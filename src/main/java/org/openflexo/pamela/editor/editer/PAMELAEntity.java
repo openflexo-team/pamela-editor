@@ -8,13 +8,21 @@ import org.openflexo.model.exceptions.ModelDefinitionException;
 import org.openflexo.pamela.editor.editer.exceptions.DeclaredPropertyNullException;
 import org.openflexo.pamela.editor.editer.utils.UtilPAMELA;
 
-import com.thoughtworks.qdox.model.DocletTag;
 import com.thoughtworks.qdox.model.JavaAnnotation;
 import com.thoughtworks.qdox.model.JavaClass;
 import com.thoughtworks.qdox.model.JavaField;
 import com.thoughtworks.qdox.model.JavaMethod;
 
 public class PAMELAEntity {
+	/**
+	 *  source.java path
+	 */
+	private String sourceUrl;
+	/**
+	 * source.java String
+	 */
+	private String sourceString;
+	
 
 	private String name;
 
@@ -27,6 +35,7 @@ public class PAMELAEntity {
 	 * the properties declared in the Entity
 	 */
 	private Map<String, PAMELAProperty> declaredProperties;
+	
 
 	public PAMELAEntity(JavaClass inplementedInterface) throws ModelDefinitionException {
 		super();
@@ -114,6 +123,9 @@ public class PAMELAEntity {
 		return "PAMELAEntity [name=" + name + "]:properties-size:"+ declaredProperties.size();
 	}
 	
-	
+	public void addsource(String url, String string){
+		this.sourceUrl = url;
+		this.sourceString = string;
+	}
 
 }

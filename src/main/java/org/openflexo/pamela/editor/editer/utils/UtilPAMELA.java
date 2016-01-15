@@ -2,10 +2,6 @@ package org.openflexo.pamela.editor.editer.utils;
 
 import java.io.StringReader;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.swing.text.html.parser.Entity;
 
 import org.openflexo.pamela.editor.builder.EntityBuilder;
 
@@ -34,46 +30,7 @@ public class UtilPAMELA {
 			}
 		}
 		return annotation;
-	}
-	
-	
-
-	/**
-	 * use the name of the class to get JavaClass from the builder of qdox
-	 * 
-	 * @param name
-	 * @return
-	 */
-	/*
-	public static JavaClass getJavaClassFromName(String name) {
-		JavaClass cls = EntityBuilder.builder.getClassByName(name);
-		return cls;
-
-	}*/
-
-	
-	
-	/**
-	 * use regex to get the content of the List or Map
-	 * 
-	 * @param list
-	 * @return
-	 */
-	/*
-	public static JavaClass getActualTypeArgument(String list) {
-		String regex = "\\<.*\\>";
-		Pattern pattern = Pattern.compile(regex);
-		Matcher matcher = pattern.matcher(list);
-		// System.out.println("replace: "+list.replaceAll(regex, "O"));
-		while (matcher.find()) {
-			int length = matcher.group(0).length();
-			String match = matcher.group(0).substring(1, length - 1);
-			// System.out.println("find class:"+match);
-			return getJavaClassFromName(match);
-		}
-		return null;
-	}*/
-	
+	}	
 	
 	 public static JavaMethod buildMethod(String methodSource) {
 	        String source = "interface Something { " + methodSource + " }";
@@ -92,9 +49,5 @@ public class UtilPAMELA {
 	        return javaAnnotation;
 	    }
 	 
-	 /*
-	 public static String firstUpperRestLowCase(String str){
-		
-	 }*/
 	 
 }

@@ -1,26 +1,17 @@
 package org.openflexo.pamela.editor.editer;
 
-import java.lang.annotation.Target;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.openflexo.model.exceptions.ModelDefinitionException;
 import org.openflexo.pamela.editor.annotations.AnnotationA;
 import org.openflexo.pamela.editor.annotations.GetterA;
-import org.openflexo.pamela.editor.builder.EntityBuilder;
 import org.openflexo.pamela.editor.editer.utils.UtilPAMELA;
 
-import com.thoughtworks.qdox.model.JavaAnnotatedElement;
 import com.thoughtworks.qdox.model.JavaAnnotation;
 import com.thoughtworks.qdox.model.JavaClass;
 import com.thoughtworks.qdox.model.JavaMethod;
 import com.thoughtworks.qdox.model.JavaParameterizedType;
 import com.thoughtworks.qdox.model.JavaType;
-import com.thoughtworks.qdox.model.impl.JavaMethodDelegate;
 
 public class PAMELAProperty {
 
@@ -43,6 +34,7 @@ public class PAMELAProperty {
 	private JavaMethod setter;
 	private JavaMethod adder;
 	private JavaMethod remover;
+	
 
 	public static PAMELAProperty getPAMELAproperty(String propertyIdentifier, PAMELAEntity pamelaEntity)
 			throws ModelDefinitionException {
