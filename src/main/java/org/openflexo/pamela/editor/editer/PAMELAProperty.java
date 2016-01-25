@@ -2,9 +2,9 @@ package org.openflexo.pamela.editor.editer;
 
 import java.util.Map;
 
-import org.openflexo.model.exceptions.ModelDefinitionException;
 import org.openflexo.pamela.editor.annotations.AnnotationA;
 import org.openflexo.pamela.editor.annotations.GetterA;
+import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
 import org.openflexo.pamela.editor.editer.utils.UtilPAMELA;
 
 import com.thoughtworks.qdox.model.JavaAnnotation;
@@ -14,11 +14,6 @@ import com.thoughtworks.qdox.model.JavaParameterizedType;
 import com.thoughtworks.qdox.model.JavaType;
 
 public class PAMELAProperty {
-
-	public enum Cardinality {
-		SINGLE, LIST, MAP
-	};
-
 	private String identifier;
 
 	private PAMELAEntity PAMELAEntity;
@@ -179,7 +174,8 @@ public class PAMELAProperty {
 	public void setRemover(JavaMethod remover) {
 		this.remover = remover;
 	}
-
+	
+	
 	// -----------------code accordant with
 	// gui----------------------------------------------
 
@@ -202,6 +198,9 @@ public class PAMELAProperty {
 		}
 
 		// create method source
+		
+		/*
+		
 		switch (this.cardinality) {
 		case SINGLE:
 			sb.append(gA.getType());
@@ -225,6 +224,8 @@ public class PAMELAProperty {
 		// build method
 		JavaMethod newGetter = UtilPAMELA.buildMethod(sb.toString());
 		this.getter = newGetter;
+
+		*/
 
 		// update Type
 		updateMethod();
@@ -253,7 +254,8 @@ public class PAMELAProperty {
 
 	}
 
-	//update the setter adder remover method by the new type 
+	//update the setter adder remover method by the new type
+	//TODO need to be modify
 	private void updateMethod() {
 		setTypeAndKeyType();	
 		String targetType = null;
@@ -317,6 +319,15 @@ public class PAMELAProperty {
 
 		}
 
+	}
+	
+	public boolean ignoreType() {
+		if (getGetter() != null) {
+			JavaAnnotation ja = UtilPAMELA.getAnnotation(getGetter(), "Getter");
+			if(ja!=null && ja.getNamedParameter("ignoreType")!=null && ja.getNamedParameter("ignoreType").equals("true"))
+				return true;
+		}
+		return false;
 	}
 
 	@Override

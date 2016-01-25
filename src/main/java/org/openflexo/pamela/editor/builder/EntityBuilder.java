@@ -1,28 +1,31 @@
 package org.openflexo.pamela.editor.builder;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 
-import org.openflexo.model.exceptions.ModelDefinitionException;
+import org.openflexo.pamela.editor.editer.PAMELAContext;
 import org.openflexo.pamela.editor.editer.PAMELAEntity;
-import org.openflexo.pamela.editor.editer.exceptions.EntityRedefineException;
+import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
 
 import com.thoughtworks.qdox.JavaProjectBuilder;
 import com.thoughtworks.qdox.model.JavaClass;
-import com.thoughtworks.qdox.model.JavaSource;
 
 public class EntityBuilder {
 
 	public static JavaProjectBuilder builder = new JavaProjectBuilder();
 	public static List<File> filelist = new ArrayList<File>();
 	public static List<String> filepathlist = new ArrayList<String>();
+	public static Map<String,PAMELAEntity> entities = new HashMap<String,PAMELAEntity>();
+	//use for import Entities
 	public static Map<String,PAMELAEntity> entityLibrary = new HashMap<String,PAMELAEntity>();
 	
+	public static PAMELAContext context = null;
+	
+	
+	/*
 	public static void load(String codeSourcePath, String className) {	
 		try {
 			
@@ -37,18 +40,34 @@ public class EntityBuilder {
 					Scanner scanner = new Scanner(new File(js.getURL().getPath()));
 					String content = scanner.useDelimiter("\\Z").next();				
 					pe.addsource(js.getURL().getPath(), content);									
-					if(entityLibrary.put(pe.getName(), pe)!=null){
+					if(entities.put(pe.getName(), pe)!=null){
 						throw new EntityRedefineException(pe.getName());
 					}					
 				}
 				
 			}
 
-		} catch (ModelDefinitionException | EntityRedefineException | FileNotFoundException e) {
+		} catch (EntityRedefineException | FileNotFoundException | org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}*/
+	
+	public static void load(String codeSourcePath, String baseClassName) {	
+		try {
+			
+			builder.addSourceTree(new File(codeSourcePath));		
+			PAMELAEntity pe=null;
+			
+			JavaClass baseClass = builder.getClassByName(baseClassName);
+			context = new PAMELAContext(baseClass);
+
+		} catch (ModelDefinitionException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
+	
 	
 	/**
 	 * not use now

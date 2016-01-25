@@ -3,7 +3,7 @@ package org.openflexo.pamela.editor.learnqdox;
 import java.io.File;
 import java.io.IOException;
 
-import org.openflexo.pamela.editor.model.Book;
+import org.openflexo.pamela.editor.model.model2.Book;
 
 import com.thoughtworks.qdox.JavaProjectBuilder;
 import com.thoughtworks.qdox.model.JavaClass;

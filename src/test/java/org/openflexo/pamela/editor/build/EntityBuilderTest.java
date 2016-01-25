@@ -77,8 +77,18 @@ public class EntityBuilderTest {
 	}
 
 	@Test
-	public void testFileList(){
-		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model","");
+	public void testBuilder1(){
+		//EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model","");
+	}
+	
+	@Test
+	public void testBuilder2(){
+		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model/model2","org.openflexo.pamela.editor.model.model2.Liberary");
+	}
+	
+	@Test
+	public void testBuilder3(){
+		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model/model1","org.openflexo.pamela.editor.model.model1.FlexoProcess");
 	}
 	
 }

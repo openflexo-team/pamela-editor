@@ -2,10 +2,9 @@ package org.openflexo.pamela.editor.annotations;
 
 
 
-import org.openflexo.pamela.editor.editer.PAMELAProperty.Cardinality;
-import org.openflexo.pamela.editor.editer.utils.UtilPAMELA;
-
-import com.thoughtworks.qdox.model.JavaAnnotation;
+import org.openflexo.model.StringEncoder;
+import org.openflexo.model.factory.ModelFactory;
+import org.openflexo.pamela.editor.editer.Cardinality;
 
 
 public class GetterA  extends AnnotationA{
@@ -60,15 +59,12 @@ public class GetterA  extends AnnotationA{
 	 */
 	boolean ignoreType = false;
 	
-	String type = "java.lang.Object";
-	
-	String keyType = "";
-	
+
 	
 	
 	
 	public GetterA(String value, Cardinality cardinality, String inverse, String defaultValue,
-			boolean isStringConvertable, boolean ignoreType,String type, String keyType) {
+			boolean isStringConvertable, boolean ignoreType) {
 		this.value = value;
 		if(cardinality!=null)
 			this.cardinality = cardinality;
@@ -78,18 +74,12 @@ public class GetterA  extends AnnotationA{
 			this.defaultValue = defaultValue;
 		this.isStringConvertable = isStringConvertable;
 		this.ignoreType = ignoreType;
-		
-		this.type = type;
-		this.keyType = keyType;
-		
+				
 	}
 	
-	//getJavaAnnotation
-	public JavaAnnotation getJavaAnnotation(){
-		return UtilPAMELA.buildAnnotation(this.toString());
-	}
 
 	/* use for javaAnnotation builder*/
+	@Override
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
 		sb.append("@");
@@ -136,13 +126,6 @@ public class GetterA  extends AnnotationA{
 		return ignoreType;
 	}
 
-	public String getType() {
-		return type;
-	}
-
-	public String getKeyType() {
-		return keyType;
-	}
 
 	
 
