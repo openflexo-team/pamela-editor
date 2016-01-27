@@ -38,7 +38,7 @@ public class PAMELAProperty {
 		JavaMethod adder = null;
 		JavaMethod remover = null;
 
-		JavaClass inplementedInterface = pamelaEntity.getInplementedInterface();
+		JavaClass inplementedInterface = pamelaEntity.getImplementedInterface();
 		// get methods from inplementedInterface
 		for (JavaMethod m : inplementedInterface.getMethods()) {
 			JavaAnnotation aGetter = UtilPAMELA.getAnnotation(m, "Getter");

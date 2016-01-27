@@ -96,7 +96,8 @@ public class PAMELAEntity {
 
 		//TODO Init delegate implementations
 		
-		System.out.println("End create Entity-->with property num" + declaredProperties.size());
+		System.out.println("End create Entity "+ this.name +"-->with property num" + declaredProperties.size());
+		
 	}
 
 	public PAMELAProperty getDeclaredProperty(String propertyName) {
@@ -110,7 +111,7 @@ public class PAMELAEntity {
 		return this.declaredProperties;
 	}
 
-	public JavaClass getInplementedInterface() {
+	public JavaClass getImplementedInterface() {		
 		return implementedInterface;
 	}
 
@@ -234,7 +235,7 @@ public class PAMELAEntity {
 		if(directSuperEntities == null && superImplementedInterfaces != null){
 			directSuperEntities = new ArrayList<PAMELAEntity>(superImplementedInterfaces.size());
 			for (JavaClass superInterface : superImplementedInterfaces) {
-				PAMELAEntity superEntity = PAMELAEntityLiberary.get(superInterface, true);
+				PAMELAEntity superEntity = PAMELAEntityLibrary.get(superInterface, true);
 				directSuperEntities.add(superEntity);
 			}
 		}
@@ -256,20 +257,13 @@ public class PAMELAEntity {
 		}
 		*/
 		for (PAMELAProperty property : declaredProperties.values()) {
-			if (property.getType() != null /*  && !StringConverterLibrary.getInstance().hasConverter(property.getType()) */ 
+			
+			System.out.println(property.getIdentifier()+"===property.getType.FullQualidiedName:"+property.getType().getFullyQualifiedName());
+			
+			if (property.getType() != null   && !TypeConverterLibrary.getInstance().hasConverter(property.getType().getFullyQualifiedName())
 					/*&& !property.getType().isEnum() && !property.isStringConvertable()*/ && !property.ignoreType()) {
-				try {
-					//TODO get implemented class
-					System.out.println("property.getType.FullQualidiedName:"+property.getType().getFullyQualifiedName());
-					//TODO Is converter  
-					if(!property.getType().getFullyQualifiedName().equals("java.lang.String")
-						&& !property.getType().getFullyQualifiedName().equals("int")	
-							){ // will be replaced by Converter
-					
-						embeddedEntities.add(PAMELAEntityLiberary.get((JavaClass) property.getType(), true));
-					
-					}
-					
+				try {		
+						embeddedEntities.add(PAMELAEntityLibrary.get((JavaClass) property.getType(), true));	
 				} catch (ModelDefinitionException e) {
 					throw new ModelDefinitionException("Could not retrieve model entity for property " + property + " and entity " + this,
 							e);

@@ -18,9 +18,6 @@ public class EntityBuilderTest {
 	@Test
 	public void loadTest() {
 		
-
-
-
 	}
 	
 	//Test for model library
@@ -82,13 +79,19 @@ public class EntityBuilderTest {
 	}
 	
 	@Test
-	public void testBuilder2(){
+	public void testBuilder2SingleEntry(){
 		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model/model2","org.openflexo.pamela.editor.model.model2.Liberary");
 	}
 	
 	@Test
-	public void testBuilder3(){
+	public void testBuilder3SingleEntry(){
 		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model/model1","org.openflexo.pamela.editor.model.model1.FlexoProcess");
+	}
+	
+	@Test
+	public void testBuilder4MuiltiEntry(){
+		String[] classNames = {"org.openflexo.pamela.editor.model.model2.Liberary","org.openflexo.pamela.editor.model.model2.Company"};
+		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model",classNames);
 	}
 	
 }

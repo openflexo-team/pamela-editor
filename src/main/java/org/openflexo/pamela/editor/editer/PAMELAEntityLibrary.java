@@ -15,7 +15,7 @@ import com.thoughtworks.qdox.model.JavaClass;
  * @author ddcat1991
  *
  */
-public class PAMELAEntityLiberary {
+public class PAMELAEntityLibrary {
 
 	private static Map<JavaClass, PAMELAEntity> entities = new HashMap<JavaClass, PAMELAEntity>();
 
@@ -50,7 +50,7 @@ public class PAMELAEntityLiberary {
 			if (!PAMELAEntity.isModelEntity(implementedInterface)) {
 				throw new ModelDefinitionException("Class " + implementedInterface + " is not a ModelEntity.");
 			}
-			synchronized (PAMELAEntityLiberary.class) {
+			synchronized (PAMELAEntityLibrary.class) {
 				entities.put(implementedInterface, pamelaEntity = new PAMELAEntity(implementedInterface));
 				pamelaEntity.init();
 				newEntities.add(pamelaEntity);
