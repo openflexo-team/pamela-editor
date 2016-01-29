@@ -2,6 +2,7 @@ package org.openflexo.pamela.editor.build;
 
 
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.openflexo.pamela.editor.builder.EntityBuilder;
@@ -92,6 +93,11 @@ public class EntityBuilderTest {
 	public void testBuilder4MuiltiEntry(){
 		String[] classNames = {"org.openflexo.pamela.editor.model.model2.Liberary","org.openflexo.pamela.editor.model.model2.Company"};
 		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model",classNames);
+	}
+	
+	@After
+	public void testAfter(){
+		EntityBuilder.entityLibrary.printAllEntities();
 	}
 	
 }

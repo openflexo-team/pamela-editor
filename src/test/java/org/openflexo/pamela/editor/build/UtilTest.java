@@ -4,7 +4,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openflexo.pamela.editor.builder.EntityBuilder;
 import org.openflexo.pamela.editor.editer.Cardinality;
-import org.openflexo.pamela.editor.editer.utils.Location;
 import org.openflexo.pamela.editor.editer.utils.UtilPAMELA;
 
 public class UtilTest {
@@ -17,8 +16,8 @@ public class UtilTest {
 	@Test
 	public void testMethodLocation() {
 		
-		Location loc = UtilPAMELA.getMethodLocation(EntityBuilder.entities.get("Book").getDeclaredProperty("AUTHOR").getGetter());
-		System.out.println(loc);
+		//Location loc = UtilPAMELA.getMethodLocation(EntityBuilder.entities.get("Book").getDeclaredProperty("AUTHOR").getGetter());
+		//System.out.println(loc);
 	}
 	
 	@Test

@@ -34,8 +34,21 @@ public class UtilPAMELA {
 		}
 		return annotation;
 	}
-	
-	
+
+	public static JavaClass getClassByName(JavaClass implementedInterface, String className) {
+		JavaClass clazz = null;	
+		if(className.split("\\.").length>1)
+			//full qualified name
+			clazz = EntityBuilder.builder.getClassByName(className);
+		else{	
+			//find with simple name
+			clazz = EntityBuilder.builder.getClassByName(implementedInterface.getPackageName()+"."+className);
+		}
+
+		
+		return clazz;
+
+	}
 
 	public static JavaMethod buildMethod(String methodSource) {
 		String source = "interface Something { " + methodSource + " }";
@@ -86,9 +99,9 @@ public class UtilPAMELA {
 		GetterA getterAnnotation = new GetterA(identify, cardinality, inverse, defaultValue, isStringConvertable,
 				ignoreType);
 		sb.append(getterAnnotation.toString());
-		// create method		
-		sb.append(System.getProperty("line.separator"));	
-		//returnType
+		// create method
+		sb.append(System.getProperty("line.separator"));
+		// returnType
 		switch (cardinality) {
 		case SINGLE:
 			sb.append(type);
@@ -97,14 +110,14 @@ public class UtilPAMELA {
 			sb.append("List<").append(type).append(">");
 			break;
 		case MAP:
-			//TODO keyType==null
+			// TODO keyType==null
 			sb.append("Map<").append(type).append(",").append(keyType).append(">");
 			break;
-		}		
+		}
 		sb.append(" ");
-		//method name
-		sb.append("get").append(identify).append(" ( ); ");		
-		System.out.println(sb.toString());		
+		// method name
+		sb.append("get").append(identify).append(" ( ); ");
+		System.out.println(sb.toString());
 		return sb.toString();
 	}
 

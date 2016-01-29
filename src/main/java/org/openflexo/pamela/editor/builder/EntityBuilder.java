@@ -2,12 +2,11 @@ package org.openflexo.pamela.editor.builder;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.openflexo.pamela.editor.editer.PAMELAContext;
 import org.openflexo.pamela.editor.editer.PAMELAEntity;
+import org.openflexo.pamela.editor.editer.PAMELAEntityLibrary;
 import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
 
 import com.thoughtworks.qdox.JavaProjectBuilder;
@@ -18,9 +17,10 @@ public class EntityBuilder {
 	public static JavaProjectBuilder builder = new JavaProjectBuilder();
 	public static List<File> filelist = new ArrayList<File>();
 	public static List<String> filepathlist = new ArrayList<String>();
-	public static Map<String, PAMELAEntity> entities = new HashMap<String, PAMELAEntity>();
+	public static PAMELAEntityLibrary entityLibrary = new PAMELAEntityLibrary();
+	//public static Map<String, PAMELAEntity> entities = new HashMap<String, PAMELAEntity>();
 	// use for import Entities
-	public static Map<String, PAMELAEntity> entityLibrary = new HashMap<String, PAMELAEntity>();
+	//public static Map<String, PAMELAEntity> entityLibrary = new HashMap<String, PAMELAEntity>();
 
 	public static PAMELAContext context = null;
 

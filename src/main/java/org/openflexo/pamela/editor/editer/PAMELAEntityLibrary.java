@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
 
@@ -76,4 +77,9 @@ public class PAMELAEntityLibrary {
 		entities.clear();
 	}
 
+	public void printAllEntities(){
+		for(Entry<JavaClass, PAMELAEntity> entry:entities.entrySet()){
+			System.out.println("LB-Entity--:"+entry.getValue().getName());
+		}
+	}
 }

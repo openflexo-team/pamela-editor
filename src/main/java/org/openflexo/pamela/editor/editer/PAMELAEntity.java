@@ -7,18 +7,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.openflexo.model.ModelEntity;
 import org.openflexo.model.ModelProperty;
 import org.openflexo.model.annotations.Getter;
 import org.openflexo.model.exceptions.PropertyClashException;
+import org.openflexo.pamela.editor.builder.EntityBuilder;
 import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
 import org.openflexo.pamela.editor.editer.utils.Location;
 import org.openflexo.pamela.editor.editer.utils.UtilPAMELA;
+import org.openflexo.pamela.editor.editer.utils.UtilString;
 
 import com.thoughtworks.qdox.model.JavaAnnotation;
 import com.thoughtworks.qdox.model.JavaClass;
 import com.thoughtworks.qdox.model.JavaField;
 import com.thoughtworks.qdox.model.JavaMethod;
+import com.thoughtworks.qdox.model.expression.AnnotationValue;
+import com.thoughtworks.qdox.model.expression.AnnotationValueList;
+import com.thoughtworks.qdox.model.impl.DefaultJavaAnnotation;
 
 public class PAMELAEntity {
 	/**
@@ -60,12 +64,13 @@ public class PAMELAEntity {
 	private List<JavaClass> superImplementedInterfaces;
 	
 	private Set<PAMELAEntity> embeddedEntities;
+	
 
 	public PAMELAEntity(JavaClass inplementedInterface) throws ModelDefinitionException {
 		super();
 		this.implementedInterface = inplementedInterface;
 		this.name = inplementedInterface.getFullyQualifiedName();
-		System.out.println("full-qualified-name"+this.name);
+		//System.out.println("full-qualified-name"+this.name);
 		this.declaredProperties = new HashMap<String, PAMELAProperty>();
 		this.properties = new HashMap<String, PAMELAProperty>();
 		this.embeddedEntities = new HashSet<PAMELAEntity>();
@@ -96,7 +101,7 @@ public class PAMELAEntity {
 
 		//TODO Init delegate implementations
 		
-		System.out.println("End create Entity "+ this.name +"-->with property num" + declaredProperties.size());
+		System.out.println("create Entity "+ this.name +"-->with property num" + declaredProperties.size());
 		
 	}
 
@@ -155,6 +160,7 @@ public class PAMELAEntity {
 		this.sourceString = string;
 	}
 
+	/*
 	public PAMELAProperty createNewProperty(String identifier, Cardinality cardinality, String inverse,
 			String defaultValue, boolean isStringConvertable, boolean ignoreType, String type, String keyType) {
 		// identifier not in Properties Map
@@ -187,7 +193,7 @@ public class PAMELAEntity {
 
 		return null;
 
-	}
+	}*/
 
 	public int getLastLineNum() {
 		// we scan all the method
@@ -258,28 +264,35 @@ public class PAMELAEntity {
 		*/
 		for (PAMELAProperty property : declaredProperties.values()) {
 			
-			System.out.println(property.getIdentifier()+"===property.getType.FullQualidiedName:"+property.getType().getFullyQualifiedName());
+			System.out.println("init property:" + property.getIdentifier()+" type:"+property.getType().getFullyQualifiedName());
 			
 			if (property.getType() != null   && !TypeConverterLibrary.getInstance().hasConverter(property.getType().getFullyQualifiedName())
 					/*&& !property.getType().isEnum() && !property.isStringConvertable()*/ && !property.ignoreType()) {
 				try {		
-						embeddedEntities.add(PAMELAEntityLibrary.get((JavaClass) property.getType(), true));	
+					//use qdox builder to get the coherent class
+					embeddedEntities.add(PAMELAEntityLibrary.get(EntityBuilder.builder.getClassByName(property.getType().getFullyQualifiedName()), true));	
 				} catch (ModelDefinitionException e) {
 					throw new ModelDefinitionException("Could not retrieve model entity for property " + property + " and entity " + this,
 							e);
 				}
 			}
 		}
-
-		//TODO We also resolve our imports
-		/*
-		Imports imports = implementedInterface.getAnnotation(Imports.class);
-		if (imports != null) {
-			for (Import imp : imports.value()) {
-				embeddedEntities.add(ModelEntityLibrary.get(imp.value(), true));
+		
+		//resolve Annotation Imports
+		JavaAnnotation imports = UtilPAMELA.getAnnotation(implementedInterface, "Imports");
+		if(imports !=null ){
+			AnnotationValueList values = (AnnotationValueList) imports.getProperty("value");
+			
+			for(AnnotationValue imp: values.getValueList()){
+				String impclsname = (String) ((DefaultJavaAnnotation)imp).getNamedParameter("value");				
+				impclsname = UtilString.removeDotClassInClassname(impclsname);			
+				JavaClass impclas = UtilPAMELA.getClassByName(implementedInterface, impclsname);
+				System.out.println(impclas.getCodeBlock());
+				//TODO do we need a attribute for import Entities?
+				embeddedEntities.add(PAMELAEntityLibrary.get(impclas, true));	
 			}
+			
 		}
-		*/
 	}
 	
 	
@@ -349,7 +362,6 @@ public class PAMELAEntity {
 		}
 		return returned;
 	}
-
 	
 	/**
 	 * Returns the {@link ModelProperty} with the identifier <code>propertyIdentifier</code>.
