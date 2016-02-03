@@ -12,7 +12,6 @@ import org.openflexo.model.annotations.Getter;
 import org.openflexo.model.exceptions.PropertyClashException;
 import org.openflexo.pamela.editor.builder.EntityBuilder;
 import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
-import org.openflexo.pamela.editor.editer.utils.Location;
 import org.openflexo.pamela.editor.editer.utils.UtilPAMELA;
 import org.openflexo.pamela.editor.editer.utils.UtilString;
 
@@ -65,27 +64,45 @@ public class PAMELAEntity {
 	
 	private Set<PAMELAEntity> embeddedEntities;
 	
+	private Set<PAMELAEntity> importEntities;
+	
+	private int currentProcessLinenum = 0;
 
-	public PAMELAEntity(JavaClass inplementedInterface) throws ModelDefinitionException {
+	public PAMELAEntity(JavaClass implementedInterface) throws ModelDefinitionException {
 		super();
-		this.implementedInterface = inplementedInterface;
-		this.name = inplementedInterface.getFullyQualifiedName();
+		this.implementedInterface = implementedInterface;
+		this.name = implementedInterface.getFullyQualifiedName();
 		//System.out.println("full-qualified-name"+this.name);
 		this.declaredProperties = new HashMap<String, PAMELAProperty>();
 		this.properties = new HashMap<String, PAMELAProperty>();
 		this.embeddedEntities = new HashSet<PAMELAEntity>();
-		// model super interface
-
+		this.importEntities = new HashSet<PAMELAEntity>();
+		// model super interface - will be resolved latter
+		for(JavaClass superi : implementedInterface.getInterfaces()){
+			//System.out.println("the super interface : "+superi.getFullyQualifiedName());
+			if(isModelEntity(superi)){
+				/*
+				if(superImplementedInterfaces == null){
+					superImplementedInterfaces = new ArrayList<JavaClass>();
+				}
+				superImplementedInterfaces.add(superi);
+				*/
+			}
+		}
+		
 		// get fields
 		List<JavaField> fields = this.implementedInterface.getFields();
 		for (JavaField field : fields) {
 			// TODO
-			// System.out.println(field.getName());
+			//System.out.println(field.getName()+" : "+ field.getInitializationExpression());
 			// this.declaredProperties.put(key, value)
+			
+			currentProcessLinenum = currentProcessLinenum<field.getLineNumber()?field.getLineNumber():currentProcessLinenum;
 		}
 
 		// we scan all the method
-		List<JavaMethod> methods = inplementedInterface.getMethods();
+		List<JavaMethod> methods = implementedInterface.getMethods();
+		
 		for (JavaMethod method : methods) {
 
 			// get the propertyIdentifier for the method
@@ -97,6 +114,8 @@ public class PAMELAEntity {
 				declaredProperties.put(propertyIdentifier, property);
 			}
 
+			//TODO currentProcessLinenum => end of last method  getEndLineNumber
+			currentProcessLinenum = method.getLineNumber();
 		}
 
 		//TODO Init delegate implementations
@@ -195,6 +214,7 @@ public class PAMELAEntity {
 
 	}*/
 
+	/*
 	public int getLastLineNum() {
 		// we scan all the method
 		List<JavaMethod> methods = implementedInterface.getMethods();
@@ -213,7 +233,7 @@ public class PAMELAEntity {
 				lastLine = mEnd;
 		}
 		return lastLine;
-	}
+	}*/
 
 	void mergeProperties() throws ModelDefinitionException {
 		if (initialized) {
@@ -257,14 +277,15 @@ public class PAMELAEntity {
 	void init() throws ModelDefinitionException {
 		// TODO init----ignore Type....
 		// We now resolve our inherited entities and properties
+		
 		/*
 		if (getDirectSuperEntities() != null) {
 			embeddedEntities.addAll(getDirectSuperEntities());
-		}
-		*/
+		} */
+		
 		for (PAMELAProperty property : declaredProperties.values()) {
 			
-			System.out.println("init property:" + property.getIdentifier()+" type:"+property.getType().getFullyQualifiedName());
+			//System.out.println("init property:" + property.getIdentifier()+" type:"+property.getType().getFullyQualifiedName());
 			
 			if (property.getType() != null   && !TypeConverterLibrary.getInstance().hasConverter(property.getType().getFullyQualifiedName())
 					/*&& !property.getType().isEnum() && !property.isStringConvertable()*/ && !property.ignoreType()) {
@@ -287,14 +308,15 @@ public class PAMELAEntity {
 				String impclsname = (String) ((DefaultJavaAnnotation)imp).getNamedParameter("value");				
 				impclsname = UtilString.removeDotClassInClassname(impclsname);			
 				JavaClass impclas = UtilPAMELA.getClassByName(implementedInterface, impclsname);
-				System.out.println(impclas.getCodeBlock());
 				//TODO do we need a attribute for import Entities?
-				embeddedEntities.add(PAMELAEntityLibrary.get(impclas, true));	
+				//embeddedEntities.add(PAMELAEntityLibrary.get(impclas, true));	
+				importEntities.add(PAMELAEntityLibrary.get(impclas,true));
 			}
 			
 		}
 	}
 	
+	/*=================================================no use now ====================================*/
 	
 	/**
 	 * Creates the {@link ModelProperty} with the identifier <code>propertyIdentifier</code>.
@@ -357,11 +379,26 @@ public class PAMELAEntity {
 			}
 			else {
 				//TODO
-				//returned = combineAsAncestors(parent.getPAMELAProperty(propertyIdentifier), returned, property);
+				returned = combineAsAncestors(parent.getPAMELAProperty(propertyIdentifier), returned, property);
 			}
 		}
 		return returned;
 	}
+	
+	private PAMELAProperty combineAsAncestors(PAMELAProperty property1, PAMELAProperty property2,
+			PAMELAProperty declaredProperty) throws ModelDefinitionException {
+		if (property1 == null) {
+			return property2;
+		}
+		if (property2 == null) {
+			return property1;
+		}
+		//TODO checkForContradictions(property1, property2, declaredProperty);
+		//return property1.combineWith(property2, declaredProperty);
+		return property1;
+	}
+	
+	/*=================================end no use now====================================================*/
 	
 	/**
 	 * Returns the {@link ModelProperty} with the identifier <code>propertyIdentifier</code>.

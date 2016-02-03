@@ -5,6 +5,7 @@ import java.util.Map;
 import org.openflexo.pamela.editor.annotations.AnnotationA;
 import org.openflexo.pamela.editor.annotations.GetterA;
 import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
+import org.openflexo.pamela.editor.editer.utils.Location;
 import org.openflexo.pamela.editor.editer.utils.UtilPAMELA;
 
 import com.thoughtworks.qdox.model.JavaAnnotation;
@@ -30,7 +31,14 @@ public class PAMELAProperty {
 	private JavaMethod adder;
 	private JavaMethod remover;
 	
-
+	/**
+	 * the line number (begin,end) of this property
+	 */
+	private Location location;
+	
+	private int begin;
+	private int end;
+	
 	public static PAMELAProperty getPAMELAproperty(String propertyIdentifier, PAMELAEntity pamelaEntity)
 			throws ModelDefinitionException {
 		JavaMethod getter = null;
@@ -38,7 +46,11 @@ public class PAMELAProperty {
 		JavaMethod adder = null;
 		JavaMethod remover = null;
 
+		int beginLine = Integer.MAX_VALUE;
+		int endLine = Integer.MIN_VALUE;
+		
 		JavaClass inplementedInterface = pamelaEntity.getImplementedInterface();
+			
 		// get methods from inplementedInterface
 		for (JavaMethod m : inplementedInterface.getMethods()) {
 			JavaAnnotation aGetter = UtilPAMELA.getAnnotation(m, "Getter");
@@ -56,7 +68,8 @@ public class PAMELAProperty {
 					throw new ModelDefinitionException("Duplicate getter '" + propertyIdentifier
 							+ "' defined for interface " + pamelaEntity.getName());
 				} else {
-
+					beginLine = java.lang.Math.min(beginLine, Location.getMethodBeginLine(m));
+					endLine = java.lang.Math.max(beginLine, Location.getMethodLastLine(m));
 					getter = m;
 				}
 			}
@@ -66,7 +79,8 @@ public class PAMELAProperty {
 					throw new ModelDefinitionException("Duplicate setter '" + propertyIdentifier
 							+ "' defined for interface " + pamelaEntity.getName());
 				} else {
-
+					beginLine = java.lang.Math.min(beginLine, Location.getMethodBeginLine(m));
+					endLine = java.lang.Math.max(beginLine, Location.getMethodLastLine(m));
 					setter = m;
 				}
 			}
@@ -76,7 +90,8 @@ public class PAMELAProperty {
 					throw new ModelDefinitionException("Duplicate setter '" + propertyIdentifier
 							+ "' defined for interface " + pamelaEntity.getName());
 				} else {
-
+					beginLine = java.lang.Math.min(beginLine, Location.getMethodBeginLine(m));
+					endLine = java.lang.Math.max(beginLine, Location.getMethodLastLine(m));
 					adder = m;
 				}
 			}
@@ -86,24 +101,27 @@ public class PAMELAProperty {
 					throw new ModelDefinitionException("Duplicate setter '" + propertyIdentifier
 							+ "' defined for interface " + pamelaEntity.getName());
 				} else {
-
+					beginLine = java.lang.Math.min(beginLine, Location.getMethodBeginLine(m));
+					endLine = java.lang.Math.max(beginLine, Location.getMethodLastLine(m));
 					remover = m;
 				}
 			}
 
 		}
 
-		return new PAMELAProperty(propertyIdentifier, pamelaEntity, getter, setter, adder, remover);
+		return new PAMELAProperty(propertyIdentifier, pamelaEntity, getter, setter, adder, remover,beginLine,endLine);
 	}
 
 	public PAMELAProperty(String identifier, org.openflexo.pamela.editor.editer.PAMELAEntity pAMELAEntity, JavaMethod getter,
-			JavaMethod setter, JavaMethod adder, JavaMethod remover) {
+			JavaMethod setter, JavaMethod adder, JavaMethod remover,int beginLine,int endLine) {
 		this.identifier = identifier;
 		this.PAMELAEntity = pAMELAEntity;
 		this.getter = getter;
 		this.setter = setter;
 		this.adder = adder;
 		this.remover = remover;
+		this.begin = beginLine;
+		this.end = endLine;
 
 		if (getter != null) {
 			setTypeAndKeyType();
@@ -321,6 +339,7 @@ public class PAMELAProperty {
 
 	}
 	
+	
 	public boolean ignoreType() {
 		if (getGetter() != null) {
 			JavaAnnotation ja = UtilPAMELA.getAnnotation(getGetter(), "Getter");
@@ -328,6 +347,16 @@ public class PAMELAProperty {
 				return true;
 		}
 		return false;
+	}
+
+	
+	
+	public int getBegin() {
+		return begin;
+	}
+
+	public int getEnd() {
+		return end;
 	}
 
 	@Override

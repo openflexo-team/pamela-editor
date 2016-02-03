@@ -1,30 +1,25 @@
 package org.openflexo.pamela.editor.editer.utils;
 
+import java.util.List;
+
+import com.thoughtworks.qdox.model.JavaAnnotation;
+import com.thoughtworks.qdox.model.JavaMethod;
+
 public class Location {
 	
-	private int begin;
-	private int end;
-	public Location(int begin, int end) {
-		super();
-		this.begin = begin;
-		this.end = end;
-	}
-	public int getBegin() {
-		return begin;
-	}
-	public void setBegin(int begin) {
-		this.begin = begin;
-	}
-	public int getEnd() {
-		return end;
-	}
-	public void setEnd(int end) {
-		this.end = end;
-	}
-	@Override
-	public String toString() {
-		return "Location [begin=" + begin + ", end=" + end + "]";
+	//This method will be update in the future
+	public static int getMethodLastLine(JavaMethod method){
+		int methodLine = method.getLineNumber();
+		return methodLine;
 	}
 	
+	//This method will be update in the future
+	public static int getMethodBeginLine(JavaMethod method){
+		int methodLine = method.getLineNumber();
+		List<JavaAnnotation> annotations = method.getAnnotations();
+		int numAnotation = annotations.size();
+		return methodLine-numAnotation;
+	}
 	
+
 }

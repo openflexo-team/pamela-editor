@@ -43,11 +43,8 @@ public class UtilPAMELA {
 		else{	
 			//find with simple name
 			clazz = EntityBuilder.builder.getClassByName(implementedInterface.getPackageName()+"."+className);
-		}
-
-		
+		}	
 		return clazz;
-
 	}
 
 	public static JavaMethod buildMethod(String methodSource) {
@@ -67,17 +64,21 @@ public class UtilPAMELA {
 		return javaAnnotation;
 	}
 
+	
 	/**
 	 * just support method declaration in one line (need to be fix)
 	 * 
 	 * @param method
 	 */
+	/*
 	public static Location getMethodLocation(JavaMethod method) {
 		int methodBegin = method.getLineNumber();
 		String methodsource = method.getCodeBlock();
 		String[] lines = methodsource.split("\r\n|\r|\n");
 		return new Location(methodBegin - lines.length + 1, methodBegin);
-	}
+	}*/
+	
+	
 
 	/**
 	 * Build method getXXX with Annotation Getter

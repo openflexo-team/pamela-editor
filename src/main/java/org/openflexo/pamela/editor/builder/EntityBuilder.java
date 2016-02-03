@@ -85,6 +85,17 @@ public class EntityBuilder {
 			e.printStackTrace();
 		}
 	}
+	
+	/**
+	 * use className to find a entity in PAMELAEntityLibrary
+	 * @param className
+	 * @return
+	 */
+	public static PAMELAEntity getEntityByClassName(String className){
+		JavaClass jclass = builder.getClassByName(className);
+		PAMELAEntity entity = PAMELAEntityLibrary.get(jclass);
+		return entity;
+	}
 
 	/**
 	 * not use now traverse the folder to get the file list of *.java

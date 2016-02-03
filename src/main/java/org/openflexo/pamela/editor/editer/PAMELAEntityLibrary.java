@@ -61,7 +61,7 @@ public class PAMELAEntityLibrary {
 		return pamelaEntity;
 	}
 
-	static PAMELAEntity get(JavaClass implementedInterface) {
+	public static PAMELAEntity get(JavaClass implementedInterface) {
 		try {
 			return get(implementedInterface, false);
 		} catch (ModelDefinitionException e) {

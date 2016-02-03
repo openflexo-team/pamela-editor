@@ -10,15 +10,9 @@ public class UtilTest {
 
 	@Before
 	public void setUp() throws Exception {
-		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model", "");
+		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model/model1","org.openflexo.pamela.editor.model.model1.FlexoProcess");
 	}
 
-	@Test
-	public void testMethodLocation() {
-		
-		//Location loc = UtilPAMELA.getMethodLocation(EntityBuilder.entities.get("Book").getDeclaredProperty("AUTHOR").getGetter());
-		//System.out.println(loc);
-	}
 	
 	@Test
 	public void testGetterCreator(){
