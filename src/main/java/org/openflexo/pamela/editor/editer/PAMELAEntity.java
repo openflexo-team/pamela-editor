@@ -8,8 +8,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.openflexo.model.ModelProperty;
-import org.openflexo.model.annotations.Getter;
-import org.openflexo.model.exceptions.PropertyClashException;
 import org.openflexo.pamela.editor.builder.EntityBuilder;
 import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
 import org.openflexo.pamela.editor.editer.utils.UtilPAMELA;
@@ -81,12 +79,11 @@ public class PAMELAEntity {
 		for(JavaClass superi : implementedInterface.getInterfaces()){
 			//System.out.println("the super interface : "+superi.getFullyQualifiedName());
 			if(isModelEntity(superi)){
-				/*
 				if(superImplementedInterfaces == null){
 					superImplementedInterfaces = new ArrayList<JavaClass>();
 				}
 				superImplementedInterfaces.add(superi);
-				*/
+				//System.out.println("superInterface"+superi.getCodeBlock());
 			}
 		}
 		
@@ -235,28 +232,6 @@ public class PAMELAEntity {
 		return lastLine;
 	}*/
 
-	void mergeProperties() throws ModelDefinitionException {
-		if (initialized) {
-			return;
-		}
-		properties.putAll(declaredProperties);
-
-		// Resolve inherited properties (we only scan direct parent properties,
-		// since themselves will scan for their inherited parents)
-		if(getDirectSuperEntities() != null){
-			for(PAMELAEntity parentEntity : getDirectSuperEntities()){
-				parentEntity.mergeProperties();
-				for(PAMELAProperty property:parentEntity.properties.values()){
-					//TODO createMergedProperty - line 449 in ModelEntity
-				}
-			}
-		}
-		
-		//TODO validate properties(they all have a getter and a return type etc??)
-		initialized = true;
-		//TODO propertyMethod, initializers
-	}
-
 	public List<PAMELAEntity> getDirectSuperEntities() throws ModelDefinitionException {
 		if(directSuperEntities == null && superImplementedInterfaces != null){
 			directSuperEntities = new ArrayList<PAMELAEntity>(superImplementedInterfaces.size());
@@ -278,6 +253,9 @@ public class PAMELAEntity {
 		// TODO init----ignore Type....
 		// We now resolve our inherited entities and properties
 		
+		if(directSuperEntities==null){
+			getDirectSuperEntities();
+		}
 		/*
 		if (getDirectSuperEntities() != null) {
 			embeddedEntities.addAll(getDirectSuperEntities());
@@ -316,89 +294,6 @@ public class PAMELAEntity {
 		}
 	}
 	
-	/*=================================================no use now ====================================*/
-	
-	/**
-	 * Creates the {@link ModelProperty} with the identifier <code>propertyIdentifier</code>.
-	 * 
-	 * @param propertyIdentifier
-	 *            the identifier of the property
-	 * @param create
-	 *            whether the property should be create or not, if not found
-	 * @return the property with the identifier <code>propertyIdentifier</code>.
-	 * @throws ModelDefinitionException
-	 */
-	void createMergedProperty(String propertyIdentifier, boolean create) throws ModelDefinitionException {
-		PAMELAProperty returned = buildPAMELAProperty(propertyIdentifier);
-		properties.put(propertyIdentifier, returned);
-	}
-
-	/**
-	 * Builds the {@link ModelProperty} with identifier <code>propertyIdentifier</code>, if it is declared at least once in the hierarchy
-	 * (i.e., at least one method is annotated with the {@link Getter} annotation and the given identifier, <code>propertyIdentifier</code>
-	 * ). In case of inheritance, the property is combined with all its ancestors. In case of multiple inheritance of the same property,
-	 * conflicts are resolved to the possible extent. In case of contradiction, a {@link PropertyClashException} is thrown.
-	 * 
-	 * @param propertyIdentifier
-	 *            the identifier of the property
-	 * @return the new, possibly combined, property.
-	 * @throws ModelDefinitionException
-	 *             in case of an inconsistency in the model of a clash of property inheritance.
-	 */
-	private PAMELAProperty buildPAMELAProperty(String propertyIdentifier) throws ModelDefinitionException {
-		PAMELAProperty property = PAMELAProperty.getPAMELAproperty(propertyIdentifier, this);
-		if (singleInheritance() || multipleInheritance()) {
-			PAMELAProperty parentProperty = buildModelPropertyUsingParentProperties(propertyIdentifier, property);
-			//TODO
-			//return combine(property, parentProperty);
-		}
-		return property;
-	}
-	
-	/**
-	 * Returns a model property with the identifier <code>propertyIdentifier</code> which is a combination of all the model properties with
-	 * the identifier <code>propertyIdentifier</code> of the parent entities. This method may return <code>null</code> in case amongst all
-	 * parents, non of them declare a property with identifier <code>propertyIdentifier</code>.
-	 * 
-	 * @param propertyIdentifier
-	 *            the identifier of the property
-	 * @param property
-	 *            the model property with the identifier defined for <code>this</code> {@link ModelEntity}.
-	 * @return
-	 * @throws ModelDefinitionException
-	 */
-	private PAMELAProperty buildModelPropertyUsingParentProperties(String propertyIdentifier, PAMELAProperty property)
-			throws ModelDefinitionException {
-		PAMELAProperty returned = null;
-		for (PAMELAEntity parent : getDirectSuperEntities()) {
-			if (!parent.hasProperty(propertyIdentifier)) {
-				continue;
-			}
-			if (returned == null) {
-				returned = parent.getPAMELAProperty(propertyIdentifier);
-			}
-			else {
-				//TODO
-				returned = combineAsAncestors(parent.getPAMELAProperty(propertyIdentifier), returned, property);
-			}
-		}
-		return returned;
-	}
-	
-	private PAMELAProperty combineAsAncestors(PAMELAProperty property1, PAMELAProperty property2,
-			PAMELAProperty declaredProperty) throws ModelDefinitionException {
-		if (property1 == null) {
-			return property2;
-		}
-		if (property2 == null) {
-			return property1;
-		}
-		//TODO checkForContradictions(property1, property2, declaredProperty);
-		//return property1.combineWith(property2, declaredProperty);
-		return property1;
-	}
-	
-	/*=================================end no use now====================================================*/
 	
 	/**
 	 * Returns the {@link ModelProperty} with the identifier <code>propertyIdentifier</code>.

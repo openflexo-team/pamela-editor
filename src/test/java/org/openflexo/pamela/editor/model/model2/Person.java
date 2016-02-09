@@ -5,24 +5,14 @@ import org.openflexo.model.annotations.ModelEntity;
 import org.openflexo.model.annotations.Setter;
 
 @ModelEntity
-public interface Company{
+public interface Person {
 
 	String NAME="name";
-	String SIZE = "size";
-	String EMPLOYEE = "employee";
 	
 	@Getter(NAME)
 	public String getName();
 	
+	
 	@Setter(NAME)
 	public void setName(String name);
-	
-	@Getter(value=SIZE,defaultValue="0")
-	public int getSize();
-	
-	@Setter(SIZE)
-	public void setSize(int size);
-	
-	
-	
 }

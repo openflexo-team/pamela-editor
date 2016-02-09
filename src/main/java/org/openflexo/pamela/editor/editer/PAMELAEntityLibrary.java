@@ -26,9 +26,6 @@ public class PAMELAEntityLibrary {
 		PAMELAEntity pamelaEntity = entities.get(implementedInterface);
 		if (pamelaEntity == null) {
 			pamelaEntity = get(implementedInterface, true);
-			for (PAMELAEntity e : newEntities) {
-				e.mergeProperties();
-			}
 			newEntities.clear();
 		}
 

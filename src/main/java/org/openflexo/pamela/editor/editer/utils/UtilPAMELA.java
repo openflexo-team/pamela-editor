@@ -2,6 +2,8 @@ package org.openflexo.pamela.editor.editer.utils;
 
 import java.io.StringReader;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.openflexo.pamela.editor.annotations.GetterA;
 import org.openflexo.pamela.editor.builder.EntityBuilder;
@@ -64,21 +66,25 @@ public class UtilPAMELA {
 		return javaAnnotation;
 	}
 
-	
 	/**
-	 * just support method declaration in one line (need to be fix)
-	 * 
-	 * @param method
+	 * create annotation string like @AnnotationName(key1=value1,key2,value2...)
+	 * @param annotationName
+	 * @param params
+	 * @return
 	 */
-	/*
-	public static Location getMethodLocation(JavaMethod method) {
-		int methodBegin = method.getLineNumber();
-		String methodsource = method.getCodeBlock();
-		String[] lines = methodsource.split("\r\n|\r|\n");
-		return new Location(methodBegin - lines.length + 1, methodBegin);
-	}*/
-	
-	
+	public static String buildAnnotationString(String annotationName,Map<String,String> params){
+		StringBuilder sb = new StringBuilder();
+		sb.append("@").append(annotationName);
+		if(params.size()>0){
+			sb.append("(");
+			for(Entry<String, String> param:params.entrySet()){
+				sb.append(param.getKey()).append(" = ").append(param.getValue()).append(",");
+			}
+			sb.setLength(sb.length()-1 );
+			sb.append(")");
+		}
+		return sb.toString();
+	}	
 
 	/**
 	 * Build method getXXX with Annotation Getter

@@ -1,9 +1,5 @@
 package org.openflexo.pamela.editor.editer;
 
-import java.util.Map;
-
-import org.openflexo.pamela.editor.annotations.AnnotationA;
-import org.openflexo.pamela.editor.annotations.GetterA;
 import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
 import org.openflexo.pamela.editor.editer.utils.Location;
 import org.openflexo.pamela.editor.editer.utils.UtilPAMELA;
@@ -32,12 +28,14 @@ public class PAMELAProperty {
 	private JavaMethod remover;
 	
 	/**
-	 * the line number (begin,end) of this property
+	 * the location of this property
 	 */
-	private Location location;
-	
 	private int begin;
 	private int end;
+	/**
+	 * indicate if this property has been modified
+	 */
+	private boolean ismodified;
 	
 	public static PAMELAProperty getPAMELAproperty(String propertyIdentifier, PAMELAEntity pamelaEntity)
 			throws ModelDefinitionException {
@@ -196,59 +194,61 @@ public class PAMELAProperty {
 	
 	// -----------------code accordant with
 	// gui----------------------------------------------
+	
+//	public void setGetter(Map<String, AnnotationA> annotations) {
+//
+//		// annotation for getter
+//		GetterA gA = (GetterA) annotations.get("Getter");
+//		this.cardinality = gA.getCardinality();
+//
+//		// create annotations source
+//		StringBuilder sb = new StringBuilder();
+//		sb.append(gA.toString()).append("\n");
+//		// TODO
+//
+//		// keep the annotations of this getMethod except Getter
+//		// TODO
+//		for (JavaAnnotation ja : getter.getAnnotations()) {
+//			if (!ja.getType().getValue().equals("Getter"))
+//				sb.append(ja).append("\n");
+//		}
+//
+//		// create method source
+//		
+//		/*
+//		
+//		switch (this.cardinality) {
+//		case SINGLE:
+//			sb.append(gA.getType());
+//			break;
+//		case LIST:
+//			sb.append("List<").append(gA.getType()).append(">");
+//			break;
+//		case MAP:
+//			sb.append("Map<").append(gA.getKeyType()).append(",").append(gA.getType()).append(">");
+//			break;
+//		}
+//
+//		sb.append(" ");
+//
+//		// name
+//		sb.append("get").append(identifier).append(" ( ); ");
+//
+//		// jaGetter.getNamedParameter(key)
+//		System.out.println(sb);
+//
+//		// build method
+//		JavaMethod newGetter = UtilPAMELA.buildMethod(sb.toString());
+//		this.getter = newGetter;
+//
+//		*/
+//
+//		// update Type
+//		updateMethod();
+//
+//	}
+	
 
-	public void setGetter(Map<String, AnnotationA> annotations) {
-
-		// annotation for getter
-		GetterA gA = (GetterA) annotations.get("Getter");
-		this.cardinality = gA.getCardinality();
-
-		// create annotations source
-		StringBuilder sb = new StringBuilder();
-		sb.append(gA.toString()).append("\n");
-		// TODO
-
-		// keep the annotations of this getMethod except Getter
-		// TODO
-		for (JavaAnnotation ja : getter.getAnnotations()) {
-			if (!ja.getType().getValue().equals("Getter"))
-				sb.append(ja).append("\n");
-		}
-
-		// create method source
-		
-		/*
-		
-		switch (this.cardinality) {
-		case SINGLE:
-			sb.append(gA.getType());
-			break;
-		case LIST:
-			sb.append("List<").append(gA.getType()).append(">");
-			break;
-		case MAP:
-			sb.append("Map<").append(gA.getKeyType()).append(",").append(gA.getType()).append(">");
-			break;
-		}
-
-		sb.append(" ");
-
-		// name
-		sb.append("get").append(identifier).append(" ( ); ");
-
-		// jaGetter.getNamedParameter(key)
-		System.out.println(sb);
-
-		// build method
-		JavaMethod newGetter = UtilPAMELA.buildMethod(sb.toString());
-		this.getter = newGetter;
-
-		*/
-
-		// update Type
-		updateMethod();
-
-	}
 
 	private void setTypeAndKeyType() {
 
@@ -272,6 +272,16 @@ public class PAMELAProperty {
 
 	}
 
+	
+	/* ===============================Modify the property=============================*/
+	/*  add modify? delete*/
+	public void setGetterMethod(String[] annotations){
+		//build annotations
+		
+		//build method header
+	}
+	
+	
 	//update the setter adder remover method by the new type
 	//TODO need to be modify
 	private void updateMethod() {
