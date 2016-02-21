@@ -73,8 +73,8 @@ public class EntityBuilderTest {
 		// @Getter, @Setter, @Adder, @Remover)
 		Map<String, PAMELAProperty> companyPMap = eCompany.getDeclaredProperty();
 		assertEquals(2, companyPMap.size());
-		//employee has none Annotation, we dont consider employee is a property
-		assertEquals(null, eCompany.getDeclaredProperty("employee")); 
+		// employee has none Annotation, we dont consider employee is a property
+		assertEquals(null, eCompany.getDeclaredProperty("employee"));
 
 	}
 
@@ -84,11 +84,56 @@ public class EntityBuilderTest {
 				"org.openflexo.pamela.editor.model.model1.FlexoProcess");
 	}
 
+	/**
+	 * Load multi entities from the java source. In this test, use the qualified
+	 * name array for entry points the load path must contain these java source.
+	 */
 	@Test
 	public void testBuilder4MuiltiEntry() {
 		String[] classNames = { "org.openflexo.pamela.editor.model.model2.Library",
-				"org.openflexo.pamela.editor.model.model2.Company" };
+				"org.openflexo.pamela.editor.model.model2.Person" };
 		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model", classNames);
+
+		// get entities by implemented class name
+		PAMELAEntity eLibrary = EntityBuilder.entityLibrary
+				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Library"));
+		PAMELAEntity eBook = EntityBuilder.entityLibrary
+				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Book"));
+		PAMELAEntity eCompany = EntityBuilder.entityLibrary
+				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Company"));
+		PAMELAEntity ePerson = EntityBuilder.entityLibrary
+				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Person"));
+
+		/* ==== verify entities === */
+
+		assertEquals("org.openflexo.pamela.editor.model.model2.Library", eLibrary.getName());
+		assertEquals("org.openflexo.pamela.editor.model.model2.Book", eBook.getName());
+		assertEquals("org.openflexo.pamela.editor.model.model2.Company", eCompany.getName());
+		assertEquals("org.openflexo.pamela.editor.model.model2.Person", ePerson.getName());
+
+		/* ==== verify properties === */
+
+		// property in Library entity
+		PAMELAProperty pBook = eLibrary.getDeclaredProperty("BOOKS");
+		assertEquals("BOOKS", pBook.getIdentifier());
+		assertEquals(Cardinality.LIST, pBook.getCardinality());
+
+		// properties in Book entity
+		Map<String, PAMELAProperty> bookPMap = eBook.getDeclaredProperty();
+		assertEquals(2, bookPMap.size());
+		// the identifier of the property is write in upper case
+		assertEquals("TITLE", eBook.getDeclaredProperty("title").getIdentifier());
+		assertEquals("AUTHOR", eBook.getDeclaredProperty("author").getIdentifier());
+
+		// properties in Company entity
+		Map<String, PAMELAProperty> companyPMap = eCompany.getDeclaredProperty();
+		assertEquals(2, companyPMap.size());
+		// employee has none Annotation, we dont consider employee is a property
+		assertEquals(null, eCompany.getDeclaredProperty("employee"));
+
+		// properties in Person entity
+		assertEquals("NAME", ePerson.getDeclaredProperty("name").getIdentifier());
+
 	}
 
 	@After
