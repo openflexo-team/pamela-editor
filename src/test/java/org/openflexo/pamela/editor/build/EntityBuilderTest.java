@@ -1,103 +1,99 @@
 package org.openflexo.pamela.editor.build;
 
+import static org.junit.Assert.assertEquals;
 
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.openflexo.pamela.editor.builder.EntityBuilder;
-import org.openflexo.pamela.editor.editer.exceptions.DeclaredPropertyNullException;
-
+import org.openflexo.pamela.editor.editer.Cardinality;
+import org.openflexo.pamela.editor.editer.PAMELAEntity;
+import org.openflexo.pamela.editor.editer.PAMELAProperty;
 
 public class EntityBuilderTest {
 
 	@Before
 	public void setUp() throws Exception {
-		
+
 	}
 
 	@Test
 	public void loadTest() {
-		
+
 	}
-	
-	//Test for model library
+
+	/**
+	 * Load a single entity from the java source In this test, use the qualified
+	 * name of class Library as a entry point of the loader of EntityBuilder
+	 * 
+	 */
 	@Test
-	public void testBasicLibrary() throws Exception{
-		/*
-		PAMELAEntity myLibriry =  EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model", "org.openflexo.pamela.editor.model.Liberary");
-		System.out.println(myLibriry);
-		
-		PAMELAProperty book = myLibriry.getDeclaredProperty("BOOKS"); 
-		System.out.println(book.getIdentifier());
-		System.out.println(book.getGetter().getCodeBlock());
-		System.out.println(book.getSetter().getCodeBlock());
-		System.out.println(book.getAdder().getCodeBlock());
-		System.out.println(book.getRemover().getCodeBlock());
-		*/
-	}
-	
-	@Test
-	public void testBasicBook() throws DeclaredPropertyNullException{
-		/*
-		PAMELAEntity book =  EntityBuilder.load("src/test/example/openflexotest/model", "openflexotest.model.Book");
-		System.out.println(book);
-		
-		JavaMethod mySetter = UtilPAMELA.buildMethod("@Setter(TITLE)"+"\n"+"void newMysetter(String title,java.util.Date date);");
-		System.out.println(mySetter.getCodeBlock());
-		book.getDeclaredProperty("TITLE").setSetter(mySetter);
-		
-		JavaMethod myGetter = UtilPAMELA.buildMethod("@Getter(TITLE)"+"\n"+"private void newMygetter();");
-		book.getDeclaredProperty("TITLE").setGetter(myGetter);
-		
-		Map<String, PAMELAProperty> propertys = book.getDeclaredProperty();
-		System.out.println(propertys);
-		*/
-	}
-	
-	@Test
-	public void testSetGetter() throws DeclaredPropertyNullException{
-		/*
-		GetterA getter= new GetterA("TITLE", Cardinality.LIST, "", "", true, false,"java.lang.Object","java.lang.String");
-		Map<String,AnnotationA> mapGetter = new HashMap<String,AnnotationA>();
-		mapGetter.put("Getter", getter);
-		
-		
-		PAMELAEntity book =  EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model", "");
-		System.out.println(book);
-		
-		
-		book.getDeclaredProperty("TITLE").setGetter(mapGetter);
-		
-		JavaMethod setter = book.getDeclaredProperty("TITLE").getSetter();
-		System.out.println(setter.getCodeBlock());		
-		*/
+	public void testBuilder2SingleEntry() {
+		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model/model2",
+				"org.openflexo.pamela.editor.model.model2.Library");
+
+		// get entities by implemented class name
+		PAMELAEntity eLibrary = EntityBuilder.entityLibrary
+				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Library"));
+		PAMELAEntity eBook = EntityBuilder.entityLibrary
+				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Book"));
+		PAMELAEntity eCompany = EntityBuilder.entityLibrary
+				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Company"));
+		PAMELAEntity ePerson = EntityBuilder.entityLibrary
+				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Person"));
+
+		/* ==== verify entities === */
+
+		// verify if the entities loaded are correct
+		assertEquals("org.openflexo.pamela.editor.model.model2.Library", eLibrary.getName());
+		// book is loaded as a Entity, book is an embedded entity of Library
+		assertEquals("org.openflexo.pamela.editor.model.model2.Book", eBook.getName());
+		// company is loaded as a Entity, book is an parent of Library
+		assertEquals("org.openflexo.pamela.editor.model.model2.Company", eCompany.getName());
+		// the person is null, because Person has no relationship with Library
+		assertEquals(null, ePerson);
+
+		/* ==== verify properties === */
+
+		// property in Library entity
+		PAMELAProperty pBook = eLibrary.getDeclaredProperty("BOOKS");
+		assertEquals("BOOKS", pBook.getIdentifier());
+		assertEquals(Cardinality.LIST, pBook.getCardinality());
+
+		// properties in Book entity
+		Map<String, PAMELAProperty> bookPMap = eBook.getDeclaredProperty();
+		assertEquals(2, bookPMap.size());
+		// the identifier of the property is write in upper case
+		assertEquals("TITLE", eBook.getDeclaredProperty("title").getIdentifier());
+		assertEquals("AUTHOR", eBook.getDeclaredProperty("author").getIdentifier());
+
+		// properties in Company entity ( A property must have one of
+		// @Getter, @Setter, @Adder, @Remover)
+		Map<String, PAMELAProperty> companyPMap = eCompany.getDeclaredProperty();
+		assertEquals(2, companyPMap.size());
+		//employee has none Annotation, we dont consider employee is a property
+		assertEquals(null, eCompany.getDeclaredProperty("employee")); 
+
 	}
 
 	@Test
-	public void testBuilder1(){
-		//EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model","");
+	public void testBuilder3SingleEntry() {
+		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model/model1",
+				"org.openflexo.pamela.editor.model.model1.FlexoProcess");
 	}
-	
+
 	@Test
-	public void testBuilder2SingleEntry(){
-		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model/model2","org.openflexo.pamela.editor.model.model2.Liberary");
+	public void testBuilder4MuiltiEntry() {
+		String[] classNames = { "org.openflexo.pamela.editor.model.model2.Library",
+				"org.openflexo.pamela.editor.model.model2.Company" };
+		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model", classNames);
 	}
-	
-	@Test
-	public void testBuilder3SingleEntry(){
-		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model/model1","org.openflexo.pamela.editor.model.model1.FlexoProcess");
-	}
-	
-	@Test
-	public void testBuilder4MuiltiEntry(){
-		String[] classNames = {"org.openflexo.pamela.editor.model.model2.Liberary","org.openflexo.pamela.editor.model.model2.Company"};
-		EntityBuilder.load("src/test/java/org/openflexo/pamela/editor/model",classNames);
-	}
-	
+
 	@After
-	public void testAfter(){
+	public void testAfter() {
 		EntityBuilder.entityLibrary.printAllEntities();
 	}
-	
+
 }

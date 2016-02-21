@@ -11,7 +11,7 @@ import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
 import com.thoughtworks.qdox.model.JavaClass;
 
 /**
- * to save all the entity
+ * to store all the entity
  * 
  * @author ddcat1991
  *

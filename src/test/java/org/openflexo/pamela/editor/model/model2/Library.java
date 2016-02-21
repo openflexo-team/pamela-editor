@@ -10,7 +10,7 @@ import org.openflexo.model.annotations.Remover;
 import org.openflexo.model.annotations.Setter;
 
 @ModelEntity
-public interface Liberary extends Company{
+public interface Library extends Company{
 
 	String BOOKS = "books";
 

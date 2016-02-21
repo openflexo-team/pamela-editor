@@ -37,15 +37,25 @@ public class UtilPAMELA {
 		return annotation;
 	}
 
+	/**
+	 * use qdox builder to get the
+	 * 
+	 * @param implementedInterface
+	 * @param className:
+	 *            can be simple or qualified name, if we use simple name, this
+	 *            function will find source class in the same package of
+	 *            implementedInterface
+	 * @return
+	 */
 	public static JavaClass getClassByName(JavaClass implementedInterface, String className) {
-		JavaClass clazz = null;	
-		if(className.split("\\.").length>1)
-			//full qualified name
+		JavaClass clazz = null;
+		if (className.split("\\.").length > 1)
+			// full qualified name
 			clazz = EntityBuilder.builder.getClassByName(className);
-		else{	
-			//find with simple name
-			clazz = EntityBuilder.builder.getClassByName(implementedInterface.getPackageName()+"."+className);
-		}	
+		else {
+			// find with simple name
+			clazz = EntityBuilder.builder.getClassByName(implementedInterface.getPackageName() + "." + className);
+		}
 		return clazz;
 	}
 
@@ -68,23 +78,24 @@ public class UtilPAMELA {
 
 	/**
 	 * create annotation string like @AnnotationName(key1=value1,key2,value2...)
+	 * 
 	 * @param annotationName
 	 * @param params
 	 * @return
 	 */
-	public static String buildAnnotationString(String annotationName,Map<String,String> params){
+	public static String buildAnnotationString(String annotationName, Map<String, String> params) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@").append(annotationName);
-		if(params.size()>0){
+		if (params.size() > 0) {
 			sb.append("(");
-			for(Entry<String, String> param:params.entrySet()){
+			for (Entry<String, String> param : params.entrySet()) {
 				sb.append(param.getKey()).append(" = ").append(param.getValue()).append(",");
 			}
-			sb.setLength(sb.length()-1 );
+			sb.setLength(sb.length() - 1);
 			sb.append(")");
 		}
 		return sb.toString();
-	}	
+	}
 
 	/**
 	 * Build method getXXX with Annotation Getter
