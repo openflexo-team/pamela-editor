@@ -1,13 +1,13 @@
 package org.openflexo.pamela.editor.editer.exceptions;
 
-public class EntityExistException extends Exception{
+public class PropertyExistException extends Exception{
 
-	public EntityExistException() {
+	public PropertyExistException() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
 
-	public EntityExistException(String message) {
+	public PropertyExistException(String message) {
 		super(message);
 		// TODO Auto-generated constructor stub
 	}

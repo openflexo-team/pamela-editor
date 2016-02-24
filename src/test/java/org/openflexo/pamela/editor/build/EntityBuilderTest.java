@@ -10,13 +10,14 @@ import org.junit.Test;
 import org.openflexo.pamela.editor.builder.EntityBuilder;
 import org.openflexo.pamela.editor.editer.Cardinality;
 import org.openflexo.pamela.editor.editer.PAMELAEntity;
+import org.openflexo.pamela.editor.editer.PAMELAEntityLibrary;
 import org.openflexo.pamela.editor.editer.PAMELAProperty;
 
 public class EntityBuilderTest {
 
 	@Before
 	public void setUp() throws Exception {
-
+		PAMELAEntityLibrary.clear();
 	}
 
 	@Test
@@ -36,14 +37,14 @@ public class EntityBuilderTest {
 
 		// get entities by implemented class name
 		PAMELAEntity eLibrary = EntityBuilder.entityLibrary
-				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Library"));
+				.get("org.openflexo.pamela.editor.model.model2.Library");
 		PAMELAEntity eBook = EntityBuilder.entityLibrary
-				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Book"));
+				.get("org.openflexo.pamela.editor.model.model2.Book");
 		PAMELAEntity eCompany = EntityBuilder.entityLibrary
-				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Company"));
+				.get("org.openflexo.pamela.editor.model.model2.Company");
 		PAMELAEntity ePerson = EntityBuilder.entityLibrary
-				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Person"));
-
+				.get("org.openflexo.pamela.editor.model.model2.Person");
+		
 		/* ==== verify entities === */
 
 		// verify if the entities loaded are correct
@@ -96,13 +97,13 @@ public class EntityBuilderTest {
 
 		// get entities by implemented class name
 		PAMELAEntity eLibrary = EntityBuilder.entityLibrary
-				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Library"));
+				.get("org.openflexo.pamela.editor.model.model2.Library");
 		PAMELAEntity eBook = EntityBuilder.entityLibrary
-				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Book"));
+				.get("org.openflexo.pamela.editor.model.model2.Book");
 		PAMELAEntity eCompany = EntityBuilder.entityLibrary
-				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Company"));
+				.get("org.openflexo.pamela.editor.model.model2.Company");
 		PAMELAEntity ePerson = EntityBuilder.entityLibrary
-				.get(EntityBuilder.builder.getClassByName("org.openflexo.pamela.editor.model.model2.Person"));
+				.get("org.openflexo.pamela.editor.model.model2.Person");
 
 		/* ==== verify entities === */
 
@@ -135,6 +136,8 @@ public class EntityBuilderTest {
 		assertEquals("NAME", ePerson.getDeclaredProperty("name").getIdentifier());
 
 	}
+	
+
 
 	@After
 	public void testAfter() {

@@ -13,7 +13,7 @@ import com.thoughtworks.qdox.model.JavaType;
 public class PAMELAProperty {
 	private String identifier;
 
-	private PAMELAEntity PAMELAEntity;
+	private PAMELAEntity pamelaEntity;
 	/**
 	 * A property can be a single, a List or a Map
 	 */
@@ -113,7 +113,7 @@ public class PAMELAProperty {
 	public PAMELAProperty(String identifier, org.openflexo.pamela.editor.editer.PAMELAEntity pAMELAEntity, JavaMethod getter,
 			JavaMethod setter, JavaMethod adder, JavaMethod remover,int beginLine,int endLine) {
 		this.identifier = identifier;
-		this.PAMELAEntity = pAMELAEntity;
+		this.pamelaEntity = pAMELAEntity;
 		this.getter = getter;
 		this.setter = setter;
 		this.adder = adder;

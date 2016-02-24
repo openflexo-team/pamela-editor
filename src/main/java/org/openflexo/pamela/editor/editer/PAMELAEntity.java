@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.openflexo.model.ModelProperty;
+import javax.xml.bind.PropertyException;
+
 import org.openflexo.pamela.editor.builder.EntityBuilder;
 import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
 import org.openflexo.pamela.editor.editer.utils.UtilPAMELA;
@@ -33,6 +34,9 @@ public class PAMELAEntity {
 
 	private boolean initialized;
 
+	/**
+	 * qualified name of entity
+	 */
 	private String name;
 
 	/**
@@ -44,11 +48,6 @@ public class PAMELAEntity {
 	 * the properties declared in the Entity
 	 */
 	private Map<String, PAMELAProperty> declaredProperties;
-
-	/**
-	 * The properties of this entity. The key is the identifier of the property
-	 */
-	private Map<String, PAMELAProperty> properties;
 
 	/**
 	 * The list of super entities (matching the list of super interfaces). This
@@ -67,12 +66,18 @@ public class PAMELAEntity {
 
 	private int currentProcessLinenum = 0;
 
+	/**
+	 * create entity from class of source.java
+	 * 
+	 * @param implementedInterface
+	 * @throws ModelDefinitionException
+	 */
 	public PAMELAEntity(JavaClass implementedInterface) throws ModelDefinitionException {
 		super();
 		this.implementedInterface = implementedInterface;
 		this.name = implementedInterface.getFullyQualifiedName();
 		this.declaredProperties = new HashMap<String, PAMELAProperty>();
-		this.properties = new HashMap<String, PAMELAProperty>();
+		// this.properties = new HashMap<String, PAMELAProperty>();
 		this.embeddedEntities = new HashSet<PAMELAEntity>();
 		this.importEntities = new HashSet<PAMELAEntity>();
 		// model super interface
@@ -120,6 +125,22 @@ public class PAMELAEntity {
 
 		System.out.println("create Entity " + this.name + "-->with property num" + declaredProperties.size());
 
+	}
+
+	// TODO create a new PAMELAEntity
+	/**
+	 * create a new PAMELAEntity
+	 * 
+	 * @param qname
+	 *            qualified name of this new entity
+	 */
+	public PAMELAEntity(String qname) {
+		this.implementedInterface = null;
+		this.name = qname;
+		this.declaredProperties = new HashMap<String, PAMELAProperty>();
+		// this.properties = new HashMap<String, PAMELAProperty>();
+		this.embeddedEntities = new HashSet<PAMELAEntity>();
+		this.importEntities = new HashSet<PAMELAEntity>();
 	}
 
 	/**
@@ -183,6 +204,19 @@ public class PAMELAEntity {
 	public void addsource(String url, String string) {
 		this.sourceUrl = url;
 		this.sourceString = string;
+	}
+	
+	/**
+	 * add a new property in entity
+	 * @param prop
+	 * @throws PropertyException 
+	 */
+	public void addProperty(PAMELAProperty prop) throws PropertyException{
+		if(declaredProperties.containsKey(prop.getIdentifier()))
+			throw new PropertyException(prop.getIdentifier() +" is already exist.");
+		else{
+			declaredProperties.put(prop.getIdentifier(), prop);
+		}
 	}
 
 	/*
@@ -296,27 +330,12 @@ public class PAMELAEntity {
 		}
 	}
 
-	/**
-	 * Returns the {@link ModelProperty} with the identifier
-	 * <code>propertyIdentifier</code>.
-	 * 
-	 * @param propertyIdentifier
-	 * @return
-	 */
-	private PAMELAProperty getPAMELAProperty(String propertyIdentifier) {
-		return properties.get(propertyIdentifier);
-	}
-
 	public boolean singleInheritance() {
 		return superImplementedInterfaces != null && superImplementedInterfaces.size() == 1;
 	}
 
 	public boolean multipleInheritance() {
 		return superImplementedInterfaces != null && superImplementedInterfaces.size() > 1;
-	}
-
-	public boolean hasProperty(String propertyIdentifier) {
-		return properties.containsKey(propertyIdentifier);
 	}
 
 	public Set<PAMELAEntity> getEmbeddedEntities() {
