@@ -1,15 +1,12 @@
 package org.openflexo.pamela.editor.learnqdox;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 
 import com.thoughtworks.qdox.JavaProjectBuilder;
 import com.thoughtworks.qdox.model.JavaAnnotation;
 import com.thoughtworks.qdox.model.JavaClass;
-import com.thoughtworks.qdox.model.JavaField;
 import com.thoughtworks.qdox.model.JavaMethod;
 import com.thoughtworks.qdox.model.JavaPackage;
 import com.thoughtworks.qdox.model.JavaSource;
@@ -24,8 +21,8 @@ public class TestQdox {
 		//File f = new File(getResource("/").getPath()); 
 		//System.out.println(f); 
 		
-		builder.addSource(new File("E:/proS5/code_git_jue/pamela/pamela-editor/src/main/java/org/openflexo/learnqdox/MyfileInterface.java"));
-		JavaClass cls = builder.getClassByName("org.openflexo.learnqdox.MyfileInterface");
+		builder.addSource(new File("E:/proS5/pamela-editor-git/pamela-editor/src/test/java/org/openflexo/pamela/editor/learnqdox/MyfileInterface.java"));
+		JavaClass cls = builder.getClassByName("org.openflexo.pamela.editor.learnqdox.MyfileInterface");
 		
 		
 		JavaPackage pkg      = cls.getPackage();            // "com.blah.foo"
@@ -49,6 +46,8 @@ public class TestQdox {
 			List<JavaAnnotation> annotations = method.getAnnotations();
 			for(JavaAnnotation a:annotations){
 				System.out.println("get a annotation");
+				System.out.println("typevalue:" + a.getType().getValue());
+				System.out.println(a.getProperty("ignoreType").getParameterValue().toString());
 				System.out.println(a.toString());
 				System.out.println(method.getLineNumber());
 			}

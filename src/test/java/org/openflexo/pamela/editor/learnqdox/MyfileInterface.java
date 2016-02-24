@@ -7,7 +7,7 @@ public interface MyfileInterface {
 
 	//MyFile(String name, int age, float height);
 	
-	@Getter("ooooo1")
+	@Getter(value = "NAME1", ignoreType = true)
 	public String getName();
 	@Getter("ooooo2")
 	public void setName(String name);

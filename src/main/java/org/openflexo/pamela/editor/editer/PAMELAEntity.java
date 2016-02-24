@@ -113,7 +113,7 @@ public class PAMELAEntity {
 
 			// create the properties
 			if (propertyIdentifier != null && !declaredProperties.containsKey(propertyIdentifier)) {
-				PAMELAProperty property = PAMELAProperty.getPAMELAproperty(propertyIdentifier, this);
+				PAMELAProperty property = PAMELAProperty.loadPAMELAproperty(propertyIdentifier, this);
 				declaredProperties.put(propertyIdentifier, property);
 			}
 

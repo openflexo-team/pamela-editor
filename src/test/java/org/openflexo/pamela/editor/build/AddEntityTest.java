@@ -12,7 +12,7 @@ public class AddEntityTest {
 	@Before
 	public void setUp() throws Exception {
 		EntityBuilder.entityLibrary.clear();
-		;
+
 	}
 
 	@Test
