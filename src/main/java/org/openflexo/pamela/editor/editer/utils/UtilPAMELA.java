@@ -5,9 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.openflexo.pamela.editor.annotations.GetterA;
 import org.openflexo.pamela.editor.builder.EntityBuilder;
-import org.openflexo.pamela.editor.editer.Cardinality;
 
 import com.thoughtworks.qdox.model.JavaAnnotatedElement;
 import com.thoughtworks.qdox.model.JavaAnnotation;
@@ -97,46 +95,5 @@ public class UtilPAMELA {
 		return sb.toString();
 	}
 
-	/**
-	 * Build method getXXX with Annotation Getter
-	 * 
-	 * @param identify
-	 * @param cardinality
-	 * @param inverse
-	 * @param defaultValue
-	 * @param isStringConvertable
-	 * @param ignoreType
-	 * @param type
-	 * @param keyType
-	 * @return
-	 */
-	public static String getterCreator(String identify, Cardinality cardinality, String inverse, String defaultValue,
-			boolean isStringConvertable, boolean ignoreType, String type, String keyType) {
-		StringBuilder sb = new StringBuilder();
-		// create annotation
-		GetterA getterAnnotation = new GetterA(identify, cardinality, inverse, defaultValue, isStringConvertable,
-				ignoreType);
-		sb.append(getterAnnotation.toString());
-		// create method
-		sb.append(System.getProperty("line.separator"));
-		// returnType
-		switch (cardinality) {
-		case SINGLE:
-			sb.append(type);
-			break;
-		case LIST:
-			sb.append("List<").append(type).append(">");
-			break;
-		case MAP:
-			// TODO keyType==null
-			sb.append("Map<").append(type).append(",").append(keyType).append(">");
-			break;
-		}
-		sb.append(" ");
-		// method name
-		sb.append("get").append(identify).append(" ( ); ");
-		System.out.println(sb.toString());
-		return sb.toString();
-	}
 
 }

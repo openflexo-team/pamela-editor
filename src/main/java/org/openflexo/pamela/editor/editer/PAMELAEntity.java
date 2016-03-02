@@ -215,52 +215,11 @@ public class PAMELAEntity {
 		if(declaredProperties.containsKey(prop.getIdentifier()))
 			throw new PropertyException(prop.getIdentifier() +" is already exist.");
 		else{
+			prop.setPamelaEntity(this);
 			declaredProperties.put(prop.getIdentifier(), prop);
+			
 		}
 	}
-
-	/*
-	 * public PAMELAProperty createNewProperty(String identifier, Cardinality
-	 * cardinality, String inverse, String defaultValue, boolean
-	 * isStringConvertable, boolean ignoreType, String type, String keyType) {
-	 * // identifier not in Properties Map if
-	 * (declaredProperties.containsKey(identifier)) return null;
-	 * 
-	 * // create getter String getterStr = UtilPAMELA.getterCreator(identifier,
-	 * cardinality, inverse, defaultValue, isStringConvertable, ignoreType,
-	 * type, keyType); // UtilPAMELA.getterCreator(identifier, cardinality,
-	 * null, null, // null, // ignoreType, type, keyType);
-	 * 
-	 * // find last line int lastline = getLastLineNum(); String[] lines =
-	 * sourceString.split(System.getProperty("line.separator"));
-	 * 
-	 * lines[lastline - 1] += System.getProperty("line.separator") + getterStr;
-	 * 
-	 * StringBuilder sb = new StringBuilder(); for (String str : lines) {
-	 * sb.append(str).append(System.getProperty("line.separator")); }
-	 * 
-	 * // TODO respect the /tab
-	 * 
-	 * System.out.println(sb + "\n" + lines.length);
-	 * 
-	 * // TODO return PAMELAProperty
-	 * 
-	 * return null;
-	 * 
-	 * }
-	 */
-
-	/*
-	 * public int getLastLineNum() { // we scan all the method List<JavaMethod>
-	 * methods = implementedInterface.getMethods(); List<JavaField> fields =
-	 * implementedInterface.getFields(); int lastLine = 0;
-	 * 
-	 * for (JavaField jf : fields) { int jfline = jf.getLineNumber(); if
-	 * (lastLine < jfline) lastLine = jfline; } for (JavaMethod m : methods) {
-	 * Location mlocation = UtilPAMELA.getMethodLocation(m); int mEnd =
-	 * mlocation.getEnd(); if (lastLine < mEnd) lastLine = mEnd; } return
-	 * lastLine; }
-	 */
 
 	public List<PAMELAEntity> getDirectSuperEntities() throws ModelDefinitionException {
 		if (directSuperEntities == null && superImplementedInterfaces != null) {

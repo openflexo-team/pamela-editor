@@ -110,6 +110,17 @@ public class PAMELAProperty {
 		return new PAMELAProperty(propertyIdentifier, pamelaEntity, getter, setter, adder, remover, beginLine, endLine);
 	}
 
+	/**
+	 * create a pamelaProperty from loading java sources
+	 * @param identifier
+	 * @param pAMELAEntity
+	 * @param getter
+	 * @param setter
+	 * @param adder
+	 * @param remover
+	 * @param beginLine
+	 * @param endLine
+	 */
 	public PAMELAProperty(String identifier, org.openflexo.pamela.editor.editer.PAMELAEntity pAMELAEntity,
 			JavaMethod getter, JavaMethod setter, JavaMethod adder, JavaMethod remover, int beginLine, int endLine) {
 		this.identifier = identifier;
@@ -128,6 +139,12 @@ public class PAMELAProperty {
 		if (getter != null) {
 			setTypeAndKeyType();
 		}
+	}
+	
+	
+	public PAMELAProperty(String identifier, Cardinality cardinality) {
+		this.identifier = identifier;
+		this.cardinality = cardinality;
 	}
 
 	public Cardinality getCardinality() {
@@ -195,6 +212,16 @@ public class PAMELAProperty {
 
 	public void setRemover(EditableMethod remover) {
 		this.remover = remover;
+	}
+
+	
+	
+	public PAMELAEntity getPamelaEntity() {
+		return pamelaEntity;
+	}
+
+	public void setPamelaEntity(PAMELAEntity pamelaEntity) {
+		this.pamelaEntity = pamelaEntity;
 	}
 
 	private void setTypeAndKeyType() {

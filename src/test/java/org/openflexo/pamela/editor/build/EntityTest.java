@@ -1,13 +1,17 @@
 package org.openflexo.pamela.editor.build;
 
+import javax.xml.bind.PropertyException;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.openflexo.pamela.editor.builder.EntityBuilder;
+import org.openflexo.pamela.editor.editer.Cardinality;
 import org.openflexo.pamela.editor.editer.PAMELAEntity;
+import org.openflexo.pamela.editor.editer.PAMELAProperty;
 import org.openflexo.pamela.editor.editer.exceptions.EntityExistException;
 
-public class AddEntityTest {
+public class EntityTest {
 
 	@Before
 	public void setUp() throws Exception {
@@ -39,9 +43,17 @@ public class AddEntityTest {
 	@Test
 	public void testAddEntityWithProperty() throws EntityExistException {
 		PAMELAEntity mytable = new PAMELAEntity("org.openflexo.pamela.editor.model.model2.Table");
+		//TODO how to resolve javatype in PAMELAProperty
+		PAMELAProperty color = new PAMELAProperty("color", Cardinality.SINGLE);
+		try {
+			mytable.addProperty(color);
+		} catch (PropertyException e) {
+			e.printStackTrace();
+		}
 		// TODO add property in mytable
 		EntityBuilder.entityLibrary.add(mytable);
 	}
+	
 
 	@After
 	public void testAfter() {

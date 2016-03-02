@@ -42,7 +42,6 @@ public class EditableMethod {
 		loadAnnotations(methodload);
 		begin = Location.getMethodBeginLine(methodload);
 		end = Location.getMethodLastLine(methodload);
-
 	}
 
 	public JavaMethod getJavaMethod() {
@@ -72,6 +71,24 @@ public class EditableMethod {
 			return annotation.get(paramkey);
 		} else
 			return null;
+	}
+	
+	/**
+	 * modify or add an annotation
+	 * @param aname
+	 * @param params
+	 */
+	public void setAnnotation(String aname, HashMap<String, String> params){
+		annotations.put(aname, params);
+	}
+	
+	/**
+	 * return null if the annotation not exis
+	 * @param aname
+	 * @return
+	 */
+	public HashMap<String, String> removeAnnotation(String aname){
+		return annotations.remove(aname);
 	}
 
 	private void loadAnnotations(JavaMethod methodload) {
