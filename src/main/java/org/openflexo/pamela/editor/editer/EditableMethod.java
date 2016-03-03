@@ -29,6 +29,10 @@ public class EditableMethod {
 	 */
 	Integer begin;
 	Integer end;
+	
+	public EditableMethod(String methodName) {
+		this.methodName = methodName;
+	}
 
 	/**
 	 * load from java source

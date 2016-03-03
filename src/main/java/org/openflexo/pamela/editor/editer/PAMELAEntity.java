@@ -127,7 +127,6 @@ public class PAMELAEntity {
 
 	}
 
-	// TODO create a new PAMELAEntity
 	/**
 	 * create a new PAMELAEntity
 	 * 
@@ -141,6 +140,25 @@ public class PAMELAEntity {
 		// this.properties = new HashMap<String, PAMELAProperty>();
 		this.embeddedEntities = new HashSet<PAMELAEntity>();
 		this.importEntities = new HashSet<PAMELAEntity>();
+	}
+
+	/**
+	 * get direct super entity by qualified name
+	 * 
+	 * @param qname
+	 * @return
+	 */
+	public PAMELAEntity getDirectSuperEntity(String qname) {
+		// TODO replace directSuperEntity by Map
+		PAMELAEntity entity = null;
+		for (PAMELAEntity superEntity : directSuperEntities) {
+			if (superEntity.getName().equals(qname)) {
+				entity = superEntity;
+				break;
+			}
+		}
+
+		return entity;
 	}
 
 	/**
@@ -170,9 +188,15 @@ public class PAMELAEntity {
 		return name;
 	}
 
+	/**
+	 * used in loading property from the source. Scan the annotation of
+	 * getter/setter/adder/remover to find the identifier
+	 * 
+	 * @param m
+	 * @return
+	 */
 	private String getPropertyIdentifier(JavaMethod m) {
-		// scan the annotation of getter/setter/adder/remover to find the
-		// identifier
+		//
 		String propertyIdentifier = null;
 		JavaAnnotation aGetter = UtilPAMELA.getAnnotation(m, "Getter");
 		if (aGetter != null) {
@@ -205,22 +229,31 @@ public class PAMELAEntity {
 		this.sourceUrl = url;
 		this.sourceString = string;
 	}
-	
+
 	/**
 	 * add a new property in entity
+	 * 
 	 * @param prop
-	 * @throws PropertyException 
+	 * @throws PropertyException
+	 *             if a property has same identify added in declaredProperties
+	 *             map.
 	 */
-	public void addProperty(PAMELAProperty prop) throws PropertyException{
-		if(declaredProperties.containsKey(prop.getIdentifier()))
-			throw new PropertyException(prop.getIdentifier() +" is already exist.");
-		else{
+	public void addProperty(PAMELAProperty prop) throws PropertyException {
+		if (declaredProperties.containsKey(prop.getIdentifier()))
+			throw new PropertyException(prop.getIdentifier() + " is already exist.");
+		else {
 			prop.setPamelaEntity(this);
 			declaredProperties.put(prop.getIdentifier(), prop);
-			
+
 		}
 	}
 
+	/**
+	 * can be used for loading. Add the parent entity into directSuperEntities.
+	 * 
+	 * @return directSuperEntities
+	 * @throws ModelDefinitionException
+	 */
 	public List<PAMELAEntity> getDirectSuperEntities() throws ModelDefinitionException {
 		if (directSuperEntities == null && superImplementedInterfaces != null) {
 			directSuperEntities = new ArrayList<PAMELAEntity>(superImplementedInterfaces.size());
@@ -232,12 +265,25 @@ public class PAMELAEntity {
 		return directSuperEntities;
 	}
 
+	/**
+	 * verify if an java class has annotation @ModelEntity
+	 * 
+	 * @param type
+	 * @return
+	 */
 	public static boolean isModelEntity(JavaClass type) {
 		if (UtilPAMELA.getAnnotation(type, "ModelEntity") != null)
 			return true;
 		return false;
 	}
 
+	/**
+	 * used when loading a entity from sources.java by Qdox we don't load the
+	 * entity if it has ignoreType=true or if it is a primitive type TODO need
+	 * to distinguish Enum Type.
+	 * 
+	 * @throws ModelDefinitionException
+	 */
 	void init() throws ModelDefinitionException {
 		// TODO init----ignore Type....
 		// We now resolve our inherited entities and properties
@@ -245,21 +291,13 @@ public class PAMELAEntity {
 		if (directSuperEntities == null) {
 			getDirectSuperEntities();
 		}
-		/*
-		 * if (getDirectSuperEntities() != null) {
-		 * embeddedEntities.addAll(getDirectSuperEntities()); }
-		 */
 
 		for (PAMELAProperty property : declaredProperties.values()) {
-
-			// System.out.println("init property:" + property.getIdentifier()+"
-			// type:"+property.getType().getFullyQualifiedName());
 
 			if (property.getType() != null
 					&& !TypeConverterLibrary.getInstance().hasConverter(property.getType().getFullyQualifiedName())
 					/*
-					 * && !property.getType().isEnum() &&
-					 * !property.isStringConvertable()
+					 * TODO && !property.getType().isEnum() &&
 					 */ && !property.ignoreType()) {
 				try {
 					// use qdox builder to get the coherent class
@@ -281,8 +319,6 @@ public class PAMELAEntity {
 				String impclsname = (String) ((DefaultJavaAnnotation) imp).getNamedParameter("value");
 				impclsname = UtilString.removeDotClassInClassname(impclsname);
 				JavaClass impclas = UtilPAMELA.getClassByName(implementedInterface, impclsname);
-				// TODO do we need a attribute for import Entities?
-				// embeddedEntities.add(PAMELAEntityLibrary.get(impclas, true));
 				importEntities.add(PAMELAEntityLibrary.get(impclas, true));
 			}
 

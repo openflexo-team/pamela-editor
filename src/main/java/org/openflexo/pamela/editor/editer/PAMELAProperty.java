@@ -112,6 +112,7 @@ public class PAMELAProperty {
 
 	/**
 	 * create a pamelaProperty from loading java sources
+	 * 
 	 * @param identifier
 	 * @param pAMELAEntity
 	 * @param getter
@@ -140,13 +141,31 @@ public class PAMELAProperty {
 			setTypeAndKeyType();
 		}
 	}
-	
-	
-	public PAMELAProperty(String identifier, Cardinality cardinality) {
+
+	/**
+	 *  use for user create a new property
+	 *  auto cover the identifier to upper case
+	 * @param identifier
+	 * @param cardinality
+	 * @param keyType
+	 * @param type
+	 */
+	public PAMELAProperty(String identifier, Cardinality cardinality, JavaType keyType, JavaType type) {
+		identifier = identifier.toUpperCase();
+		this.keyType = keyType;
+		this.type = type;
 		this.identifier = identifier;
 		this.cardinality = cardinality;
+		
+		//TODO initial PamelapProperty with these parameters
+		// -> decide the type according to the cardinality
+		// -> bind the embeded type from the EntityLibray
 	}
 
+	/**
+	 * get Cardinality, if the cardinality not initialized, 
+	 * @return
+	 */
 	public Cardinality getCardinality() {
 		// load cardinality from javaMethod
 		if (cardinality == null && getter != null) {
@@ -198,24 +217,35 @@ public class PAMELAProperty {
 		return identifier;
 	}
 
+	/**
+	 * set getter method and add anootation
+	 * TODO support params in annotation in the future 
+	 * @param getter
+	 */
 	public void setGetter(EditableMethod getter) {
+		//add @Getter annotation
+		getter.setAnnotation("Getter", null);
 		this.getter = getter;
 	}
 
 	public void setSetter(EditableMethod setter) {
+		//TODO support params in annotation in the future
+		setter.setAnnotation("Setter", null);
 		this.setter = setter;
 	}
 
 	public void setAdder(EditableMethod adder) {
+		//TODO support params in annotation in the future
+		adder.setAnnotation("Adder", null);
 		this.adder = adder;
 	}
 
 	public void setRemover(EditableMethod remover) {
+		//TODO support params in annotation in the future
+		remover.setAnnotation("Remover", null);
 		this.remover = remover;
 	}
 
-	
-	
 	public PAMELAEntity getPamelaEntity() {
 		return pamelaEntity;
 	}

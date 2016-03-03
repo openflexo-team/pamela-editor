@@ -65,6 +65,12 @@ public class UtilPAMELA {
 		return javaMethod;
 	}
 
+	/**
+	 * build method annotation
+	 * no use now - replaced by Editable Method
+	 * @param methodAnnotation
+	 * @return
+	 */
 	public static JavaAnnotation buildAnnotation(String methodAnnotation) {
 		String source = "interface Something { \n" + methodAnnotation + "\nvoid someMethod(); }";
 		JavaSource javaSource = EntityBuilder.builder.addSource(new StringReader(source));
@@ -75,7 +81,8 @@ public class UtilPAMELA {
 	}
 
 	/**
-	 * create annotation string like @AnnotationName(key1=value1,key2,value2...)
+	 * no use now
+	 * create annotation string like @AnnotationName(key1=value1,key2,value2...) for qdox
 	 * 
 	 * @param annotationName
 	 * @param params

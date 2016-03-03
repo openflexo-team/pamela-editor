@@ -17,7 +17,12 @@ import com.thoughtworks.qdox.model.JavaClass;
 
 public class PAMELAContext {
 	
-	
+	/**
+	 * will be used in the future, now it can not support for XMLTag
+	 * @author ddcat1991
+	 *
+	 * @param <I>
+	 */
 	public static class PAMELAPropertyXMLTag<I> {
 		private String tag;
 		private PAMELAProperty property;
@@ -75,6 +80,12 @@ public class PAMELAContext {
 		appendEntity(modelEntity, new HashSet<PAMELAEntity>());
 	}
 	
+	/**
+	 * no use now
+	 * @param baseClass
+	 * @param contexts
+	 * @throws ModelDefinitionException
+	 */
 	public PAMELAContext(JavaClass baseClass, List<PAMELAContext> contexts) throws ModelDefinitionException{
 		this.baseClass = baseClass;
 		modelEntities = new HashMap<JavaClass, PAMELAEntity>();
@@ -101,7 +112,11 @@ public class PAMELAContext {
 		//modelEntities = Collections.unmodifiableMap(modelEntities);
 		//modelEntitiesByXmlTag = Collections.unmodifiableMap(modelEntitiesByXmlTag);
 	}
-	
+	/**
+	 * load multi entry classes
+	 * @param baseClasses
+	 * @throws ModelDefinitionException
+	 */
 	public PAMELAContext(JavaClass... baseClasses) throws ModelDefinitionException{
 		this(null,makePAMELAContextList(baseClasses));
 	}

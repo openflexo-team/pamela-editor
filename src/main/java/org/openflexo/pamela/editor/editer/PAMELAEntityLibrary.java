@@ -26,6 +26,14 @@ public class PAMELAEntityLibrary {
 
 	private static List<PAMELAEntity> newEntities = new ArrayList<PAMELAEntity>();
 
+	/**
+	 * import an entity from implementedInterface(JavaClass), if this entity not
+	 * exist in the library then create and add this entity in library
+	 * 
+	 * @param implementedInterface
+	 * @return
+	 * @throws ModelDefinitionException
+	 */
 	static synchronized PAMELAEntity importEntity(JavaClass implementedInterface) throws ModelDefinitionException {
 		PAMELAEntity pamelaEntity = entities.get(implementedInterface.getFullyQualifiedName());
 		if (pamelaEntity == null) {
@@ -37,12 +45,14 @@ public class PAMELAEntityLibrary {
 	}
 
 	/**
-	 * 
+	 * get an entity from entities
 	 * 
 	 * @param implementedInterface
-	 * @param create:
+	 * @param create
 	 *            true - if the entity is not in the entities Map, it will be
-	 *            initialized and add into entities Map.
+	 *            initialized and add into entities Map, then return this new
+	 *            entity. false - if the entity exist then return the entity,
+	 *            otherwise return null
 	 * @return
 	 * @throws ModelDefinitionException
 	 */
@@ -63,12 +73,28 @@ public class PAMELAEntityLibrary {
 		return pamelaEntity;
 	}
 
+	/**
+	 * get an entity class by implemented Interface
+	 * 
+	 * @param implementedInterface
+	 * @return
+	 */
 	public static PAMELAEntity get(JavaClass implementedInterface) {
 		try {
 			return get(implementedInterface, false);
 		} catch (ModelDefinitionException e) {
 			return null;
 		}
+	}
+
+	/**
+	 * get entity by qualified name (from entity library)
+	 * 
+	 * @param qname
+	 * @return
+	 */
+	public static PAMELAEntity get(String qname) {
+		return entities.get(qname);
 	}
 
 	/**
@@ -98,27 +124,20 @@ public class PAMELAEntityLibrary {
 	 */
 	public PAMELAEntity delete(String qname) throws EntityExistException {
 		if (has(qname)) {
-			//TODO update related entities:
+			// TODO update related entities:
 			// delete from embedded,import or super entities
 			return entities.remove(qname);
 		} else
 			throw new EntityExistException(qname + " not exist in library");
 	}
 
-	/**
-	 * get entity by qualified name
-	 * 
-	 * @param qname
-	 * @return
-	 */
-	public static PAMELAEntity get(String qname) {
-		return entities.get(qname);
-	}
-
-	static boolean has(String qname) {
+	public static boolean has(String qname) {
 		return entities.containsKey(qname);
 	}
 
+	/**
+	 * clear entities library
+	 */
 	public static void clear() {
 		entities.clear();
 	}
@@ -128,4 +147,16 @@ public class PAMELAEntityLibrary {
 			System.out.println("LB-Entity--:" + entry.getValue().getName());
 		}
 	}
+
+	/**
+	 * TODO remove an entity from library the relationship
+	 * (inherit,embedded,import) with other entities need to be considered
+	 * 
+	 * @param string
+	 */
+	public void remove(String string) {
+		// TODO Auto-generated method stub
+
+	}
+
 }

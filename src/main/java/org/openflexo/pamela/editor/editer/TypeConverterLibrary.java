@@ -18,6 +18,10 @@ public class TypeConverterLibrary {
 	
 	private final Set<String> converters;
 	
+	/**
+	 * support some other simple type
+	 * like: Data..
+	 */
 	public TypeConverterLibrary() {
 		converters = new HashSet<String>();
 		converters.add("byte");
