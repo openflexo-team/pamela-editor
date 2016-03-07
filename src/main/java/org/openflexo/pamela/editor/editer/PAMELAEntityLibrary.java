@@ -144,7 +144,7 @@ public class PAMELAEntityLibrary {
 
 	public void printAllEntities() {
 		for (Entry<String, PAMELAEntity> entry : entities.entrySet()) {
-			System.out.println("LB-Entity--:" + entry.getValue().getName());
+			System.out.println("LB-Entity--:" + entry.getValue().toString());
 		}
 	}
 

@@ -1,8 +1,10 @@
 package org.openflexo.pamela.editor.editer;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
+import org.openflexo.pamela.editor.editer.exceptions.PropertyException;
 import org.openflexo.pamela.editor.editer.utils.Location;
 import org.openflexo.pamela.editor.editer.utils.UtilPAMELA;
 
@@ -87,7 +89,7 @@ public class PAMELAProperty {
 			// adder exist and identifier corresponding
 			if (anAdder != null && anAdder.getNamedParameter("value").toString().equals(propertyIdentifier)) {
 				if (adder != null) {
-					throw new ModelDefinitionException("Duplicate setter '" + propertyIdentifier
+					throw new ModelDefinitionException("Duplicate adder '" + propertyIdentifier
 							+ "' defined for interface " + pamelaEntity.getName());
 				} else {
 					beginLine = java.lang.Math.min(beginLine, Location.getMethodBeginLine(m));
@@ -98,7 +100,7 @@ public class PAMELAProperty {
 			// remover exist and identifier corresponding
 			if (aRemover != null && aRemover.getNamedParameter("value").toString().equals(propertyIdentifier)) {
 				if (remover != null) {
-					throw new ModelDefinitionException("Duplicate setter '" + propertyIdentifier
+					throw new ModelDefinitionException("Duplicate remover '" + propertyIdentifier
 							+ "' defined for interface " + pamelaEntity.getName());
 				} else {
 					beginLine = java.lang.Math.min(beginLine, Location.getMethodBeginLine(m));
@@ -145,8 +147,9 @@ public class PAMELAProperty {
 	}
 
 	/**
-	 *  use for user create a new property
-	 *  auto cover the identifier to upper case
+	 * use for user create a new property auto cover the identifier to upper
+	 * case
+	 * 
 	 * @param identifier
 	 * @param cardinality
 	 * @param keyType
@@ -158,14 +161,54 @@ public class PAMELAProperty {
 		this.type = type;
 		this.identifier = identifier;
 		this.cardinality = cardinality;
-		
-		//TODO initial PamelapProperty with these parameters
+
+		// TODO initial PamelapProperty with these parameters
 		// -> decide the type according to the cardinality
 		// -> bind the embeded type from the EntityLibray
+
+		try {
+			init();
+		} catch (PropertyException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
-	 * get Cardinality, if the cardinality not initialized, 
+	 * initialize a PamelaProperty when user create a property by the
+	 * constructor PAMELAProperty: 1.initialize the default getter and setter
+	 * method with annotation 2. set the ignoreType, when the new property is an
+	 * embedded entity
+	 * 
+	 * @throws PropertyException
+	 */
+	void init() throws PropertyException {
+		// if the cardinality is not map, set the keyType = null
+		switch (cardinality) {
+		case SINGLE:
+		case LIST:
+			this.keyType = null;
+			break;
+
+		case MAP:
+			break;
+		}
+
+		setGetter(new EditableMethod("get" + identifier));
+		setSetter(new EditableMethod("set" + identifier));
+
+		// if this javaType is embeddedType, find it in EntityLibrary, if not
+		// exist -> set the ignoreType = true
+		if (!TypeConverterLibrary.getInstance().hasConverter(type.getFullyQualifiedName())) {
+			if (PAMELAEntityLibrary.get(type.getFullyQualifiedName()) == null) {
+				setIgnoreType(true);
+			}
+		}
+
+	}
+
+	/**
+	 * get Cardinality, if the cardinality not initialized,
+	 * 
 	 * @return
 	 */
 	public Cardinality getCardinality() {
@@ -220,31 +263,45 @@ public class PAMELAProperty {
 	}
 
 	/**
-	 * set getter method and add anootation
-	 * TODO support params in annotation in the future 
+	 * set getter method and add anootation TODO support params in annotation in
+	 * the future
+	 * 
 	 * @param getter
 	 */
 	public void setGetter(EditableMethod getter) {
-		//add @Getter annotation
-		getter.setAnnotation("Getter", null);
+		if (getter.getAnnotationByName("Getter") == null) {
+			// add initial @Getter annotation
+			HashMap<String, String> initAnnotations = new HashMap<String, String>();
+			initAnnotations.put("value", identifier);
+			getter.setAnnotation("Getter", initAnnotations);
+		}
 		this.getter = getter;
 	}
 
 	public void setSetter(EditableMethod setter) {
-		//TODO support params in annotation in the future
-		setter.setAnnotation("Setter", null);
+		if (getter.getAnnotationByName("Setter") == null) {
+			HashMap<String, String> initAnnotations = new HashMap<String, String>();
+			initAnnotations.put("value", identifier);
+			setter.setAnnotation("Setter", initAnnotations);
+		}
 		this.setter = setter;
 	}
 
 	public void setAdder(EditableMethod adder) {
-		//TODO support params in annotation in the future
-		adder.setAnnotation("Adder", null);
+		if (getter.getAnnotationByName("Adder") == null) {
+			HashMap<String, String> initAnnotations = new HashMap<String, String>();
+			initAnnotations.put("value", identifier);
+			adder.setAnnotation("Adder", initAnnotations);
+		}
 		this.adder = adder;
 	}
 
 	public void setRemover(EditableMethod remover) {
-		//TODO support params in annotation in the future
-		remover.setAnnotation("Remover", null);
+		if (getter.getAnnotationByName("Remover") == null) {
+			HashMap<String, String> initAnnotations = new HashMap<String, String>();
+			initAnnotations.put("value", identifier);
+			remover.setAnnotation("Remover", initAnnotations);
+		}
 		this.remover = remover;
 	}
 
@@ -286,12 +343,14 @@ public class PAMELAProperty {
 		}
 		return false;
 	}
-	
-	// TODO 
-	public boolean setIgnoreType(boolean b){
-		if(getGetter()!=null){
+
+	// TODO
+	public boolean setIgnoreType(boolean b) {
+		if (getGetter() != null) {
 			Map<String, String> aGetter = getter.getAnnotationByName("Getter");
-			aGetter.put("ignoreType",java.lang.Boolean.toString(b));
+			aGetter.put("ignoreType", java.lang.Boolean.toString(b));
+			System.out.println(getter.toString());
+			return true;
 		}
 		return false;
 	}

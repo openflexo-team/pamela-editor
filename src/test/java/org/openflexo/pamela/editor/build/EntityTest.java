@@ -9,7 +9,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openflexo.pamela.editor.builder.EntityBuilder;
 import org.openflexo.pamela.editor.editer.Cardinality;
-import org.openflexo.pamela.editor.editer.EditableMethod;
 import org.openflexo.pamela.editor.editer.PAMELAEntity;
 import org.openflexo.pamela.editor.editer.PAMELAProperty;
 import org.openflexo.pamela.editor.editer.exceptions.EntityExistException;
@@ -67,15 +66,16 @@ public class EntityTest {
 	@Test
 	public void testAddEntityWithProperty() throws EntityExistException {
 		PAMELAEntity mytable = new PAMELAEntity("org.openflexo.pamela.editor.model.model2.Table");
-		JavaType javatype = new DefaultJavaType("org.openflexo.pamela.editor.model.model2.Color");
+		JavaType javatypeColor = new DefaultJavaType("org.openflexo.pamela.editor.model.model2.Color");
+		JavaType javatypePrice = new DefaultJavaType("int");
 		// create property
-		PAMELAProperty color = new PAMELAProperty("color", Cardinality.SINGLE, null, javatype);
-		// add getter method, TODO need to support the params of annotation in
-		// the future
-		color.setGetter(new EditableMethod("getColor"));
+		PAMELAProperty color = new PAMELAProperty("color", Cardinality.SINGLE, null, javatypeColor);
+		PAMELAProperty price = new PAMELAProperty("price", Cardinality.SINGLE, null, javatypePrice);
+		
 		try {
 			// add property in entity
 			mytable.addProperty(color);
+			mytable.addProperty(price);
 		} catch (PropertyException e) {
 			e.printStackTrace();
 		}
@@ -85,7 +85,11 @@ public class EntityTest {
 		/* ==== verify properties === */
 		PAMELAEntity entity = EntityBuilder.entityLibrary.get("org.openflexo.pamela.editor.model.model2.Table");
 		PAMELAProperty pcolor = entity.getDeclaredProperty("color");
+		PAMELAProperty pprice = entity.getDeclaredProperty("price");
 		assertEquals("org.openflexo.pamela.editor.model.model2.Color", pcolor.getType().getFullyQualifiedName());
+		assertEquals(true, pcolor.ignoreType());
+		assertEquals("int", pprice.getType().getFullyQualifiedName());
+		assertEquals(false, pprice.ignoreType());
 	}
 
 	/**

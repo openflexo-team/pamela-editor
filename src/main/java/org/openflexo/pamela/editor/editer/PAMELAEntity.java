@@ -65,6 +65,9 @@ public class PAMELAEntity {
 	 */
 	private Map<String, PAMELAEntity> embeddedEntities;
 
+	/**
+	 * the entities with annotation @Import
+	 */
 	private Set<PAMELAEntity> importEntities;
 
 	private int currentProcessLinenum = 0;
@@ -185,7 +188,6 @@ public class PAMELAEntity {
 		propertyName = propertyName.toUpperCase();
 		if (!this.declaredProperties.containsKey(propertyName))
 			return null;
-		// throw new DeclaredPropertyNullException(propertyName+" not exist");
 		return this.declaredProperties.get(propertyName);
 	}
 
@@ -235,7 +237,14 @@ public class PAMELAEntity {
 
 	@Override
 	public String toString() {
-		return "PAMELAEntity [name=" + name + "]:properties-size:" + declaredProperties.size();
+		return " [name=" + name + "]:properties-size:" + declaredProperties.size() + " properties: "+ propertiesIdToString();
+	}
+	
+	private String propertiesIdToString(){
+		StringBuilder sb = new StringBuilder("|");
+		for(String id:declaredProperties.keySet())
+			sb.append(id).append("|");
+		return sb.toString();
 	}
 
 	public void addsource(String url, String string) {
@@ -260,6 +269,39 @@ public class PAMELAEntity {
 
 		}
 	}
+
+	/**
+	 * remove a property from the entity
+	 * 
+	 * @param pidentify
+	 *            the identify of the property
+	 * @throws PropertyException
+	 */
+	public void removeProperty(String pidentify) throws PropertyException {
+		pidentify = pidentify.toUpperCase();
+		// check property exist
+		PAMELAProperty prop = getDeclaredProperty(pidentify);
+		if (prop == null)
+			throw new PropertyException(pidentify + " is not exist.");
+		else {
+			// if this property's type is not simple type, and the ignoreType is true
+			if(!TypeConverterLibrary.getInstance().hasConverter(prop.getType().getFullyQualifiedName()) && !prop.ignoreType()){
+				//try to find if this property is the last one who use the same embedded entity
+				boolean flag = false;
+				for(PAMELAProperty p:declaredProperties.values()){
+					if(!p.getIdentifier().equals(pidentify) && p.getType().getFullyQualifiedName().equals(prop.getType().getFullyQualifiedName()))
+						flag = true;
+				}
+				// if not found, remove from embedded entity
+				if(flag==false)
+					removeEmbeddedEntity(prop.getType().getFullyQualifiedName());
+			}
+			// remove this property
+			declaredProperties.remove(pidentify);
+		}
+		
+	}
+	
 
 	/**
 	 * verify if an java class has annotation @ModelEntity

@@ -17,6 +17,7 @@ public class EntityBuilderTest {
 
 	@Before
 	public void setUp() throws Exception {
+		System.out.println("===================Test Begin=========================");
 		PAMELAEntityLibrary.clear();
 	}
 
