@@ -50,17 +50,20 @@ public class PAMELAEntity {
 	private Map<String, PAMELAProperty> declaredProperties;
 
 	/**
-	 * The list of super entities (matching the list of super interfaces). This
-	 * may be null
-	 */
-	private List<PAMELAEntity> directSuperEntities;
-
-	/**
-	 * The list of super interfaces of this entity. This may be null.
+	 * The list of super interfaces of this entity.
 	 */
 	private List<JavaClass> superImplementedInterfaces;
 
-	private Set<PAMELAEntity> embeddedEntities;
+	/**
+	 * The map of super entities (matching the list of super interfaces). This
+	 * may be null. key: qualified entity name
+	 */
+	private Map<String, PAMELAEntity> directSuperEntities;
+
+	/**
+	 * key: entity name
+	 */
+	private Map<String, PAMELAEntity> embeddedEntities;
 
 	private Set<PAMELAEntity> importEntities;
 
@@ -78,7 +81,7 @@ public class PAMELAEntity {
 		this.name = implementedInterface.getFullyQualifiedName();
 		this.declaredProperties = new HashMap<String, PAMELAProperty>();
 		// this.properties = new HashMap<String, PAMELAProperty>();
-		this.embeddedEntities = new HashSet<PAMELAEntity>();
+		this.embeddedEntities = new HashMap<String, PAMELAEntity>();
 		this.importEntities = new HashSet<PAMELAEntity>();
 		// model super interface
 		for (JavaClass superi : implementedInterface.getInterfaces()) {
@@ -123,6 +126,8 @@ public class PAMELAEntity {
 
 		// TODO Init delegate implementations
 
+		// init supperEntities
+
 		System.out.println("create Entity " + this.name + "-->with property num" + declaredProperties.size());
 
 	}
@@ -138,7 +143,7 @@ public class PAMELAEntity {
 		this.name = qname;
 		this.declaredProperties = new HashMap<String, PAMELAProperty>();
 		// this.properties = new HashMap<String, PAMELAProperty>();
-		this.embeddedEntities = new HashSet<PAMELAEntity>();
+		this.embeddedEntities = new HashMap<String, PAMELAEntity>();
 		this.importEntities = new HashSet<PAMELAEntity>();
 	}
 
@@ -146,19 +151,27 @@ public class PAMELAEntity {
 	 * get direct super entity by qualified name
 	 * 
 	 * @param qname
-	 * @return
+	 * @return null the entity not exist
 	 */
 	public PAMELAEntity getDirectSuperEntity(String qname) {
-		// TODO replace directSuperEntity by Map
-		PAMELAEntity entity = null;
-		for (PAMELAEntity superEntity : directSuperEntities) {
-			if (superEntity.getName().equals(qname)) {
-				entity = superEntity;
-				break;
+		return directSuperEntities.get(qname);
+	}
+
+	/**
+	 * used for loading. Add the parent entity into directSuperEntities.
+	 * 
+	 * @return directSuperEntities
+	 * @throws ModelDefinitionException
+	 */
+	public Map<String, PAMELAEntity> loadDirectSuperEntities() throws ModelDefinitionException {
+		if (directSuperEntities == null && superImplementedInterfaces != null) {
+			directSuperEntities = new HashMap<String, PAMELAEntity>();
+			for (JavaClass superInterface : superImplementedInterfaces) {
+				PAMELAEntity superEntity = PAMELAEntityLibrary.get(superInterface, true);
+				directSuperEntities.put(superEntity.getName(), superEntity);
 			}
 		}
-
-		return entity;
+		return directSuperEntities;
 	}
 
 	/**
@@ -249,23 +262,6 @@ public class PAMELAEntity {
 	}
 
 	/**
-	 * can be used for loading. Add the parent entity into directSuperEntities.
-	 * 
-	 * @return directSuperEntities
-	 * @throws ModelDefinitionException
-	 */
-	public List<PAMELAEntity> getDirectSuperEntities() throws ModelDefinitionException {
-		if (directSuperEntities == null && superImplementedInterfaces != null) {
-			directSuperEntities = new ArrayList<PAMELAEntity>(superImplementedInterfaces.size());
-			for (JavaClass superInterface : superImplementedInterfaces) {
-				PAMELAEntity superEntity = PAMELAEntityLibrary.get(superInterface, true);
-				directSuperEntities.add(superEntity);
-			}
-		}
-		return directSuperEntities;
-	}
-
-	/**
 	 * verify if an java class has annotation @ModelEntity
 	 * 
 	 * @param type
@@ -289,7 +285,7 @@ public class PAMELAEntity {
 		// We now resolve our inherited entities and properties
 
 		if (directSuperEntities == null) {
-			getDirectSuperEntities();
+			loadDirectSuperEntities();
 		}
 
 		for (PAMELAProperty property : declaredProperties.values()) {
@@ -301,8 +297,9 @@ public class PAMELAEntity {
 					 */ && !property.ignoreType()) {
 				try {
 					// use qdox builder to get the coherent class
-					embeddedEntities.add(PAMELAEntityLibrary.get(
-							EntityBuilder.builder.getClassByName(property.getType().getFullyQualifiedName()), true));
+					PAMELAEntity addEntity = PAMELAEntityLibrary.get(
+							EntityBuilder.builder.getClassByName(property.getType().getFullyQualifiedName()), true);
+					embeddedEntities.put(addEntity.getName(), addEntity);
 				} catch (ModelDefinitionException e) {
 					throw new ModelDefinitionException(
 							"Could not retrieve model entity for property " + property + " and entity " + this, e);
@@ -333,7 +330,50 @@ public class PAMELAEntity {
 		return superImplementedInterfaces != null && superImplementedInterfaces.size() > 1;
 	}
 
-	public Set<PAMELAEntity> getEmbeddedEntities() {
+	public Map<String, PAMELAEntity> getEmbeddedEntities() {
 		return this.embeddedEntities;
 	}
+
+	/**
+	 * remove embedded entity and change the corresponding property -> ignore
+	 * type = true
+	 * 
+	 * @param qname
+	 *            qualified name of the entity
+	 * @return true-removed false-the embedded entity not exist in this entity
+	 */
+	public boolean removeEmbeddedEntity(String qname) {
+		// find if the entity exist
+		if (embeddedEntities.containsKey(qname)) {
+			// change property's ignoreType
+			for (PAMELAProperty prop : declaredProperties.values()) {
+				// verify if the property's type is same with the removed Entity
+				if (prop.getType().getFullyQualifiedName().equals(qname)) {
+					prop.setIgnoreType(true);
+				}
+			}
+			embeddedEntities.remove(qname);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * remove superEntity
+	 * 
+	 * @param qname
+	 * @return true-removed ; false-the embedded entity not exist in this entity
+	 */
+	public boolean removeSuperEntity(String qname) {
+		if (directSuperEntities != null && directSuperEntities.containsKey(qname)) {
+			directSuperEntities.remove(qname);
+			return true;
+		}
+		return false;
+	}
+
+	public boolean equals(PAMELAEntity e) {
+		return this.getName().equals(e.getName());
+	}
+
 }

@@ -98,10 +98,13 @@ public class EditableMethod {
 	private void loadAnnotations(JavaMethod methodload) {
 		for (JavaAnnotation anno : methodload.getAnnotations()) {
 			String aNameKey = anno.getType().getValue();
+			HashMap<String, String> values = new HashMap<String,String>();
 			for (Entry<String, AnnotationValue> entry : anno.getPropertyMap().entrySet()) {
 				String paramKey = entry.getKey();
 				String paramValue = entry.getValue().toString();
+				values.put(paramKey, paramValue);
 			}
+			annotations.put(aNameKey, values);
 		}
 	}
 }

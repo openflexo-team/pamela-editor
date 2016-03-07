@@ -1,5 +1,7 @@
 package org.openflexo.pamela.editor.editer;
 
+import java.util.Map;
+
 import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
 import org.openflexo.pamela.editor.editer.utils.Location;
 import org.openflexo.pamela.editor.editer.utils.UtilPAMELA;
@@ -281,6 +283,15 @@ public class PAMELAProperty {
 			String ignoreValue = getGetter().getAnnotationParam("Getter", "ignoreType");
 			if (ignoreValue != null && ignoreValue.equals("true"))
 				return true;
+		}
+		return false;
+	}
+	
+	// TODO 
+	public boolean setIgnoreType(boolean b){
+		if(getGetter()!=null){
+			Map<String, String> aGetter = getter.getAnnotationByName("Getter");
+			aGetter.put("ignoreType",java.lang.Boolean.toString(b));
 		}
 		return false;
 	}

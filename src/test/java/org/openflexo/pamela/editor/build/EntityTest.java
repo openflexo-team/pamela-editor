@@ -26,6 +26,7 @@ public class EntityTest {
 	 */
 	@Before
 	public void setUp() throws Exception {
+		System.out.println("===================Test Begin=========================");
 		EntityBuilder.entityLibrary.clear();
 
 	}
@@ -88,8 +89,8 @@ public class EntityTest {
 	}
 
 	/**
-	 * TODO remove an entity, the entities who have the relationship - embedded
-	 * with removed entity, this relationship will be deleted (Not sure)
+	 * remove an entity, the entities who have the relationship - embedded
+	 * with removed entity, this relationship will be deleted (Change the @Getter ignoreType = true)
 	 */
 	@Test
 	public void testRemoveEntityEmbedded() {
@@ -98,22 +99,22 @@ public class EntityTest {
 				"org.openflexo.pamela.editor.model.model2.Library");
 
 		// remove BOOK(qualified name) entity in model2
-		// TODO remove method needs to be implemented
 		EntityBuilder.entityLibrary.remove("org.openflexo.pamela.editor.model.model2.Book");
 
 		/* ==== verify === */
 		
 		// verify the relationship between other entities and removed entity has been deleted
 		PAMELAEntity eLib = EntityBuilder.entityLibrary.get("org.openflexo.pamela.editor.model.model2.Library");
-		// TODO i'm not sure: if we delete a entity from EntityLibrary, the
+		// i'm not sure: if we delete a entity from EntityLibrary, the
 		// entity
 		// who has the embedded property of this removed entity will be deleted
-		// or not => in my test here, I delete this relationship
-		assertEquals(null, eLib.getDeclaredProperty("books"));
+		// or not => in my test here, I delete this relationship by changing the ignoreType to "true"
+		PAMELAProperty pbooks = eLib.getDeclaredProperty("books");
+		assertEquals(true, pbooks.ignoreType());
 	}
 
 	/**
-	 * TODO remove an entity, the entities who have the relationship - inherit
+	 * remove an entity, the entities who have the relationship - inherit
 	 * with removed entity, this relationship will be deleted
 	 */
 	@Test

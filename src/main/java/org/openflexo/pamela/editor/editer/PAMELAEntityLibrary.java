@@ -149,13 +149,27 @@ public class PAMELAEntityLibrary {
 	}
 
 	/**
-	 * TODO remove an entity from library the relationship
+	 * TODO remove import relationship
+	 * remove an entity from library the relationship
 	 * (inherit,embedded,import) with other entities need to be considered
 	 * 
 	 * @param string
 	 */
-	public void remove(String string) {
-		// TODO Auto-generated method stub
+	public void remove(String qname) {
+		// find if entity existed
+		PAMELAEntity rEntity = get(qname);
+		// traverse all entities
+		for (PAMELAEntity e : entities.values()) {
+			// remove the embedded relationship(change
+			// ignoreType->true)
+			e.removeEmbeddedEntity(qname);
+			// remove inherit relationship
+			e.removeSuperEntity(qname);
+			// TODO remove import relationship
+		}
+
+		// remove
+		entities.remove(qname);
 
 	}
 

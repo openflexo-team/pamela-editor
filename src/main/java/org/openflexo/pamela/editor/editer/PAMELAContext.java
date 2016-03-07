@@ -151,7 +151,7 @@ public class PAMELAContext {
 							+ modelEntity.getImplementedInterface().getName() + " " + put.getImplementedInterface().getName());
 		}
 		*/
-		for (PAMELAEntity e : modelEntity.getEmbeddedEntities()) {
+		for (PAMELAEntity e : modelEntity.getEmbeddedEntities().values()) {
 			if (!visited.contains(e)) {
 				appendEntity(e, visited);
 			}
