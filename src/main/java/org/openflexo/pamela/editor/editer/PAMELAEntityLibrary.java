@@ -12,8 +12,8 @@ import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
 import com.thoughtworks.qdox.model.JavaClass;
 
 /**
- * to store all the entity
- * 
+ * to store all the entities and manage the entities
+ * TODO : the serialization function
  * @author ddcat1991
  *
  */

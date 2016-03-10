@@ -9,7 +9,11 @@ import java.util.Set;
 import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
 
 import com.thoughtworks.qdox.model.JavaClass;
-
+/**
+ * Same with pamela-core
+ * @author lenovo
+ *
+ */
 public class PAMELAContextLibrary {
 
 	private static Map<JavaClass,PAMELAContext> contexts = new Hashtable<JavaClass,PAMELAContext>();

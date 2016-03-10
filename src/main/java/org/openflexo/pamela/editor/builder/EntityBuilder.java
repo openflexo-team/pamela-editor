@@ -12,6 +12,11 @@ import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
 import com.thoughtworks.qdox.JavaProjectBuilder;
 import com.thoughtworks.qdox.model.JavaClass;
 
+/**
+ * The entry of the this project
+ * @author ddcat1991
+ *
+ */
 public class EntityBuilder {
 
 	public static JavaProjectBuilder builder = new JavaProjectBuilder();

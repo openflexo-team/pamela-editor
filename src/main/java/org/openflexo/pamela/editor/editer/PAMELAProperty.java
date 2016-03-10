@@ -14,16 +14,34 @@ import com.thoughtworks.qdox.model.JavaMethod;
 import com.thoughtworks.qdox.model.JavaParameterizedType;
 import com.thoughtworks.qdox.model.JavaType;
 
+/**
+ * the property of the entity
+ * 
+ * @author ddcat1991
+ *
+ */
 public class PAMELAProperty {
+
 	private String identifier;
 
+	/**
+	 * the entity which this property belongs to
+	 */
 	private PAMELAEntity pamelaEntity;
 	/**
 	 * A property can be a single, a List or a Map
 	 */
 	private Cardinality cardinality;
 
+	/**
+	 * type of the property
+	 */
 	private JavaType type;
+
+	/**
+	 * if this property is Map cardinality, this is the key type of the map's
+	 * key, if not, keyType is null
+	 */
 	private JavaType keyType;
 
 	private EditableMethod getter;
@@ -37,10 +55,19 @@ public class PAMELAProperty {
 	private Integer begin;
 	private Integer end;
 	/**
-	 * indicate if this property has been modified
+	 * indicate if this property has been modified -> used for the serialization
+	 * in java file
 	 */
 	private boolean ismodified;
 
+	/**
+	 * use for loading a property from the java file and create a property
+	 * 
+	 * @param propertyIdentifier
+	 * @param pamelaEntity
+	 * @return
+	 * @throws ModelDefinitionException
+	 */
 	public static PAMELAProperty loadPAMELAproperty(String propertyIdentifier, PAMELAEntity pamelaEntity)
 			throws ModelDefinitionException {
 		JavaMethod getter = null;
@@ -313,6 +340,10 @@ public class PAMELAProperty {
 		this.pamelaEntity = pamelaEntity;
 	}
 
+	/**
+	 * used for loading from the java files, to set the type and keyType
+	 * corresponding the cardinality
+	 */
 	private void setTypeAndKeyType() {
 
 		switch (getCardinality()) {
@@ -322,12 +353,10 @@ public class PAMELAProperty {
 		case LIST:
 			// type is the parameterizedType of the List
 			type = ((JavaParameterizedType) getter.getJavaMethod().getReturnType()).getActualTypeArguments().get(0);
-
 			break;
 		case MAP:
 			keyType = ((JavaParameterizedType) getter.getJavaMethod().getReturnType()).getActualTypeArguments().get(0);
 			type = ((JavaParameterizedType) getter.getJavaMethod().getReturnType()).getActualTypeArguments().get(1);
-
 			break;
 		}
 
@@ -335,6 +364,11 @@ public class PAMELAProperty {
 
 	}
 
+	/**
+	 * to know if the ignoreType is true or false in @Getter
+	 * 
+	 * @return
+	 */
 	public boolean ignoreType() {
 		if (getGetter() != null) {
 			String ignoreValue = getGetter().getAnnotationParam("Getter", "ignoreType");
@@ -344,7 +378,12 @@ public class PAMELAProperty {
 		return false;
 	}
 
-	// TODO
+	/**
+	 * set the ignoreType and modify the Getter annotation in EditableMethod
+	 * 
+	 * @param b
+	 * @return
+	 */
 	public boolean setIgnoreType(boolean b) {
 		if (getGetter() != null) {
 			Map<String, String> aGetter = getter.getAnnotationByName("Getter");

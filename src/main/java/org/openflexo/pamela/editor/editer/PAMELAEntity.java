@@ -22,13 +22,20 @@ import com.thoughtworks.qdox.model.expression.AnnotationValue;
 import com.thoughtworks.qdox.model.expression.AnnotationValueList;
 import com.thoughtworks.qdox.model.impl.DefaultJavaAnnotation;
 
+/**
+ * The entity correspondent with the ModelEntity in Pamela-core, now support
+ * initialize the entity load from java file; create a entity; remove a
+ * entity(the relationship embedding and inherit has been considered);
+ * @author ddcat1991
+ *
+ */
 public class PAMELAEntity {
 	/**
 	 * source.java path
 	 */
 	private String sourceUrl;
 	/**
-	 * source.java String
+	 * source.java String TODO: used for serializaton in java file
 	 */
 	private String sourceString;
 
@@ -237,12 +244,13 @@ public class PAMELAEntity {
 
 	@Override
 	public String toString() {
-		return " [name=" + name + "]:properties-size:" + declaredProperties.size() + " properties: "+ propertiesIdToString();
+		return " [name=" + name + "]:properties-size:" + declaredProperties.size() + " properties: "
+				+ propertiesIdToString();
 	}
-	
-	private String propertiesIdToString(){
+
+	private String propertiesIdToString() {
 		StringBuilder sb = new StringBuilder("|");
-		for(String id:declaredProperties.keySet())
+		for (String id : declaredProperties.keySet())
 			sb.append(id).append("|");
 		return sb.toString();
 	}
@@ -284,24 +292,27 @@ public class PAMELAEntity {
 		if (prop == null)
 			throw new PropertyException(pidentify + " is not exist.");
 		else {
-			// if this property's type is not simple type, and the ignoreType is true
-			if(!TypeConverterLibrary.getInstance().hasConverter(prop.getType().getFullyQualifiedName()) && !prop.ignoreType()){
-				//try to find if this property is the last one who use the same embedded entity
+			// if this property's type is not simple type, and the ignoreType is
+			// true
+			if (!TypeConverterLibrary.getInstance().hasConverter(prop.getType().getFullyQualifiedName())
+					&& !prop.ignoreType()) {
+				// try to find if this property is the last one who use the same
+				// embedded entity
 				boolean flag = false;
-				for(PAMELAProperty p:declaredProperties.values()){
-					if(!p.getIdentifier().equals(pidentify) && p.getType().getFullyQualifiedName().equals(prop.getType().getFullyQualifiedName()))
+				for (PAMELAProperty p : declaredProperties.values()) {
+					if (!p.getIdentifier().equals(pidentify)
+							&& p.getType().getFullyQualifiedName().equals(prop.getType().getFullyQualifiedName()))
 						flag = true;
 				}
 				// if not found, remove from embedded entity
-				if(flag==false)
+				if (flag == false)
 					removeEmbeddedEntity(prop.getType().getFullyQualifiedName());
 			}
 			// remove this property
 			declaredProperties.remove(pidentify);
 		}
-		
+
 	}
-	
 
 	/**
 	 * verify if an java class has annotation @ModelEntity

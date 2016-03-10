@@ -15,10 +15,18 @@ import org.openflexo.pamela.editor.editer.exceptions.ModelDefinitionException;
 
 import com.thoughtworks.qdox.model.JavaClass;
 
+/**
+ * same with ModelContextLibrary in pamela-core. Used to load the source.java
+ * from one or more entry point not support XMLTag yet.
+ * 
+ * @author ddcat1991
+ *
+ */
 public class PAMELAContext {
-	
+
 	/**
 	 * will be used in the future, now it can not support for XMLTag
+	 * 
 	 * @author ddcat1991
 	 *
 	 * @param <I>
@@ -32,16 +40,17 @@ public class PAMELAContext {
 			super();
 			this.property = property;
 			this.accessedEntity = null;
-			//TODO 
-			//this.tag = property.getXMLContext() + property.getXMLElement().xmlTag();
+			// TODO
+			// this.tag = property.getXMLContext() +
+			// property.getXMLElement().xmlTag();
 		}
 
 		public PAMELAPropertyXMLTag(PAMELAProperty property, PAMELAEntity accessedEntity) {
 			super();
 			this.property = property;
 			this.accessedEntity = accessedEntity;
-			//TODO
-			//this.tag = property.getXMLContext() + accessedEntity.getXMLTag();
+			// TODO
+			// this.tag = property.getXMLContext() + accessedEntity.getXMLTag();
 		}
 
 		public String getTag() {
@@ -60,13 +69,13 @@ public class PAMELAContext {
 		public String toString() {
 			return "PAMELAPropertyXMLTag" + getAccessedEntity() + getProperty() + "/tag=" + getTag();
 		}
-	}	
+	}
 
-	private Map<JavaClass,PAMELAEntity> modelEntities;
+	private Map<JavaClass, PAMELAEntity> modelEntities;
 	private Map<String, PAMELAEntity> modelEntitiesByXmlTag;
 	private Map<PAMELAEntity, Map<String, PAMELAPropertyXMLTag<?>>> modelPropertiesByXmlTag;
 	private JavaClass baseClass;
-	
+
 	/**
 	 * one entry base class
 	 * 
@@ -79,57 +88,60 @@ public class PAMELAContext {
 		PAMELAEntity modelEntity = PAMELAEntityLibrary.importEntity(baseClass);
 		appendEntity(modelEntity, new HashSet<PAMELAEntity>());
 	}
-	
+
 	/**
 	 * no use now
+	 * 
 	 * @param baseClass
 	 * @param contexts
 	 * @throws ModelDefinitionException
 	 */
-	public PAMELAContext(JavaClass baseClass, List<PAMELAContext> contexts) throws ModelDefinitionException{
+	public PAMELAContext(JavaClass baseClass, List<PAMELAContext> contexts) throws ModelDefinitionException {
 		this.baseClass = baseClass;
 		modelEntities = new HashMap<JavaClass, PAMELAEntity>();
-		//modelEntitiesByXmlTag = new HashMap<String, PAMELAEntity>();
-		//modelPropertiesByXmlTag = new HashMap<PAMELAEntity, Map<String, PAMELAPropertyXMLTag<?>>>();
+		// modelEntitiesByXmlTag = new HashMap<String, PAMELAEntity>();
+		// modelPropertiesByXmlTag = new HashMap<PAMELAEntity, Map<String,
+		// PAMELAPropertyXMLTag<?>>>();
 		/*
-		for (PAMELAContext context : contexts) {
-			for (Entry<String, PAMELAEntity> e : context.modelEntitiesByXmlTag.entrySet()) {
-				PAMELAEntity entity = modelEntitiesByXmlTag.put(e.getKey(), e.getValue());
-				// TODO: handle properly namespaces. Different namespaces allows to have identical tags
-				// See also importModelEntity(Class<T>)
-				if (entity != null && !entity.getImplementedInterface().equals(e.getValue().getImplementedInterface())) {
-					throw new ModelDefinitionException(
-							entity + " and " + e.getValue() + " declare the same XML tag but not the same implemented interface");
-				}
-			}
-			modelEntities.putAll(context.modelEntities);
-		}
-		*/
+		 * for (PAMELAContext context : contexts) { for (Entry<String,
+		 * PAMELAEntity> e : context.modelEntitiesByXmlTag.entrySet()) {
+		 * PAMELAEntity entity = modelEntitiesByXmlTag.put(e.getKey(),
+		 * e.getValue()); // TODO: handle properly namespaces. Different
+		 * namespaces allows to have identical tags // See also
+		 * importModelEntity(Class<T>) if (entity != null &&
+		 * !entity.getImplementedInterface().equals(e.getValue().
+		 * getImplementedInterface())) { throw new ModelDefinitionException(
+		 * entity + " and " + e.getValue() +
+		 * " declare the same XML tag but not the same implemented interface");
+		 * } } modelEntities.putAll(context.modelEntities); }
+		 */
 		if (baseClass != null) {
 			PAMELAEntity modelEntity = PAMELAEntityLibrary.importEntity(baseClass);
 			appendEntity(modelEntity, new HashSet<PAMELAEntity>());
 		}
-		//modelEntities = Collections.unmodifiableMap(modelEntities);
-		//modelEntitiesByXmlTag = Collections.unmodifiableMap(modelEntitiesByXmlTag);
+		// modelEntities = Collections.unmodifiableMap(modelEntities);
+		// modelEntitiesByXmlTag =
+		// Collections.unmodifiableMap(modelEntitiesByXmlTag);
 	}
+
 	/**
 	 * load multi entry classes
+	 * 
 	 * @param baseClasses
 	 * @throws ModelDefinitionException
 	 */
-	public PAMELAContext(JavaClass... baseClasses) throws ModelDefinitionException{
-		this(null,makePAMELAContextList(baseClasses));
+	public PAMELAContext(JavaClass... baseClasses) throws ModelDefinitionException {
+		this(null, makePAMELAContextList(baseClasses));
 	}
-	
 
 	private static List<PAMELAContext> makePAMELAContextList(JavaClass[] baseClasses) throws ModelDefinitionException {
 		List<PAMELAContext> returned = new ArrayList<PAMELAContext>();
-		for(JavaClass c:baseClasses){
+		for (JavaClass c : baseClasses) {
 			returned.add(PAMELAContextLibrary.getModelContext(c));
 		}
 		return returned;
 	}
-	
+
 	public PAMELAContext(PAMELAContext... contexts) throws ModelDefinitionException {
 		this(null, contexts);
 	}
@@ -141,22 +153,23 @@ public class PAMELAContext {
 	private void appendEntity(PAMELAEntity modelEntity, Set<PAMELAEntity> visited) {
 		visited.add(modelEntity);
 		modelEntities.put(modelEntity.getImplementedInterface(), modelEntity);
-		
-		//TODO
+
+		// TODO
 		/*
-		ModelEntity<?> put = modelEntitiesByXmlTag.put(modelEntity.getXMLTag(), modelEntity);
-		if (put != null && put != modelEntity) {
-			throw new ModelDefinitionException(
-					"Two entities define the same XMLTag '" + modelEntity.getXMLTag() + "'. Implemented interfaces: "
-							+ modelEntity.getImplementedInterface().getName() + " " + put.getImplementedInterface().getName());
-		}
-		*/
+		 * ModelEntity<?> put =
+		 * modelEntitiesByXmlTag.put(modelEntity.getXMLTag(), modelEntity); if
+		 * (put != null && put != modelEntity) { throw new
+		 * ModelDefinitionException( "Two entities define the same XMLTag '" +
+		 * modelEntity.getXMLTag() + "'. Implemented interfaces: " +
+		 * modelEntity.getImplementedInterface().getName() + " " +
+		 * put.getImplementedInterface().getName()); }
+		 */
 		for (PAMELAEntity e : modelEntity.getEmbeddedEntities().values()) {
 			if (!visited.contains(e)) {
 				appendEntity(e, visited);
 			}
 		}
-		
+
 	}
 
 	public JavaClass getBaseClass() {
@@ -178,7 +191,5 @@ public class PAMELAContext {
 	public PAMELAEntity getPAMELAEntity(JavaClass implementedInterface) {
 		return modelEntities.get(implementedInterface);
 	}
-	
 
-	
 }
