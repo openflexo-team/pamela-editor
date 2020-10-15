@@ -1,0 +1,5 @@
+dependencies {
+  api project(':pamela-editor-core')
+  implementation ginaApi()
+  implementation gina()
+}

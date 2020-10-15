@@ -1,0 +1,8 @@
+dependencies {
+  api flexoUtils()
+  api connie()
+  implementation pamela()
+  api group: 'com.thoughtworks.qdox', name: 'qdox', version: '2.0-M4'
+  api group: 'com.google.guava', name: 'guava', version: '21.0'
+ 
+}

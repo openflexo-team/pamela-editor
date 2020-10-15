@@ -1,0 +1,2 @@
+include 'pamela-editor-core'
+include 'pamela-editor-gui'
