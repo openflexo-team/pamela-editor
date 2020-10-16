@@ -7,9 +7,11 @@ import com.google.common.graph.MutableGraph;
 import com.thoughtworks.qdox.JavaProjectBuilder;
 import com.thoughtworks.qdox.model.JavaClass;
 import com.thoughtworks.qdox.model.JavaSource;
-import model.PamelaEntity;
-import model.PamelaModel;
+
 import org.openflexo.pamela.annotations.ModelEntity;
+import org.openflexo.pamela.scm.PamelaEntity;
+import org.openflexo.pamela.scm.PamelaModel;
+
 import qdox.OrderedModelWriter;
 
 import java.io.File;
