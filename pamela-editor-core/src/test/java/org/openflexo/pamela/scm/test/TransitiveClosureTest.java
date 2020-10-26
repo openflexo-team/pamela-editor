@@ -5,9 +5,8 @@ import java.util.Objects;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.openflexo.pamela.scm.PamelaModel;
-
-import project.PamelaProject;
+import org.openflexo.pamela.scm.PamelaSCMModel;
+import org.openflexo.pamela.scm.PamelaSCMModelFactory;
 
 /**
  * Created by adria on 12/02/2017.
@@ -17,7 +16,7 @@ public class TransitiveClosureTest {
 
 	@Test
 	public void transitiveClosureWithEntityOnReturn() throws Exception {
-		PamelaModel model = PamelaProject.createModel("org.openflexo.pamela.scm.test.resources3.ChildEntity2", new File(directoryPath));
+		PamelaSCMModel model = PamelaSCMModelFactory.createModel("org.openflexo.pamela.scm.test.resources3.ChildEntity2", new File(directoryPath));
 		Assert.assertEquals(5, model.getEntities().size());
 		Assert.assertFalse(model.getEntities().stream().anyMatch(
 				entity -> Objects.equals(entity.getCanonicalName(), "org.openflexo.pamela.scm.test.resources3.ForeverAloneEntity")));

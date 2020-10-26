@@ -8,11 +8,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openflexo.pamela.annotations.Getter;
 import org.openflexo.pamela.scm.PamelaEntity;
+import org.openflexo.pamela.scm.PamelaSCMModelFactory;
 import org.openflexo.pamela.scm.PamelaProperty;
 
 import com.thoughtworks.qdox.model.impl.DefaultJavaClass;
-
-import project.PamelaProject;
 
 /**
  * Created by adria on 14/12/2016.
@@ -23,7 +22,7 @@ public class PropertyTest {
 
 	@Before
 	public void initialize() throws Exception {
-		entity = PamelaProject.createEntity(new File(BasicPamelaEntity1Path));
+		entity = PamelaSCMModelFactory.createEntity(new File(BasicPamelaEntity1Path));
 	}
 
 	@Test
@@ -40,7 +39,7 @@ public class PropertyTest {
 	public void addPropertiesTest() {
 		entity.addProperty("test", new DefaultJavaClass("int"));
 		Assert.assertTrue(entity.getProperties().size() == 2);
-		System.out.println(PamelaProject.serialize(entity));
+		System.out.println(PamelaSCMModelFactory.serialize(entity));
 	}
 
 	@Test

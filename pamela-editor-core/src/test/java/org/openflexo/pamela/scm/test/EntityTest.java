@@ -9,8 +9,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.openflexo.pamela.scm.PamelaEntity;
-
-import project.PamelaProject;
+import org.openflexo.pamela.scm.PamelaSCMModelFactory;
 
 /**
  * Created by adria on 24/01/2017.
@@ -21,14 +20,14 @@ public class EntityTest {
 
 	@Before
 	public void initialize() throws Exception {
-		entity = PamelaProject.createEntity(new File(BasicPamelaEntity1Path));
+		entity = PamelaSCMModelFactory.createEntity(new File(BasicPamelaEntity1Path));
 	}
 
 	@Test
 	public void implementationClassTest() {
 		entity.addImplementationClass().setValue(BasicImpl.class.getCanonicalName());
 		Assert.assertNotNull(entity.getImplementationClass());
-		System.out.println(PamelaProject.serialize(entity));
+		System.out.println(PamelaSCMModelFactory.serialize(entity));
 	}
 
 	@Test
@@ -36,7 +35,7 @@ public class EntityTest {
 		entity.addImplementationClass().setValue(BasicImpl.class.getSimpleName());
 		entity.removeImplementationClass();
 		Assert.assertNull(entity.getImplementationClass());
-		System.out.println(PamelaProject.serialize(entity));
+		System.out.println(PamelaSCMModelFactory.serialize(entity));
 	}
 
 	@Test
@@ -47,20 +46,20 @@ public class EntityTest {
 		imports.add(Map.class.getCanonicalName());
 		entity.addImports().setValue(imports);
 		Assert.assertNotNull(entity.getImportsAnnotation());
-		System.out.println(PamelaProject.serialize(entity));
+		System.out.println(PamelaSCMModelFactory.serialize(entity));
 	}
 
 	@Test
 	public void nullImportsTest() {
 		entity.addImports();
 		entity.getImportsAnnotation();
-		System.out.println(PamelaProject.serialize(entity));
+		System.out.println(PamelaSCMModelFactory.serialize(entity));
 	}
 
 	@Test
 	public void emptyImportsTest() {
 		entity.addImports();
 		entity.getImportsAnnotation();
-		System.out.println(PamelaProject.serialize(entity));
+		System.out.println(PamelaSCMModelFactory.serialize(entity));
 	}
 }

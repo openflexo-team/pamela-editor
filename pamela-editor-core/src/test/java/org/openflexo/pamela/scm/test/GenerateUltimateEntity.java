@@ -10,14 +10,13 @@ import org.openflexo.pamela.annotations.CloningStrategy;
 import org.openflexo.pamela.annotations.Getter;
 import org.openflexo.pamela.annotations.ModelEntity;
 import org.openflexo.pamela.scm.PamelaEntity;
+import org.openflexo.pamela.scm.PamelaSCMModelFactory;
 import org.openflexo.pamela.scm.PamelaProperty;
 import org.openflexo.pamela.scm.test.resources2.DummyImplementationClass;
 import org.openflexo.pamela.scm.test.resources2.EmbeddedModelEntity;
 import org.openflexo.pamela.scm.test.resources2.ImportedModelEntity;
 
 import com.thoughtworks.qdox.model.impl.DefaultJavaClass;
-
-import project.PamelaProject;
 
 /**
  * Created by adria on 28/02/2017.
@@ -32,7 +31,7 @@ public class GenerateUltimateEntity extends UltimateEntityTestBase {
 		File file = new File(UltimateModelEntity);
 		System.out.println("Hop " + file.getAbsolutePath());
 
-		entity = PamelaProject.createEntity(file);
+		entity = PamelaSCMModelFactory.createEntity(file);
 
 		entity.addXmlElement().setContext(enquote("context")).setDeprecatedXMLTags(enquote("context")).setNamespace(enquote("namespace"))
 				.setPrimary(true).setXmlTag(enquote("xmlTag"));
@@ -75,7 +74,7 @@ public class GenerateUltimateEntity extends UltimateEntityTestBase {
 
 		embeddedList.addRemover(new DefaultJavaClass(EmbeddedModelEntity.class.getSimpleName()));
 
-		System.out.println(PamelaProject.serialize(entity));
+		System.out.println(PamelaSCMModelFactory.serialize(entity));
 	}
 
 	@Test

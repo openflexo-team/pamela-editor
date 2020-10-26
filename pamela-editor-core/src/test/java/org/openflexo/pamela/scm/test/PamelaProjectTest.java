@@ -6,9 +6,8 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.openflexo.pamela.scm.PamelaEntity;
+import org.openflexo.pamela.scm.PamelaSCMModelFactory;
 import org.openflexo.pamela.scm.PamelaProperty;
-
-import project.PamelaProject;
 
 /**
  * Created by adria on 24/01/2017.
@@ -18,7 +17,7 @@ public class PamelaProjectTest {
 
 	@Test
 	public void createEntityTest() throws Exception {
-		PamelaEntity entity = PamelaProject.createEntity(new File(BasicPamelaEntity1Path));
+		PamelaEntity entity = PamelaSCMModelFactory.createEntity(new File(BasicPamelaEntity1Path));
 
 		List<PamelaProperty> properties = entity.getProperties();
 

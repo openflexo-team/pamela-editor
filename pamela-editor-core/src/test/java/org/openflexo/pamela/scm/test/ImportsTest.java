@@ -7,8 +7,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.openflexo.pamela.scm.PamelaEntity;
-
-import project.PamelaProject;
+import org.openflexo.pamela.scm.PamelaSCMModelFactory;
 
 /**
  * Created by adria on 17/02/2017.
@@ -19,9 +18,9 @@ public class ImportsTest {
 
 	@Before
 	public void initialize() throws Exception {
-		entity = PamelaProject.createEntity(new File(EntityPath));
+		entity = PamelaSCMModelFactory.createEntity(new File(EntityPath));
 
-		System.out.println(PamelaProject.serialize(entity));
+		System.out.println(PamelaSCMModelFactory.serialize(entity));
 
 	}
 

@@ -5,8 +5,7 @@ import java.io.File;
 import org.junit.Before;
 import org.junit.Test;
 import org.openflexo.pamela.scm.PamelaEntity;
-
-import project.PamelaProject;
+import org.openflexo.pamela.scm.PamelaSCMModelFactory;
 
 /**
  * Created by adria on 27/02/2017.
@@ -17,7 +16,7 @@ public class ParseAllTest extends UltimateEntityTestBase {
 
 	@Before
 	public void initialize() throws Exception {
-		entity = PamelaProject.createEntity(new File(UltimateModelEntity));
+		entity = PamelaSCMModelFactory.createEntity(new File(UltimateModelEntity));
 	}
 
 	@Test
