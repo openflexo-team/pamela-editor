@@ -5,6 +5,7 @@ import static org.openflexo.pamela.scm.util.Util.getAnnotation;
 import static org.openflexo.pamela.scm.util.Util.hasAnnotation;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,6 +57,12 @@ public class PamelaEntity {
 	private List<PamelaEntity> superEntities;
 	private List<PamelaEntity> referencedEntities;
 
+	public static boolean isPamelaEntity(JavaClass javaClass) {
+		boolean isPamelaEntity = javaClass.getAnnotations().stream()
+				.anyMatch(annotation -> Objects.equals(annotation.getType().getCanonicalName(), ModelEntity.class.getCanonicalName()));
+		return javaClass.isInterface() && isPamelaEntity;
+	}
+
 	public PamelaEntity(@Nonnull JavaClass containingInterface) {
 		superEntities = new ArrayList<>();
 		referencedEntities = new ArrayList<>();
@@ -67,6 +74,10 @@ public class PamelaEntity {
 			String identifier = field.getName();
 			properties.add(new PamelaProperty(identifier, containingInterface));
 		}
+	}
+
+	public void updateWith(@Nonnull JavaClass containingInterface) {
+		System.out.println("Tiens faut faire l'update de " + containingInterface.getCanonicalName());
 	}
 
 	private void initializeAnnotations() {
@@ -82,7 +93,7 @@ public class PamelaEntity {
 			xmlElement = new XMLElementAnnotation(getAnnotation(containingInterface, XMLElement.class));
 	}
 
-	public void resolveDependencies(List<PamelaEntity> context) throws Exception {
+	public void resolveDependencies(Collection<PamelaEntity> context) {
 		resolveImports(context);
 		resolveInheritance(context);
 		resolveEmbeddedEntities(context);
@@ -96,7 +107,7 @@ public class PamelaEntity {
 		return referencedEntities;
 	}
 
-	public void resolveInheritance(List<PamelaEntity> context) throws Exception {
+	public void resolveInheritance(Collection<PamelaEntity> context) {
 		for (JavaClass superClass : containingInterface.getInterfaces()) {
 			context.stream()
 					.filter(entity -> Objects.equals(entity.getContainingInterface().getCanonicalName(), superClass.getCanonicalName()))
@@ -105,7 +116,7 @@ public class PamelaEntity {
 
 	}
 
-	public void resolveImports(List<PamelaEntity> context) throws Exception {
+	public void resolveImports(Collection<PamelaEntity> context) {
 		if (imports == null)
 			return;
 		for (String className : imports.getValue()) {
@@ -113,11 +124,11 @@ public class PamelaEntity {
 			if (entity.isPresent())
 				referencedEntities.add(entity.get());
 			else
-				throw new Exception("Referenced import entity " + className + " is missing.");
+				System.err.println("Referenced import entity " + className + " is missing.");
 		}
 	}
 
-	private void resolveEmbeddedEntities(List<PamelaEntity> context) throws Exception {
+	private void resolveEmbeddedEntities(Collection<PamelaEntity> context) {
 		for (JavaMethod method : containingInterface.getMethods()) {
 			String returnType = method.getReturnType().getCanonicalName();
 			context.stream().filter(entity -> Objects.equals(entity.getCanonicalName(), returnType)).findFirst()
@@ -315,5 +326,10 @@ public class PamelaEntity {
 		containingInterface.getAnnotations().remove(xmlElement.getAnnotationSource());
 		xmlElement = null;
 		return this;
+	}
+
+	@Override
+	public String toString() {
+		return "Entity[" + getCanonicalName() + "]";
 	}
 }

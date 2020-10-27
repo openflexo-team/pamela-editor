@@ -17,7 +17,6 @@ import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.Graphs;
 import com.google.common.graph.MutableGraph;
 import com.thoughtworks.qdox.JavaProjectBuilder;
-import com.thoughtworks.qdox.directorywalker.FileVisitor;
 import com.thoughtworks.qdox.model.JavaClass;
 import com.thoughtworks.qdox.model.JavaSource;
 
@@ -50,21 +49,9 @@ public class PamelaSCMModelFactory {
 	}
 
 	public static PamelaSCMModel makePamelaModel(Collection<File> sourceDirectories, Collection<String> headClassNames) {
-		JavaProjectBuilder builder = new JavaProjectBuilder();
-		System.out.println("Avant sources: " + builder.getSources());
-		System.out.println("Avant classes: " + builder.getClasses());
-		for (File sourceDirectory : sourceDirectories) {
-			builder.addSourceTree(sourceDirectory, new FileVisitor() {
-				@Override
-				public void visitFile(File file) {
-					System.out.println("Probleme avec le fichier " + file);
-				}
-			});
-		}
-		System.out.println("Avant2 sources: " + builder.getSources().size());
-		System.out.println("Avant2 classes: " + builder.getClasses().size());
 
-		return null;
+		PamelaSCMModel returned = new PamelaSCMModel(sourceDirectories, headClassNames);
+		return returned;
 	}
 
 	/**
@@ -158,6 +145,7 @@ public class PamelaSCMModelFactory {
 		}
 		Graph<PamelaEntity> closure = Graphs.transitiveClosure(graph);
 		Set<PamelaEntity> reachableEntities = closure.adjacentNodes(headEntity);
-		return new PamelaSCMModel(new ArrayList<>(reachableEntities));
+		// return new PamelaSCMModel(new ArrayList<>(reachableEntities));
+		return null;
 	}
 }
