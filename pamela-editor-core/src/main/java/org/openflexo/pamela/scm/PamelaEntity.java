@@ -4,6 +4,9 @@ import static org.openflexo.pamela.scm.util.Util.addAnnotation;
 import static org.openflexo.pamela.scm.util.Util.getAnnotation;
 import static org.openflexo.pamela.scm.util.Util.hasAnnotation;
 
+import java.io.File;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -142,6 +145,19 @@ public class PamelaEntity {
 
 	public JavaClass getContainingInterface() {
 		return containingInterface;
+	}
+
+	private File sourceFile = null;
+
+	public File getSourceFile() {
+		if (sourceFile == null) {
+			try {
+				sourceFile = Paths.get(containingInterface.getSource().getURL().toURI()).toFile();
+			} catch (URISyntaxException e) {
+				System.err.println("URISyntaxException: " + containingInterface.getSource().getURL());
+			}
+		}
+		return sourceFile;
 	}
 
 	/**

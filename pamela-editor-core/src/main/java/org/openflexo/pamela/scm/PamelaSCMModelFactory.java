@@ -48,6 +48,14 @@ public class PamelaSCMModelFactory {
 		return makePamelaModel(Collections.singletonList(sourceDirectory), Collections.singletonList(headClassName));
 	}
 
+	public static PamelaSCMModel makePamelaModel(Collection<File> sourceDirectories, String headClassName) {
+		return makePamelaModel(sourceDirectories, Collections.singletonList(headClassName));
+	}
+
+	public static PamelaSCMModel makePamelaModel(File sourceDirectory, Collection<String> headClassNames) {
+		return makePamelaModel(Collections.singletonList(sourceDirectory), headClassNames);
+	}
+
 	public static PamelaSCMModel makePamelaModel(Collection<File> sourceDirectories, Collection<String> headClassNames) {
 
 		PamelaSCMModel returned = new PamelaSCMModel(sourceDirectories, headClassNames);

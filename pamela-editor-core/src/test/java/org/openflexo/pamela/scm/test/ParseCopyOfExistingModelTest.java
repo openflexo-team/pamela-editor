@@ -5,7 +5,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.util.List;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,7 +21,7 @@ import org.openflexo.test.TestOrder;
  *
  */
 @RunWith(OrderedRunner.class)
-public class ParseExistingModelTest extends PamelaSCMModelTest {
+public class ParseCopyOfExistingModelTest extends PamelaSCMModelTest {
 	private static final String Resource3Path = "src/test/java/org/openflexo/pamela/scm/test/resources3";
 
 	private static PamelaSCMModel pamelaModel;
@@ -29,8 +31,15 @@ public class ParseExistingModelTest extends PamelaSCMModelTest {
 
 		File currentDir = new File(System.getProperty("user.dir"));
 		File resource3dir = new File(currentDir, Resource3Path);
-		System.out.println("Working on " + resource3dir);
-		pamelaModel = PamelaSCMModelFactory.makePamelaModel(resource3dir, "org.openflexo.pamela.scm.test.resources3.ChildEntity2");
+
+		List<File> sourceDirs = makeNewTempSourceDirectories(currentDir, resource3dir);
+
+		pamelaModel = PamelaSCMModelFactory.makePamelaModel(sourceDirs, "org.openflexo.pamela.scm.test.resources3.ChildEntity2");
+	}
+
+	@AfterClass
+	public static void finalizeTest() {
+		deleteTempSourceDirectories();
 	}
 
 	@Test
