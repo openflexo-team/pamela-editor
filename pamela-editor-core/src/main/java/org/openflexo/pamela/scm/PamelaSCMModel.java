@@ -84,7 +84,7 @@ public class PamelaSCMModel {
 	 * Internally called to rebuild the whole model
 	 */
 	private void updateModel() {
-		JavaProjectBuilder builder = new JavaProjectBuilder();
+		JavaProjectBuilder builder = new PamelaJavaProjectBuilder();
 		for (File sourceDirectory : sourceDirectories) {
 			builder.addSourceTree(sourceDirectory, new FileVisitor() {
 				@Override
