@@ -7,7 +7,7 @@ import org.openflexo.toolbox.StringUtils;
 
 import spoon.reflect.declaration.CtPackage;
 
-public class SourcePackage {
+public class SourcePackage implements SourceElement {
 
 	private final CtPackage ctPackage;
 	private final SourceMetaModel metaModel;

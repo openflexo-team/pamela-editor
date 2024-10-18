@@ -22,8 +22,9 @@ import spoon.reflect.visitor.filter.AnnotationFilter;
  * 
  * TODO... explain
  */
-public class SourceMetaModel {
+public class SourceMetaModel implements SourceElement {
 
+	private String name;
 	private final SpoonAPI spoon;
 	private CtModel model;
 	private final Map<CtPackage, SourcePackage> packages;
@@ -35,6 +36,14 @@ public class SourceMetaModel {
 		packages = new HashMap<>();
 		entities = new HashMap<>();
 		issues = new ArrayList<>();
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	/**

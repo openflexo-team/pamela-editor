@@ -3,7 +3,7 @@ package org.openflexo.pamela.editor;
 import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtType;
 
-public class SourceModelEntity<T> {
+public class SourceModelEntity<T> implements SourceElement {
 
 	private final CtType<T> ctInterface;
 	private SourceMetaModel metaModel;

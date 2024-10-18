@@ -81,7 +81,7 @@ public class LaunchPamelaEditor {
 
 		PamelaEditorApplication application = new PamelaEditorApplication();
 		application.showMainPanel();
-		application.newDiagramEditor();
+		// application.newDiagramEditor();
 	}
 
 }

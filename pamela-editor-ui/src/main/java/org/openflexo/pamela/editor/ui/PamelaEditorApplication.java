@@ -40,51 +40,34 @@
 package org.openflexo.pamela.editor.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics2D;
+import java.awt.Paint;
+import java.awt.Point;
+import java.awt.RadialGradientPaint;
 import java.awt.Rectangle;
-import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
-import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
-import java.util.prefs.PreferenceChangeEvent;
-import java.util.prefs.PreferenceChangeListener;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
-import org.openflexo.diana.DianaCoreUtils;
-import org.openflexo.diana.control.DianaInteractiveViewer;
 import org.openflexo.diana.swing.control.SwingToolFactory;
 import org.openflexo.diana.swing.control.tools.JDianaDialogInspectors;
 import org.openflexo.diana.swing.control.tools.JDianaLayoutWidget;
@@ -98,30 +81,38 @@ import org.openflexo.exceptions.PasteException;
 import org.openflexo.gina.ApplicationFIBLibrary.ApplicationFIBLibraryImpl;
 import org.openflexo.gina.swing.utils.localization.LocalizedEditor;
 import org.openflexo.gina.swing.utils.logging.FlexoLoggingViewer;
-import org.openflexo.icon.ImageIconResource;
+import org.openflexo.localization.FlexoLocalization;
 import org.openflexo.localization.LocalizedDelegate;
 import org.openflexo.localization.LocalizedDelegateImpl;
 import org.openflexo.logging.FlexoLogger;
 import org.openflexo.logging.FlexoLoggingManager;
+import org.openflexo.pamela.editor.SourceMetaModel;
 import org.openflexo.pamela.editor.diagram.ClassDiagram;
 import org.openflexo.pamela.editor.diagram.ClassDiagramFactory;
 import org.openflexo.pamela.editor.ui.diagram.ClassDiagramEditingContext;
 import org.openflexo.pamela.editor.ui.diagram.ClassDiagramEditor;
 import org.openflexo.pamela.editor.ui.diagram.ClassDiagramEditorPalette;
 import org.openflexo.pamela.editor.ui.diagram.ClassDiagramEditorView;
-import org.openflexo.pamela.editor.ui.diagram.DianaDrawingEditor;
+import org.openflexo.pamela.editor.ui.widget.MetaModelBrowser;
 import org.openflexo.pamela.exceptions.ModelDefinitionException;
-import org.openflexo.pamela.undo.UndoManager;
 import org.openflexo.rm.FileSystemResourceLocatorImpl;
+import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
 import org.openflexo.swing.ComponentBoundSaver;
 import org.openflexo.swing.FlexoFileChooser;
-import org.openflexo.toolbox.HasPropertyChangeSupport;
+import org.openflexo.swing.layout.JXMultiSplitPane;
+import org.openflexo.swing.layout.JXMultiSplitPane.DividerPainter;
+import org.openflexo.swing.layout.MultiSplitLayout;
+import org.openflexo.swing.layout.MultiSplitLayout.Divider;
+import org.openflexo.swing.layout.MultiSplitLayout.Leaf;
+import org.openflexo.swing.layout.MultiSplitLayout.Node;
+import org.openflexo.swing.layout.MultiSplitLayout.Split;
+import org.openflexo.swing.layout.MultiSplitLayoutFactory;
 import org.openflexo.toolbox.PropertyChangeListenerRegistrationManager;
 import org.openflexo.toolbox.ToolBox;
 
 /**
- * Represents the DiagramEditor application
+ * Represents the Pamela Editor application
  * 
  * @author sylvain
  * 
@@ -131,12 +122,16 @@ public class PamelaEditorApplication {
 	private static final Logger logger = FlexoLogger.getLogger(PamelaEditorApplication.class.getPackage().getName());
 
 	public static LocalizedDelegate PAMELA_EDITOR_LOCALIZATION = new LocalizedDelegateImpl(
-			ResourceLocator.locateResource("FlexoLocalization/PamelaEditor"), DianaCoreUtils.DIANA_LOCALIZATION, true, true);
+			ResourceLocator.locateResource("PamelaLocalization/PamelaEditor"), FlexoLocalization.getMainLocalizer(), true, true);
 
-	private static final int META_MASK = ToolBox.isMacOS() ? InputEvent.META_MASK : InputEvent.CTRL_MASK;
+	static final int META_MASK = ToolBox.isMacOS() ? InputEvent.META_MASK : InputEvent.CTRL_MASK;
 
-	private final JFrame frame;
-	private final JDialog paletteDialog;
+	protected static final MultiSplitLayoutFactory MSL_FACTORY = new MultiSplitLayoutFactory.DefaultMultiSplitLayoutFactory();
+
+	private JXMultiSplitPane centerPanel;
+
+	final JFrame frame;
+	final JDialog paletteDialog;
 	private final FlexoFileChooser fileChooser;
 	private final SwingToolFactory toolFactory;
 
@@ -144,11 +139,13 @@ public class PamelaEditorApplication {
 
 	private ClassDiagramFactory factory;
 
+	private MetaModelBrowser metaModelBrowser;
+
 	private final Vector<ClassDiagramEditor> classDiagramEditors = new Vector<>();
 	private final JPanel mainPanel;
 	private JTabbedPane tabbedPane;
 
-	private ClassDiagramEditor currentDiagramEditor;
+	ClassDiagramEditor currentClassDiagramEditor;
 
 	private final JDianaToolSelector toolSelector;
 	private final JDianaScaleSelector scaleSelector;
@@ -156,329 +153,17 @@ public class PamelaEditorApplication {
 	private final JDianaStyles stylesWidget;
 	private final JDianaPalette commonPalette;
 	private final ClassDiagramEditorPalette commonPaletteModel;
-	private final JDianaDialogInspectors inspectors;
+	final JDianaDialogInspectors inspectors;
 
 	protected PropertyChangeListenerRegistrationManager manager;
 
 	private final ClassDiagramEditingContext editingContext;
 
-	private LocalizedEditor localizedEditor;
+	LocalizedEditor localizedEditor;
 
 	final FileSystemResourceLocatorImpl resourceLocator;
 
-	public class MenuBar extends JMenuBar implements PreferenceChangeListener {
-
-		private final JMenu fileMenu;
-		private final JMenu editMenu;
-		private final JMenu viewMenu;
-		private final JMenu toolsMenu;
-		private final JMenu helpMenu;
-
-		private final JMenuItem newItem;
-		private final JMenuItem loadItem;
-		private final JMenuItem saveItem;
-		private final JMenuItem saveAsItem;
-		private final JMenuItem closeItem;
-		private final JMenuItem quitItem;
-
-		private final SynchronizedMenuItem copyItem;
-		private final SynchronizedMenuItem cutItem;
-		private final SynchronizedMenuItem pasteItem;
-		private final SynchronizedMenuItem undoItem;
-		private final SynchronizedMenuItem redoItem;
-
-		private final JMenuItem logsItem;
-		private final JMenuItem localizedItem;
-
-		private final JMenu openRecent;
-
-		private final JMenuItem showPaletteItem;
-
-		public MenuBar() {
-			fileMenu = new JMenu(PAMELA_EDITOR_LOCALIZATION.localizedForKey("file"));
-			editMenu = new JMenu(PAMELA_EDITOR_LOCALIZATION.localizedForKey("edit"));
-			viewMenu = new JMenu(PAMELA_EDITOR_LOCALIZATION.localizedForKey("view"));
-			toolsMenu = new JMenu(PAMELA_EDITOR_LOCALIZATION.localizedForKey("tools"));
-			helpMenu = new JMenu(PAMELA_EDITOR_LOCALIZATION.localizedForKey("help"));
-
-			newItem = new JMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("new_diagram"));
-			newItem.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					newDiagramEditor();
-				}
-			});
-
-			loadItem = new JMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("open_diagram"));
-			loadItem.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					loadDiagramEditor();
-				}
-			});
-
-			openRecent = new JMenu(PAMELA_EDITOR_LOCALIZATION.localizedForKey("open_recent"));
-			PamelaEditorPreferences.addPreferenceChangeListener(this);
-			updateOpenRecent();
-			saveItem = new JMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("save_diagram"));
-			saveItem.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					saveDiagramEditor();
-				}
-			});
-
-			saveAsItem = new JMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("save_diagram_as"));
-			saveAsItem.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					saveDrawingAs();
-				}
-			});
-
-			closeItem = new JMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("close"));
-			closeItem.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					closeDrawing();
-				}
-			});
-
-			quitItem = new JMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("quit"));
-			quitItem.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					quit();
-				}
-			});
-
-			fileMenu.add(newItem);
-			fileMenu.add(loadItem);
-			fileMenu.add(openRecent);
-			fileMenu.add(saveItem);
-			fileMenu.add(saveAsItem);
-			fileMenu.add(closeItem);
-			fileMenu.addSeparator();
-
-			fileMenu.add(quitItem);
-
-			showPaletteItem = new JMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("show_palette"));
-			showPaletteItem.addActionListener(new ActionListener() {
-
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					paletteDialog.setVisible(true);
-				}
-			});
-			logsItem = new JMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("logs"));
-			logsItem.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					FlexoLoggingViewer.showLoggingViewer(FlexoLoggingManager.instance(), ApplicationFIBLibraryImpl.instance(), frame);
-				}
-			});
-
-			localizedItem = new JMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("localized_editor"));
-			localizedItem.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					if (localizedEditor == null) {
-						localizedEditor = new LocalizedEditor(getFrame(), "localized_editor", PAMELA_EDITOR_LOCALIZATION,
-								PAMELA_EDITOR_LOCALIZATION, true, false);
-					}
-					localizedEditor.setVisible(true);
-				}
-			});
-
-			copyItem = makeSynchronizedMenuItem("copy", COPY_ICON, KeyStroke.getKeyStroke(KeyEvent.VK_C, META_MASK), new AbstractAction() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					System.out.println("copy");
-					try {
-						currentDiagramEditor.getController().copy();
-					} catch (CopyException e1) {
-						e1.printStackTrace();
-					}
-				}
-			}, new Synchronizer() {
-				@Override
-				public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-					if (observable instanceof DianaDrawingEditor) {
-						menuItem.setEnabled(((DianaDrawingEditor) observable).isCopiable());
-					}
-				}
-			});
-
-			cutItem = makeSynchronizedMenuItem("cut", CUT_ICON, KeyStroke.getKeyStroke(KeyEvent.VK_X, META_MASK), new AbstractAction() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					System.out.println("cut");
-					try {
-						currentDiagramEditor.getController().cut();
-					} catch (CutException e1) {
-						e1.printStackTrace();
-					}
-				}
-			}, new Synchronizer() {
-				@Override
-				public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-					if (observable instanceof DianaDrawingEditor) {
-						menuItem.setEnabled(((DianaDrawingEditor) observable).isCutable());
-					}
-				}
-			});
-
-			pasteItem = makeSynchronizedMenuItem("paste", PASTE_ICON, KeyStroke.getKeyStroke(KeyEvent.VK_V, META_MASK),
-					new AbstractAction() {
-						@Override
-						public void actionPerformed(ActionEvent e) {
-							System.out.println("paste");
-							if (currentDiagramEditor != null) {
-								try {
-									currentDiagramEditor.getController().paste();
-								} catch (PasteException e1) {
-									e1.printStackTrace();
-								}
-							}
-						}
-					}, new Synchronizer() {
-						@Override
-						public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-							if (observable instanceof DianaInteractiveViewer) {
-								menuItem.setEnabled(currentDiagramEditor.getController().isPastable());
-							}
-						}
-					});
-
-			undoItem = makeSynchronizedMenuItem("undo", UNDO_ICON, KeyStroke.getKeyStroke(KeyEvent.VK_Z, META_MASK), new AbstractAction() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					System.out.println("undo");
-					currentDiagramEditor.getController().undo();
-				}
-			}, new Synchronizer() {
-				@Override
-				public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-					if (observable instanceof UndoManager) {
-						menuItem.setEnabled(currentDiagramEditor.getController().canUndo());
-						if (currentDiagramEditor.getController().canUndo()) {
-							menuItem.setText(currentDiagramEditor.getController().getFactory().getUndoManager().getUndoPresentationName());
-						}
-						else {
-							menuItem.setText(PAMELA_EDITOR_LOCALIZATION.localizedForKey("undo"));
-						}
-					}
-				}
-			});
-
-			redoItem = makeSynchronizedMenuItem("redo", REDO_ICON, KeyStroke.getKeyStroke(KeyEvent.VK_R, META_MASK), new AbstractAction() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					System.out.println("redo");
-					currentDiagramEditor.getController().redo();
-				}
-			}, new Synchronizer() {
-				@Override
-				public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-					if (observable instanceof UndoManager) {
-						menuItem.setEnabled(currentDiagramEditor.getController().canRedo());
-						if (currentDiagramEditor.getController().canRedo()) {
-							menuItem.setText(currentDiagramEditor.getController().getFactory().getUndoManager().getRedoPresentationName());
-						}
-						else {
-							menuItem.setText(PAMELA_EDITOR_LOCALIZATION.localizedForKey("redo"));
-						}
-					}
-				}
-			});
-
-			editMenu.add(copyItem);
-			editMenu.add(cutItem);
-			editMenu.add(pasteItem);
-			editMenu.addSeparator();
-			editMenu.add(undoItem);
-			editMenu.add(redoItem);
-
-			WindowMenuItem foregroundInspectorItem = new WindowMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("foreground_inspector"),
-					inspectors.getForegroundStyleInspector());
-			WindowMenuItem backgroundInspectorItem = new WindowMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("background_inspector"),
-					inspectors.getBackgroundStyleInspector());
-			WindowMenuItem textInspectorItem = new WindowMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("text_inspector"),
-					inspectors.getTextPropertiesInspector());
-			WindowMenuItem shapeInspectorItem = new WindowMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("shape_inspector"),
-					inspectors.getShapeInspector());
-			WindowMenuItem connectorInspectorItem = new WindowMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("connector_inspector"),
-					inspectors.getConnectorInspector());
-			WindowMenuItem shadowInspectorItem = new WindowMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("shadow_inspector"),
-					inspectors.getShadowStyleInspector());
-			WindowMenuItem locationSizeInspectorItem = new WindowMenuItem(
-					PAMELA_EDITOR_LOCALIZATION.localizedForKey("location_size_inspector"), inspectors.getLocationSizeInspector());
-			WindowMenuItem controlInspectorItem = new WindowMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("control_inspector"),
-					inspectors.getControlInspector());
-			WindowMenuItem layoutManagerInspectorItem = new WindowMenuItem(
-					PAMELA_EDITOR_LOCALIZATION.localizedForKey("layout_manager_inspector"), inspectors.getLayoutManagersInspector());
-
-			WindowMenuItem paletteItem = new WindowMenuItem(PAMELA_EDITOR_LOCALIZATION.localizedForKey("palette"), paletteDialog);
-
-			viewMenu.add(foregroundInspectorItem);
-			viewMenu.add(backgroundInspectorItem);
-			viewMenu.add(textInspectorItem);
-			viewMenu.add(shapeInspectorItem);
-			viewMenu.add(connectorInspectorItem);
-			viewMenu.add(shadowInspectorItem);
-			viewMenu.add(locationSizeInspectorItem);
-			viewMenu.add(controlInspectorItem);
-			viewMenu.add(layoutManagerInspectorItem);
-			viewMenu.addSeparator();
-			viewMenu.add(paletteItem);
-
-			toolsMenu.add(showPaletteItem);
-			toolsMenu.add(logsItem);
-			toolsMenu.add(localizedItem);
-
-			add(fileMenu);
-			add(editMenu);
-			add(viewMenu);
-			add(toolsMenu);
-			add(helpMenu);
-		}
-
-		private boolean willUpdate = false;
-
-		@Override
-		public void preferenceChange(PreferenceChangeEvent evt) {
-			if (evt.getKey().startsWith(PamelaEditorPreferences.LAST_FILE)) {
-				if (willUpdate) {
-					return;
-				}
-				willUpdate = true;
-				SwingUtilities.invokeLater(() -> {
-					willUpdate = false;
-					updateOpenRecent();
-				});
-			}
-		}
-
-		private void updateOpenRecent() {
-			openRecent.removeAll();
-			List<File> files = PamelaEditorPreferences.getLastFiles();
-			openRecent.setEnabled(files.size() != 0);
-			for (final File file : files) {
-				JMenuItem item = new JMenuItem(file.getName());
-				item.setToolTipText(file.getAbsolutePath());
-				item.addActionListener(new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						loadDiagramEditor(file);
-					}
-				});
-				openRecent.add(item);
-			}
-		}
-
-	}
-
-	private MenuBar menuBar;
+	private PamelaEditorMenuBar menuBar;
 
 	public PamelaEditorApplication() {
 		super();
@@ -487,11 +172,6 @@ public class PamelaEditorApplication {
 
 		try {
 			factory = new ClassDiagramFactory(editingContext);
-			// System.out.println("factory: " + factory.debug());
-			// DianaPamelaInjectionModule injectionModule = new DianaPamelaInjectionModule(factory);
-			// injector = Guice.createInjector(injectionModule);
-
-			// factory = new DiagramFactory();
 		} catch (ModelDefinitionException e1) {
 			e1.printStackTrace();
 		}
@@ -534,7 +214,57 @@ public class PamelaEditorApplication {
 
 		// inspector = new JFIBInspectorController(frame);
 
-		frame.setTitle("DIANA - Drawing Editor");
+		frame.setTitle("PAMELA Editor");
+
+		Split<?> defaultLayout = getDefaultLayout();
+
+		MultiSplitLayout centerLayout = new MultiSplitLayout(true, MSL_FACTORY);
+		centerLayout.setLayoutMode(MultiSplitLayout.NO_MIN_SIZE_LAYOUT);
+		centerLayout.setModel(defaultLayout);
+
+		centerPanel = new JXMultiSplitPane(centerLayout);
+		centerPanel.setDividerSize(DIVIDER_SIZE);
+		centerPanel.setDividerPainter(new DividerPainter() {
+
+			@Override
+			protected void doPaint(Graphics2D g, Divider divider, int width, int height) {
+				if (!divider.isVisible()) {
+					return;
+				}
+				if (divider.isVertical()) {
+					int x = (width - KNOB_SIZE) / 2;
+					int y = (height - DIVIDER_KNOB_SIZE) / 2;
+					for (int i = 0; i < 3; i++) {
+						Graphics2D graph = (Graphics2D) g.create(x, y + i * (KNOB_SIZE + KNOB_SPACE), KNOB_SIZE + 1, KNOB_SIZE + 1);
+						graph.setPaint(KNOB_PAINTER);
+						graph.fillOval(0, 0, KNOB_SIZE, KNOB_SIZE);
+					}
+				}
+				else {
+					int x = (width - DIVIDER_KNOB_SIZE) / 2;
+					int y = (height - KNOB_SIZE) / 2;
+					for (int i = 0; i < 3; i++) {
+						Graphics2D graph = (Graphics2D) g.create(x + i * (KNOB_SIZE + KNOB_SPACE), y, KNOB_SIZE + 1, KNOB_SIZE + 1);
+						graph.setPaint(KNOB_PAINTER);
+						graph.fillOval(0, 0, KNOB_SIZE, KNOB_SIZE);
+					}
+				}
+
+			}
+		});
+
+		frame.getContentPane().setLayout(new BorderLayout());
+		frame.getContentPane().add(centerPanel, BorderLayout.CENTER);
+
+		metaModelBrowser = new MetaModelBrowser(null) {
+			@Override
+			public void doubleClickOnComponentResource(Resource selectedComponentResource) {
+				System.out.println("doubleClickOnComponentResource " + selectedComponentResource);
+				/*if (selectedComponentResource != null) {
+					editor.openFIBComponent(selectedComponentResource, null, null, frame);
+				}*/
+			}
+		};
 
 		mainPanel = new JPanel(new BorderLayout());
 
@@ -562,6 +292,8 @@ public class PamelaEditorApplication {
 
 		mainPanel.add(topPanel, BorderLayout.NORTH);
 
+		mainPanel.add(metaModelBrowser, BorderLayout.WEST);
+
 		commonPaletteModel = new ClassDiagramEditorPalette();
 		commonPalette = toolFactory.makeDianaPalette(commonPaletteModel);
 
@@ -572,9 +304,12 @@ public class PamelaEditorApplication {
 		paletteDialog.setVisible(true);
 		paletteDialog.setFocusableWindowState(false);
 
-		manager = new PropertyChangeListenerRegistrationManager();
+		centerPanel.add(metaModelBrowser, LayoutPosition.TOP_LEFT.name());
+		centerPanel.add(mainPanel, LayoutPosition.CENTER.name());
+		centerPanel.add(new JLabel("TOP_RIGHT"), LayoutPosition.TOP_RIGHT.name());
+		// centerPanel.add(inspectors.getPanelGroup(), LayoutPosition.BOTTOM_RIGHT.name());
 
-		menuBar = new MenuBar();
+		manager = new PropertyChangeListenerRegistrationManager();
 
 		frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 		frame.addWindowListener(new WindowAdapter() {
@@ -583,241 +318,12 @@ public class PamelaEditorApplication {
 				quit();
 			}
 		});
+
+		menuBar = new PamelaEditorMenuBar(this);
 		frame.setJMenuBar(menuBar);
 
-		/*JMenuBar mb = new JMenuBar();
-		JMenu fileMenu = new JMenu(FlexoLocalization.localizedForKey(LOCALIZATION, "file"));
-		JMenu editMenu = new JMenu(FlexoLocalization.localizedForKey(LOCALIZATION, "edit"));
-		JMenu viewMenu = new JMenu(FlexoLocalization.localizedForKey(LOCALIZATION, "view"));
-		JMenu toolsMenu = new JMenu(FlexoLocalization.localizedForKey(LOCALIZATION, "tools"));
-		JMenu helpMenu = new JMenu(FlexoLocalization.localizedForKey(LOCALIZATION, "help"));
-		
-		JMenuItem newItem = makeJMenuItem("new_drawing", NEW_ICON, KeyStroke.getKeyStroke(KeyEvent.VK_N, META_MASK), new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				newDiagramEditor();
-			}
-		});
-		
-		JMenuItem openItem = makeJMenuItem("open_drawing", OPEN_ICON, KeyStroke.getKeyStroke(KeyEvent.VK_O, META_MASK),
-				new AbstractAction() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						loadDiagramEditor();
-					}
-				});
-		
-		JMenu openRecent = new JMenu(FlexoLocalization.localizedForKey(LOCALIZATION, "open_recent"));
-		DiagramEditorPreferences.addPreferenceChangeListener(this);
-		updateOpenRecent();
-		
-		JMenuItem saveItem = makeJMenuItem("save_drawing", SAVE_ICON, KeyStroke.getKeyStroke(KeyEvent.VK_S, META_MASK),
-				new AbstractAction() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						saveDiagramEditor();
-					}
-				});
-		
-		JMenuItem saveAsItem = makeJMenuItem("save_drawing_as...", SAVE_AS_ICON, null, new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				saveDrawingAs();
-			}
-		});
-		
-		JMenuItem closeItem = makeJMenuItem("close_drawing", null, null, new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				closeDrawing();
-			}
-		});
-		
-		JMenuItem quitItem = makeJMenuItem("quit", null, KeyStroke.getKeyStroke(KeyEvent.VK_Q, META_MASK), new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				quit();
-			}
-		});
-		
-		fileMenu.add(newItem);
-		fileMenu.add(openItem);
-		fileMenu.add(openRecent);
-		fileMenu.add(saveItem);
-		fileMenu.add(saveAsItem);
-		fileMenu.add(closeItem);
-		fileMenu.addSeparator();
-		fileMenu.add(quitItem);*/
+		// frame.getContentPane().add(mainPanel);
 
-		/*copyItem = makeSynchronizedMenuItem("copy", COPY_ICON, KeyStroke.getKeyStroke(KeyEvent.VK_C, META_MASK), new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				System.out.println("copy");
-				try {
-					currentDiagramEditor.getController().copy();
-				} catch (CopyException e1) {
-					e1.printStackTrace();
-				}
-			}
-		}, new Synchronizer() {
-			@Override
-			public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-				if (observable instanceof DianaDrawingEditor) {
-					menuItem.setEnabled(((DianaDrawingEditor) observable).isCopiable());
-				}
-			}
-		});
-		
-		cutItem = makeSynchronizedMenuItem("cut", CUT_ICON, KeyStroke.getKeyStroke(KeyEvent.VK_X, META_MASK), new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				System.out.println("cut");
-				try {
-					currentDiagramEditor.getController().cut();
-				} catch (CutException e1) {
-					e1.printStackTrace();
-				}
-			}
-		}, new Synchronizer() {
-			@Override
-			public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-				if (observable instanceof DianaDrawingEditor) {
-					menuItem.setEnabled(((DianaDrawingEditor) observable).isCutable());
-				}
-			}
-		});
-		
-		pasteItem = makeSynchronizedMenuItem("paste", PASTE_ICON, KeyStroke.getKeyStroke(KeyEvent.VK_V, META_MASK), new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				System.out.println("paste");
-				if (currentDiagramEditor != null) {
-					try {
-						currentDiagramEditor.getController().paste();
-					} catch (PasteException e1) {
-						e1.printStackTrace();
-					}
-				}
-			}
-		}, new Synchronizer() {
-			@Override
-			public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-				if (observable instanceof DianaInteractiveViewer) {
-					menuItem.setEnabled(currentDiagramEditor.getController().isPastable());
-				}
-			}
-		});
-		
-		undoItem = makeSynchronizedMenuItem("undo", UNDO_ICON, KeyStroke.getKeyStroke(KeyEvent.VK_Z, META_MASK), new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				System.out.println("undo");
-				currentDiagramEditor.getController().undo();
-			}
-		}, new Synchronizer() {
-			@Override
-			public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-				if (observable instanceof UndoManager) {
-					menuItem.setEnabled(currentDiagramEditor.getController().canUndo());
-					if (currentDiagramEditor.getController().canUndo()) {
-						menuItem.setText(currentDiagramEditor.getController().getFactory().getUndoManager().getUndoPresentationName());
-					}
-					else {
-						menuItem.setText(FlexoLocalization.localizedForKey(LOCALIZATION, "undo"));
-					}
-				}
-			}
-		});
-		
-		redoItem = makeSynchronizedMenuItem("redo", REDO_ICON, KeyStroke.getKeyStroke(KeyEvent.VK_R, META_MASK), new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				System.out.println("redo");
-				currentDiagramEditor.getController().redo();
-			}
-		}, new Synchronizer() {
-			@Override
-			public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-				if (observable instanceof UndoManager) {
-					menuItem.setEnabled(currentDiagramEditor.getController().canRedo());
-					if (currentDiagramEditor.getController().canRedo()) {
-						menuItem.setText(currentDiagramEditor.getController().getFactory().getUndoManager().getRedoPresentationName());
-					}
-					else {
-						menuItem.setText(FlexoLocalization.localizedForKey(LOCALIZATION, "redo"));
-					}
-				}
-			}
-		});
-		
-		editMenu.add(copyItem);
-		editMenu.add(cutItem);
-		editMenu.add(pasteItem);
-		editMenu.addSeparator();
-		editMenu.add(undoItem);
-		editMenu.add(redoItem);
-		
-		WindowMenuItem foregroundInspectorItem = new WindowMenuItem(FlexoLocalization.localizedForKey(LOCALIZATION, "foreground_inspector"),
-				inspectors.getForegroundStyleInspector());
-		WindowMenuItem backgroundInspectorItem = new WindowMenuItem(FlexoLocalization.localizedForKey(LOCALIZATION, "background_inspector"),
-				inspectors.getBackgroundStyleInspector());
-		WindowMenuItem textInspectorItem = new WindowMenuItem(FlexoLocalization.localizedForKey(LOCALIZATION, "text_inspector"),
-				inspectors.getTextStyleInspector());
-		WindowMenuItem shapeInspectorItem = new WindowMenuItem(FlexoLocalization.localizedForKey(LOCALIZATION, "shape_inspector"),
-				inspectors.getShapeInspector());
-		WindowMenuItem connectorInspectorItem = new WindowMenuItem(FlexoLocalization.localizedForKey(LOCALIZATION, "connector_inspector"),
-				inspectors.getConnectorInspector());
-		WindowMenuItem shadowInspectorItem = new WindowMenuItem(FlexoLocalization.localizedForKey(LOCALIZATION, "shadow_inspector"),
-				inspectors.getShadowStyleInspector());
-		WindowMenuItem locationSizeInspectorItem = new WindowMenuItem(
-				FlexoLocalization.localizedForKey(LOCALIZATION, "location_size_inspector"), inspectors.getLocationSizeInspector());
-		WindowMenuItem layoutManagerInspectorItem = new WindowMenuItem(
-				FlexoLocalization.localizedForKey(LOCALIZATION, "layout_manager_inspector"), inspectors.getLayoutManagersInspector());
-		
-		WindowMenuItem paletteItem = new WindowMenuItem(FlexoLocalization.localizedForKey(LOCALIZATION, "palette"), paletteDialog);
-		
-		viewMenu.add(foregroundInspectorItem);
-		viewMenu.add(backgroundInspectorItem);
-		viewMenu.add(textInspectorItem);
-		viewMenu.add(shapeInspectorItem);
-		viewMenu.add(connectorInspectorItem);
-		viewMenu.add(shadowInspectorItem);
-		viewMenu.add(locationSizeInspectorItem);
-		viewMenu.add(layoutManagerInspectorItem);
-		viewMenu.addSeparator();
-		viewMenu.add(paletteItem);
-		
-		JMenuItem logsItem = new JMenuItem(FlexoLocalization.localizedForKey(LOCALIZATION, "logs"));
-		logsItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				FlexoLoggingViewer.showLoggingViewer(FlexoLoggingManager.instance(), frame);
-			}
-		});
-		
-		JMenuItem localizedItem = new JMenuItem(FlexoLocalization.localizedForKey(LOCALIZATION, "localized_editor"));
-		localizedItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (localizedEditor == null) {
-					localizedEditor = new LocalizedEditor(frame, "localized_editor", LOCALIZATION, MAIN_LOCALIZER, true, false);
-				}
-				localizedEditor.setVisible(true);
-			}
-		});
-		
-		toolsMenu.add(logsItem);
-		toolsMenu.add(localizedItem);
-		
-		mb.add(fileMenu);
-		mb.add(editMenu);
-		mb.add(viewMenu);
-		mb.add(toolsMenu);
-		mb.add(helpMenu);
-		
-		frame.setJMenuBar(mb);*/
-
-		frame.getContentPane().add(mainPanel);
 		frame.validate();
 		frame.pack();
 
@@ -930,7 +436,7 @@ public class PamelaEditorApplication {
 			// mainPanel.remove(currentDiagramEditor.getController().getScalePanel());
 			currentDiagramEditor.getController().deleteObserver(inspector);
 		}*/
-		currentDiagramEditor = classDiagramEditor;
+		currentClassDiagramEditor = classDiagramEditor;
 		toolSelector.attachToEditor(classDiagramEditor.getController());
 		stylesWidget.attachToEditor(classDiagramEditor.getController());
 		scaleSelector.attachToEditor(classDiagramEditor.getController());
@@ -959,11 +465,11 @@ public class PamelaEditorApplication {
 	}
 
 	private void updateFrameTitle() {
-		frame.setTitle("Basic drawing editor - " + currentDiagramEditor.getTitle());
+		frame.setTitle("Pamela editor - " + currentClassDiagramEditor.getTitle());
 	}
 
 	private void updateTabTitle() {
-		tabbedPane.setTitleAt(classDiagramEditors.indexOf(currentDiagramEditor), currentDiagramEditor.getTitle());
+		tabbedPane.setTitleAt(classDiagramEditors.indexOf(currentClassDiagramEditor), currentClassDiagramEditor.getTitle());
 	}
 
 	public void showMainPanel() {
@@ -982,15 +488,15 @@ public class PamelaEditorApplication {
 	}
 
 	public void closeDrawing() {
-		if (currentDiagramEditor == null) {
+		if (currentClassDiagramEditor == null) {
 			return;
 		}
-		if (currentDiagramEditor.getDiagram().hasChanged()) {
+		if (currentClassDiagramEditor.getDiagram().hasChanged()) {
 			int result = JOptionPane.showOptionDialog(frame, "Would you like to save drawing changes?", "Save changes",
 					JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, null, JOptionPane.YES_OPTION);
 			switch (result) {
 				case JOptionPane.YES_OPTION:
-					if (!currentDiagramEditor.save()) {
+					if (!currentClassDiagramEditor.save()) {
 						return;
 					}
 					break;
@@ -1000,11 +506,17 @@ public class PamelaEditorApplication {
 					return;
 			}
 		}
-		classDiagramEditors.remove(currentDiagramEditor);
+		classDiagramEditors.remove(currentClassDiagramEditor);
 		tabbedPane.remove(tabbedPane.getSelectedIndex());
 		if (classDiagramEditors.size() == 0) {
 			newDiagramEditor();
 		}
+	}
+
+	public void newMetaModel() {
+		SourceMetaModel newMetaModel = new SourceMetaModel();
+		newMetaModel.setName("tutu");
+		metaModelBrowser.setEditedObject(newMetaModel);
 	}
 
 	public void newDiagramEditor() {
@@ -1028,17 +540,17 @@ public class PamelaEditorApplication {
 	}
 
 	public boolean saveDiagramEditor() {
-		if (currentDiagramEditor == null) {
+		if (currentClassDiagramEditor == null) {
 			return false;
 		}
-		if (currentDiagramEditor.getFile() == null) {
+		if (currentClassDiagramEditor.getFile() == null) {
 			return saveDrawingAs();
 		}
-		return currentDiagramEditor.save();
+		return currentClassDiagramEditor.save();
 	}
 
 	public boolean saveDrawingAs() {
-		if (currentDiagramEditor == null) {
+		if (currentClassDiagramEditor == null) {
 			return false;
 		}
 		if (fileChooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
@@ -1046,126 +558,61 @@ public class PamelaEditorApplication {
 			if (!file.getName().endsWith(".drw")) {
 				file = new File(file.getParentFile(), file.getName() + ".drw");
 			}
-			currentDiagramEditor.setFile(file);
+			currentClassDiagramEditor.setFile(file);
 			PamelaEditorPreferences.setLastFile(file);
 			updateFrameTitle();
 			updateTabTitle();
-			return currentDiagramEditor.save();
+			return currentClassDiagramEditor.save();
 		}
 		return false;
 	}
 
-	// FD : never used
-	// private JMenuItem makeJMenuItem(String actionName, Icon icon, KeyStroke accelerator, AbstractAction action) {
-
-	// JMenuItem returned = new JMenuItem(FlexoLocalization.localizedForKey(LOCALIZATION, actionName));
-	// returned.addActionListener(action);
-	// returned.setIcon(icon);
-	// returned.setAccelerator(accelerator);
-	// frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accelerator, actionName);
-	// frame.getRootPane().getActionMap().put(actionName, action);
-	// return returned;
-	// }
-
-	private SynchronizedMenuItem makeSynchronizedMenuItem(String actionName, Icon icon, KeyStroke accelerator, AbstractAction action,
-			Synchronizer synchronizer) {
-
-		String localizedName = PAMELA_EDITOR_LOCALIZATION.localizedForKey(actionName);
-		SynchronizedMenuItem returned = new SynchronizedMenuItem(localizedName, synchronizer);
-		action.putValue(Action.NAME, localizedName);
-		returned.setAction(action);
-		returned.setIcon(icon);
-		returned.setAccelerator(accelerator);
-		frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accelerator, actionName);
-		frame.getRootPane().getActionMap().put(actionName, action);
-		returned.setEnabled(false);
-		return returned;
+	public void showLogs() {
+		FlexoLoggingViewer.showLoggingViewer(FlexoLoggingManager.instance(), ApplicationFIBLibraryImpl.instance(), frame);
 	}
 
-	public interface Synchronizer {
-		public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem);
-	}
-
-	public class SynchronizedMenuItem extends JMenuItem implements PropertyChangeListener {
-
-		private HasPropertyChangeSupport observable;
-		private final Synchronizer synchronizer;
-
-		public SynchronizedMenuItem(String menuName, Synchronizer synchronizer) {
-			super(menuName);
-			this.synchronizer = synchronizer;
+	public void showLocalizedEditor() {
+		if (localizedEditor == null) {
+			localizedEditor = new LocalizedEditor(getFrame(), "localized_editor", PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION,
+					PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION, true, false);
 		}
+		localizedEditor.setVisible(true);
+	}
 
-		public void synchronizeWith(HasPropertyChangeSupport anObservable) {
-			if (this.observable != null) {
-				manager.removeListener(this, this.observable);
+	public void copy() {
+		System.out.println("copy");
+		try {
+			currentClassDiagramEditor.getController().copy();
+		} catch (CopyException e1) {
+			e1.printStackTrace();
+		}
+	}
+
+	public void cut() {
+		System.out.println("cut");
+		try {
+			currentClassDiagramEditor.getController().cut();
+		} catch (CutException e1) {
+			e1.printStackTrace();
+		}
+	}
+
+	public void paste() {
+		System.out.println("paste");
+		if (currentClassDiagramEditor != null) {
+			try {
+				currentClassDiagramEditor.getController().paste();
+			} catch (PasteException e1) {
+				e1.printStackTrace();
 			}
-			manager.addListener(this, anObservable);
-			observable = anObservable;
-			synchronizer.synchronize(observable, this);
 		}
+	}
 
-		@Override
-		public void propertyChange(PropertyChangeEvent evt) {
-			synchronizer.synchronize(observable, this);
-		}
-
-		@Override
-		public void setEnabled(boolean b) {
-			super.setEnabled(b);
-			getAction().setEnabled(b);
-		}
+	public void undo() {
 
 	}
 
-	public class WindowMenuItem extends JCheckBoxMenuItem implements WindowListener {
-
-		private final Window window;
-
-		public WindowMenuItem(String menuName, Window aWindow) {
-			super(menuName);
-			this.window = aWindow;
-			addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					window.setVisible(!window.isVisible());
-				}
-			});
-			aWindow.addWindowListener(this);
-		}
-
-		@Override
-		public void windowOpened(WindowEvent e) {
-			setState(window.isVisible());
-		}
-
-		@Override
-		public void windowIconified(WindowEvent e) {
-		}
-
-		@Override
-		public void windowDeiconified(WindowEvent e) {
-		}
-
-		@Override
-		public void windowDeactivated(WindowEvent e) {
-			setState(window.isVisible());
-		}
-
-		@Override
-		public void windowClosing(WindowEvent e) {
-			setState(window.isVisible());
-		}
-
-		@Override
-		public void windowClosed(WindowEvent e) {
-			setState(window.isVisible());
-		}
-
-		@Override
-		public void windowActivated(WindowEvent e) {
-			setState(window.isVisible());
-		}
+	public void redo() {
 
 	}
 
@@ -1173,28 +620,60 @@ public class PamelaEditorApplication {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
 
-	// Actions icons
-	public static final ImageIcon UNDO_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Undo.png"));
-	public static final ImageIcon REDO_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Redo.png"));
-	public static final ImageIcon COPY_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Copy.png"));
-	public static final ImageIcon PASTE_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Paste.png"));
-	public static final ImageIcon CUT_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Cut.png"));
-	public static final ImageIcon DELETE_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Delete.png"));
-	public static final ImageIcon HELP_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Help.png"));
-	public static final ImageIcon IMPORT_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Import.png"));
-	public static final ImageIcon EXPORT_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Export.png"));
-	public static final ImageIcon OPEN_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Open.png"));
-	public static final ImageIcon NEW_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/New.png"));
-	public static final ImageIcon PRINT_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Print.png"));
-	public static final ImageIcon SAVE_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Save.png"));
-	public static final ImageIcon SAVE_DISABLED_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Save-disabled.png"));
-	public static final ImageIcon SAVE_AS_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Save-as.png"));
-	public static final ImageIcon SAVE_ALL_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Save-all.png"));
-	public static final ImageIcon NETWORK_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Network.png"));
-	public static final ImageIcon INFO_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Info.png"));
-	public static final ImageIcon INSPECT_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Inspect.png"));
-	public static final ImageIcon REFRESH_ICON = new ImageIconResource(ResourceLocator.locateResource("Icons/Refresh.png"));
-	public static final ImageIcon REFRESH_DISABLED_ICON = new ImageIconResource(
-			ResourceLocator.locateResource("Icons/Refresh-disabled.png"));
+	public static enum LayoutPosition {
+		TOP_LEFT, BOTTOM_LEFT, CENTER, TOP_RIGHT, BOTTOM_RIGHT;
+	}
+
+	public static enum LayoutColumns {
+		LEFT, CENTER, RIGHT;
+	}
+
+	protected static final int KNOB_SIZE = 5;
+	protected static final int KNOB_SPACE = 2;
+	protected static final int DIVIDER_SIZE = KNOB_SIZE + 2 * KNOB_SPACE;
+	protected static final int DIVIDER_KNOB_SIZE = 3 * KNOB_SIZE + 2 * KNOB_SPACE;
+
+	protected static final Paint KNOB_PAINTER = new RadialGradientPaint(new Point((KNOB_SIZE - 1) / 2, (KNOB_SIZE - 1) / 2),
+			(KNOB_SIZE - 1) / 2, new float[] { 0.0f, 1.0f }, new Color[] { Color.GRAY, Color.LIGHT_GRAY });
+
+	protected static Split<?> getDefaultLayout() {
+		Split root = MSL_FACTORY.makeSplit();
+		root.setName("ROOT");
+		Split<?> left = getVerticalSplit(LayoutPosition.TOP_LEFT, 0.5, LayoutPosition.BOTTOM_LEFT, 0.5);
+		left.setWeight(0.2);
+		left.setName(LayoutColumns.LEFT.name());
+		Node<?> center = MSL_FACTORY.makeLeaf(LayoutPosition.CENTER.name());
+		center.setWeight(0.55);
+		center.setName(LayoutColumns.CENTER.name());
+		Split<?> right = getVerticalSplit(LayoutPosition.TOP_RIGHT, 0.4, LayoutPosition.BOTTOM_RIGHT, 0.6);
+		right.setWeight(0.25);
+		right.setName(LayoutColumns.RIGHT.name());
+		root.setChildren(left, MSL_FACTORY.makeDivider(), center, MSL_FACTORY.makeDivider(), right);
+		return root;
+	}
+
+	protected static Split<?> getVerticalSplit(LayoutPosition position1, double weight1, LayoutPosition position2, double weight2) {
+		Split split = MSL_FACTORY.makeSplit();
+		split.setRowLayout(false);
+		Leaf<?> l1 = MSL_FACTORY.makeLeaf(position1.name());
+		l1.setWeight(weight1);
+		Leaf<?> l2 = MSL_FACTORY.makeLeaf(position2.name());
+		l2.setWeight(weight2);
+		split.setChildren(l1, MSL_FACTORY.makeDivider(), l2);
+		return split;
+	}
+
+	protected static Split<?> getVerticalSplit(LayoutPosition position1, LayoutPosition position2, LayoutPosition position3) {
+		Split split = MSL_FACTORY.makeSplit();
+		split.setRowLayout(false);
+		Leaf<?> l1 = MSL_FACTORY.makeLeaf(position1.name());
+		l1.setWeight(0.2);
+		Leaf<?> l2 = MSL_FACTORY.makeLeaf(position2.name());
+		l2.setWeight(0.6);
+		Leaf<?> l3 = MSL_FACTORY.makeLeaf(position3.name());
+		l3.setWeight(0.2);
+		split.setChildren(l1, MSL_FACTORY.makeDivider(), l2, MSL_FACTORY.makeDivider(), l3);
+		return split;
+	}
 
 }
