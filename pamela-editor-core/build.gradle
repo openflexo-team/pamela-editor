@@ -1,0 +1,6 @@
+dependencies {
+  implementation pamela()
+  implementation ginaSwing()
+  implementation dianaSwing()
+  implementation group: 'fr.inria.gforge.spoon', name: 'spoon-core', version: '9.1.0'
+}
