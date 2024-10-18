@@ -1,0 +1,5 @@
+dependencies {
+  implementation project(':pamela-editor')
+  implementation ginaSwing()
+  implementation dianaSwing()
+}
