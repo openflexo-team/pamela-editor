@@ -42,7 +42,7 @@ import java.util.logging.Logger;
 
 import org.openflexo.gina.model.FIBComponent;
 import org.openflexo.gina.model.FIBContainer;
-import org.openflexo.pamela.editor.SourceMetaModel;
+import org.openflexo.pamela.editor.deprecated.SourceMetaModel;
 import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
 
 public class BrowserFIBController extends PamelaEditorFIBController<SourceMetaModel> {

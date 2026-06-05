@@ -1,4 +1,4 @@
-package org.openflexo.pamela.editor;
+package org.openflexo.pamela.editor.deprecated;
 
 import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtType;

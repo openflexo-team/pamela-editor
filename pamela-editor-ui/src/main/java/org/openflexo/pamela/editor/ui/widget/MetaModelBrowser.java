@@ -45,7 +45,7 @@ import org.openflexo.gina.model.FIBComponent;
 import org.openflexo.gina.swing.utils.FIBJPanel;
 import org.openflexo.localization.FlexoLocalization;
 import org.openflexo.localization.LocalizedDelegate;
-import org.openflexo.pamela.editor.SourceMetaModel;
+import org.openflexo.pamela.editor.deprecated.SourceMetaModel;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
 

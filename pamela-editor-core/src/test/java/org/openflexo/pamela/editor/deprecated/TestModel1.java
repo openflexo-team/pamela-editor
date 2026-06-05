@@ -1,4 +1,4 @@
-package org.openflexo.pamela.editor;
+package org.openflexo.pamela.editor.deprecated;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -7,6 +7,8 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 
 import org.junit.Test;
+import org.openflexo.pamela.editor.deprecated.SourceMetaModel;
+import org.openflexo.pamela.editor.deprecated.SourcePackage;
 
 public class TestModel1 {
 

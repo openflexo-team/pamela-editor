@@ -86,7 +86,7 @@ import org.openflexo.localization.LocalizedDelegate;
 import org.openflexo.localization.LocalizedDelegateImpl;
 import org.openflexo.logging.FlexoLogger;
 import org.openflexo.logging.FlexoLoggingManager;
-import org.openflexo.pamela.editor.SourceMetaModel;
+import org.openflexo.pamela.editor.deprecated.SourceMetaModel;
 import org.openflexo.pamela.editor.diagram.ClassDiagram;
 import org.openflexo.pamela.editor.diagram.ClassDiagramFactory;
 import org.openflexo.pamela.editor.ui.diagram.ClassDiagramEditingContext;

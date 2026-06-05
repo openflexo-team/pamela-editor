@@ -1,4 +1,4 @@
-package org.openflexo.pamela.editor;
+package org.openflexo.pamela.editor.deprecated;
 
 import java.io.File;
 import java.util.ArrayList;
