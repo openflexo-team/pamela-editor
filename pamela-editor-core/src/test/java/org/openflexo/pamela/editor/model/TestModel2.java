@@ -7,12 +7,14 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openflexo.pamela.annotations.Getter.Cardinality;
+import org.openflexo.pamela.editor.SourceMetaModelSerializer;
 
 /**
  * Tests for the {@link SourceMetaModel} layer using the {@code test/model2/} test model.
@@ -57,26 +59,14 @@ public class TestModel2 {
     private static SourceMetaModel metaModelFull;
 
     @BeforeClass
-    public static void buildMetaModels() {
-        File sourceDir = new File(System.getProperty("user.dir") + "/src/test/java/test/model2");
+    public static void buildMetaModels() throws IOException {
+        File testDir = new File(System.getProperty("user.dir") + "/src/test/java/test");
 
-        // --- meta-model from FlexoProcess only ---
-        metaModelFromFlexoProcess = new SourceMetaModel();
-        metaModelFromFlexoProcess.addSourceDirectory(sourceDir);
-        metaModelFromFlexoProcess.addRootTypeName("test.model2.FlexoProcess");
-        metaModelFromFlexoProcess.buildMetaModel();
+        metaModelFromFlexoProcess = SourceMetaModelSerializer.load(
+                new File(testDir, "model2-from-flexoprocess.pamela"));
 
-        // --- full meta-model: all leaf entities as additional roots ---
-        metaModelFull = new SourceMetaModel();
-        metaModelFull.addSourceDirectory(sourceDir);
-        // The leaf types that are not otherwise reachable from FlexoProcess
-        metaModelFull.addRootTypeName("test.model2.FlexoProcess");
-        metaModelFull.addRootTypeName("test.model2.ActivityNode");
-        metaModelFull.addRootTypeName("test.model2.StartNode");
-        metaModelFull.addRootTypeName("test.model2.EndNode");
-        metaModelFull.addRootTypeName("test.model2.MyNode");
-        metaModelFull.addRootTypeName("test.model2.TokenEdge");
-        metaModelFull.buildMetaModel();
+        metaModelFull = SourceMetaModelSerializer.load(
+                new File(testDir, "model2-full.pamela"));
     }
 
     // =========================================================================

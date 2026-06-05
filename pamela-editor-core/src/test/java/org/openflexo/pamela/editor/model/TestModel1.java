@@ -7,11 +7,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openflexo.pamela.annotations.Getter.Cardinality;
+import org.openflexo.pamela.editor.SourceMetaModelSerializer;
 
 /**
  * Tests for the {@link SourceMetaModel} layer using the {@code test/model1/} test model.
@@ -51,20 +53,14 @@ public class TestModel1 {
     private static SourceMetaModel metaModelFromFoo2;
 
     @BeforeClass
-    public static void buildMetaModels() {
-        File sourceDir = new File(System.getProperty("user.dir") + "/src/test/java/test/model1");
+    public static void buildMetaModels() throws IOException {
+        File testDir = new File(System.getProperty("user.dir") + "/src/test/java/test");
 
-        // --- meta-model rooted at Foo1 (discovers both Foo1 and Foo2) ---
-        metaModelFromFoo1 = new SourceMetaModel();
-        metaModelFromFoo1.addSourceDirectory(sourceDir);
-        metaModelFromFoo1.addRootTypeName("test.model1.Foo1");
-        metaModelFromFoo1.buildMetaModel();
+        metaModelFromFoo1 = SourceMetaModelSerializer.load(
+                new File(testDir, "model1-from-foo1.pamela"));
 
-        // --- meta-model rooted at Foo2 only (discovers Foo2 alone) ---
-        metaModelFromFoo2 = new SourceMetaModel();
-        metaModelFromFoo2.addSourceDirectory(sourceDir);
-        metaModelFromFoo2.addRootTypeName("test.model1.Foo2");
-        metaModelFromFoo2.buildMetaModel();
+        metaModelFromFoo2 = SourceMetaModelSerializer.load(
+                new File(testDir, "model1-from-foo2.pamela"));
     }
 
     // =========================================================================

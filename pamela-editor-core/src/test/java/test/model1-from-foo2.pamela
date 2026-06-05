@@ -1,0 +1,5 @@
+{
+  "name" : "test-model1-from-foo2",
+  "sourceDirectories" : [ "model1" ],
+  "rootTypes" : [ "test.model1.Foo2" ]
+}

@@ -1,4 +1,5 @@
 dependencies {
   implementation pamela()
   implementation group: 'fr.inria.gforge.spoon', name: 'spoon-core', version: '9.1.0'
+  implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.1'
 }

@@ -1,0 +1,5 @@
+{
+  "name" : "test-model2-from-flexoprocess",
+  "sourceDirectories" : [ "model2" ],
+  "rootTypes" : [ "test.model2.FlexoProcess" ]
+}
