@@ -68,3 +68,5 @@ type=type
 undo=undo
 untitled=untitled
 view=view
+navigate_back=Précédent
+navigate_forward=Suivant

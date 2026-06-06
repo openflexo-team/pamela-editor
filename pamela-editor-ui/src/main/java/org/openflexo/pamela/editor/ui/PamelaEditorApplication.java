@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Point;
@@ -13,19 +14,21 @@ import java.awt.event.InputEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
 import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -78,21 +81,38 @@ import org.openflexo.toolbox.ToolBox;
  *
  * <p>Layout: three-column {@link JXMultiSplitPane}.
  * <ul>
- *   <li>LEFT top  — {@link MetaModelBrowser} (project tree)</li>
+ *   <li>LEFT top    — {@link MetaModelBrowser} (project tree)</li>
  *   <li>LEFT bottom — {@link DetailedBrowser} (content of selected element)</li>
- *   <li>CENTER — {@link JTabbedPane} (source code view, diagram view, etc.)</li>
- *   <li>RIGHT top — inspector (dynamically-swapped FIB panel)</li>
+ *   <li>CENTER      — single contextual view with Back / Forward navigation history</li>
+ *   <li>RIGHT top   — inspector (dynamically-swapped FIB panel)</li>
  *   <li>RIGHT bottom — validation panel (placeholder)</li>
  * </ul>
  * </p>
  *
  * <p>Selection model: a single {@link #currentSelectedElement} ({@code Object}).
- * Changing it updates the detailed browser, the inspector, and the central tab.</p>
+ * Changing it updates the detailed browser, the inspector, and the central view.</p>
+ *
+ * <p>Central view navigation: clicking any element replaces the central view and
+ * pushes the previous element onto the back-history stack.  The Back (←) and
+ * Forward (→) buttons navigate through that history.</p>
  */
-public class PamelaEditorApplication {
+public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropertyChangeSupport {
 
     private static final Logger logger =
             FlexoLogger.getLogger(PamelaEditorApplication.class.getPackage().getName());
+
+    private final java.beans.PropertyChangeSupport pcSupport =
+            new java.beans.PropertyChangeSupport(this);
+
+    @Override
+    public java.beans.PropertyChangeSupport getPropertyChangeSupport() {
+        return pcSupport;
+    }
+
+    @Override
+    public String getDeletedProperty() {
+        return null;
+    }
 
     // -------------------------------------------------------------------------
     // Constants
@@ -162,21 +182,45 @@ public class PamelaEditorApplication {
     private final DetailedBrowser detailedBrowser;
 
     // -------------------------------------------------------------------------
-    // Central column
+    // Central column — single view with Back/Forward navigation
     // -------------------------------------------------------------------------
 
-    private final JTabbedPane centralTabbedPane;
+    /** The swappable content area: holds the currently displayed view. */
+    private final JPanel centralViewPanel;
+
+    /** Navigation bar: Back button, title label, Forward button. */
+    private final JButton backButton;
+    private final JButton forwardButton;
+    private final JLabel centralTitleLabel;
 
     /**
-     * Map from model element (identity) → the Swing component displayed for it.
-     * Used to avoid opening duplicate tabs and to switch to existing tabs.
+     * Navigation history — back stack (most-recently visited element at top).
+     * When the user navigates to a new element, the previous element is pushed here.
      */
-    private final Map<Object, JComponent> openTabs =
-            new IdentityHashMap<>();
+    private final Deque<Object> backHistory = new ArrayDeque<>();
 
     /**
-     * Map from {@link PamelaClassDiagram} → its editor (for refresh and
-     * tool-attachment on tab switch).
+     * Navigation history — forward stack.
+     * Populated when the user navigates backward; cleared when a new element is visited.
+     */
+    private final Deque<Object> forwardHistory = new ArrayDeque<>();
+
+    /**
+     * The model element whose view is currently shown in the central panel.
+     * Null when nothing is shown.
+     */
+    private Object currentHistoryElement = null;
+
+    /**
+     * Cache of already-created views: element identity → Swing component.
+     * Avoids recreating expensive views (Spoon source code, Diana diagram) on
+     * every back/forward navigation.
+     */
+    private final Map<Object, JComponent> viewCache = new IdentityHashMap<>();
+
+    /**
+     * Map from {@link PamelaClassDiagram} → its editor (for Diana tool
+     * attachment when the diagram view becomes active).
      */
     private final Map<PamelaClassDiagram, PamelaClassDiagramEditor> diagramEditors =
             new IdentityHashMap<>();
@@ -266,6 +310,43 @@ public class PamelaEditorApplication {
         toolbarPanel.add(stylesWidget.getComponent());
         toolbarPanel.add(layoutWidget.getComponent());
         toolbarPanel.add(scaleSelector.getComponent());
+        toolbarPanel.setVisible(false); // hidden until a diagram view is active
+
+        // --- Central column: navigation bar ---
+        backButton = new JButton("←");
+        backButton.setFont(backButton.getFont().deriveFont(Font.BOLD));
+        backButton.setToolTipText("Navigate back");
+        backButton.setEnabled(false);
+        backButton.addActionListener(e -> navigateBack());
+
+        forwardButton = new JButton("→");
+        forwardButton.setFont(forwardButton.getFont().deriveFont(Font.BOLD));
+        forwardButton.setToolTipText("Navigate forward");
+        forwardButton.setEnabled(false);
+        forwardButton.addActionListener(e -> navigateForward());
+
+        centralTitleLabel = new JLabel("", JLabel.CENTER);
+        centralTitleLabel.setFont(centralTitleLabel.getFont().deriveFont(Font.BOLD));
+
+        JPanel navButtonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
+        navButtonsPanel.add(backButton);
+        navButtonsPanel.add(forwardButton);
+
+        JPanel navigationBar = new JPanel(new BorderLayout());
+        navigationBar.add(navButtonsPanel, BorderLayout.WEST);
+        navigationBar.add(centralTitleLabel, BorderLayout.CENTER);
+
+        // --- Central column: top bar (navigation + optional Diana toolbar) ---
+        JPanel topBarPanel = new JPanel(new BorderLayout());
+        topBarPanel.add(navigationBar, BorderLayout.NORTH);
+        topBarPanel.add(toolbarPanel,  BorderLayout.SOUTH);
+
+        // --- Central column: swappable content area ---
+        centralViewPanel = new JPanel(new BorderLayout());
+
+        JPanel centerColumn = new JPanel(new BorderLayout());
+        centerColumn.add(topBarPanel,      BorderLayout.NORTH);
+        centerColumn.add(centralViewPanel, BorderLayout.CENTER);
 
         // --- Left column: MetaModelBrowser (top) ---
         metaModelBrowser = new MetaModelBrowser(this);
@@ -276,14 +357,6 @@ public class PamelaEditorApplication {
 
         // --- Left column: DetailedBrowser (bottom) ---
         detailedBrowser = new DetailedBrowser(this);
-
-        // --- Central column: tabbed pane ---
-        centralTabbedPane = new JTabbedPane();
-        centralTabbedPane.addChangeListener(e -> onCentralTabChanged());
-
-        JPanel centerColumn = new JPanel(new BorderLayout());
-        centerColumn.add(toolbarPanel, BorderLayout.NORTH);
-        centerColumn.add(centralTabbedPane, BorderLayout.CENTER);
 
         // --- Right column: inspector area (top) ---
         inspectorArea = new JPanel(new BorderLayout());
@@ -367,57 +440,90 @@ public class PamelaEditorApplication {
 
     /**
      * Opens a {@code .pamela} project file.
-     * Builds the {@link SourceMetaModel} via Spoon, creates a
-     * {@link PamelaEditorSession}, and refreshes the browser.
+     *
+     * <p>The Spoon analysis ({@link SourceMetaModelSerializer#load}) is run on a
+     * background thread so the EDT stays responsive. The browser is refreshed
+     * on the EDT once the analysis completes.</p>
      */
     public void openProject(File pamelaFile) {
         if (pamelaFile == null || !pamelaFile.exists()) {
             return;
         }
-        try {
-            // 1. Build meta-model from source analysis
-            SourceMetaModel metaModel = SourceMetaModelSerializer.load(pamelaFile);
 
-            // 2. Create session
-            PamelaEditorSession session = new PamelaEditorSession(pamelaFile, metaModel);
-            session.setToolFactory(toolFactory);
+        // Run Spoon analysis on a background thread to avoid blocking the EDT.
+        new javax.swing.SwingWorker<PamelaEditorSession, Void>() {
 
-            // 3. Load diagram sidecars listed in the .pamela file
-            File projectDir = pamelaFile.getParentFile();
-            if (projectDir == null) {
-                projectDir = new java.io.File(".");
-            }
-            try {
-                java.util.List<String> diagramFileNames =
-                        SourceMetaModelSerializer.loadDiagramFileNames(pamelaFile);
-                for (String fileName : diagramFileNames) {
-                    File diagramFile = new File(projectDir, fileName);
-                    if (diagramFile.exists()) {
-                        try {
-                            PamelaClassDiagram diagram =
-                                    PamelaClassDiagramSerializer.load(diagramFile, session);
-                            session.addDiagram(diagram);
-                        } catch (Exception de) {
-                            logger.warning("Failed to load diagram sidecar "
-                                    + diagramFile + ": " + de.getMessage());
-                        }
-                    } else {
-                        logger.warning("Diagram sidecar not found: "
-                                + diagramFile.getAbsolutePath());
-                    }
+            @Override
+            protected PamelaEditorSession doInBackground() throws Exception {
+                // 1. Build meta-model (heavy — runs Spoon / javac)
+                SourceMetaModel metaModel = SourceMetaModelSerializer.load(pamelaFile);
+                logger.info(metaModel.prettyPrint());
+
+                // 2. Create session (lightweight)
+                PamelaEditorSession session =
+                        new PamelaEditorSession(pamelaFile, metaModel);
+
+                // 3. Load diagram sidecars (I/O only, no Spoon)
+                File projectDir = pamelaFile.getParentFile();
+                if (projectDir == null) {
+                    projectDir = new java.io.File(".");
                 }
-            } catch (Exception de) {
-                logger.warning("Failed to read diagram list from " + pamelaFile + ": "
-                        + de.getMessage());
+                try {
+                    java.util.List<String> diagramFileNames =
+                            SourceMetaModelSerializer.loadDiagramFileNames(pamelaFile);
+                    for (String fileName : diagramFileNames) {
+                        File diagramFile = new File(projectDir, fileName);
+                        if (diagramFile.exists()) {
+                            try {
+                                PamelaClassDiagram diagram =
+                                        PamelaClassDiagramSerializer.load(
+                                                diagramFile, session);
+                                session.addDiagram(diagram);
+                            } catch (Exception de) {
+                                logger.warning("Failed to load diagram sidecar "
+                                        + diagramFile + ": " + de.getMessage());
+                            }
+                        } else {
+                            logger.warning("Diagram sidecar not found: "
+                                    + diagramFile.getAbsolutePath());
+                        }
+                    }
+                } catch (Exception de) {
+                    logger.warning("Failed to read diagram list from "
+                            + pamelaFile + ": " + de.getMessage());
+                }
+                return session;
             }
 
-            sessions.add(session);
-            PamelaEditorPreferences.setLastFile(pamelaFile);
-            // Rebind the browser to the application (refreshes the tree)
-            metaModelBrowser.setEditedObject(this);
-        } catch (Exception e) {
-            logger.severe("Failed to open project " + pamelaFile + ": " + e.getMessage());
-        }
+            @Override
+            protected void done() {
+                // Back on the EDT — safe to update UI
+                try {
+                    PamelaEditorSession session = get();
+                    session.setToolFactory(toolFactory);
+
+                    List<PamelaEditorSession> oldSessions = new ArrayList<>(sessions);
+                    sessions.add(session);
+                    PamelaEditorPreferences.setLastFile(pamelaFile);
+
+                    // Notify Gina bindings that the sessions list has changed
+                    pcSupport.firePropertyChange("sessions",
+                            Collections.unmodifiableList(oldSessions),
+                            Collections.unmodifiableList(sessions));
+
+                } catch (Exception e) {
+                    Throwable cause = (e.getCause() != null) ? e.getCause() : e;
+                    logger.severe("Failed to open project "
+                            + pamelaFile + ": " + cause.getMessage());
+                    cause.printStackTrace();
+                    javax.swing.JOptionPane.showMessageDialog(
+                            frame,
+                            "Failed to open project:\n" + cause.getMessage(),
+                            "Error",
+                            javax.swing.JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 
     /** Opens a file chooser and loads the selected {@code .pamela} project. */
@@ -466,17 +572,21 @@ public class PamelaEditorApplication {
         }
     }
 
-    /** Closes a session and removes all related tabs and browser entries. */
+    /** Closes a session and removes all related views and browser entries. */
     public void closeSession(PamelaEditorSession session) {
         if (session == null) {
             return;
         }
-        // Close all tabs that belong to this session
+        // Invalidate all diagram views belonging to this session
         for (PamelaClassDiagram diagram : session.getDiagrams()) {
-            closeDiagramTab(diagram);
+            invalidateCachedView(diagram);
+            diagramEditors.remove(diagram);
         }
+        List<PamelaEditorSession> oldSessions = new ArrayList<>(sessions);
         sessions.remove(session);
-        metaModelBrowser.setEditedObject(this);
+        pcSupport.firePropertyChange("sessions",
+                Collections.unmodifiableList(oldSessions),
+                Collections.unmodifiableList(sessions));
     }
 
     // =========================================================================
@@ -489,12 +599,27 @@ public class PamelaEditorApplication {
      */
     public void setCurrentSelectedElement(Object element) {
         this.currentSelectedElement = element;
-        // 1. Rebind the detailed browser
-        detailedBrowser.setEditedObject(element);
-        // 2. Refresh the inspector
-        refreshInspector(element);
-        // 3. Open or switch the central tab
-        openOrSwitchCentralView(element);
+        try {
+            // 1. Rebind the detailed browser
+            detailedBrowser.setEditedObject(element);
+        } catch (Exception e) {
+            logger.warning("DetailedBrowser rebind failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+        try {
+            // 2. Refresh the inspector
+            refreshInspector(element);
+        } catch (Exception e) {
+            logger.warning("Inspector refresh failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+        try {
+            // 3. Open or navigate the central view
+            openOrSwitchCentralView(element);
+        } catch (Exception e) {
+            logger.warning("Central view switch failed: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /** Called from MetaModelBrowserFIBController on single-click. */
@@ -503,49 +628,130 @@ public class PamelaEditorApplication {
     }
 
     // =========================================================================
-    // Central tab management (ui-design.md §5)
+    // Central view — single view + Back/Forward history (ui-design.md §5)
     // =========================================================================
 
     /**
-     * Opens a new central tab for {@code element}, or switches to the existing
-     * one if it is already open.  For elements without their own view
-     * (e.g. {@link SourceModelProperty}), the nearest ancestor view is shown.
+     * Navigates the central view to show {@code element}.
+     *
+     * <p>If {@code element} is already the currently displayed element, nothing
+     * happens. Otherwise, the current element is pushed onto the back-history
+     * stack, the forward history is cleared, and the view is replaced.</p>
+     *
+     * <p>For elements without a dedicated central view (e.g. {@link SourceModelProperty}),
+     * the nearest ancestor view is shown instead (the entity), and the relevant
+     * methods are highlighted in the source-code view.</p>
      */
     public void openOrSwitchCentralView(Object element) {
         if (element == null) {
             return;
         }
 
-        // Elements without their own tab: delegate to parent
+        // SourceModelProperty: show the parent entity's source view, then highlight
         if (element instanceof SourceModelProperty) {
             SourceModelProperty prop = (SourceModelProperty) element;
             SourceModelEntity entity = prop.getModelEntity();
             openOrSwitchCentralView(entity);
-            // Highlight the property methods in the source code view
-            JComponent tab = openTabs.get(entity);
-            if (tab instanceof SourceCodeView) {
-                ((SourceCodeView) tab).highlightProperty(prop);
+            JComponent view = viewCache.get(entity);
+            if (view instanceof SourceCodeView) {
+                ((SourceCodeView) view).highlightProperty(prop);
             }
             return;
         }
 
-        // Find or create the Swing component for this element
-        JComponent view = openTabs.get(element);
+        // Already showing this element — do nothing
+        if (element == currentHistoryElement) {
+            return;
+        }
+
+        // Push the current element onto the back stack (if there is one)
+        if (currentHistoryElement != null) {
+            backHistory.push(currentHistoryElement);
+        }
+        // A new navigation always clears the forward history
+        forwardHistory.clear();
+
+        currentHistoryElement = element;
+        showViewForElement(element);
+        updateNavButtons();
+    }
+
+    /**
+     * Navigates backward in history: the current element goes to the forward
+     * stack, and the top of the back stack becomes the new current element.
+     */
+    public void navigateBack() {
+        if (backHistory.isEmpty()) {
+            return;
+        }
+        if (currentHistoryElement != null) {
+            forwardHistory.push(currentHistoryElement);
+        }
+        currentHistoryElement = backHistory.pop();
+        showViewForElement(currentHistoryElement);
+        updateNavButtons();
+    }
+
+    /**
+     * Navigates forward in history: the current element goes to the back stack,
+     * and the top of the forward stack becomes the new current element.
+     */
+    public void navigateForward() {
+        if (forwardHistory.isEmpty()) {
+            return;
+        }
+        if (currentHistoryElement != null) {
+            backHistory.push(currentHistoryElement);
+        }
+        currentHistoryElement = forwardHistory.pop();
+        showViewForElement(currentHistoryElement);
+        updateNavButtons();
+    }
+
+    /**
+     * Replaces the content of {@link #centralViewPanel} with the view for
+     * {@code element}.  Creates the view if it is not yet cached.
+     * Does NOT modify the navigation history stacks.
+     */
+    private void showViewForElement(Object element) {
+        // Look up or create the view
+        JComponent view = viewCache.get(element);
         if (view == null) {
             view = createViewFor(element);
             if (view == null) {
-                return; // no view for this element type
+                // No dedicated view for this type — keep the current view unchanged
+                return;
             }
-            String title = titleFor(element);
-            openTabs.put(element, view);
-            centralTabbedPane.addTab(title, view);
+            viewCache.put(element, view);
         }
 
-        // Switch to the tab
-        int idx = centralTabbedPane.indexOfComponent(view);
-        if (idx >= 0) {
-            centralTabbedPane.setSelectedIndex(idx);
+        // Swap the content area
+        centralViewPanel.removeAll();
+        centralViewPanel.add(view, BorderLayout.CENTER);
+        centralViewPanel.revalidate();
+        centralViewPanel.repaint();
+
+        // Update the navigation title
+        centralTitleLabel.setText(titleFor(element));
+
+        // Attach or detach Diana tools
+        if (element instanceof PamelaClassDiagram) {
+            PamelaClassDiagramEditor editor = diagramEditors.get(element);
+            if (editor != null) {
+                attachDianaTools(editor);
+            }
+        } else {
+            detachDianaTools();
         }
+    }
+
+    /**
+     * Updates the enabled state of the Back/Forward navigation buttons.
+     * Must be called after any change to {@link #backHistory} or {@link #forwardHistory}.
+     */
+    private void updateNavButtons() {
+        backButton.setEnabled(!backHistory.isEmpty());
+        forwardButton.setEnabled(!forwardHistory.isEmpty());
     }
 
     /**
@@ -568,7 +774,6 @@ public class PamelaEditorApplication {
         }
         if (element instanceof PamelaClassDiagram) {
             PamelaClassDiagram diagram = (PamelaClassDiagram) element;
-            // Find the session owning this diagram
             PamelaEditorSession session = getSessionForDiagram(diagram);
             PamelaClassDiagramEditor editor =
                     new PamelaClassDiagramEditor(session, diagram);
@@ -600,44 +805,27 @@ public class PamelaEditorApplication {
         return element.toString();
     }
 
-    /** Closes the central tab displaying the given diagram. */
-    private void closeDiagramTab(PamelaClassDiagram diagram) {
-        JComponent view = openTabs.remove(diagram);
-        if (view != null) {
-            int idx = centralTabbedPane.indexOfComponent(view);
-            if (idx >= 0) {
-                centralTabbedPane.remove(idx);
-            }
-        }
-        diagramEditors.remove(diagram);
-    }
+    /**
+     * Removes the cached view for {@code element} and purges it from the
+     * navigation history.  Used when a session is closed or a diagram is deleted.
+     */
+    private void invalidateCachedView(Object element) {
+        viewCache.remove(element);
 
-    /** Called when the user switches tabs manually. */
-    private void onCentralTabChanged() {
-        int idx = centralTabbedPane.getSelectedIndex();
-        if (idx < 0) {
-            detachDianaTools();
-            return;
-        }
-        JComponent view = (JComponent) centralTabbedPane.getComponentAt(idx);
-        // Attach Diana tools if the selected tab is a diagram
-        PamelaClassDiagramEditor diagramEditor = findDiagramEditor(view);
-        if (diagramEditor != null) {
-            attachDianaTools(diagramEditor);
-        } else {
+        // If this element is currently shown, clear the view
+        if (element == currentHistoryElement) {
+            currentHistoryElement = null;
+            centralViewPanel.removeAll();
+            centralTitleLabel.setText("");
+            centralViewPanel.revalidate();
+            centralViewPanel.repaint();
             detachDianaTools();
         }
-    }
 
-    /** Finds the {@link PamelaClassDiagramEditor} whose view is currently displayed. */
-    private PamelaClassDiagramEditor findDiagramEditor(JComponent view) {
-        for (Map.Entry<PamelaClassDiagram, PamelaClassDiagramEditor> entry
-                : diagramEditors.entrySet()) {
-            if (entry.getValue().getView() == view) {
-                return entry.getValue();
-            }
-        }
-        return null;
+        // Remove this element from both history stacks
+        backHistory.removeIf(e -> e == element);
+        forwardHistory.removeIf(e -> e == element);
+        updateNavButtons();
     }
 
     // =========================================================================
@@ -650,13 +838,18 @@ public class PamelaEditorApplication {
         scaleSelector.attachToEditor(editor.getDianaEditor());
         layoutWidget.attachToEditor(editor.getDianaEditor());
         inspectors.attachToEditor(editor.getDianaEditor());
+        toolbarPanel.setVisible(true);
+        toolbarPanel.revalidate();
     }
 
     private void detachDianaTools() {
+        // Note: DianaStyles.attachToEditor(null) throws NPE internally when
+        // backgroundSelector or shapeSelector are non-null (Diana bug).
+        // Skip stylesWidget — leave it attached to the last editor.
         toolSelector.attachToEditor(null);
-        stylesWidget.attachToEditor(null);
         scaleSelector.attachToEditor(null);
         layoutWidget.attachToEditor(null);
+        toolbarPanel.setVisible(false);
     }
 
     // =========================================================================
@@ -748,12 +941,7 @@ public class PamelaEditorApplication {
         if (element == null) {
             return;
         }
-        if (element instanceof PamelaClassDiagram) {
-            // Double-click on a diagram in the browser: open/switch diagram tab
-            openOrSwitchCentralView(element);
-        } else {
-            openOrSwitchCentralView(element);
-        }
+        openOrSwitchCentralView(element);
     }
 
     // =========================================================================
@@ -773,7 +961,7 @@ public class PamelaEditorApplication {
         session.addDiagram(diagram);
         // Refresh browser tree
         metaModelBrowser.setEditedObject(this);
-        // Open the diagram editor immediately
+        // Navigate to the diagram editor immediately
         openOrSwitchCentralView(diagram);
     }
 
@@ -825,16 +1013,14 @@ public class PamelaEditorApplication {
     }
 
     /**
-     * Returns the {@link PamelaClassDiagramEditor} currently shown in the active
-     * central tab, or {@code null} if the active tab is not a diagram view.
+     * Returns the {@link PamelaClassDiagramEditor} currently shown in the
+     * central view, or {@code null} if the current view is not a diagram view.
      */
     public PamelaClassDiagramEditor getActiveDiagramEditor() {
-        int idx = centralTabbedPane.getSelectedIndex();
-        if (idx < 0) {
-            return null;
+        if (currentHistoryElement instanceof PamelaClassDiagram) {
+            return diagramEditors.get((PamelaClassDiagram) currentHistoryElement);
         }
-        JComponent view = (JComponent) centralTabbedPane.getComponentAt(idx);
-        return findDiagramEditor(view);
+        return null;
     }
 
     // =========================================================================

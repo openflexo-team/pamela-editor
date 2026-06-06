@@ -6,16 +6,27 @@
     dataClassName="org.openflexo.pamela.editor.ui.PamelaEditorApplication"
     trackViewPortHeight="true">
     <Browser id="1" deepExploration="false" showFooter="false" rowHeight="18"
-        showRootsHandle="true" root="data.sessions"
+        showRootsHandle="true" root="data"
         selectionMode="SingleTreeSelection"
         doubleClickAction="controller.doubleClick(metaModelBrowser.selected)"
         rightClickAction="controller.rightClick(metaModelBrowser.selected,event)"
         useScrollBar="true" selected="controller.selectedElement"
-        name="metaModelBrowser" rootVisible="false" readOnly="true"
+        name="metaModelBrowser" rootVisible="false" readOnly="false"
         iteratorClassName="java.lang.Object"
         constraints="border(location=center;x=0;y=0)">
 
         <BrowserElement id="2"
+            icon="controller.iconForObject(app)"
+            filtered="false"
+            label="app.class.simpleName"
+            defaultVisible="true"
+            dataClassName="org.openflexo.pamela.editor.ui.PamelaEditorApplication"
+            name="app"
+            isEditable="false">
+            <Children id="9" name="sessions" data="app.sessions" />
+        </BrowserElement>
+
+        <BrowserElement id="3"
             icon="controller.iconForObject(session)"
             filtered="false"
             label="session.metaModel.name"
@@ -27,7 +38,7 @@
             <Children id="11" name="packages" data="session.metaModel.allPackages" />
         </BrowserElement>
 
-        <BrowserElement id="3"
+        <BrowserElement id="4"
             icon="controller.iconForObject(diagram)"
             filtered="false"
             label="diagram.name"
@@ -37,7 +48,7 @@
             isEditable="false">
         </BrowserElement>
 
-        <BrowserElement id="4"
+        <BrowserElement id="5"
             icon="controller.iconForObject(pkg)"
             filtered="false"
             label="pkg.qualifiedName"
@@ -48,7 +59,7 @@
             <Children id="12" name="entities" data="pkg.entities" />
         </BrowserElement>
 
-        <BrowserElement id="5"
+        <BrowserElement id="6"
             icon="controller.iconForObject(entity)"
             filtered="false"
             label="entity.simpleName"

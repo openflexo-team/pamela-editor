@@ -64,6 +64,23 @@ public class DetailedBrowserFIBController extends PamelaEditorFIBController<Obje
     }
 
     // -------------------------------------------------------------------------
+    // Type predicates used by FIB visible= bindings
+    // (Connie does not support Java instanceof expressions)
+    // -------------------------------------------------------------------------
+
+    public boolean isSourceModelEntity(Object obj) {
+        return obj instanceof SourceModelEntity;
+    }
+
+    public boolean isSourcePackage(Object obj) {
+        return obj instanceof SourcePackage;
+    }
+
+    public boolean isPamelaClassDiagram(Object obj) {
+        return obj instanceof PamelaClassDiagram;
+    }
+
+    // -------------------------------------------------------------------------
     // Actions
     // -------------------------------------------------------------------------
 

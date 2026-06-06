@@ -68,3 +68,5 @@ type=Type
 undo=Undo
 untitled=Untitled
 view=View
+navigate_back=Back
+navigate_forward=Forward

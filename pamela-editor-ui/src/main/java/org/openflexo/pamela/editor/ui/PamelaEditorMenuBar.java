@@ -53,6 +53,10 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
     private final JMenuItem quitItem;
     private final JMenu openRecent;
 
+    // View menu items
+    private final JMenuItem backItem;
+    private final JMenuItem forwardItem;
+
     // Edit menu items (synchronised with the active diagram editor)
     final SynchronizedMenuItem copyItem;
     final SynchronizedMenuItem cutItem;
@@ -113,6 +117,20 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
         fileMenu.add(closeItem);
         fileMenu.addSeparator();
         fileMenu.add(quitItem);
+
+        // ------------------------------------------------------------------ View menu
+        backItem = new JMenuItem(loc("navigate_back"));
+        backItem.setAccelerator(KeyStroke.getKeyStroke(
+                KeyEvent.VK_LEFT, java.awt.event.InputEvent.ALT_DOWN_MASK));
+        backItem.addActionListener(e -> application.navigateBack());
+
+        forwardItem = new JMenuItem(loc("navigate_forward"));
+        forwardItem.setAccelerator(KeyStroke.getKeyStroke(
+                KeyEvent.VK_RIGHT, java.awt.event.InputEvent.ALT_DOWN_MASK));
+        forwardItem.addActionListener(e -> application.navigateForward());
+
+        viewMenu.add(backItem);
+        viewMenu.add(forwardItem);
 
         // ------------------------------------------------------------------ Edit menu
         copyItem = makeSynchronizedMenuItem(
