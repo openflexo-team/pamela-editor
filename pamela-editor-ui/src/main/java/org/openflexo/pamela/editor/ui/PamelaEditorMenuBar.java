@@ -24,437 +24,359 @@ import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
-import org.openflexo.diana.control.DianaInteractiveViewer;
+import org.openflexo.diana.control.DianaInteractiveEditor;
 import org.openflexo.pamela.editor.ui.diagram.DianaDrawingEditor;
+import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
 import org.openflexo.pamela.undo.UndoManager;
 import org.openflexo.toolbox.HasPropertyChangeSupport;
 
+/**
+ * Application menu bar for the PAMELA editor.
+ *
+ * <p>File menu: open / save project, new diagram, quit.<br>
+ * Edit menu: undo / redo, copy / cut / paste (wired to the active diagram editor).<br>
+ * Tools menu: logs, localised string editor.</p>
+ */
 public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeListener {
 
-	private final JMenu fileMenu;
-	private final JMenu editMenu;
-	private final JMenu viewMenu;
-	private final JMenu toolsMenu;
-	private final JMenu helpMenu;
+    private final JMenu fileMenu;
+    private final JMenu editMenu;
+    private final JMenu viewMenu;
+    private final JMenu toolsMenu;
+    private final JMenu helpMenu;
 
-	private final JMenuItem newItem;
-	private final JMenuItem loadItem;
-	private final JMenuItem saveItem;
-	private final JMenuItem saveAsItem;
-	private final JMenuItem closeItem;
-	private final JMenuItem quitItem;
+    // File menu items
+    private final JMenuItem openItem;
+    private final JMenuItem newDiagramItem;
+    private final JMenuItem saveItem;
+    private final JMenuItem closeItem;
+    private final JMenuItem quitItem;
+    private final JMenu openRecent;
 
-	final SynchronizedMenuItem copyItem;
-	final SynchronizedMenuItem cutItem;
-	final SynchronizedMenuItem pasteItem;
-	final SynchronizedMenuItem undoItem;
-	final SynchronizedMenuItem redoItem;
+    // Edit menu items (synchronised with the active diagram editor)
+    final SynchronizedMenuItem copyItem;
+    final SynchronizedMenuItem cutItem;
+    final SynchronizedMenuItem pasteItem;
+    final SynchronizedMenuItem undoItem;
+    final SynchronizedMenuItem redoItem;
 
-	private final JMenuItem logsItem;
-	private final JMenuItem localizedItem;
+    // Tools menu items
+    private final JMenuItem logsItem;
+    private final JMenuItem localizedItem;
 
-	private final JMenu openRecent;
+    private final PamelaEditorApplication application;
 
-	private final JMenuItem showPaletteItem;
+    public PamelaEditorMenuBar(PamelaEditorApplication application) {
+        this.application = application;
 
-	private final PamelaEditorApplication application;
+        // ------------------------------------------------------------------ menus
+        fileMenu  = new JMenu(loc("file"));
+        editMenu  = new JMenu(loc("edit"));
+        viewMenu  = new JMenu(loc("view"));
+        toolsMenu = new JMenu(loc("tools"));
+        helpMenu  = new JMenu(loc("help"));
 
-	public PamelaEditorMenuBar(PamelaEditorApplication application) {
+        // ------------------------------------------------------------------ File menu
+        openItem = new JMenuItem(loc("open_project"));
+        openItem.setAccelerator(KeyStroke.getKeyStroke(
+                KeyEvent.VK_O, PamelaEditorApplication.META_MASK));
+        openItem.addActionListener(e -> application.openProjectFromChooser());
 
-		this.application = application;
+        newDiagramItem = new JMenuItem(loc("new_diagram"));
+        newDiagramItem.addActionListener(e -> application.newDiagram());
 
-		fileMenu = new JMenu(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("file"));
-		editMenu = new JMenu(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("edit"));
-		viewMenu = new JMenu(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("view"));
-		toolsMenu = new JMenu(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("tools"));
-		helpMenu = new JMenu(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("help"));
+        openRecent = new JMenu(loc("open_recent"));
+        PamelaEditorPreferences.addPreferenceChangeListener(this);
+        updateOpenRecent();
 
-		newItem = new JMenuItem(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("new_metamodel"));
-		newItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				application.newMetaModel();
-			}
-		});
+        saveItem = new JMenuItem(loc("save_project"));
+        saveItem.setAccelerator(KeyStroke.getKeyStroke(
+                KeyEvent.VK_S, PamelaEditorApplication.META_MASK));
+        saveItem.addActionListener(e -> application.saveActiveProject());
 
-		loadItem = new JMenuItem(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("open_metamodel"));
-		loadItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// application.loadDiagramEditor();
-			}
-		});
+        closeItem = new JMenuItem(loc("close"));
+        closeItem.addActionListener(e -> {
+            // Close the session that contains the currently selected element
+        });
 
-		/*newItem = new JMenuItem(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("new_diagram"));
-		newItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				application.newDiagramEditor();
-			}
-		});
-		
-		loadItem = new JMenuItem(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("open_diagram"));
-		loadItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				application.loadDiagramEditor();
-			}
-		});*/
+        quitItem = new JMenuItem(loc("quit"));
+        quitItem.setAccelerator(KeyStroke.getKeyStroke(
+                KeyEvent.VK_Q, PamelaEditorApplication.META_MASK));
+        quitItem.addActionListener(e -> application.quit());
 
-		openRecent = new JMenu(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("open_recent"));
-		PamelaEditorPreferences.addPreferenceChangeListener(this);
-		updateOpenRecent();
-		saveItem = new JMenuItem(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("save_diagram"));
-		saveItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				application.saveDiagramEditor();
-			}
-		});
+        fileMenu.add(openItem);
+        fileMenu.add(openRecent);
+        fileMenu.addSeparator();
+        fileMenu.add(newDiagramItem);
+        fileMenu.addSeparator();
+        fileMenu.add(saveItem);
+        fileMenu.add(closeItem);
+        fileMenu.addSeparator();
+        fileMenu.add(quitItem);
 
-		saveAsItem = new JMenuItem(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("save_diagram_as"));
-		saveAsItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				application.saveDrawingAs();
-			}
-		});
+        // ------------------------------------------------------------------ Edit menu
+        copyItem = makeSynchronizedMenuItem(
+                "copy",
+                PamelaEditorIconLibrary.COPY_ICON,
+                KeyStroke.getKeyStroke(KeyEvent.VK_C,
+                        PamelaEditorApplication.META_MASK),
+                new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        PamelaClassDiagramEditor ed = application.getActiveDiagramEditor();
+                        if (ed != null) {
+                            try { ed.getDianaEditor().copy(); }
+                            catch (Exception ex) { ex.printStackTrace(); }
+                        }
+                    }
+                },
+                (observable, menuItem) -> {
+                    if (observable instanceof DianaDrawingEditor) {
+                        menuItem.setEnabled(
+                                ((DianaDrawingEditor) observable).isCopiable());
+                    }
+                });
 
-		closeItem = new JMenuItem(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("close"));
-		closeItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				application.closeDrawing();
-			}
-		});
+        cutItem = makeSynchronizedMenuItem(
+                "cut",
+                PamelaEditorIconLibrary.CUT_ICON,
+                KeyStroke.getKeyStroke(KeyEvent.VK_X,
+                        PamelaEditorApplication.META_MASK),
+                new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        PamelaClassDiagramEditor ed = application.getActiveDiagramEditor();
+                        if (ed != null) {
+                            try { ed.getDianaEditor().cut(); }
+                            catch (Exception ex) { ex.printStackTrace(); }
+                        }
+                    }
+                },
+                (observable, menuItem) -> {
+                    if (observable instanceof DianaDrawingEditor) {
+                        menuItem.setEnabled(
+                                ((DianaDrawingEditor) observable).isCutable());
+                    }
+                });
 
-		quitItem = new JMenuItem(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("quit"));
-		quitItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				application.quit();
-			}
-		});
+        pasteItem = makeSynchronizedMenuItem(
+                "paste",
+                PamelaEditorIconLibrary.PASTE_ICON,
+                KeyStroke.getKeyStroke(KeyEvent.VK_V,
+                        PamelaEditorApplication.META_MASK),
+                new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        PamelaClassDiagramEditor ed = application.getActiveDiagramEditor();
+                        if (ed != null) {
+                            try { ed.getDianaEditor().paste(); }
+                            catch (Exception ex) { ex.printStackTrace(); }
+                        }
+                    }
+                },
+                (observable, menuItem) -> {
+                    if (observable instanceof DianaInteractiveEditor) {
+                        menuItem.setEnabled(
+                                ((DianaInteractiveEditor<?, ?, ?>) observable).isPastable());
+                    }
+                });
 
-		fileMenu.add(newItem);
-		fileMenu.add(loadItem);
-		fileMenu.add(openRecent);
-		fileMenu.add(saveItem);
-		fileMenu.add(saveAsItem);
-		fileMenu.add(closeItem);
-		fileMenu.addSeparator();
+        undoItem = makeSynchronizedMenuItem(
+                "undo",
+                PamelaEditorIconLibrary.UNDO_ICON,
+                KeyStroke.getKeyStroke(KeyEvent.VK_Z,
+                        PamelaEditorApplication.META_MASK),
+                new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        PamelaClassDiagramEditor ed = application.getActiveDiagramEditor();
+                        if (ed != null) {
+                            ed.getDianaEditor().undo();
+                        }
+                    }
+                },
+                (observable, menuItem) -> {
+                    if (observable instanceof UndoManager) {
+                        UndoManager um = (UndoManager) observable;
+                        menuItem.setEnabled(um.canUndo());
+                        menuItem.setText(um.canUndo()
+                                ? um.getUndoPresentationName()
+                                : loc("undo"));
+                    }
+                });
 
-		fileMenu.add(quitItem);
+        redoItem = makeSynchronizedMenuItem(
+                "redo",
+                PamelaEditorIconLibrary.REDO_ICON,
+                KeyStroke.getKeyStroke(KeyEvent.VK_R,
+                        PamelaEditorApplication.META_MASK),
+                new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        PamelaClassDiagramEditor ed = application.getActiveDiagramEditor();
+                        if (ed != null) {
+                            ed.getDianaEditor().redo();
+                        }
+                    }
+                },
+                (observable, menuItem) -> {
+                    if (observable instanceof UndoManager) {
+                        UndoManager um = (UndoManager) observable;
+                        menuItem.setEnabled(um.canRedo());
+                        menuItem.setText(um.canRedo()
+                                ? um.getRedoPresentationName()
+                                : loc("redo"));
+                    }
+                });
 
-		showPaletteItem = new JMenuItem(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("show_palette"));
-		showPaletteItem.addActionListener(new ActionListener() {
+        editMenu.add(copyItem);
+        editMenu.add(cutItem);
+        editMenu.add(pasteItem);
+        editMenu.addSeparator();
+        editMenu.add(undoItem);
+        editMenu.add(redoItem);
 
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				application.paletteDialog.setVisible(true);
-			}
-		});
-		logsItem = new JMenuItem(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("logs"));
-		logsItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				application.showLogs();
-			}
-		});
+        // ------------------------------------------------------------------ Tools menu
+        logsItem = new JMenuItem(loc("logs"));
+        logsItem.addActionListener(e -> application.showLogs());
 
-		localizedItem = new JMenuItem(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("localized_editor"));
-		localizedItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				application.showLocalizedEditor();
-			}
-		});
+        localizedItem = new JMenuItem(loc("localized_editor"));
+        localizedItem.addActionListener(e -> application.showLocalizedEditor());
 
-		copyItem = makeSynchronizedMenuItem("copy", PamelaEditorIconLibrary.COPY_ICON,
-				KeyStroke.getKeyStroke(KeyEvent.VK_C, PamelaEditorApplication.META_MASK), new AbstractAction() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						application.copy();
-					}
-				}, new Synchronizer() {
-					@Override
-					public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-						if (observable instanceof DianaDrawingEditor) {
-							menuItem.setEnabled(((DianaDrawingEditor) observable).isCopiable());
-						}
-					}
-				});
+        toolsMenu.add(logsItem);
+        toolsMenu.add(localizedItem);
 
-		cutItem = makeSynchronizedMenuItem("cut", PamelaEditorIconLibrary.CUT_ICON,
-				KeyStroke.getKeyStroke(KeyEvent.VK_X, PamelaEditorApplication.META_MASK), new AbstractAction() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						application.cut();
-					}
-				}, new Synchronizer() {
-					@Override
-					public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-						if (observable instanceof DianaDrawingEditor) {
-							menuItem.setEnabled(((DianaDrawingEditor) observable).isCutable());
-						}
-					}
-				});
+        add(fileMenu);
+        add(editMenu);
+        add(viewMenu);
+        add(toolsMenu);
+        add(helpMenu);
+    }
 
-		pasteItem = makeSynchronizedMenuItem("paste", PamelaEditorIconLibrary.PASTE_ICON,
-				KeyStroke.getKeyStroke(KeyEvent.VK_V, PamelaEditorApplication.META_MASK), new AbstractAction() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						application.paste();
-					}
-				}, new Synchronizer() {
-					@Override
-					public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-						if (observable instanceof DianaInteractiveViewer) {
-							menuItem.setEnabled(application.currentClassDiagramEditor.getController().isPastable());
-						}
-					}
-				});
+    // =========================================================================
+    // Open recent
+    // =========================================================================
 
-		undoItem = makeSynchronizedMenuItem("undo", PamelaEditorIconLibrary.UNDO_ICON,
-				KeyStroke.getKeyStroke(KeyEvent.VK_Z, PamelaEditorApplication.META_MASK), new AbstractAction() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						System.out.println("undo");
-						application.currentClassDiagramEditor.getController().undo();
-					}
-				}, new Synchronizer() {
-					@Override
-					public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-						if (observable instanceof UndoManager) {
-							menuItem.setEnabled(application.currentClassDiagramEditor.getController().canUndo());
-							if (application.currentClassDiagramEditor.getController().canUndo()) {
-								menuItem.setText(application.currentClassDiagramEditor.getController().getFactory().getUndoManager()
-										.getUndoPresentationName());
-							}
-							else {
-								menuItem.setText(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("undo"));
-							}
-						}
-					}
-				});
+    private boolean willUpdate = false;
 
-		redoItem = makeSynchronizedMenuItem("redo", PamelaEditorIconLibrary.REDO_ICON,
-				KeyStroke.getKeyStroke(KeyEvent.VK_R, PamelaEditorApplication.META_MASK), new AbstractAction() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						System.out.println("redo");
-						application.currentClassDiagramEditor.getController().redo();
-					}
-				}, new Synchronizer() {
-					@Override
-					public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem) {
-						if (observable instanceof UndoManager) {
-							menuItem.setEnabled(application.currentClassDiagramEditor.getController().canRedo());
-							if (application.currentClassDiagramEditor.getController().canRedo()) {
-								menuItem.setText(application.currentClassDiagramEditor.getController().getFactory().getUndoManager()
-										.getRedoPresentationName());
-							}
-							else {
-								menuItem.setText(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("redo"));
-							}
-						}
-					}
-				});
+    @Override
+    public void preferenceChange(PreferenceChangeEvent evt) {
+        if (evt.getKey().startsWith(PamelaEditorPreferences.LAST_FILE)) {
+            if (willUpdate) {
+                return;
+            }
+            willUpdate = true;
+            SwingUtilities.invokeLater(() -> {
+                willUpdate = false;
+                updateOpenRecent();
+            });
+        }
+    }
 
-		editMenu.add(copyItem);
-		editMenu.add(cutItem);
-		editMenu.add(pasteItem);
-		editMenu.addSeparator();
-		editMenu.add(undoItem);
-		editMenu.add(redoItem);
+    private void updateOpenRecent() {
+        openRecent.removeAll();
+        List<File> files = PamelaEditorPreferences.getLastFiles();
+        openRecent.setEnabled(!files.isEmpty());
+        for (File file : files) {
+            JMenuItem item = new JMenuItem(file.getName());
+            item.setToolTipText(file.getAbsolutePath());
+            item.addActionListener(e -> application.openProject(file));
+            openRecent.add(item);
+        }
+    }
 
-		/*WindowMenuItem foregroundInspectorItem = new WindowMenuItem(
-				PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("foreground_inspector"),
-				pamelaEditorApplication.inspectors.getForegroundStyleInspector());
-		WindowMenuItem backgroundInspectorItem = new WindowMenuItem(
-				PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("background_inspector"),
-				pamelaEditorApplication.inspectors.getBackgroundStyleInspector());
-		WindowMenuItem textInspectorItem = new WindowMenuItem(
-				PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("text_inspector"),
-				pamelaEditorApplication.inspectors.getTextPropertiesInspector());
-		WindowMenuItem shapeInspectorItem = new WindowMenuItem(
-				PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("shape_inspector"),
-				pamelaEditorApplication.inspectors.getShapeInspector());
-		WindowMenuItem connectorInspectorItem = new WindowMenuItem(
-				PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("connector_inspector"),
-				pamelaEditorApplication.inspectors.getConnectorInspector());
-		WindowMenuItem shadowInspectorItem = new WindowMenuItem(
-				PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("shadow_inspector"),
-				pamelaEditorApplication.inspectors.getShadowStyleInspector());
-		WindowMenuItem locationSizeInspectorItem = new WindowMenuItem(
-				PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("location_size_inspector"),
-				pamelaEditorApplication.inspectors.getLocationSizeInspector());
-		WindowMenuItem controlInspectorItem = new WindowMenuItem(
-				PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("control_inspector"),
-				pamelaEditorApplication.inspectors.getControlInspector());
-		WindowMenuItem layoutManagerInspectorItem = new WindowMenuItem(
-				PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("layout_manager_inspector"),
-				pamelaEditorApplication.inspectors.getLayoutManagersInspector());
-		
-		WindowMenuItem paletteItem = new WindowMenuItem(PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("palette"),
-				pamelaEditorApplication.paletteDialog);
-		
-		viewMenu.add(foregroundInspectorItem);
-		viewMenu.add(backgroundInspectorItem);
-		viewMenu.add(textInspectorItem);
-		viewMenu.add(shapeInspectorItem);
-		viewMenu.add(connectorInspectorItem);
-		viewMenu.add(shadowInspectorItem);
-		viewMenu.add(locationSizeInspectorItem);
-		viewMenu.add(controlInspectorItem);
-		viewMenu.add(layoutManagerInspectorItem);
-		viewMenu.addSeparator();
-		viewMenu.add(paletteItem);*/
+    // =========================================================================
+    // Synchronized menu item factory
+    // =========================================================================
 
-		toolsMenu.add(showPaletteItem);
-		toolsMenu.add(logsItem);
-		toolsMenu.add(localizedItem);
+    SynchronizedMenuItem makeSynchronizedMenuItem(
+            String actionName, Icon icon, KeyStroke accelerator,
+            AbstractAction action, Synchronizer synchronizer) {
+        String localizedName = loc(actionName);
+        SynchronizedMenuItem returned = new SynchronizedMenuItem(localizedName, synchronizer);
+        action.putValue(Action.NAME, localizedName);
+        returned.setAction(action);
+        returned.setIcon(icon);
+        returned.setAccelerator(accelerator);
+        application.frame.getRootPane()
+                .getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(accelerator, actionName);
+        application.frame.getRootPane()
+                .getActionMap()
+                .put(actionName, action);
+        returned.setEnabled(false);
+        return returned;
+    }
 
-		add(fileMenu);
-		add(editMenu);
-		add(viewMenu);
-		add(toolsMenu);
-		add(helpMenu);
-	}
+    // =========================================================================
+    // Helper
+    // =========================================================================
 
-	private boolean willUpdate = false;
+    private static String loc(String key) {
+        return PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey(key);
+    }
 
-	@Override
-	public void preferenceChange(PreferenceChangeEvent evt) {
-		if (evt.getKey().startsWith(PamelaEditorPreferences.LAST_FILE)) {
-			if (willUpdate) {
-				return;
-			}
-			willUpdate = true;
-			SwingUtilities.invokeLater(() -> {
-				willUpdate = false;
-				updateOpenRecent();
-			});
-		}
-	}
+    // =========================================================================
+    // Inner types
+    // =========================================================================
 
-	private void updateOpenRecent() {
-		openRecent.removeAll();
-		List<File> files = PamelaEditorPreferences.getLastFiles();
-		openRecent.setEnabled(files.size() != 0);
-		for (final File file : files) {
-			JMenuItem item = new JMenuItem(file.getName());
-			item.setToolTipText(file.getAbsolutePath());
-			item.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					application.loadDiagramEditor(file);
-				}
-			});
-			openRecent.add(item);
-		}
-	}
+    public interface Synchronizer {
+        void synchronize(HasPropertyChangeSupport observable,
+                         SynchronizedMenuItem menuItem);
+    }
 
-	SynchronizedMenuItem makeSynchronizedMenuItem(String actionName, Icon icon, KeyStroke accelerator, AbstractAction action,
-			Synchronizer synchronizer) {
+    public class SynchronizedMenuItem extends JMenuItem
+            implements PropertyChangeListener {
 
-		String localizedName = PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey(actionName);
-		SynchronizedMenuItem returned = new SynchronizedMenuItem(localizedName, synchronizer);
-		action.putValue(Action.NAME, localizedName);
-		returned.setAction(action);
-		returned.setIcon(icon);
-		returned.setAccelerator(accelerator);
-		application.frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accelerator, actionName);
-		application.frame.getRootPane().getActionMap().put(actionName, action);
-		returned.setEnabled(false);
-		return returned;
-	}
+        private HasPropertyChangeSupport observable;
+        private final Synchronizer synchronizer;
 
-	public interface Synchronizer {
-		public void synchronize(HasPropertyChangeSupport observable, SynchronizedMenuItem menuItem);
-	}
+        public SynchronizedMenuItem(String menuName, Synchronizer synchronizer) {
+            super(menuName);
+            this.synchronizer = synchronizer;
+        }
 
-	public class SynchronizedMenuItem extends JMenuItem implements PropertyChangeListener {
+        public void synchronizeWith(HasPropertyChangeSupport anObservable) {
+            if (this.observable != null) {
+                application.manager.removeListener(this, this.observable);
+            }
+            application.manager.addListener(this, anObservable);
+            observable = anObservable;
+            synchronizer.synchronize(observable, this);
+        }
 
-		private HasPropertyChangeSupport observable;
-		private final Synchronizer synchronizer;
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            synchronizer.synchronize(observable, this);
+        }
 
-		public SynchronizedMenuItem(String menuName, Synchronizer synchronizer) {
-			super(menuName);
-			this.synchronizer = synchronizer;
-		}
+        @Override
+        public void setEnabled(boolean b) {
+            super.setEnabled(b);
+            if (getAction() != null) {
+                getAction().setEnabled(b);
+            }
+        }
+    }
 
-		public void synchronizeWith(HasPropertyChangeSupport anObservable) {
-			if (this.observable != null) {
-				application.manager.removeListener(this, this.observable);
-			}
-			application.manager.addListener(this, anObservable);
-			observable = anObservable;
-			synchronizer.synchronize(observable, this);
-		}
+    public class WindowMenuItem extends JCheckBoxMenuItem
+            implements WindowListener {
 
-		@Override
-		public void propertyChange(PropertyChangeEvent evt) {
-			synchronizer.synchronize(observable, this);
-		}
+        private final Window window;
 
-		@Override
-		public void setEnabled(boolean b) {
-			super.setEnabled(b);
-			getAction().setEnabled(b);
-		}
+        public WindowMenuItem(String menuName, Window aWindow) {
+            super(menuName);
+            this.window = aWindow;
+            addActionListener(e -> window.setVisible(!window.isVisible()));
+            aWindow.addWindowListener(this);
+        }
 
-	}
-
-	public class WindowMenuItem extends JCheckBoxMenuItem implements WindowListener {
-
-		private final Window window;
-
-		public WindowMenuItem(String menuName, Window aWindow) {
-			super(menuName);
-			this.window = aWindow;
-			addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					window.setVisible(!window.isVisible());
-				}
-			});
-			aWindow.addWindowListener(this);
-		}
-
-		@Override
-		public void windowOpened(WindowEvent e) {
-			setState(window.isVisible());
-		}
-
-		@Override
-		public void windowIconified(WindowEvent e) {
-		}
-
-		@Override
-		public void windowDeiconified(WindowEvent e) {
-		}
-
-		@Override
-		public void windowDeactivated(WindowEvent e) {
-			setState(window.isVisible());
-		}
-
-		@Override
-		public void windowClosing(WindowEvent e) {
-			setState(window.isVisible());
-		}
-
-		@Override
-		public void windowClosed(WindowEvent e) {
-			setState(window.isVisible());
-		}
-
-		@Override
-		public void windowActivated(WindowEvent e) {
-			setState(window.isVisible());
-		}
-
-	}
-
+        @Override public void windowOpened(WindowEvent e)      { setState(window.isVisible()); }
+        @Override public void windowIconified(WindowEvent e)   {}
+        @Override public void windowDeiconified(WindowEvent e) {}
+        @Override public void windowDeactivated(WindowEvent e) { setState(window.isVisible()); }
+        @Override public void windowClosing(WindowEvent e)     { setState(window.isVisible()); }
+        @Override public void windowClosed(WindowEvent e)      { setState(window.isVisible()); }
+        @Override public void windowActivated(WindowEvent e)   { setState(window.isVisible()); }
+    }
 }

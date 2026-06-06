@@ -1,122 +1,88 @@
-/**
- * 
- * Copyright (c) 2014, Openflexo
- * 
- * This file is part of Gina-swing-editor, a component of the software infrastructure 
- * developed at Openflexo.
- * 
- * 
- * Openflexo is dual-licensed under the European Union Public License (EUPL, either 
- * version 1.1 of the License, or any later version ), which is available at 
- * https://joinup.ec.europa.eu/software/page/eupl/licence-eupl
- * and the GNU General Public License (GPL, either version 3 of the License, or any 
- * later version), which is available at http://www.gnu.org/licenses/gpl.html .
- * 
- * You can redistribute it and/or modify under the terms of either of these licenses
- * 
- * If you choose to redistribute it and/or modify under the terms of the GNU GPL, you
- * must include the following additional permission.
- *
- *          Additional permission under GNU GPL version 3 section 7
- *
- *          If you modify this Program, or any covered work, by linking or 
- *          combining it with software containing parts covered by the terms 
- *          of EPL 1.0, the licensors of this Program grant you additional permission
- *          to convey the resulting work. * 
- * 
- * This software is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE. 
- *
- * See http://www.openflexo.org/license.html for details.
- * 
- * 
- * Please contact Openflexo (openflexo-contacts@openflexo.org)
- * or visit www.openflexo.org if you need additional information.
- * 
- */
-
 package org.openflexo.pamela.editor.ui.widget;
 
-import java.util.logging.Logger;
+import javax.swing.ImageIcon;
 
-import org.openflexo.connie.annotations.NotificationUnsafe;
-import org.openflexo.gina.ApplicationFIBLibrary;
-import org.openflexo.gina.FIBLibrary;
 import org.openflexo.gina.model.FIBComponent;
-import org.openflexo.gina.model.FIBMouseEvent;
+import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
+import org.openflexo.pamela.editor.model.SourceModelEntity;
+import org.openflexo.pamela.editor.model.SourcePackage;
+import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
-import org.openflexo.rm.Resource;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import org.openflexo.pamela.editor.ui.PamelaEditorSession;
 
-public class MetaModelBrowserFIBController extends PamelaEditorFIBController<FIBLibrary> {
+/**
+ * FIB controller for the {@link MetaModelBrowser}.
+ *
+ * <p>Holds the currently selected element ({@code selectedElement}) as an
+ * observable property.  The FIB browser writes to it on single-click via the
+ * two-way binding {@code selected="controller.selectedElement"}.
+ * {@link PamelaEditorApplication} listens to {@code PropertyChangeEvent}s on
+ * {@code "selectedElement"} to propagate the selection to the rest of the UI.</p>
+ */
+public class MetaModelBrowserFIBController extends PamelaEditorFIBController<PamelaEditorApplication> {
 
-	private static final Logger logger = Logger.getLogger(MetaModelBrowserFIBController.class.getPackage().getName());
+    /** Property name fired when the selected element changes. */
+    public static final String SELECTED_ELEMENT = "selectedElement";
 
-	private MetaModelBrowser fibLibraryBrowser;
+    private Object selectedElement;
 
-	public MetaModelBrowserFIBController(FIBComponent rootComponent) {
-		super(rootComponent);
-	}
+    public MetaModelBrowserFIBController(FIBComponent rootComponent) {
+        super(rootComponent);
+    }
 
-	public Resource getSelectedComponentResource() {
-		if (fibLibraryBrowser != null) {
-			return fibLibraryBrowser.getSelectedComponentResource();
-		}
-		return null;
-	}
+    // -------------------------------------------------------------------------
+    // Observable selection property (two-way bound from the FIB browser)
+    // -------------------------------------------------------------------------
 
-	public void setSelectedComponentResource(Resource selectedComponentResource) {
-		if (fibLibraryBrowser != null) {
-			fibLibraryBrowser.setSelectedComponentResource(selectedComponentResource);
-			getPropertyChangeSupport().firePropertyChange("selectedComponentResource", null, selectedComponentResource);
-		}
-	}
+    public Object getSelectedElement() {
+        return selectedElement;
+    }
 
-	public void doubleClickOnComponentResource(Resource selectedComponentResource) {
-		if (fibLibraryBrowser != null) {
-			fibLibraryBrowser.doubleClickOnComponentResource(selectedComponentResource);
-		}
-	}
+    public void setSelectedElement(Object selectedElement) {
+        Object old = this.selectedElement;
+        this.selectedElement = selectedElement;
+        getPropertyChangeSupport().firePropertyChange(SELECTED_ELEMENT, old, selectedElement);
+    }
 
-	@NotificationUnsafe
-	public String textFor(Object object) {
-		if (object == null) {
-			return null;
-		}
-		if (object instanceof Resource) {
-			String relativePath = ((Resource) object).getRelativePath();
-			if (relativePath.lastIndexOf("/") > -1) {
-				return relativePath.substring(relativePath.lastIndexOf("/") + 1);
-			}
-			return relativePath;
-		}
-		else if (object instanceof ApplicationFIBLibrary) {
-			return "ApplicationFIBLibrary";
-		}
-		else if (object instanceof FIBLibrary) {
-			return "FIBLibrary";
-		}
-		return object.toString();
+    // -------------------------------------------------------------------------
+    // Actions invoked from the FIB
+    // -------------------------------------------------------------------------
 
-	}
+    /** Called when the user double-clicks a node in the browser. */
+    public void doubleClick(Object object) {
+        PamelaEditorApplication app = getDataObject();
+        if (app != null) {
+            app.doubleClickInBrowser(object);
+        }
+    }
 
-	public void rightClick(Resource resource, FIBMouseEvent event) {
-		System.out.println("rightClick with " + resource + " event=" + event);
-		// editorController.getContextualMenu().displayPopupMenu(component,
-		// /*((JFIBView<?, ?>) getRootView()).getJComponent()*/(Component) event.getSource(), event.getPoint());
-	}
+    /** Called on right-click (contextual menu — deferred to a later sprint). */
+    public void rightClick(Object object, Object event) {
+        // TODO: contextual menu
+    }
 
-	public MetaModelBrowser getFIBLibraryBrowser() {
-		return fibLibraryBrowser;
-	}
+    // -------------------------------------------------------------------------
+    // Icon resolution
+    // -------------------------------------------------------------------------
 
-	public void setFIBLibraryBrowser(MetaModelBrowser fibLibraryBrowser) {
-		if ((fibLibraryBrowser == null && this.fibLibraryBrowser != null)
-				|| (fibLibraryBrowser != null && !fibLibraryBrowser.equals(this.fibLibraryBrowser))) {
-			MetaModelBrowser oldValue = this.fibLibraryBrowser;
-			this.fibLibraryBrowser = fibLibraryBrowser;
-			getPropertyChangeSupport().firePropertyChange("fibLibraryBrowser", oldValue, fibLibraryBrowser);
-		}
-	}
-
+    @Override
+    protected ImageIcon retrieveIconForObject(Object object) {
+        if (object instanceof PamelaEditorSession) {
+            return PamelaEditorIconLibrary.SESSION_ICON;
+        }
+        if (object instanceof PamelaClassDiagram) {
+            return PamelaEditorIconLibrary.DIAGRAM_ICON;
+        }
+        if (object instanceof SourcePackage) {
+            return PamelaEditorIconLibrary.PACKAGE_ICON;
+        }
+        if (object instanceof SourceModelEntity) {
+            SourceModelEntity entity = (SourceModelEntity) object;
+            return entity.isAbstract()
+                    ? PamelaEditorIconLibrary.ABSTRACT_ENTITY_ICON
+                    : PamelaEditorIconLibrary.ENTITY_ICON;
+        }
+        return super.retrieveIconForObject(object);
+    }
 }

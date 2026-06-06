@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Inspector panel for PamelaClassDiagram (read-only, first sprint) -->
+<Panel id="0" darkLevel="0" useScrollBar="true" layout="twocols"
+    height="200" name="DiagramInspector"
+    dataClassName="org.openflexo.pamela.editor.diagram.PamelaClassDiagram"
+    trackViewPortWidth="true" width="250">
+
+    <Label id="1" label="Diagram" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+
+    <Label id="2" label="Name" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="3" data="data.name" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=true;expandVertically=false)" />
+
+    <Label id="4" label="Entity views" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="5" data="data.entityViews.size" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=false;expandVertically=false)" />
+
+</Panel>

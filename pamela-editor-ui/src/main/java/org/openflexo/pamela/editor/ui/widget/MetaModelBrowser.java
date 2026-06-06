@@ -1,106 +1,52 @@
-/**
- * 
- * Copyright (c) 2014, Openflexo
- * 
- * This file is part of Gina-swing-editor, a component of the software infrastructure 
- * developed at Openflexo.
- * 
- * 
- * Openflexo is dual-licensed under the European Union Public License (EUPL, either 
- * version 1.1 of the License, or any later version ), which is available at 
- * https://joinup.ec.europa.eu/software/page/eupl/licence-eupl
- * and the GNU General Public License (GPL, either version 3 of the License, or any 
- * later version), which is available at http://www.gnu.org/licenses/gpl.html .
- * 
- * You can redistribute it and/or modify under the terms of either of these licenses
- * 
- * If you choose to redistribute it and/or modify under the terms of the GNU GPL, you
- * must include the following additional permission.
- *
- *          Additional permission under GNU GPL version 3 section 7
- *
- *          If you modify this Program, or any covered work, by linking or 
- *          combining it with software containing parts covered by the terms 
- *          of EPL 1.0, the licensors of this Program grant you additional permission
- *          to convey the resulting work. * 
- * 
- * This software is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE. 
- *
- * See http://www.openflexo.org/license.html for details.
- * 
- * 
- * Please contact Openflexo (openflexo-contacts@openflexo.org)
- * or visit www.openflexo.org if you need additional information.
- * 
- */
-
 package org.openflexo.pamela.editor.ui.widget;
 
-import java.util.logging.Logger;
-
 import org.openflexo.gina.ApplicationFIBLibrary.ApplicationFIBLibraryImpl;
-import org.openflexo.gina.model.FIBComponent;
 import org.openflexo.gina.swing.utils.FIBJPanel;
-import org.openflexo.localization.FlexoLocalization;
-import org.openflexo.localization.LocalizedDelegate;
-import org.openflexo.pamela.editor.deprecated.SourceMetaModel;
+import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
+import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
 
 /**
- * Browser for FIBEditor elements
- * 
- * @author sylvain
- * 
+ * Left-top browser panel.  Shows all open sessions and their content as a tree:
+ * <pre>
+ * PamelaEditorSession (project name)
+ * ├── Diagrams
+ * │   └── PamelaClassDiagram
+ * └── Packages
+ *     └── SourcePackage
+ *         └── SourceModelEntity
+ * </pre>
+ *
+ * <p>The data object is the {@link PamelaEditorApplication} itself (so the
+ * FIB can reach {@code data.sessions}).</p>
+ *
+ * <p>Single-click propagates via {@link MetaModelBrowserFIBController#getSelectedElement()}
+ * property-change events to {@link PamelaEditorApplication#setCurrentSelectedElement(Object)}.</p>
  */
 @SuppressWarnings("serial")
-public class MetaModelBrowser extends FIBJPanel<SourceMetaModel> {
+public class MetaModelBrowser extends FIBJPanel<PamelaEditorApplication> {
 
-	protected static final Logger logger = Logger.getLogger(MetaModelBrowser.class.getPackage().getName());
+    public static final Resource FIB_FILE =
+            ResourceLocator.locateResource("Fib/MetaModelBrowser.fib");
 
-	public static Resource FIB_FILE = ResourceLocator.locateResource("Fib/MetaModelBrowser.fib");
+    public MetaModelBrowser(PamelaEditorApplication application) {
+        super(FIB_FILE, application,
+              ApplicationFIBLibraryImpl.instance(),
+              PamelaEditorFIBController.EDITOR_LOCALIZATION);
+    }
 
-	public MetaModelBrowser(SourceMetaModel metaModel) {
-		super(FIB_FILE, metaModel, ApplicationFIBLibraryImpl.instance(), FlexoLocalization.getMainLocalizer());
-	}
+    @Override
+    public MetaModelBrowserFIBController getController() {
+        return (MetaModelBrowserFIBController) super.getController();
+    }
 
-	@Override
-	protected MetaModelBrowserFIBController makeFIBController(FIBComponent fibComponent, LocalizedDelegate parentLocalizer) {
-		MetaModelBrowserFIBController returned = new MetaModelBrowserFIBController(fibComponent);
-		returned.setFIBLibraryBrowser(this);
-		return returned;
-	}
+    @Override
+    public Class<PamelaEditorApplication> getRepresentedType() {
+        return PamelaEditorApplication.class;
+    }
 
-	@Override
-	public MetaModelBrowserFIBController getController() {
-		return (MetaModelBrowserFIBController) super.getController();
-	}
-
-	@Override
-	public Class<SourceMetaModel> getRepresentedType() {
-		return SourceMetaModel.class;
-	}
-
-	@Override
-	public void delete() {
-	}
-
-	private Resource selectedComponentResource;
-
-	public Resource getSelectedComponentResource() {
-		return selectedComponentResource;
-	}
-
-	public void setSelectedComponentResource(Resource selectedComponentResource) {
-		logger.info(">>>>setSelectedComponentResource with " + selectedComponentResource);
-		this.selectedComponentResource = selectedComponentResource;
-	}
-
-	public void doubleClickOnComponentResource(Resource selectedComponentResource) {
-		setSelectedComponentResource(selectedComponentResource);
-		logger.info(">>>>doubleClickOnComponentResource with " + selectedComponentResource);
-	}
-
+    @Override
+    public void delete() {
+    }
 }

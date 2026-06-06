@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel id="0" darkLevel="0" useScrollBar="false" protectContent="false"
+    height="400" name="main" layout="border"
+    controllerClassName="org.openflexo.pamela.editor.ui.widget.DetailedBrowserFIBController"
+    border="empty" trackViewPortWidth="true" width="250"
+    dataClassName="java.lang.Object"
+    trackViewPortHeight="true">
+
+    <!-- Browser shown when a SourceModelEntity is selected -->
+    <Browser id="10" deepExploration="false" showFooter="false" rowHeight="18"
+        showRootsHandle="false" root="data"
+        selectionMode="SingleTreeSelection"
+        doubleClickAction="controller.doubleClick(entityDetailBrowser.selected)"
+        useScrollBar="true" selected="controller.selectedElement"
+        name="entityDetailBrowser" rootVisible="false" readOnly="true"
+        iteratorClassName="java.lang.Object"
+        visible="data instanceof org.openflexo.pamela.editor.model.SourceModelEntity"
+        constraints="border(location=center;x=0;y=0)">
+
+        <BrowserElement id="11"
+            icon="controller.iconForObject(entity)"
+            filtered="false"
+            label="entity.simpleName"
+            defaultVisible="true"
+            dataClassName="org.openflexo.pamela.editor.model.SourceModelEntity"
+            name="entity"
+            isEditable="false">
+            <Children id="20" name="properties" data="entity.declaredProperties.values()" />
+            <Children id="21" name="initializers" data="entity.initializers" />
+        </BrowserElement>
+
+        <BrowserElement id="12"
+            icon="controller.iconForObject(property)"
+            filtered="false"
+            label="property.propertyIdentifier"
+            defaultVisible="true"
+            dataClassName="org.openflexo.pamela.editor.model.SourceModelProperty"
+            name="property"
+            isEditable="false">
+        </BrowserElement>
+
+        <BrowserElement id="13"
+            icon="controller.iconForObject(initializer)"
+            filtered="false"
+            label="initializer.methodName"
+            defaultVisible="true"
+            dataClassName="org.openflexo.pamela.editor.model.SourceModelInitializer"
+            name="initializer"
+            isEditable="false">
+        </BrowserElement>
+
+    </Browser>
+
+    <!-- Browser shown when a SourcePackage is selected -->
+    <Browser id="30" deepExploration="false" showFooter="false" rowHeight="18"
+        showRootsHandle="false" root="data"
+        selectionMode="SingleTreeSelection"
+        doubleClickAction="controller.doubleClick(packageDetailBrowser.selected)"
+        useScrollBar="true" selected="controller.selectedElement"
+        name="packageDetailBrowser" rootVisible="false" readOnly="true"
+        iteratorClassName="java.lang.Object"
+        visible="data instanceof org.openflexo.pamela.editor.model.SourcePackage"
+        constraints="border(location=center;x=0;y=0)">
+
+        <BrowserElement id="31"
+            icon="controller.iconForObject(pkg)"
+            filtered="false"
+            label="pkg.qualifiedName"
+            defaultVisible="true"
+            dataClassName="org.openflexo.pamela.editor.model.SourcePackage"
+            name="pkg"
+            isEditable="false">
+            <Children id="32" name="entities" data="pkg.entities" />
+        </BrowserElement>
+
+        <BrowserElement id="33"
+            icon="controller.iconForObject(entity)"
+            filtered="false"
+            label="entity.simpleName"
+            defaultVisible="true"
+            dataClassName="org.openflexo.pamela.editor.model.SourceModelEntity"
+            name="entity"
+            isEditable="false">
+        </BrowserElement>
+
+    </Browser>
+
+    <!-- Browser shown when a PamelaClassDiagram is selected -->
+    <Browser id="40" deepExploration="false" showFooter="false" rowHeight="18"
+        showRootsHandle="false" root="data"
+        selectionMode="SingleTreeSelection"
+        doubleClickAction="controller.doubleClick(diagramDetailBrowser.selected)"
+        useScrollBar="true" selected="controller.selectedElement"
+        name="diagramDetailBrowser" rootVisible="false" readOnly="true"
+        iteratorClassName="java.lang.Object"
+        visible="data instanceof org.openflexo.pamela.editor.diagram.PamelaClassDiagram"
+        constraints="border(location=center;x=0;y=0)">
+
+        <BrowserElement id="41"
+            icon="controller.iconForObject(diagram)"
+            filtered="false"
+            label="diagram.name"
+            defaultVisible="true"
+            dataClassName="org.openflexo.pamela.editor.diagram.PamelaClassDiagram"
+            name="diagram"
+            isEditable="false">
+            <Children id="42" name="entityViews" data="diagram.entityViews" />
+        </BrowserElement>
+
+        <BrowserElement id="43"
+            icon="controller.iconForObject(ev)"
+            filtered="false"
+            label="ev.qualifiedName"
+            defaultVisible="true"
+            dataClassName="org.openflexo.pamela.editor.diagram.EntityView"
+            name="ev"
+            isEditable="false">
+        </BrowserElement>
+
+    </Browser>
+
+</Panel>

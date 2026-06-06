@@ -2,4 +2,19 @@ dependencies {
   implementation project(':pamela-editor-core')
   implementation ginaSwing()
   implementation dianaSwing()
+  implementation dianaApi()
+  implementation diana()
+  implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.4'
+}
+
+task run(type: JavaExec) {
+  group = 'application'
+  description = 'Launch the PAMELA Editor'
+  classpath = sourceSets.main.runtimeClasspath
+  mainClass = 'org.openflexo.pamela.editor.ui.LaunchPamelaEditor'
+  // macOS: use screen menu bar
+  jvmArgs '-Xmx512m'
+  if (System.getProperty('os.name').toLowerCase().contains('mac')) {
+    jvmArgs '-Dapple.laf.useScreenMenuBar=true'
+  }
 }

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Inspector panel for SourceModelEntity (read-only, first sprint) -->
+<Panel id="0" darkLevel="0" useScrollBar="true" layout="twocols"
+    height="300" name="EntityInspector"
+    dataClassName="org.openflexo.pamela.editor.model.SourceModelEntity"
+    trackViewPortWidth="true" width="250">
+
+    <Label id="1" label="Entity" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+
+    <Label id="2" label="Simple name" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="3" data="data.simpleName" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=true;expandVertically=false)" />
+
+    <Label id="4" label="Qualified name" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="5" data="data.qualifiedName" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=true;expandVertically=false)" />
+
+    <Label id="6" label="Package" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="7" data="data.sourcePackage.qualifiedName" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=true;expandVertically=false)" />
+
+    <Label id="8" label="Abstract" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <CheckBox id="9" data="data.abstract" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=false;expandVertically=false)" />
+
+    <Label id="10" label="Init policy" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="11" data="data.initPolicy.name" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=true;expandVertically=false)" />
+
+    <Label id="12" label="Properties" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="13" data="data.declaredProperties.size" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=false;expandVertically=false)" />
+
+    <Label id="14" label="Super entities" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="15" data="data.directSuperEntities.size" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=false;expandVertically=false)" />
+
+</Panel>

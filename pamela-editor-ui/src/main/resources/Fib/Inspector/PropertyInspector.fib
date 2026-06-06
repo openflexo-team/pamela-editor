@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Inspector panel for SourceModelProperty (read-only, first sprint) -->
+<Panel id="0" darkLevel="0" useScrollBar="true" layout="twocols"
+    height="350" name="PropertyInspector"
+    dataClassName="org.openflexo.pamela.editor.model.SourceModelProperty"
+    trackViewPortWidth="true" width="250">
+
+    <Label id="1" label="Property" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+
+    <Label id="2" label="Identifier" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="3" data="data.propertyIdentifier" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=true;expandVertically=false)" />
+
+    <Label id="4" label="Cardinality" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="5" data="data.cardinality.name" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=false;expandVertically=false)" />
+
+    <Label id="6" label="Type" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="7" data="data.type.simpleName" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=true;expandVertically=false)" />
+
+    <Label id="8" label="Derived" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <CheckBox id="9" data="data.derived" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=false;expandVertically=false)" />
+
+    <Label id="10" label="Embedded" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <CheckBox id="11" data="data.embedded" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=false;expandVertically=false)" />
+
+    <Label id="12" label="Getter" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="13" data="data.getterMethodName" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=true;expandVertically=false)" />
+
+    <Label id="14" label="Setter" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="15" data="data.setterMethodName" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=true;expandVertically=false)" />
+
+    <Label id="16" label="Inverse" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="17" data="data.inversePropertyIdentifier" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=true;expandVertically=false)" />
+
+</Panel>

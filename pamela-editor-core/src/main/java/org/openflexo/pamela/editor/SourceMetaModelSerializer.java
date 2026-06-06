@@ -124,17 +124,68 @@ public class SourceMetaModelSerializer {
     }
 
     /**
+     * Returns the list of diagram sidecar file names declared in a
+     * {@code .pamela} project file.
+     *
+     * <p>This is the list of file names (not paths) from the {@code "diagrams"}
+     * JSON array. Returns an empty list if the field is absent or empty.</p>
+     *
+     * @param pamelaFile the {@code .pamela} file to read; must exist
+     * @return list of diagram file names (e.g. {@code ["Overview.diagram.json"]})
+     * @throws IOException if the file cannot be read or is not valid JSON
+     */
+    public static List<String> loadDiagramFileNames(File pamelaFile) throws IOException {
+        List<String> names = new java.util.ArrayList<>();
+        if (!pamelaFile.exists()) {
+            return names;
+        }
+        JsonNode root = MAPPER.readTree(pamelaFile);
+        JsonNode diagramsNode = root.get("diagrams");
+        if (diagramsNode != null && diagramsNode.isArray()) {
+            for (JsonNode n : diagramsNode) {
+                String name = n.asText().trim();
+                if (!name.isEmpty()) {
+                    names.add(name);
+                }
+            }
+        }
+        return names;
+    }
+
+    /**
      * Saves a {@link SourceMetaModel} to a {@code .pamela} project file.
      *
      * <p>Source directory paths are written as paths <em>relative to the
      * directory containing {@code pamelaFile}</em>. The file is overwritten if
      * it already exists. Parent directories are created if necessary.</p>
      *
+     * <p>No diagram sidecar references are written. Use
+     * {@link #save(SourceMetaModel, File, List)} to persist diagram names.</p>
+     *
      * @param metaModel  the meta-model whose construction inputs to persist
      * @param pamelaFile the destination {@code .pamela} file
      * @throws IOException if the file cannot be written
      */
     public static void save(SourceMetaModel metaModel, File pamelaFile) throws IOException {
+        save(metaModel, pamelaFile, java.util.Collections.emptyList());
+    }
+
+    /**
+     * Saves a {@link SourceMetaModel} to a {@code .pamela} project file,
+     * including the list of diagram sidecar file names.
+     *
+     * <p>Source directory paths are written as paths <em>relative to the
+     * directory containing {@code pamelaFile}</em>. The file is overwritten if
+     * it already exists. Parent directories are created if necessary.</p>
+     *
+     * @param metaModel         the meta-model whose construction inputs to persist
+     * @param pamelaFile        the destination {@code .pamela} file
+     * @param diagramFileNames  file names (not paths) of the diagram sidecar files
+     *                          to list in the {@code "diagrams"} JSON array
+     * @throws IOException if the file cannot be written
+     */
+    public static void save(SourceMetaModel metaModel, File pamelaFile,
+                            List<String> diagramFileNames) throws IOException {
         // Create parent directories if they don't exist
         File parentDir = pamelaFile.getParentFile();
         if (parentDir != null) {
@@ -166,6 +217,15 @@ public class SourceMetaModelSerializer {
             typesArray.add(rootType);
         }
         root.set("rootTypes", typesArray);
+
+        // diagrams — sidecar file names (omit array if empty)
+        if (diagramFileNames != null && !diagramFileNames.isEmpty()) {
+            ArrayNode diagramsArray = MAPPER.createArrayNode();
+            for (String name : diagramFileNames) {
+                diagramsArray.add(name);
+            }
+            root.set("diagrams", diagramsArray);
+        }
 
         MAPPER.writeValue(pamelaFile, root);
     }

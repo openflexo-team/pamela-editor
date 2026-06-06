@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Inspector panel for SourceMetaModel (read-only, first sprint) -->
+<Panel id="0" darkLevel="0" useScrollBar="true" layout="twocols"
+    height="200" name="MetaModelInspector"
+    dataClassName="org.openflexo.pamela.editor.model.SourceMetaModel"
+    trackViewPortWidth="true" width="250">
+
+    <Label id="1" label="MetaModel" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+
+    <Label id="2" label="Name" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="3" data="data.name" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=true;expandVertically=false)" />
+
+    <Label id="4" label="Packages" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="5" data="data.allPackages.size" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=false;expandVertically=false)" />
+
+    <Label id="6" label="Entities" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="7" data="data.entities.size" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=false;expandVertically=false)" />
+
+    <Label id="8" label="Issues" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <TextField id="9" data="data.issues.size" readOnly="true"
+        constraints="twocols(isLabel=false;expandHorizontally=false;expandVertically=false)" />
+
+</Panel>
