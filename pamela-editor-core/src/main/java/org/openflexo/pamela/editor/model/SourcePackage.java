@@ -80,6 +80,24 @@ public class SourcePackage implements SourceElement {
         }
     }
 
+    /**
+     * Removes an entity from this package.
+     * Called internally when an entity is deleted.
+     *
+     * @param entity the entity to remove
+     */
+    void removeEntity(SourceModelEntity entity) {
+        entities.remove(entity);
+    }
+
+    /**
+     * Returns the internal Spoon package.
+     * Package-private — used by mutation operations in {@link SourceMetaModel}.
+     */
+    CtPackage getCtPackage() {
+        return ctPackage;
+    }
+
     @Override
     public String toString() {
         return "SourcePackage(" + (isDefault() ? "<default>" : qualifiedName) + ")";

@@ -1,5 +1,6 @@
 package org.openflexo.pamela.editor.model;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -262,6 +263,45 @@ public class SourceModelProperty implements SourceElement {
      */
     void setInverseProperty(SourceModelProperty inverse) {
         this.inverseProperty = inverse;
+    }
+
+    // =========================================================================
+    // Mutation operation
+    // =========================================================================
+
+    /**
+     * Removes this property from its declaring entity.
+     *
+     * <p>All Spoon method nodes associated with this property (getter, setter,
+     * adder, remover, reindexer, updater) are removed from the owning
+     * {@link CtType}.  The property is also removed from
+     * {@link SourceModelEntity#getDeclaredProperties()}.
+     * The compilation unit is saved to disk afterwards.</p>
+     *
+     * @throws IOException if saving the compilation unit fails
+     */
+    public void remove() throws IOException {
+        spoon.reflect.declaration.CtType<?> ct = modelEntity.getCtType();
+        if (ctGetter != null) {
+            ct.removeMethod(ctGetter);
+        }
+        if (ctSetter != null) {
+            ct.removeMethod(ctSetter);
+        }
+        if (ctAdder != null) {
+            ct.removeMethod(ctAdder);
+        }
+        if (ctRemover != null) {
+            ct.removeMethod(ctRemover);
+        }
+        if (ctReindexer != null) {
+            ct.removeMethod(ctReindexer);
+        }
+        if (ctUpdater != null) {
+            ct.removeMethod(ctUpdater);
+        }
+        modelEntity.removeDeclaredProperty(propertyIdentifier);
+        modelEntity.getCompilationUnit().save();
     }
 
     // -------------------------------------------------------------------------

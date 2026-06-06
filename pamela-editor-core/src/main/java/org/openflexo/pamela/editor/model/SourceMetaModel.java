@@ -1,6 +1,7 @@
 package org.openflexo.pamela.editor.model;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,11 +23,14 @@ import org.openflexo.pamela.annotations.Setter;
 import spoon.Launcher;
 import spoon.reflect.CtModel;
 import spoon.reflect.cu.CompilationUnit;
+import spoon.reflect.declaration.CtAnnotation;
 import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtInterface;
 import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtPackage;
 import spoon.reflect.declaration.CtType;
+import spoon.reflect.declaration.ModifierKind;
+import spoon.reflect.factory.Factory;
 import spoon.reflect.reference.CtTypeReference;
 
 /**
@@ -504,6 +508,157 @@ public class SourceMetaModel implements SourceElement {
             return null; // raw List
         }
         return typeRef;
+    }
+
+    // =========================================================================
+    // Package-private helpers used by mutation operations
+    // =========================================================================
+
+    /**
+     * Returns the internal Spoon model.
+     * Package-private — used by {@link SourceModelEntity#rename}.
+     */
+    CtModel getCtModel() {
+        return ctModel;
+    }
+
+    /**
+     * Updates the entities map and compilationUnits map when an entity is renamed.
+     * Removes the old key and inserts the new key.
+     * Package-private — called by {@link SourceModelEntity#rename}.
+     *
+     * @param oldKey the old qualified name
+     * @param newKey the new qualified name
+     * @param entity the entity being renamed
+     */
+    void renameEntityKey(String oldKey, String newKey, SourceModelEntity entity) {
+        entities.remove(oldKey);
+        entities.put(newKey, entity);
+
+        SourceCompilationUnit cu = compilationUnits.remove(oldKey);
+        if (cu != null) {
+            compilationUnits.put(newKey, cu);
+        }
+    }
+
+    /**
+     * Removes an entity from the entities map.
+     * Package-private — called by {@link SourceModelEntity#delete}.
+     *
+     * @param qualifiedName the qualified name of the entity to remove
+     */
+    void unregisterEntity(String qualifiedName) {
+        entities.remove(qualifiedName);
+    }
+
+    /**
+     * Removes a compilation unit from the compilationUnits map.
+     * Package-private — called by {@link SourceModelEntity#delete}.
+     *
+     * @param primaryTypeName the primary type name key
+     */
+    void unregisterCompilationUnit(String primaryTypeName) {
+        compilationUnits.remove(primaryTypeName);
+    }
+
+    // =========================================================================
+    // Mutation operations
+    // =========================================================================
+
+    /**
+     * Creates a new {@code @ModelEntity} interface in the given package and
+     * registers it in this meta-model.
+     *
+     * <p>The new interface is written to a {@code .java} file named
+     * {@code simpleName + ".java"} placed in the directory that corresponds to
+     * the package inside the first source directory (or, if the package already
+     * contains an entity, in the same directory as that entity's source file).</p>
+     *
+     * @param simpleName    the simple name for the new interface
+     * @param sourcePackage the package in which to place the new entity
+     * @return the newly created {@link SourceModelEntity}
+     * @throws IOException if the file cannot be written
+     */
+    public SourceModelEntity createEntity(String simpleName, SourcePackage sourcePackage) throws IOException {
+        String pkgName = sourcePackage.getQualifiedName();
+        String qualifiedName = (pkgName == null || pkgName.isEmpty())
+                ? simpleName
+                : pkgName + "." + simpleName;
+
+        // Determine the target directory
+        File targetDir = resolveTargetDirectory(sourcePackage);
+        targetDir.mkdirs();
+        File newFile = new File(targetDir, simpleName + ".java");
+
+        // Use the Spoon factory from the existing model
+        Factory factory = ctModel.getRootPackage().getFactory();
+
+        // Create the CtInterface
+        CtInterface<Object> newInterface = factory.Core().createInterface();
+        newInterface.setSimpleName(simpleName);
+        newInterface.addModifier(ModifierKind.PUBLIC);
+
+        // Add @ModelEntity annotation
+        CtAnnotation<?> modelEntityAnnotation = factory.Core().createAnnotation();
+        modelEntityAnnotation.setAnnotationType(
+                factory.Type().createReference(ModelEntity.class));
+        newInterface.addAnnotation(modelEntityAnnotation);
+
+        // Place the interface in the correct package
+        sourcePackage.getCtPackage().addType(newInterface);
+
+        // Create the compilation unit wrapper
+        SourceCompilationUnit scu = SourceCompilationUnit.forNewEntity(newInterface, newFile, this);
+
+        // Save the file to disk
+        scu.save();
+
+        // Build the SourceModelEntity
+        SourceModelEntity entity = new SourceModelEntity(newInterface, this);
+        entity.setSourcePackage(sourcePackage);
+        entity.setCompilationUnit(scu);
+
+        // Register in the meta-model
+        entities.put(qualifiedName, entity);
+        compilationUnits.put(qualifiedName, scu);
+        sourcePackage.addEntity(entity);
+
+        return entity;
+    }
+
+    /**
+     * Determines the file-system directory where a new entity in the given
+     * package should be created.
+     *
+     * <p>Strategy:
+     * <ol>
+     *   <li>If the package already contains at least one entity whose source
+     *       file is known, use that entity's parent directory.</li>
+     *   <li>Otherwise, derive the path from the first source directory plus
+     *       the package path segments.</li>
+     * </ol>
+     * </p>
+     */
+    private File resolveTargetDirectory(SourcePackage sourcePackage) {
+        // Strategy 1: use an existing entity's directory
+        for (SourceModelEntity existing : sourcePackage.getEntities()) {
+            SourceCompilationUnit cu = existing.getCompilationUnit();
+            if (cu != null && cu.getFile() != null) {
+                File parent = cu.getFile().getParentFile();
+                if (parent != null) {
+                    return parent;
+                }
+            }
+        }
+
+        // Strategy 2: derive from first source directory + package path
+        File baseDir = sourceDirectories.isEmpty() ? new File(".") : sourceDirectories.get(0);
+        String pkgName = sourcePackage.getQualifiedName();
+        if (pkgName != null && !pkgName.isEmpty()) {
+            String pkgPath = pkgName.replace('.', File.separatorChar);
+            return new File(baseDir, pkgPath);
+        }
+        return baseDir;
     }
 
     // =========================================================================
