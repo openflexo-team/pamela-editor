@@ -56,40 +56,64 @@ public class PamelaEditorIconLibrary {
     // -------------------------------------------------------------------------
     // Model element icons
     // -------------------------------------------------------------------------
-    // These use existing icons as stand-ins until dedicated model icons are
-    // designed.  Replace the path with a proper icon file when available.
 
-    /** Icon for a {@link org.openflexo.pamela.editor.ui.PamelaEditorSession} (project). */
+    /**
+     * Icon for a {@link org.openflexo.pamela.editor.ui.PamelaEditorSession} (project).
+     * Amber hexagon with bold "P" — the PAMELA model badge.
+     */
     public static final ImageIcon SESSION_ICON =
-            buildIcon("Icons/MetaModel_128x128.png");
+            buildIcon("Icons/PamelaModel_16x16.png");
 
-    /** Icon for a {@link org.openflexo.pamela.editor.diagram.PamelaClassDiagram}. */
+    /**
+     * Icon for a {@link org.openflexo.pamela.editor.diagram.PamelaClassDiagram}.
+     * Reuses the network icon until a dedicated diagram icon is designed.
+     */
     public static final ImageIcon DIAGRAM_ICON =
             buildIcon("Icons/Network.png");
 
-    /** Icon for a {@link org.openflexo.pamela.editor.model.SourcePackage}. */
+    /**
+     * Icon for a {@link org.openflexo.pamela.editor.model.SourcePackage}.
+     * Eclipse JDT-style tan folder with horizontal content lines.
+     */
     public static final ImageIcon PACKAGE_ICON =
-            buildIcon("Icons/Info.png");
+            buildIcon("Icons/Package_16x16.png");
 
-    /** Icon for a concrete {@link org.openflexo.pamela.editor.model.SourceModelEntity}. */
+    /**
+     * Icon for a concrete {@link org.openflexo.pamela.editor.model.SourceModelEntity}.
+     * Eclipse JDT-style purple rounded square with white "I" (interface marker).
+     */
     public static final ImageIcon ENTITY_ICON =
-            buildIcon("Icons/Actions/OK.gif");
+            buildIcon("Icons/Interface_16x16.png");
 
-    /** Icon for an abstract {@link org.openflexo.pamela.editor.model.SourceModelEntity}. */
+    /**
+     * Icon for an abstract {@link org.openflexo.pamela.editor.model.SourceModelEntity}.
+     * Same shape as {@link #ENTITY_ICON} but with a lighter/desaturated purple and
+     * an italic "I" to signal the abstract nature of the entity.
+     */
     public static final ImageIcon ABSTRACT_ENTITY_ICON =
-            buildIcon("Icons/Actions/Warning.gif");
+            buildIcon("Icons/InterfaceAbstract_16x16.png");
 
-    /** Icon for a {@link org.openflexo.pamela.editor.model.SourceModelProperty}. */
+    /**
+     * Icon for a {@link org.openflexo.pamela.editor.model.SourceModelProperty}.
+     * Teal rounded square with bold "P" and yellow "@" superscript — the "@"
+     * signals that the property is backed by a {@code @Getter} annotation.
+     */
     public static final ImageIcon PROPERTY_ICON =
-            buildIcon("Icons/Actions/Right.gif");
+            buildIcon("Icons/Property_16x16.png");
 
-    /** Icon for a {@link org.openflexo.pamela.editor.model.SourceModelInitializer}. */
+    /**
+     * Icon for a {@link org.openflexo.pamela.editor.model.SourceModelInitializer}.
+     * Eclipse JDT-style red circle with white play-triangle — method marker.
+     */
     public static final ImageIcon INITIALIZER_ICON =
-            buildIcon("Icons/Actions/Up.gif");
+            buildIcon("Icons/Method_16x16.png");
 
-    /** Icon for a {@link org.openflexo.pamela.editor.model.SourceImplementationClass}. */
+    /**
+     * Icon for a {@link org.openflexo.pamela.editor.model.SourceImplementationClass}.
+     * Eclipse JDT-style green rounded square with white "C" — class marker.
+     */
     public static final ImageIcon IMPL_CLASS_ICON =
-            buildIcon("Icons/Actions/Forward.gif");
+            buildIcon("Icons/Class_16x16.png");
 
     // -------------------------------------------------------------------------
     // Validation icons (pre-existing)
