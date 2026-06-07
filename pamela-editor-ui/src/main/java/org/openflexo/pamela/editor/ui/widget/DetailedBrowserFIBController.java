@@ -57,8 +57,14 @@ public class DetailedBrowserFIBController extends PamelaEditorFIBController<Obje
         Object old = this.selectedElement;
         this.selectedElement = selectedElement;
         getPropertyChangeSupport().firePropertyChange(SELECTED_ELEMENT, old, selectedElement);
-        // Propagate to application
-        if (application != null) {
+        // Propagate to application only for genuine user selections (non-null).
+        //
+        // Gina calls setSelectedElement(null) internally when the browser is rebound to a
+        // new data object and the previously-selected node no longer exists in the new tree.
+        // Propagating that null would cause setCurrentSelectedElement(null) →
+        // detailedBrowser.setEditedObject(null) → empty browser.
+        // This null is an internal Gina artefact, not a user action, so we filter it here.
+        if (application != null && selectedElement != null) {
             application.setCurrentSelectedElement(selectedElement);
         }
     }

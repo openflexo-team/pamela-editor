@@ -248,6 +248,15 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     /** The currently selected element (any Source* or PamelaClassDiagram). */
     private Object currentSelectedElement;
 
+    /**
+     * Re-entrance guard for {@link #setCurrentSelectedElement(Object)}.
+     * Prevents Gina's internal rebind machinery from triggering a recursive selection
+     * propagation (e.g. when Gina calls {@code setSelectedElement(null)} on the
+     * DetailedBrowser controller because the previously-selected node is not found
+     * in the newly-bound tree).
+     */
+    private boolean settingSelectedElement = false;
+
     private PamelaEditorMenuBar menuBar;
     LocalizedEditor localizedEditor;
 
@@ -596,30 +605,81 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     /**
      * Called when the user clicks a node in either the {@link MetaModelBrowser}
      * or the {@link DetailedBrowser}.
+     *
+     * <p>The {@link DetailedBrowser} is rebound to the <em>described element</em>
+     * (see {@link #getDetailedBrowserElement(Object)}), which may differ from
+     * {@code element} itself: for child elements such as {@link SourceModelProperty},
+     * {@link org.openflexo.pamela.editor.model.SourceModelInitializer}, and
+     * {@link org.openflexo.pamela.editor.model.SourceImplementationClass}, the
+     * described element is the parent {@link SourceModelEntity}.  This keeps the
+     * browser showing the entity's full content rather than going empty.
+     *
+     * <p>The inspector and central view always receive the actually selected
+     * {@code element}, so they continue to show property-specific content.</p>
+     *
+     * <p>This method is guarded against re-entrance: Gina may call the
+     * {@link org.openflexo.pamela.editor.ui.widget.DetailedBrowserFIBController}'s
+     * setter with {@code null} while rebinding the browser, which in turn would call
+     * this method recursively.  The guard silently discards any re-entrant call.</p>
      */
     public void setCurrentSelectedElement(Object element) {
-        this.currentSelectedElement = element;
-        try {
-            // 1. Rebind the detailed browser
-            detailedBrowser.setEditedObject(element);
-        } catch (Exception e) {
-            logger.warning("DetailedBrowser rebind failed: " + e.getMessage());
-            e.printStackTrace();
+        if (settingSelectedElement) {
+            return; // discard re-entrant calls from Gina's internal rebind machinery
         }
+        settingSelectedElement = true;
         try {
-            // 2. Refresh the inspector
-            refreshInspector(element);
-        } catch (Exception e) {
-            logger.warning("Inspector refresh failed: " + e.getMessage());
-            e.printStackTrace();
+            this.currentSelectedElement = element;
+            try {
+                // 1. Rebind the detailed browser to the "described" element.
+                //    For child elements (property, initializer, impl class) this is the
+                //    parent entity, so the browser stays populated.
+                detailedBrowser.setEditedObject(getDetailedBrowserElement(element));
+            } catch (Exception e) {
+                logger.warning("DetailedBrowser rebind failed: " + e.getMessage());
+                e.printStackTrace();
+            }
+            try {
+                // 2. Refresh the inspector (always for the actual selected element)
+                refreshInspector(element);
+            } catch (Exception e) {
+                logger.warning("Inspector refresh failed: " + e.getMessage());
+                e.printStackTrace();
+            }
+            try {
+                // 3. Open or navigate the central view
+                openOrSwitchCentralView(element);
+            } catch (Exception e) {
+                logger.warning("Central view switch failed: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } finally {
+            settingSelectedElement = false;
         }
-        try {
-            // 3. Open or navigate the central view
-            openOrSwitchCentralView(element);
-        } catch (Exception e) {
-            logger.warning("Central view switch failed: " + e.getMessage());
-            e.printStackTrace();
+    }
+
+    /**
+     * Returns the element that the {@link DetailedBrowser} should describe.
+     *
+     * <p>For child elements ({@link SourceModelProperty},
+     * {@link org.openflexo.pamela.editor.model.SourceModelInitializer},
+     * {@link org.openflexo.pamela.editor.model.SourceImplementationClass}),
+     * the parent {@link SourceModelEntity} is returned so that the browser
+     * keeps showing the entity's full property/initializer list rather than
+     * going blank when a leaf element is selected.</p>
+     *
+     * <p>For all other element types, the element itself is returned.</p>
+     */
+    private Object getDetailedBrowserElement(Object element) {
+        if (element instanceof SourceModelProperty) {
+            return ((SourceModelProperty) element).getModelEntity();
         }
+        if (element instanceof org.openflexo.pamela.editor.model.SourceModelInitializer) {
+            return ((org.openflexo.pamela.editor.model.SourceModelInitializer) element).getEntity();
+        }
+        if (element instanceof org.openflexo.pamela.editor.model.SourceImplementationClass) {
+            return ((org.openflexo.pamela.editor.model.SourceImplementationClass) element).getEntity();
+        }
+        return element;
     }
 
     /** Called from MetaModelBrowserFIBController on single-click. */
