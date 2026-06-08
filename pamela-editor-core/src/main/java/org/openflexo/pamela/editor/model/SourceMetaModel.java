@@ -267,11 +267,30 @@ public class SourceMetaModel implements SourceElement {
             // Build initializers
             buildInitializers(entity, ctType);
 
-            // Build implementation class if @ImplementationClass is present
-            ImplementationClass implAnnotation = ctType.getAnnotation(ImplementationClass.class);
-            if (implAnnotation != null) {
-                String implClassName = implAnnotation.value().getName();
-                buildImplementationClass(entity, implClassName);
+            // Build implementation class if @ImplementationClass is present.
+            // We read via CtAnnotation.getValue() (raw AST) instead of the Java proxy because
+            // invoking .value().getName() on the proxy triggers Spoon's VisitorPartialEvaluator,
+            // which tries to load the class at runtime — failing when it has not been compiled yet.
+            // @ImplementationClass(Foo.class) is stored in the AST as a CtFieldRead whose target
+            // is a CtTypeAccess<Foo>; we extract the qualified name from that type access.
+            CtAnnotation<?> implCtAnnotation = ctType.getAnnotations().stream()
+                    .filter(a -> a.getAnnotationType().getQualifiedName()
+                            .equals(ImplementationClass.class.getName()))
+                    .findFirst().orElse(null);
+            if (implCtAnnotation != null) {
+                spoon.reflect.code.CtExpression<?> valueExpr = implCtAnnotation.getValue("value");
+                String implClassName = null;
+                if (valueExpr instanceof spoon.reflect.code.CtFieldRead<?>) {
+                    spoon.reflect.code.CtFieldRead<?> fieldRead =
+                            (spoon.reflect.code.CtFieldRead<?>) valueExpr;
+                    if (fieldRead.getTarget() instanceof spoon.reflect.code.CtTypeAccess<?>) {
+                        implClassName = ((spoon.reflect.code.CtTypeAccess<?>) fieldRead.getTarget())
+                                .getAccessedType().getQualifiedName();
+                    }
+                }
+                if (implClassName != null) {
+                    buildImplementationClass(entity, implClassName);
+                }
             }
 
             // Validate initPolicy = REQUIRED + no initializer + not abstract
