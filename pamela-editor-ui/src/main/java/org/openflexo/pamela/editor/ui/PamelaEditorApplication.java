@@ -54,6 +54,7 @@ import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourceModelProperty;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourcePackage;
+import org.openflexo.pamela.editor.ui.action.AddAsRootTypeAction;
 import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
 import org.openflexo.pamela.editor.ui.action.ContextualAction;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
@@ -466,6 +467,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
 
         // --- Contextual actions ---
         registerAction(new AddSourceFolderAction());
+        registerAction(new AddAsRootTypeAction());
 
         frame.validate();
         frame.pack();
@@ -689,6 +691,49 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     }
 
     /** Closes a session and removes all related views and browser entries. */
+    /**
+     * Runs {@link org.openflexo.pamela.editor.model.SourceMetaModel#rebuildMetaModel()}
+     * on a background thread for the given session, then refreshes the UI on the EDT.
+     *
+     * <p>The metamodel's inputs (source directories, root type names) must already be
+     * updated before calling this method.</p>
+     */
+    public void rebuildSession(PamelaEditorSession session) {
+        if (session == null) {
+            return;
+        }
+        SourceMetaModel metaModel = session.getMetaModel();
+
+        new javax.swing.SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() {
+                metaModel.rebuildMetaModel();
+                logger.info("Rebuild complete: " + metaModel.prettyPrint());
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get(); // propagate exceptions if any
+                } catch (Exception e) {
+                    Throwable cause = (e.getCause() != null) ? e.getCause() : e;
+                    logger.severe("Rebuild failed: " + cause.getMessage());
+                    cause.printStackTrace();
+                    javax.swing.JOptionPane.showMessageDialog(
+                            frame,
+                            "Rebuild failed:\n" + cause.getMessage(),
+                            "Error",
+                            javax.swing.JOptionPane.ERROR_MESSAGE);
+                }
+                // Force Gina to refresh the browser tree
+                metaModel.getPropertyChangeSupport()
+                         .firePropertyChange("allPackages", null,
+                                 new ArrayList<>(metaModel.getAllPackages()));
+            }
+        }.execute();
+    }
+
     public void closeSession(PamelaEditorSession session) {
         if (session == null) {
             return;

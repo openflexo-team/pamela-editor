@@ -27,6 +27,18 @@
         iteratorClassName="java.lang.Object"
         constraints="border(location=center;x=0;y=0)">
 
+        <!-- SourceMetaModel: shown when the user selects a session's metamodel node -->
+        <BrowserElement id="5"
+            icon="controller.iconForObject(metaModel)"
+            filtered="false"
+            label="metaModel.name"
+            defaultVisible="true"
+            dataClassName="org.openflexo.pamela.editor.model.SourceMetaModel"
+            name="metaModel"
+            isEditable="false">
+            <Children id="57" name="packages" data="metaModel.allPackages" />
+        </BrowserElement>
+
         <BrowserElement id="10"
             icon="controller.iconForObject(session)"
             filtered="false"

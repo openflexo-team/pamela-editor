@@ -65,6 +65,12 @@ public class PamelaEditorIconLibrary {
             buildIcon("Icons/PamelaModel_16x16.png");
 
     /**
+     * Icon for a {@link org.openflexo.pamela.editor.model.SourceMetaModel}.
+     * Same image as the session icon — a metamodel is the content of a session.
+     */
+    public static final ImageIcon METAMODEL_ICON = SESSION_ICON;
+
+    /**
      * Icon for a {@link org.openflexo.pamela.editor.diagram.PamelaClassDiagram}.
      * Reuses the network icon until a dedicated diagram icon is designed.
      */
