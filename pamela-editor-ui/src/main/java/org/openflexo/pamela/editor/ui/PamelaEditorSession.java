@@ -73,6 +73,11 @@ public class PamelaEditorSession {
         return pamelaFile;
     }
 
+    /** Absolute path of the {@code .pamela} file, as a String for inspector bindings. */
+    public String getPamelaFilePath() {
+        return pamelaFile != null ? pamelaFile.getAbsolutePath() : "";
+    }
+
     /** The fully built {@link SourceMetaModel} for this project. */
     public SourceMetaModel getMetaModel() {
         return metaModel;

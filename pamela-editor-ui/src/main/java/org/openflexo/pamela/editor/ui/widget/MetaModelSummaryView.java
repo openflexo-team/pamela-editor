@@ -1,5 +1,7 @@
 package org.openflexo.pamela.editor.ui.widget;
 
+import java.io.File;
+
 import org.openflexo.gina.ApplicationFIBLibrary.ApplicationFIBLibraryImpl;
 import org.openflexo.gina.swing.utils.FIBJPanel;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
@@ -24,6 +26,19 @@ public class MetaModelSummaryView extends FIBJPanel<SourceMetaModel> {
         super(FIB_FILE, metaModel,
               ApplicationFIBLibraryImpl.instance(),
               MetaModelSummaryViewFIBController.EDITOR_LOCALIZATION);
+    }
+
+    /**
+     * Sets the project directory used as the starting point for the source
+     * directory file chooser.  Call this after construction when the view is
+     * bound to a {@code PamelaEditorSession} so the chooser opens at the right place.
+     */
+    public void setProjectDirectory(File projectDirectory) {
+        MetaModelSummaryViewFIBController ctrl =
+                (MetaModelSummaryViewFIBController) getController();
+        if (ctrl != null) {
+            ctrl.setProjectDirectory(projectDirectory);
+        }
     }
 
     @Override

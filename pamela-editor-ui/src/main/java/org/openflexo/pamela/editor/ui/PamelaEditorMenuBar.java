@@ -46,6 +46,7 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
     private final JMenu helpMenu;
 
     // File menu items
+    private final JMenuItem newProjectItem;
     private final JMenuItem openItem;
     private final JMenuItem newDiagramItem;
     private final JMenuItem saveItem;
@@ -81,6 +82,11 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
         helpMenu  = new JMenu(loc("help"));
 
         // ------------------------------------------------------------------ File menu
+        newProjectItem = new JMenuItem(loc("new_project"));
+        newProjectItem.setAccelerator(KeyStroke.getKeyStroke(
+                KeyEvent.VK_N, PamelaEditorApplication.META_MASK));
+        newProjectItem.addActionListener(e -> application.newProject());
+
         openItem = new JMenuItem(loc("open_project"));
         openItem.setAccelerator(KeyStroke.getKeyStroke(
                 KeyEvent.VK_O, PamelaEditorApplication.META_MASK));
@@ -108,6 +114,8 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
                 KeyEvent.VK_Q, PamelaEditorApplication.META_MASK));
         quitItem.addActionListener(e -> application.quit());
 
+        fileMenu.add(newProjectItem);
+        fileMenu.addSeparator();
         fileMenu.add(openItem);
         fileMenu.add(openRecent);
         fileMenu.addSeparator();

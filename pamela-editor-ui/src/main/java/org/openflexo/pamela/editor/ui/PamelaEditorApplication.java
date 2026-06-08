@@ -537,6 +537,76 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }
     }
 
+    /**
+     * Shows the {@link NewProjectDialog} and, if confirmed, creates a new
+     * {@link SourceMetaModel} from the supplied inputs, saves the {@code .pamela}
+     * file, and opens the resulting session in the editor.
+     *
+     * <p>The Spoon analysis ({@code buildMetaModel()}) runs on a background thread
+     * to avoid blocking the EDT.</p>
+     */
+    public void newProject() {
+        NewProjectDialog dialog = new NewProjectDialog(frame);
+        dialog.setVisible(true);
+
+        if (!dialog.isConfirmed()) {
+            return;
+        }
+
+        String projectName = dialog.getProjectName();
+        File   pamelaFile  = dialog.getPamelaFile();
+
+        new javax.swing.SwingWorker<PamelaEditorSession, Void>() {
+
+            @Override
+            protected PamelaEditorSession doInBackground() throws Exception {
+                // 1. Create an empty meta-model (no source dirs, no root types yet)
+                SourceMetaModel metaModel = new SourceMetaModel();
+                metaModel.setName(projectName);
+
+                // 2. Persist the .pamela file immediately so the session has a location
+                SourceMetaModelSerializer.save(metaModel, pamelaFile,
+                        java.util.Collections.emptyList());
+
+                // 3. Create the session
+                return new PamelaEditorSession(pamelaFile, metaModel);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    PamelaEditorSession session = get();
+                    session.setToolFactory(toolFactory);
+
+                    List<PamelaEditorSession> oldSessions = new ArrayList<>(sessions);
+                    sessions.add(session);
+                    PamelaEditorPreferences.setLastFile(pamelaFile);
+
+                    pcSupport.firePropertyChange("sessions",
+                            Collections.unmodifiableList(oldSessions),
+                            Collections.unmodifiableList(sessions));
+
+                    // Select the new session in the browser
+                    setCurrentSelectedElement(session);
+
+                } catch (Exception e) {
+                    Throwable cause = (e.getCause() != null) ? e.getCause() : e;
+                    logger.severe("Failed to create project: " + cause.getMessage());
+                    cause.printStackTrace();
+                    javax.swing.JOptionPane.showMessageDialog(
+                            frame,
+                            loc("error_creating_project") + "\n" + cause.getMessage(),
+                            loc("error"),
+                            javax.swing.JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
+    }
+
+    private static String loc(String key) {
+        return PAMELA_EDITOR_LOCALIZATION.localizedForKey(key);
+    }
+
     /** Saves the currently active session's {@code .pamela} file and all diagram sidecars. */
     public void saveActiveProject() {
         PamelaEditorSession session = getSessionForElement(currentSelectedElement);
@@ -818,8 +888,13 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             return new MetaModelSummaryView((SourceMetaModel) element);
         }
         if (element instanceof PamelaEditorSession) {
-            return new MetaModelSummaryView(
-                    ((PamelaEditorSession) element).getMetaModel());
+            PamelaEditorSession session = (PamelaEditorSession) element;
+            MetaModelSummaryView view = new MetaModelSummaryView(session.getMetaModel());
+            File pamelaFile = session.getPamelaFile();
+            if (pamelaFile != null && pamelaFile.getParentFile() != null) {
+                view.setProjectDirectory(pamelaFile.getParentFile());
+            }
+            return view;
         }
         if (element instanceof SourcePackage) {
             return new PackageSummaryView((SourcePackage) element);

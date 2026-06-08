@@ -184,6 +184,26 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
 
         // Phase 3 — resolution
         phase3Resolution();
+
+        pcSupport.firePropertyChange("entities", null, Collections.unmodifiableMap(entities));
+        pcSupport.firePropertyChange("packages", null, Collections.unmodifiableCollection(packages.values()));
+    }
+
+    /**
+     * Resets all derived state (entities, packages, compilation units, issues)
+     * and runs the full 3-phase construction algorithm again from the current
+     * source directories and root type names.
+     *
+     * <p>Call this after modifying the inputs via {@link #addSourceDirectory},
+     * {@link #removeSourceDirectory}, {@link #addRootTypeName}, or
+     * {@link #removeRootTypeName} to bring the model in sync with the new inputs.</p>
+     */
+    public void rebuildMetaModel() {
+        packages.clear();
+        compilationUnits.clear();
+        entities.clear();
+        issues.clear();
+        buildMetaModel();
     }
 
     // =========================================================================

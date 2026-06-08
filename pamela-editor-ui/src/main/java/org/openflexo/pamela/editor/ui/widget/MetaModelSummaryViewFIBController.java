@@ -27,6 +27,13 @@ public class MetaModelSummaryViewFIBController extends PamelaEditorFIBController
     private static final Logger logger =
             Logger.getLogger(MetaModelSummaryViewFIBController.class.getPackage().getName());
 
+    /** Directory of the .pamela file — used as starting directory for the file chooser. */
+    private File projectDirectory;
+
+    public void setProjectDirectory(File projectDirectory) {
+        this.projectDirectory = projectDirectory;
+    }
+
     public Icon getSourceFolderIcon(File dir) {
         return PamelaEditorIconLibrary.SOURCE_FOLDER_ICON;
     }
@@ -56,6 +63,9 @@ public class MetaModelSummaryViewFIBController extends PamelaEditorFIBController
         chooser.setDialogTitle("Select source directory");
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         chooser.setAcceptAllFileFilterUsed(false);
+        if (projectDirectory != null && projectDirectory.exists()) {
+            chooser.setCurrentDirectory(projectDirectory);
+        }
         JFrame parent = getParentFrame();
         int result = chooser.showOpenDialog(parent);
         if (result == JFileChooser.APPROVE_OPTION) {

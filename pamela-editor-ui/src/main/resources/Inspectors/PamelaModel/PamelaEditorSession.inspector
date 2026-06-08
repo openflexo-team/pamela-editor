@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.ui.PamelaEditorSession" name="Inspector">
+    <Label name="NameLabel" label="project_name" index="0"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="NameTF" index="1" data="data.metaModel.name" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="20" localize="true" />
+    <Label name="LocationLabel" label="project_location" index="2"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="LocationTF" index="3" data="data.pamelaFilePath" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="20" localize="true" />
+    <LocalizedDictionary>
+        <Localized key="project_name" lang="English" value="Name" />
+        <Localized key="project_name" lang="French" value="Nom" />
+        <Localized key="project_location" lang="English" value="Location" />
+        <Localized key="project_location" lang="French" value="Emplacement" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Project" />
+</Inspector>
