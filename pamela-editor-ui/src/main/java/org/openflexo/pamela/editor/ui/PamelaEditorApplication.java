@@ -726,10 +726,16 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                             "Error",
                             javax.swing.JOptionPane.ERROR_MESSAGE);
                 }
-                // Force Gina to refresh the browser tree
-                metaModel.getPropertyChangeSupport()
-                         .firePropertyChange("allPackages", null,
-                                 new ArrayList<>(metaModel.getAllPackages()));
+                // Force Gina to refresh the browser tree and all summary statistics
+                java.beans.PropertyChangeSupport pcs = metaModel.getPropertyChangeSupport();
+                pcs.firePropertyChange("allPackages", null,
+                        new ArrayList<>(metaModel.getAllPackages()));
+                pcs.firePropertyChange("entitiesCount", -1, metaModel.getEntitiesCount());
+                pcs.firePropertyChange("packagesCount", -1, metaModel.getPackagesCount());
+                pcs.firePropertyChange("totalPropertiesCount", -1, metaModel.getTotalPropertiesCount());
+                pcs.firePropertyChange("abstractEntitiesCount", -1, metaModel.getAbstractEntitiesCount());
+                pcs.firePropertyChange("totalInitializersCount", -1, metaModel.getTotalInitializersCount());
+                pcs.firePropertyChange("issuesCount", -1, metaModel.getIssuesCount());
             }
         }.execute();
     }
