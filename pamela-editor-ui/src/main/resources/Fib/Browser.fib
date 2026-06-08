@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Panel id="0" darkLevel="0" useScrollBar="false" protectContent="false"
-	height="200" name="main" layout="border"
+	height="100" name="main" layout="border"
 	controllerClassName="org.openflexo.gina.swing.editor.widget.BrowserFIBController"
 	border="empty" trackViewPortWidth="true" width="300"
 	dataClassName="org.openflexo.gina.model.FIBComponent" titleFont="Lucida Grande,0,13"

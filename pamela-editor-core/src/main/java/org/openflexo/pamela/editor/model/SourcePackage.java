@@ -60,6 +60,38 @@ public class SourcePackage implements SourceElement {
         return Collections.unmodifiableList(entities);
     }
 
+    /** Simple name: last segment of the qualified name, or {@code "<default>"}. */
+    public String getSimpleName() {
+        if (isDefault()) {
+            return "<default>";
+        }
+        int dot = qualifiedName.lastIndexOf('.');
+        return dot < 0 ? qualifiedName : qualifiedName.substring(dot + 1);
+    }
+
+    /** Number of entities in this package. */
+    public int getEntitiesCount() {
+        return entities.size();
+    }
+
+    /** Number of abstract entities in this package. */
+    public int getAbstractEntitiesCount() {
+        int count = 0;
+        for (SourceModelEntity e : entities) {
+            if (e.isAbstract()) count++;
+        }
+        return count;
+    }
+
+    /** Total number of declared properties across all entities in this package. */
+    public int getTotalPropertiesCount() {
+        int count = 0;
+        for (SourceModelEntity e : entities) {
+            count += e.getDeclaredProperties().size();
+        }
+        return count;
+    }
+
     /**
      * {@code true} if this is the default (unnamed) package,
      * i.e. {@link #getQualifiedName()} returns an empty string.

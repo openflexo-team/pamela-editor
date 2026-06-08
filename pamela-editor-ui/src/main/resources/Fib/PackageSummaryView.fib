@@ -1,18 +1,124 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Summary view for SourcePackage (shown in central tab when a package is selected) -->
+<!--
+  PackageSummaryView.fib
+  Central view shown when a SourcePackage is selected.
+
+  Layout (top → bottom):
+    1. Header     — package icon 64×64 + qualified name, centred
+    2. Entities   — FlatDesign table with icon + entity name
+    3. Statistics — read-only metrics in rounded3d titled panel, grid 4 cols
+-->
 <Panel id="0" darkLevel="0" useScrollBar="true" layout="twocols"
-    height="400" name="PackageSummaryView"
+    height="600" name="PackageSummaryView"
     dataClassName="org.openflexo.pamela.editor.model.SourcePackage"
-    trackViewPortWidth="true" width="400">
+    trackViewPortWidth="true" width="500"
+    borderTop="0" borderLeft="0" borderBottom="0" borderRight="0" border="empty">
 
-    <Label id="1" label="Package summary" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
+    <!-- ================================================================ -->
+    <!-- 1. HEADER: package icon + qualified name, centred                -->
+    <!-- ================================================================ -->
+    <Panel id="10" layout="flow" flowAlignment="CENTER" hGap="12" vGap="10"
+        border="empty" borderTop="5" borderLeft="10" borderBottom="5" borderRight="10"
+        constraints="twocols(expandHorizontally=true;expandVertically=false;location=center)"
+        name="HeaderPanel">
+        <Image id="11" imageWidth="64" imageHeight="64" sizeAdjustment="OriginalSize"
+            imageFile="../Icons/SourcePackage_64x64.png" align="center"
+            constraints="flow()" name="PackageIcon" />
+        <Label id="12" data="data.qualifiedName"
+            font="SansSerif,1,18" align="left"
+            constraints="flow()" name="PackageNameLabel" />
+    </Panel>
 
-    <Label id="2" label="Qualified name" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
-    <TextField id="3" data="data.qualifiedName" readOnly="true"
-        constraints="twocols(isLabel=false;expandHorizontally=true;expandVertically=false)" />
+    <!-- ================================================================ -->
+    <!-- 2. ENTITIES table (FlatDesign, read-only)                        -->
+    <!-- ================================================================ -->
+    <Panel id="40" layout="twocols"
+        border="empty" borderTop="0" borderLeft="10" borderBottom="4" borderRight="10"
+        constraints="twocols(expandHorizontally=true;expandVertically=false;location=center)"
+        name="EntitiesPanel">
 
-    <Label id="4" label="Entities" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
-    <TextField id="5" data="data.entities.size.toString" readOnly="true"
-        constraints="twocols(isLabel=false;expandHorizontally=false;expandVertically=false)" />
+        <Label id="41" label="entities" align="left" localize="true"
+            font="SansSerif,1,12"
+            constraints="twocols(expandHorizontally=true;expandVertically=false;location=center;insetsBottom=3)"
+            name="EntitiesLabel" />
+
+        <Table id="42"
+            lookAndFeel="FlatDesign"
+            data="data.entities"
+            iteratorClassName="org.openflexo.pamela.editor.model.SourceModelEntity"
+            visibleRowCount="8"
+            rowHeight="22"
+            showHeader="true"
+            showFooter="false"
+            selectionMode="SingleSelection"
+            backgroundSelectionColor="9,80,208"
+            backgroundNonSelectionColor="255,255,255"
+            backgroundSecondarySelectionColor="178,215,255"
+            textSelectionColor="255,255,255"
+            textNonSelectionColor="0,0,0"
+            textSecondarySelectionColor="0,0,0"
+            manageDynamicModel="true"
+            constraints="twocols(expandHorizontally=true;expandVertically=false;location=center)"
+            name="EntitiesTable">
+            <IconColumn id="43" data="controller.iconForObject(iterator)"
+                title="" displayTitle="false" columnWidth="20" resizable="false" name="EntityIcon" />
+            <TextFieldColumn id="44" data="iterator.simpleName"
+                title="name" displayTitle="true" resizable="true" columnWidth="200"
+                showIcon="false" readOnly="true" name="EntityName" />
+            <CheckBoxColumn id="45" data="iterator.abstract"
+                title="abstract" displayTitle="true" columnWidth="60"
+                readOnly="true" name="EntityAbstract" />
+            <TextFieldColumn id="46" data="iterator.declaredProperties.size.toString"
+                title="properties" displayTitle="true" resizable="false" columnWidth="70"
+                showIcon="false" readOnly="true" name="EntityPropertiesCount" />
+        </Table>
+
+    </Panel>
+
+    <!-- ================================================================ -->
+    <!-- 3. STATISTICS — rounded3d with title, grid 4 cols × 2 rows       -->
+    <!-- ================================================================ -->
+    <Panel id="20" layout="grid" cols="4" rows="2" hGap="6" vGap="4"
+        border="rounded3d" borderTitle="statistics"
+        borderTop="12" borderLeft="8" borderBottom="8" borderRight="8"
+        constraints="twocols(expandHorizontally=true;expandVertically=false;location=center;insetsTop=10;insetsBottom=10;insetsLeft=10;insetsRight=10)"
+        name="StatisticsPanel">
+
+        <!-- Row 0 -->
+        <Label id="50" label="entities" align="right" localize="true"
+            constraints="grid(x=0;y=0)" name="StatEntitiesLabel" />
+        <TextField id="51" data="data.entitiesCount.toString" readOnly="true" columns="4"
+            constraints="grid(x=1;y=0)" name="StatEntitiesValue" />
+        <Label id="52" label="properties" align="right" localize="true"
+            constraints="grid(x=2;y=0)" name="StatPropertiesLabel" />
+        <TextField id="53" data="data.totalPropertiesCount.toString" readOnly="true" columns="4"
+            constraints="grid(x=3;y=0)" name="StatPropertiesValue" />
+
+        <!-- Row 1 -->
+        <Label id="54" label="abstract_entities" align="right" localize="true"
+            constraints="grid(x=0;y=1)" name="StatAbstractLabel" />
+        <TextField id="55" data="data.abstractEntitiesCount.toString" readOnly="true" columns="4"
+            constraints="grid(x=1;y=1)" name="StatAbstractValue" />
+        <Label id="56" label="" align="right"
+            constraints="grid(x=2;y=1)" name="StatEmptyLabel" />
+        <Label id="57" label=""
+            constraints="grid(x=3;y=1)" name="StatEmptyValue" />
+
+    </Panel>
+
+    <LocalizedDictionary id="90">
+        <Localized id="91"  lang="English" value="Entities"           key="entities" />
+        <Localized id="92"  lang="French"  value="Entités"            key="entities" />
+        <Localized id="93"  lang="English" value="Abstract entities"  key="abstract_entities" />
+        <Localized id="94"  lang="French"  value="Entités abstraites" key="abstract_entities" />
+        <Localized id="95"  lang="English" value="Properties"         key="properties" />
+        <Localized id="96"  lang="French"  value="Propriétés"         key="properties" />
+        <Localized id="97"  lang="English" value="Name"               key="name" />
+        <Localized id="98"  lang="French"  value="Nom"                key="name" />
+        <Localized id="99"  lang="English" value="Abstract"           key="abstract" />
+        <Localized id="100" lang="French"  value="Abstraite"          key="abstract" />
+        <Localized id="101" lang="English" value="Statistics"         key="statistics" />
+        <Localized id="102" lang="French"  value="Statistiques"       key="statistics" />
+    </LocalizedDictionary>
 
 </Panel>

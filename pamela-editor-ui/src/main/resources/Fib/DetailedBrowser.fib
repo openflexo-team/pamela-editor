@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Panel id="0" darkLevel="0" useScrollBar="false" protectContent="false"
-    height="400" name="main" layout="border"
+    height="100" name="main" layout="border"
     controllerClassName="org.openflexo.pamela.editor.ui.widget.DetailedBrowserFIBController"
     border="empty" trackViewPortWidth="true" width="250"
     dataClassName="java.lang.Object"

@@ -94,7 +94,7 @@ public class PamelaEditorIconLibrary {
      * an italic "I" to signal the abstract nature of the entity.
      */
     public static final ImageIcon ABSTRACT_ENTITY_ICON =
-            buildIcon("Icons/ModelEntity_CU.png");
+            buildIcon("Icons/AbstractModelEntity_CU.png");
 
     /**
      * Icon for a {@link org.openflexo.pamela.editor.model.SourceModelProperty}.
