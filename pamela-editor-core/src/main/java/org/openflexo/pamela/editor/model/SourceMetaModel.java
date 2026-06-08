@@ -119,20 +119,133 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
      * @param directory a directory containing {@code .java} source files
      */
     public void addSourceDirectory(File directory) {
+        if (sourceDirectories.contains(directory)) {
+            return;
+        }
         List<File> old = new ArrayList<>(sourceDirectories);
         sourceDirectories.add(directory);
+        scanForPackages(directory);
         pcSupport.firePropertyChange("sourceDirectories", old, Collections.unmodifiableList(sourceDirectories));
+        pcSupport.firePropertyChange("allPackages", null, new ArrayList<>(packages.values()));
     }
 
     /**
      * Removes a previously registered source directory.
-     * Has no effect if the directory is not in the list.
+     * Rebuilds the package/file index from the remaining source directories.
      */
     public void removeSourceDirectory(File directory) {
         List<File> old = new ArrayList<>(sourceDirectories);
-        if (sourceDirectories.remove(directory)) {
-            pcSupport.firePropertyChange("sourceDirectories", old, Collections.unmodifiableList(sourceDirectories));
+        if (!sourceDirectories.remove(directory)) {
+            return;
         }
+        rescanPackages();
+        pcSupport.firePropertyChange("sourceDirectories", old, Collections.unmodifiableList(sourceDirectories));
+        pcSupport.firePropertyChange("allPackages", null, new ArrayList<>(packages.values()));
+    }
+
+    /**
+     * Clears all filesystem-scanned data (java files, empty packages) and
+     * re-scans from the current source directories.
+     * Entity links are preserved.
+     */
+    private void rescanPackages() {
+        for (SourcePackage pkg : packages.values()) {
+            pkg.clearJavaFiles();
+        }
+        for (File dir : sourceDirectories) {
+            scanForPackages(dir);
+        }
+        packages.entrySet().removeIf(e ->
+                e.getValue().getJavaFiles().isEmpty() && e.getValue().getEntities().isEmpty());
+    }
+
+    /**
+     * Recursively scans {@code rootDir} for Java packages.
+     * A directory is a package if it contains at least one {@code .java} file.
+     * For each such directory, a {@link SourcePackage} is created (or reused if
+     * already present) and a {@link SourceJavaFile} is added for each
+     * {@code .java} file found.
+     *
+     * <p>The package qualified name is derived from the relative path of the
+     * directory from {@code rootDir}: {@code foo/bar} → {@code "foo.bar"}.
+     * The default package (files directly in {@code rootDir}) uses an empty string.</p>
+     *
+     * @param rootDir a source directory already registered via {@link #addSourceDirectory}
+     */
+    private void scanForPackages(File rootDir) {
+        if (!rootDir.isDirectory()) {
+            return;
+        }
+        scanPackageDir(rootDir, rootDir, "");
+    }
+
+    private void scanPackageDir(File dir, File rootDir, String ignored) {
+        File[] children = dir.listFiles();
+        if (children == null) {
+            return;
+        }
+
+        List<File> javaFiles = new ArrayList<>();
+        List<File> subdirs = new ArrayList<>();
+        for (File child : children) {
+            if (child.isDirectory()) {
+                subdirs.add(child);
+            } else if (child.getName().endsWith(".java")) {
+                javaFiles.add(child);
+            }
+        }
+
+        // If this directory has .java files, determine their package from source
+        if (!javaFiles.isEmpty()) {
+            String packageName = readPackageDeclaration(javaFiles.get(0));
+            SourcePackage pkg = packages.get(packageName);
+            if (pkg == null) {
+                pkg = new SourcePackage(packageName, this);
+                packages.put(packageName, pkg);
+            }
+            for (File jf : javaFiles) {
+                // Avoid duplicates across multiple scans
+                final SourcePackage finalPkg = pkg;
+                boolean alreadyPresent = finalPkg.getJavaFiles().stream()
+                        .anyMatch(f -> f.getFile().equals(jf));
+                if (!alreadyPresent) {
+                    pkg.addJavaFile(new SourceJavaFile(jf, rootDir, this));
+                }
+            }
+        }
+
+        for (File subdir : subdirs) {
+            scanPackageDir(subdir, rootDir, "");
+        }
+    }
+
+    /**
+     * Reads the {@code package} declaration from the first few lines of a
+     * {@code .java} file. Returns an empty string if no package declaration
+     * is found (default package) or if the file cannot be read.
+     */
+    private static String readPackageDeclaration(File javaFile) {
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(new java.io.FileInputStream(javaFile),
+                        java.nio.charset.StandardCharsets.UTF_8))) {
+            String line;
+            int linesRead = 0;
+            while ((line = reader.readLine()) != null && linesRead < 50) {
+                linesRead++;
+                line = line.trim();
+                if (line.startsWith("package ") && line.endsWith(";")) {
+                    return line.substring("package ".length(), line.length() - 1).trim();
+                }
+                // Stop early if we've passed the header area
+                if (line.startsWith("public ") || line.startsWith("class ")
+                        || line.startsWith("interface ") || line.startsWith("@")) {
+                    if (!line.startsWith("@")) break;
+                }
+            }
+        } catch (IOException e) {
+            // ignore — return default package
+        }
+        return "";
     }
 
     /**
@@ -186,7 +299,7 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         phase3Resolution();
 
         pcSupport.firePropertyChange("entities", null, Collections.unmodifiableMap(entities));
-        pcSupport.firePropertyChange("packages", null, Collections.unmodifiableCollection(packages.values()));
+        pcSupport.firePropertyChange("allPackages", null, new ArrayList<>(packages.values()));
     }
 
     /**
@@ -203,6 +316,11 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         compilationUnits.clear();
         entities.clear();
         issues.clear();
+        // Re-scan all source directories so packages and java files are populated
+        // before Spoon runs (phase1Discovery will then enrich them with CtPackage refs)
+        for (File dir : sourceDirectories) {
+            scanForPackages(dir);
+        }
         buildMetaModel();
     }
 
@@ -281,7 +399,9 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
             }
         }
 
-        // Create SourcePackage instances for packages with at least one entity
+        // Wire SourcePackage instances for packages containing entities.
+        // Packages may already exist from the filesystem scan (scanForPackages);
+        // in that case we enrich them with the Spoon CtPackage reference.
         for (SourceModelEntity entity : entities.values()) {
             CtType<?> ctType = findType(entity.getQualifiedName());
             if (ctType == null) {
@@ -290,14 +410,21 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
             CtPackage ctPackage = ctType.getPackage();
             String pkgName = (ctPackage != null) ? ctPackage.getQualifiedName() : "";
             SourcePackage sourcePkg = packages.get(pkgName);
-            if (sourcePkg == null && ctPackage != null) {
-                sourcePkg = new SourcePackage(ctPackage, this);
+            if (sourcePkg == null) {
+                // Package not pre-created by scan (e.g., no .java files were scanned
+                // yet, or this is a Spoon-only run)
+                if (ctPackage != null) {
+                    sourcePkg = new SourcePackage(ctPackage, this);
+                } else {
+                    sourcePkg = new SourcePackage("", this);
+                }
                 packages.put(pkgName, sourcePkg);
+            } else if (sourcePkg.getCtPackage() == null && ctPackage != null) {
+                // Pre-created by scan without Spoon ref — enrich it now
+                sourcePkg.setCtPackage(ctPackage);
             }
-            if (sourcePkg != null) {
-                entity.setSourcePackage(sourcePkg);
-                sourcePkg.addEntity(entity);
-            }
+            entity.setSourcePackage(sourcePkg);
+            sourcePkg.addEntity(entity);
         }
 
         // Link entities to their compilation units
@@ -791,8 +918,8 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
      *
      * @return an unmodifiable collection
      */
-    public Collection<SourcePackage> getAllPackages() {
-        return Collections.unmodifiableCollection(packages.values());
+    public List<SourcePackage> getAllPackages() {
+        return Collections.unmodifiableList(new ArrayList<>(packages.values()));
     }
 
     /**

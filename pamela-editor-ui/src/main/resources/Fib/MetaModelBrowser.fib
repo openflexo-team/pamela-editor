@@ -57,6 +57,7 @@
             name="pkg"
             isEditable="false">
             <Children id="12" name="entities" data="pkg.entities" />
+            <Children id="13" name="javaFiles" data="pkg.nonEntityJavaFiles" />
         </BrowserElement>
 
         <BrowserElement id="6"
@@ -69,5 +70,16 @@
             isEditable="false">
         </BrowserElement>
 
+        <BrowserElement id="7"
+            icon="controller.iconForObject(javaFile)"
+            filtered="false"
+            label="javaFile.simpleName"
+            defaultVisible="true"
+            dataClassName="org.openflexo.pamela.editor.model.SourceJavaFile"
+            name="javaFile"
+            isEditable="false">
+        </BrowserElement>
+         <!--  enabled="false" -->
+ 
     </Browser>
 </Panel>

@@ -13,6 +13,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.openflexo.pamela.editor.model.SourceCompilationUnit;
+import org.openflexo.pamela.editor.model.SourceJavaFile;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourceModelProperty;
 

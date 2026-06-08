@@ -127,6 +127,9 @@ public class DetailedBrowserFIBController extends PamelaEditorFIBController<Obje
         if (object instanceof EntityView) {
             return PamelaEditorIconLibrary.ENTITY_ICON;
         }
+        if (object instanceof org.openflexo.pamela.editor.model.SourceJavaFile) {
+            return PamelaEditorIconLibrary.JAVA_FILE_ICON;
+        }
         return super.retrieveIconForObject(object);
     }
 }

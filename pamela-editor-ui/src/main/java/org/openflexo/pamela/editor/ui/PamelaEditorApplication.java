@@ -49,6 +49,7 @@ import org.openflexo.logging.FlexoLoggingManager;
 import org.openflexo.pamela.editor.SourceMetaModelSerializer;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagramSerializer;
+import org.openflexo.pamela.editor.model.SourceJavaFile;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourceModelProperty;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
@@ -59,6 +60,7 @@ import org.openflexo.pamela.editor.ui.widget.MetaModelBrowser;
 import org.openflexo.pamela.editor.ui.widget.MetaModelSummaryView;
 import org.openflexo.pamela.editor.ui.widget.PackageSummaryView;
 import org.openflexo.pamela.editor.ui.widget.PamelaEditorInspectorController;
+import org.openflexo.pamela.editor.ui.widget.JavaFileView;
 import org.openflexo.pamela.editor.ui.widget.SourceCodeView;
 import org.openflexo.rm.FileSystemResourceLocatorImpl;
 import org.openflexo.rm.Resource;
@@ -902,6 +904,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if (element instanceof SourceModelEntity) {
             return new SourceCodeView((SourceModelEntity) element);
         }
+        if (element instanceof SourceJavaFile) {
+            return new JavaFileView((SourceJavaFile) element);
+        }
         if (element instanceof PamelaClassDiagram) {
             PamelaClassDiagram diagram = (PamelaClassDiagram) element;
             PamelaEditorSession session = getSessionForDiagram(diagram);
@@ -927,6 +932,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }
         if (element instanceof SourceModelEntity) {
             return ((SourceModelEntity) element).getSimpleName();
+        }
+        if (element instanceof SourceJavaFile) {
+            return ((SourceJavaFile) element).getSimpleName();
         }
         if (element instanceof PamelaClassDiagram) {
             String name = ((PamelaClassDiagram) element).getName();

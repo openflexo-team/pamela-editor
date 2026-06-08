@@ -83,6 +83,9 @@ public class MetaModelBrowserFIBController extends PamelaEditorFIBController<Pam
                     ? PamelaEditorIconLibrary.ABSTRACT_ENTITY_ICON
                     : PamelaEditorIconLibrary.ENTITY_ICON;
         }
+        if (object instanceof org.openflexo.pamela.editor.model.SourceJavaFile) {
+            return PamelaEditorIconLibrary.JAVA_FILE_ICON;
+        }
         return super.retrieveIconForObject(object);
     }
 }

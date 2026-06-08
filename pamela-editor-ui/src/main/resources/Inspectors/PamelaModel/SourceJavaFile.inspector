@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.model.SourceJavaFile" name="Inspector">
+    <Label name="NameLabel" label="name" index="0"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="NameTF" index="1" data="data.simpleName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="PackageLabel" label="package" index="2"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="PackageTF" index="3" data="data.packageName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="QualifiedNameLabel" label="qualified_name" index="4"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="QualifiedNameTF" index="5" data="data.qualifiedName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="20" localize="true" />
+    <Label name="PotentialEntityLabel" label="potential_model_entity" index="6"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="PotentialEntityCB" index="7" data="data.potentialModelEntity" readOnly="true"
+        constraints="twocols(location=right)" localize="true" />
+    <LocalizedDictionary>
+        <Localized key="name" lang="English" value="Name" />
+        <Localized key="name" lang="French" value="Nom" />
+        <Localized key="package" lang="English" value="Package" />
+        <Localized key="package" lang="French" value="Package" />
+        <Localized key="qualified_name" lang="English" value="Qualified name" />
+        <Localized key="qualified_name" lang="French" value="Nom qualifié" />
+        <Localized key="potential_model_entity" lang="English" value="Potential @ModelEntity" />
+        <Localized key="potential_model_entity" lang="French" value="@ModelEntity potentiel" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Java File" />
+</Inspector>
