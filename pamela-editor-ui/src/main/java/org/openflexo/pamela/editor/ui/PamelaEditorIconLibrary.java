@@ -76,7 +76,7 @@ public class PamelaEditorIconLibrary {
      * Eclipse JDT-style tan folder with horizontal content lines.
      */
     public static final ImageIcon PACKAGE_ICON =
-            buildIcon("Icons/Package_16x16.png");
+            buildIcon("Icons/JavaIcons/package_obj.gif");
 
     public static final ImageIcon SOURCE_FOLDER_ICON =
             buildIcon("Icons/SourceFolder.png");
@@ -86,7 +86,7 @@ public class PamelaEditorIconLibrary {
      * Eclipse JDT-style purple rounded square with white "I" (interface marker).
      */
     public static final ImageIcon ENTITY_ICON =
-            buildIcon("Icons/Interface_16x16.png");
+            buildIcon("Icons/ModelEntity_CU.png");
 
     /**
      * Icon for an abstract {@link org.openflexo.pamela.editor.model.SourceModelEntity}.
@@ -94,7 +94,7 @@ public class PamelaEditorIconLibrary {
      * an italic "I" to signal the abstract nature of the entity.
      */
     public static final ImageIcon ABSTRACT_ENTITY_ICON =
-            buildIcon("Icons/InterfaceAbstract_16x16.png");
+            buildIcon("Icons/ModelEntity_CU.png");
 
     /**
      * Icon for a {@link org.openflexo.pamela.editor.model.SourceModelProperty}.
