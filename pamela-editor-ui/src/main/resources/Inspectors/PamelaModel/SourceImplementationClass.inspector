@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.model.SourceImplementationClass" name="Inspector">
+    <Label name="SimpleNameLabel" label="simple_name" index="0"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="SimpleNameTF" index="1" data="data.simpleName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="QualifiedNameLabel" label="qualified_name" index="2"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="QualifiedNameTF" index="3" data="data.qualifiedName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="AbstractLabel" label="abstract" index="4"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="AbstractCB" index="5" data="data.abstract" readOnly="true"
+        constraints="twocols(location=right)" localize="true" />
+    <Label name="CustomMethodsLabel" label="custom_methods" index="6"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="CustomMethodsTF" index="7" data="data.customMethods.size" readOnly="true"
+        constraints="twocols(location=right)" columns="5" localize="true" />
+    <LocalizedDictionary>
+        <Localized key="simple_name" lang="English" value="Simple name" />
+        <Localized key="simple_name" lang="French" value="Nom simple" />
+        <Localized key="qualified_name" lang="English" value="Qualified name" />
+        <Localized key="qualified_name" lang="French" value="Nom qualifié" />
+        <Localized key="abstract" lang="English" value="Abstract" />
+        <Localized key="abstract" lang="French" value="Abstrait" />
+        <Localized key="custom_methods" lang="English" value="Custom methods" />
+        <Localized key="custom_methods" lang="French" value="Méthodes personnalisées" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Implementation class" />
+</Inspector>

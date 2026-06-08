@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.model.SourceMetaModel" name="Inspector">
+    <Label name="NameLabel" label="name" index="0"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="NameTF" index="1" data="data.name" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="PackagesLabel" label="packages" index="2"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="PackagesTF" index="3" data="data.allPackages.size" readOnly="true"
+        constraints="twocols(location=right)" columns="5" localize="true" />
+    <Label name="EntitiesLabel" label="entities" index="4"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="EntitiesTF" index="5" data="data.entities.size" readOnly="true"
+        constraints="twocols(location=right)" columns="5" localize="true" />
+    <Label name="IssuesLabel" label="issues" index="6"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="IssuesTF" index="7" data="data.issues.size" readOnly="true"
+        constraints="twocols(location=right)" columns="5" localize="true" />
+    <LocalizedDictionary>
+        <Localized key="name" lang="English" value="Name" />
+        <Localized key="name" lang="French" value="Nom" />
+        <Localized key="packages" lang="English" value="Packages" />
+        <Localized key="packages" lang="French" value="Packages" />
+        <Localized key="entities" lang="English" value="Entities" />
+        <Localized key="entities" lang="French" value="Entités" />
+        <Localized key="issues" lang="English" value="Issues" />
+        <Localized key="issues" lang="French" value="Problèmes" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="MetaModel" />
+</Inspector>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.model.SourcePackage" name="Inspector">
+    <Label name="QualifiedNameLabel" label="qualified_name" index="0"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="QualifiedNameTF" index="1" data="data.qualifiedName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="EntitiesLabel" label="entities" index="2"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="EntitiesTF" index="3" data="data.entities.size" readOnly="true"
+        constraints="twocols(location=right)" columns="5" localize="true" />
+    <LocalizedDictionary>
+        <Localized key="qualified_name" lang="English" value="Qualified name" />
+        <Localized key="qualified_name" lang="French" value="Nom qualifié" />
+        <Localized key="entities" lang="English" value="Entities" />
+        <Localized key="entities" lang="French" value="Entités" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Package" />
+</Inspector>

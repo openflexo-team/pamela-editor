@@ -39,7 +39,6 @@ import org.openflexo.diana.swing.control.tools.JDianaScaleSelector;
 import org.openflexo.diana.swing.control.tools.JDianaStyles;
 import org.openflexo.diana.swing.control.tools.JDianaToolSelector;
 import org.openflexo.gina.ApplicationFIBLibrary.ApplicationFIBLibraryImpl;
-import org.openflexo.gina.swing.utils.FIBJPanel;
 import org.openflexo.gina.swing.utils.localization.LocalizedEditor;
 import org.openflexo.gina.swing.utils.logging.FlexoLoggingViewer;
 import org.openflexo.localization.FlexoLocalization;
@@ -59,6 +58,7 @@ import org.openflexo.pamela.editor.ui.widget.DetailedBrowser;
 import org.openflexo.pamela.editor.ui.widget.MetaModelBrowser;
 import org.openflexo.pamela.editor.ui.widget.MetaModelSummaryView;
 import org.openflexo.pamela.editor.ui.widget.PackageSummaryView;
+import org.openflexo.pamela.editor.ui.widget.PamelaEditorInspectorController;
 import org.openflexo.pamela.editor.ui.widget.SourceCodeView;
 import org.openflexo.rm.FileSystemResourceLocatorImpl;
 import org.openflexo.rm.Resource;
@@ -229,11 +229,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     // Right column
     // -------------------------------------------------------------------------
 
-    /** Container for the dynamically-swapped inspector FIB panel. */
-    private final JPanel inspectorArea;
-
-    /** The currently displayed inspector panel (may be null). */
-    private FIBJPanel<?> currentInspector;
+    /** Inspector controller — manages .inspector files and type-dispatch. */
+    private final PamelaEditorInspectorController inspectorController;
 
     /** Placeholder for the right-bottom validation area. */
     private final JPanel validationArea;
@@ -367,10 +364,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         // --- Left column: DetailedBrowser (bottom) ---
         detailedBrowser = new DetailedBrowser(this);
 
-        // --- Right column: inspector area (top) ---
-        inspectorArea = new JPanel(new BorderLayout());
-        inspectorArea.add(new JLabel("No selection", JLabel.CENTER),
-                BorderLayout.CENTER);
+        // --- Right column: inspector controller (top) ---
+        inspectorController = new PamelaEditorInspectorController();
 
         // --- Right column: validation area (bottom) ---
         validationArea = new JPanel(new BorderLayout());
@@ -420,7 +415,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         splitPane.add(metaModelBrowser,  LayoutPosition.TOP_LEFT.name());
         splitPane.add(detailedBrowser,   LayoutPosition.BOTTOM_LEFT.name());
         splitPane.add(centerColumn,      LayoutPosition.CENTER.name());
-        splitPane.add(inspectorArea,     LayoutPosition.TOP_RIGHT.name());
+        splitPane.add(inspectorController.getRootPane(), LayoutPosition.TOP_RIGHT.name());
         splitPane.add(validationArea,    LayoutPosition.BOTTOM_RIGHT.name());
 
         frame.getContentPane().setLayout(new BorderLayout());
@@ -640,7 +635,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             }
             try {
                 // 2. Refresh the inspector (always for the actual selected element)
-                refreshInspector(element);
+                inspectorController.inspectObject(element);
             } catch (Exception e) {
                 logger.warning("Inspector refresh failed: " + e.getMessage());
                 e.printStackTrace();
@@ -903,90 +898,19 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     }
 
     private void detachDianaTools() {
-        // Note: DianaStyles.attachToEditor(null) throws NPE internally when
-        // backgroundSelector or shapeSelector are non-null (Diana bug).
-        // Skip stylesWidget — leave it attached to the last editor.
-        toolSelector.attachToEditor(null);
-        scaleSelector.attachToEditor(null);
-        layoutWidget.attachToEditor(null);
+        // Diana bug: several tool widgets throw NPE in attachToEditor(null) when their
+        // internal sub-selectors still reference the previous editor instance.
+        // Known affected widgets: JDianaStyles (backgroundSelector / shapeSelector),
+        //                         JDianaScaleSelector (handleScaleChanged).
+        // Wrap each call individually so that one failing widget does not prevent
+        // the others from being detached or the toolbar from being hidden.
+        // The toolbar is hidden regardless, so leaving a widget "attached" to the
+        // last editor is harmless (it is not visible and cannot be interacted with).
+        try { toolSelector.attachToEditor(null); }  catch (Exception ignored) {}
+        // stylesWidget: known NPE — leave attached to last editor (hidden)
+        try { scaleSelector.attachToEditor(null); } catch (Exception ignored) {}
+        try { layoutWidget.attachToEditor(null); }  catch (Exception ignored) {}
         toolbarPanel.setVisible(false);
-    }
-
-    // =========================================================================
-    // Inspector (right top — Strategy B: FIB file swap)
-    // =========================================================================
-
-    private void refreshInspector(Object element) {
-        Resource fibFile = getInspectorFibFor(element);
-        if (fibFile == null) {
-            // Clear inspector
-            inspectorArea.removeAll();
-            inspectorArea.add(new JLabel("No inspector", JLabel.CENTER),
-                    BorderLayout.CENTER);
-            currentInspector = null;
-        } else {
-            // If the same FIB file is already loaded for the same type, just rebind
-            if (currentInspector != null
-                    && currentInspector.getRepresentedType() != null
-                    && currentInspector.getRepresentedType().isInstance(element)) {
-                @SuppressWarnings("unchecked")
-                FIBJPanel<Object> typed = (FIBJPanel<Object>) currentInspector;
-                typed.setEditedObject(element);
-            } else {
-                inspectorArea.removeAll();
-                FIBJPanel<Object> newInspector = buildInspector(fibFile, element);
-                currentInspector = newInspector;
-                if (newInspector != null) {
-                    inspectorArea.add(newInspector, BorderLayout.CENTER);
-                }
-            }
-        }
-        inspectorArea.revalidate();
-        inspectorArea.repaint();
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private FIBJPanel<Object> buildInspector(Resource fibFile, Object element) {
-        try {
-            return new FIBJPanel(fibFile, element,
-                    ApplicationFIBLibraryImpl.instance(),
-                    PAMELA_EDITOR_LOCALIZATION) {
-                @Override
-                public Class getRepresentedType() {
-                    return element != null ? element.getClass() : Object.class;
-                }
-                @Override
-                public void delete() {}
-            };
-        } catch (Exception e) {
-            logger.warning("Failed to build inspector for " + element + ": " + e.getMessage());
-            return null;
-        }
-    }
-
-    private Resource getInspectorFibFor(Object element) {
-        if (element instanceof SourceModelEntity) {
-            return ResourceLocator.locateResource("Fib/Inspector/EntityInspector.fib");
-        }
-        if (element instanceof SourceModelProperty) {
-            return ResourceLocator.locateResource("Fib/Inspector/PropertyInspector.fib");
-        }
-        if (element instanceof SourcePackage) {
-            return ResourceLocator.locateResource("Fib/Inspector/PackageInspector.fib");
-        }
-        if (element instanceof SourceMetaModel) {
-            return ResourceLocator.locateResource("Fib/Inspector/MetaModelInspector.fib");
-        }
-        if (element instanceof PamelaEditorSession) {
-            SourceMetaModel mm = ((PamelaEditorSession) element).getMetaModel();
-            return mm != null
-                    ? ResourceLocator.locateResource("Fib/Inspector/MetaModelInspector.fib")
-                    : null;
-        }
-        if (element instanceof PamelaClassDiagram) {
-            return ResourceLocator.locateResource("Fib/Inspector/DiagramInspector.fib");
-        }
-        return null;
     }
 
     // =========================================================================

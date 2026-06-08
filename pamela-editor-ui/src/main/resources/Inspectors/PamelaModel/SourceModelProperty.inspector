@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.model.SourceModelProperty" name="Inspector">
+    <Label name="IdentifierLabel" label="identifier" index="0"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="IdentifierTF" index="1" data="data.propertyIdentifier" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="CardinalityLabel" label="cardinality" index="2"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="CardinalityTF" index="3" data="data.cardinality.name" readOnly="true"
+        constraints="twocols(location=right)" columns="8" localize="true" />
+    <Label name="TypeLabel" label="type" index="4"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="TypeTF" index="5" data="data.type.simpleName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="DerivedLabel" label="derived" index="6"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="DerivedCB" index="7" data="data.derived" readOnly="true"
+        constraints="twocols(location=right)" localize="true" />
+    <Label name="EmbeddedLabel" label="embedded" index="8"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="EmbeddedCB" index="9" data="data.embedded" readOnly="true"
+        constraints="twocols(location=right)" localize="true" />
+    <Label name="GetterLabel" label="getter" index="10"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="GetterTF" index="11" data="data.getterMethodName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="SetterLabel" label="setter" index="12"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="SetterTF" index="13" data="data.setterMethodName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="InverseLabel" label="inverse" index="14"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="InverseTF" index="15" data="data.inverseProperyIdentifier" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <LocalizedDictionary>
+        <Localized key="identifier" lang="English" value="Identifier" />
+        <Localized key="identifier" lang="French" value="Identifiant" />
+        <Localized key="cardinality" lang="English" value="Cardinality" />
+        <Localized key="cardinality" lang="French" value="Cardinalité" />
+        <Localized key="type" lang="English" value="Type" />
+        <Localized key="type" lang="French" value="Type" />
+        <Localized key="derived" lang="English" value="Derived" />
+        <Localized key="derived" lang="French" value="Dérivé" />
+        <Localized key="embedded" lang="English" value="Embedded" />
+        <Localized key="embedded" lang="French" value="Embarqué" />
+        <Localized key="getter" lang="English" value="Getter" />
+        <Localized key="getter" lang="French" value="Getter" />
+        <Localized key="setter" lang="English" value="Setter" />
+        <Localized key="setter" lang="French" value="Setter" />
+        <Localized key="inverse" lang="English" value="Inverse" />
+        <Localized key="inverse" lang="French" value="Inverse" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Property" />
+</Inspector>
