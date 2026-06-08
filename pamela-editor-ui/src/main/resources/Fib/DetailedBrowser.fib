@@ -14,7 +14,7 @@
         - SourceModelEntity  → shows its properties and initializers
         - SourcePackage       → shows its entities
         - PamelaClassDiagram  → shows its entity views
-        - PamelaEditorSession → shows packages + diagrams
+        - PamelaProject → shows packages + diagrams
         - null / other        → shows nothing (no matching BrowserElement)
     -->
     <Browser id="1" deepExploration="false" showFooter="false" rowHeight="18"
@@ -40,15 +40,15 @@
         </BrowserElement>
 
         <BrowserElement id="10"
-            icon="controller.iconForObject(session)"
+            icon="controller.iconForObject(project)"
             filtered="false"
-            label="session.metaModel.name"
+            label="project.metaModel.name"
             defaultVisible="true"
-            dataClassName="org.openflexo.pamela.editor.ui.PamelaEditorSession"
-            name="session"
+            dataClassName="org.openflexo.pamela.editor.ui.PamelaProject"
+            name="project"
             isEditable="false">
-            <Children id="50" name="diagrams" data="session.diagrams" />
-            <Children id="51" name="packages" data="session.metaModel.allPackages" />
+            <Children id="50" name="diagrams" data="project.diagrams" />
+            <Children id="51" name="packages" data="project.metaModel.allPackages" />
         </BrowserElement>
 
         <BrowserElement id="20"

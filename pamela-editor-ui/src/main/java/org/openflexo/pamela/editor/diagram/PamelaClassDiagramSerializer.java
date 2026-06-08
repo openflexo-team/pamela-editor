@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import org.openflexo.pamela.editor.ui.PamelaEditorSession;
+import org.openflexo.pamela.editor.ui.PamelaProject;
 
 /**
  * Serializes and deserializes a {@link PamelaClassDiagram} to/from a
@@ -76,7 +76,7 @@ public class PamelaClassDiagramSerializer {
     /**
      * Loads a {@link PamelaClassDiagram} from a {@code .diagram.json} file.
      *
-     * <p>Entity views are created via {@link PamelaEditorSession#getDiagramFactory()}.
+     * <p>Entity views are created via {@link PamelaProject#getDiagramFactory()}.
      * The transient {@code entity} reference is resolved immediately if the
      * session's meta-model is available.</p>
      *
@@ -87,7 +87,7 @@ public class PamelaClassDiagramSerializer {
      * @throws IOException if the file cannot be read or parsed, or if the
      *                     session's {@link PamelaClassDiagramFactory} is {@code null}
      */
-    public static PamelaClassDiagram load(File diagramFile, PamelaEditorSession session)
+    public static PamelaClassDiagram load(File diagramFile, PamelaProject session)
             throws IOException {
         if (!diagramFile.exists()) {
             throw new IOException("Diagram file not found: "

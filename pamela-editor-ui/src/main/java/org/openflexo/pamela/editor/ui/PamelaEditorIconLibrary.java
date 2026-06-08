@@ -58,7 +58,7 @@ public class PamelaEditorIconLibrary {
     // -------------------------------------------------------------------------
 
     /**
-     * Icon for a {@link org.openflexo.pamela.editor.ui.PamelaEditorSession} (project).
+     * Icon for a {@link org.openflexo.pamela.editor.ui.PamelaProject} (project).
      * Amber hexagon with bold "P" — the PAMELA model badge.
      */
     public static final ImageIcon SESSION_ICON =

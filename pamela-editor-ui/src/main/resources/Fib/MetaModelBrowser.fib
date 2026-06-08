@@ -23,19 +23,19 @@
             dataClassName="org.openflexo.pamela.editor.ui.PamelaEditorApplication"
             name="app"
             isEditable="false">
-            <Children id="9" name="sessions" data="app.sessions" />
+            <Children id="9" name="projects" data="app.projects" />
         </BrowserElement>
 
         <BrowserElement id="3"
-            icon="controller.iconForObject(session)"
+            icon="controller.iconForObject(project)"
             filtered="false"
-            label="session.metaModel.name"
+            label="project.metaModel.name"
             defaultVisible="true"
-            dataClassName="org.openflexo.pamela.editor.ui.PamelaEditorSession"
-            name="session"
+            dataClassName="org.openflexo.pamela.editor.ui.PamelaProject"
+            name="project"
             isEditable="false">
-            <Children id="10" name="diagrams" data="session.diagrams" />
-            <Children id="11" name="packages" data="session.metaModel.allPackages" />
+            <Children id="10" name="diagrams" data="project.diagrams" />
+            <Children id="11" name="packages" data="project.metaModel.allPackages" />
         </BrowserElement>
 
         <BrowserElement id="4"

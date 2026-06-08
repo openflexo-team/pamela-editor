@@ -31,7 +31,7 @@ public class MetaModelSummaryView extends FIBJPanel<SourceMetaModel> {
     /**
      * Sets the project directory used as the starting point for the source
      * directory file chooser.  Call this after construction when the view is
-     * bound to a {@code PamelaEditorSession} so the chooser opens at the right place.
+     * bound to a {@code PamelaProject} so the chooser opens at the right place.
      */
     public void setProjectDirectory(File projectDirectory) {
         MetaModelSummaryViewFIBController ctrl =

@@ -3,7 +3,7 @@ package org.openflexo.pamela.editor.ui.action;
 import org.openflexo.pamela.editor.model.SourceJavaFile;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
-import org.openflexo.pamela.editor.ui.PamelaEditorSession;
+import org.openflexo.pamela.editor.ui.PamelaProject;
 
 /**
  * Contextual action: adds the selected {@link SourceJavaFile} as a root type
@@ -49,18 +49,18 @@ public class AddAsRootTypeAction implements ContextualAction {
         // Register the root type
         model.addRootTypeName(file.getQualifiedName());
 
-        // Find the owning session and trigger a background rebuild
-        PamelaEditorSession session = findSession(model, app);
-        if (session != null) {
-            app.rebuildSession(session);
+        // Find the owning project and trigger a background rebuild
+        PamelaProject project = findSession(model, app);
+        if (project != null) {
+            app.rebuildProject(project);
         }
     }
 
     // -------------------------------------------------------------------------
 
-    private static PamelaEditorSession findSession(SourceMetaModel model,
+    private static PamelaProject findSession(SourceMetaModel model,
                                                     PamelaEditorApplication app) {
-        for (PamelaEditorSession s : app.getSessions()) {
+        for (PamelaProject s : app.getProjects()) {
             if (s.getMetaModel() == model) {
                 return s;
             }

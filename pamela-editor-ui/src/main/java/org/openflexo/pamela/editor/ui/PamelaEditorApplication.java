@@ -244,8 +244,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     // Application state
     // -------------------------------------------------------------------------
 
-    /** Open sessions (projects). Exposed to the MetaModelBrowser FIB as {@code data.sessions}. */
-    private final List<PamelaEditorSession> sessions = new ArrayList<>();
+    /** Open projects (projects). Exposed to the MetaModelBrowser FIB as {@code data.projects}. */
+    private final List<PamelaProject> projects = new ArrayList<>();
 
     // -------------------------------------------------------------------------
     // Contextual action registry
@@ -474,16 +474,16 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     }
 
     // =========================================================================
-    // Session management (exposed to FIB as data.sessions)
+    // Session management (exposed to FIB as data.projects)
     // =========================================================================
 
     /**
-     * Returns the list of open sessions.
+     * Returns the list of open projects.
      * <p>This is the root of the MetaModelBrowser tree via
-     * {@code data.sessions} in the FIB file.</p>
+     * {@code data.projects} in the FIB file.</p>
      */
-    public List<PamelaEditorSession> getSessions() {
-        return Collections.unmodifiableList(sessions);
+    public List<PamelaProject> getProjects() {
+        return Collections.unmodifiableList(projects);
     }
 
     /**
@@ -499,17 +499,17 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }
 
         // Run Spoon analysis on a background thread to avoid blocking the EDT.
-        new javax.swing.SwingWorker<PamelaEditorSession, Void>() {
+        new javax.swing.SwingWorker<PamelaProject, Void>() {
 
             @Override
-            protected PamelaEditorSession doInBackground() throws Exception {
+            protected PamelaProject doInBackground() throws Exception {
                 // 1. Build meta-model (heavy — runs Spoon / javac)
                 SourceMetaModel metaModel = SourceMetaModelSerializer.load(pamelaFile);
                 logger.info(metaModel.prettyPrint());
 
-                // 2. Create session (lightweight)
-                PamelaEditorSession session =
-                        new PamelaEditorSession(pamelaFile, metaModel);
+                // 2. Create project (lightweight)
+                PamelaProject project =
+                        new PamelaProject(pamelaFile, metaModel);
 
                 // 3. Load diagram sidecars (I/O only, no Spoon)
                 File projectDir = pamelaFile.getParentFile();
@@ -525,8 +525,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                             try {
                                 PamelaClassDiagram diagram =
                                         PamelaClassDiagramSerializer.load(
-                                                diagramFile, session);
-                                session.addDiagram(diagram);
+                                                diagramFile, project);
+                                project.addDiagram(diagram);
                             } catch (Exception de) {
                                 logger.warning("Failed to load diagram sidecar "
                                         + diagramFile + ": " + de.getMessage());
@@ -540,24 +540,24 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     logger.warning("Failed to read diagram list from "
                             + pamelaFile + ": " + de.getMessage());
                 }
-                return session;
+                return project;
             }
 
             @Override
             protected void done() {
                 // Back on the EDT — safe to update UI
                 try {
-                    PamelaEditorSession session = get();
-                    session.setToolFactory(toolFactory);
+                    PamelaProject project = get();
+                    project.setToolFactory(toolFactory);
 
-                    List<PamelaEditorSession> oldSessions = new ArrayList<>(sessions);
-                    sessions.add(session);
+                    List<PamelaProject> oldProjects = new ArrayList<>(projects);
+                    projects.add(project);
                     PamelaEditorPreferences.setLastFile(pamelaFile);
 
-                    // Notify Gina bindings that the sessions list has changed
-                    pcSupport.firePropertyChange("sessions",
-                            Collections.unmodifiableList(oldSessions),
-                            Collections.unmodifiableList(sessions));
+                    // Notify Gina bindings that the projects list has changed
+                    pcSupport.firePropertyChange("projects",
+                            Collections.unmodifiableList(oldProjects),
+                            Collections.unmodifiableList(projects));
 
                 } catch (Exception e) {
                     Throwable cause = (e.getCause() != null) ? e.getCause() : e;
@@ -584,7 +584,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     /**
      * Shows the {@link NewProjectDialog} and, if confirmed, creates a new
      * {@link SourceMetaModel} from the supplied inputs, saves the {@code .pamela}
-     * file, and opens the resulting session in the editor.
+     * file, and opens the resulting project in the editor.
      *
      * <p>The Spoon analysis ({@code buildMetaModel()}) runs on a background thread
      * to avoid blocking the EDT.</p>
@@ -600,38 +600,38 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         String projectName = dialog.getProjectName();
         File   pamelaFile  = dialog.getPamelaFile();
 
-        new javax.swing.SwingWorker<PamelaEditorSession, Void>() {
+        new javax.swing.SwingWorker<PamelaProject, Void>() {
 
             @Override
-            protected PamelaEditorSession doInBackground() throws Exception {
+            protected PamelaProject doInBackground() throws Exception {
                 // 1. Create an empty meta-model (no source dirs, no root types yet)
                 SourceMetaModel metaModel = new SourceMetaModel();
                 metaModel.setName(projectName);
 
-                // 2. Persist the .pamela file immediately so the session has a location
+                // 2. Persist the .pamela file immediately so the project has a location
                 SourceMetaModelSerializer.save(metaModel, pamelaFile,
                         java.util.Collections.emptyList());
 
-                // 3. Create the session
-                return new PamelaEditorSession(pamelaFile, metaModel);
+                // 3. Create the project
+                return new PamelaProject(pamelaFile, metaModel);
             }
 
             @Override
             protected void done() {
                 try {
-                    PamelaEditorSession session = get();
-                    session.setToolFactory(toolFactory);
+                    PamelaProject project = get();
+                    project.setToolFactory(toolFactory);
 
-                    List<PamelaEditorSession> oldSessions = new ArrayList<>(sessions);
-                    sessions.add(session);
+                    List<PamelaProject> oldProjects = new ArrayList<>(projects);
+                    projects.add(project);
                     PamelaEditorPreferences.setLastFile(pamelaFile);
 
-                    pcSupport.firePropertyChange("sessions",
-                            Collections.unmodifiableList(oldSessions),
-                            Collections.unmodifiableList(sessions));
+                    pcSupport.firePropertyChange("projects",
+                            Collections.unmodifiableList(oldProjects),
+                            Collections.unmodifiableList(projects));
 
-                    // Select the new session in the browser
-                    setCurrentSelectedElement(session);
+                    // Select the new project in the browser
+                    setCurrentSelectedElement(project);
 
                 } catch (Exception e) {
                     Throwable cause = (e.getCause() != null) ? e.getCause() : e;
@@ -651,23 +651,23 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         return PAMELA_EDITOR_LOCALIZATION.localizedForKey(key);
     }
 
-    /** Saves the currently active session's {@code .pamela} file and all diagram sidecars. */
+    /** Saves the currently active project's {@code .pamela} file and all diagram sidecars. */
     public void saveActiveProject() {
-        PamelaEditorSession session = getSessionForElement(currentSelectedElement);
-        if (session == null && !sessions.isEmpty()) {
-            session = sessions.get(sessions.size() - 1);
+        PamelaProject project = getProjectForElement(currentSelectedElement);
+        if (project == null && !projects.isEmpty()) {
+            project = projects.get(projects.size() - 1);
         }
-        if (session == null) {
+        if (project == null) {
             return;
         }
-        File projectDir = session.getPamelaFile().getParentFile();
+        File projectDir = project.getPamelaFile().getParentFile();
         if (projectDir == null) {
             projectDir = new java.io.File(".");
         }
 
         // 1. Save diagram sidecars and collect their file names
         java.util.List<String> diagramFileNames = new java.util.ArrayList<>();
-        for (PamelaClassDiagram diagram : session.getDiagrams()) {
+        for (PamelaClassDiagram diagram : project.getDiagrams()) {
             String fileName = PamelaClassDiagramSerializer.sidecarFileName(diagram.getName());
             diagramFileNames.add(fileName);
             File diagramFile = new File(projectDir, fileName);
@@ -682,27 +682,27 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         // 2. Save the .pamela file (includes the diagrams list)
         try {
             SourceMetaModelSerializer.save(
-                    session.getMetaModel(),
-                    session.getPamelaFile(),
+                    project.getMetaModel(),
+                    project.getPamelaFile(),
                     diagramFileNames);
         } catch (Exception e) {
             logger.severe("Failed to save project: " + e.getMessage());
         }
     }
 
-    /** Closes a session and removes all related views and browser entries. */
+    /** Closes a project and removes all related views and browser entries. */
     /**
      * Runs {@link org.openflexo.pamela.editor.model.SourceMetaModel#rebuildMetaModel()}
-     * on a background thread for the given session, then refreshes the UI on the EDT.
+     * on a background thread for the given project, then refreshes the UI on the EDT.
      *
      * <p>The metamodel's inputs (source directories, root type names) must already be
      * updated before calling this method.</p>
      */
-    public void rebuildSession(PamelaEditorSession session) {
-        if (session == null) {
+    public void rebuildProject(PamelaProject project) {
+        if (project == null) {
             return;
         }
-        SourceMetaModel metaModel = session.getMetaModel();
+        SourceMetaModel metaModel = project.getMetaModel();
 
         new javax.swing.SwingWorker<Void, Void>() {
             @Override
@@ -734,20 +734,20 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }.execute();
     }
 
-    public void closeSession(PamelaEditorSession session) {
-        if (session == null) {
+    public void closeProject(PamelaProject project) {
+        if (project == null) {
             return;
         }
-        // Invalidate all diagram views belonging to this session
-        for (PamelaClassDiagram diagram : session.getDiagrams()) {
+        // Invalidate all diagram views belonging to this project
+        for (PamelaClassDiagram diagram : project.getDiagrams()) {
             invalidateCachedView(diagram);
             diagramEditors.remove(diagram);
         }
-        List<PamelaEditorSession> oldSessions = new ArrayList<>(sessions);
-        sessions.remove(session);
-        pcSupport.firePropertyChange("sessions",
-                Collections.unmodifiableList(oldSessions),
-                Collections.unmodifiableList(sessions));
+        List<PamelaProject> oldProjects = new ArrayList<>(projects);
+        projects.remove(project);
+        pcSupport.firePropertyChange("projects",
+                Collections.unmodifiableList(oldProjects),
+                Collections.unmodifiableList(projects));
     }
 
     // =========================================================================
@@ -974,10 +974,10 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if (element instanceof SourceMetaModel) {
             return new MetaModelSummaryView((SourceMetaModel) element);
         }
-        if (element instanceof PamelaEditorSession) {
-            PamelaEditorSession session = (PamelaEditorSession) element;
-            MetaModelSummaryView view = new MetaModelSummaryView(session.getMetaModel());
-            File pamelaFile = session.getPamelaFile();
+        if (element instanceof PamelaProject) {
+            PamelaProject project = (PamelaProject) element;
+            MetaModelSummaryView view = new MetaModelSummaryView(project.getMetaModel());
+            File pamelaFile = project.getPamelaFile();
             if (pamelaFile != null && pamelaFile.getParentFile() != null) {
                 view.setProjectDirectory(pamelaFile.getParentFile());
             }
@@ -994,9 +994,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }
         if (element instanceof PamelaClassDiagram) {
             PamelaClassDiagram diagram = (PamelaClassDiagram) element;
-            PamelaEditorSession session = getSessionForDiagram(diagram);
+            PamelaProject project = getProjectForDiagram(diagram);
             PamelaClassDiagramEditor editor =
-                    new PamelaClassDiagramEditor(session, diagram);
+                    new PamelaClassDiagramEditor(project, diagram);
             diagramEditors.put(diagram, editor);
             return editor.getView();
         }
@@ -1008,8 +1008,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if (element instanceof SourceMetaModel) {
             return ((SourceMetaModel) element).getName();
         }
-        if (element instanceof PamelaEditorSession) {
-            SourceMetaModel mm = ((PamelaEditorSession) element).getMetaModel();
+        if (element instanceof PamelaProject) {
+            SourceMetaModel mm = ((PamelaProject) element).getMetaModel();
             return mm != null ? mm.getName() : "Project";
         }
         if (element instanceof SourcePackage) {
@@ -1030,7 +1030,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
 
     /**
      * Removes the cached view for {@code element} and purges it from the
-     * navigation history.  Used when a session is closed or a diagram is deleted.
+     * navigation history.  Used when a project is closed or a diagram is deleted.
      */
     private void invalidateCachedView(Object element) {
         viewCache.remove(element);
@@ -1100,17 +1100,17 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     // New diagram action
     // =========================================================================
 
-    /** Creates a new {@link PamelaClassDiagram} for the most recently opened session. */
+    /** Creates a new {@link PamelaClassDiagram} for the most recently opened project. */
     public void newDiagram() {
-        if (sessions.isEmpty()) {
+        if (projects.isEmpty()) {
             return;
         }
-        PamelaEditorSession session = sessions.get(sessions.size() - 1);
-        if (session.getDiagramFactory() == null) {
+        PamelaProject project = projects.get(projects.size() - 1);
+        if (project.getDiagramFactory() == null) {
             return;
         }
-        PamelaClassDiagram diagram = session.getDiagramFactory().newDiagram("New diagram");
-        session.addDiagram(diagram);
+        PamelaClassDiagram diagram = project.getDiagramFactory().newDiagram("New diagram");
+        project.addDiagram(diagram);
         // Refresh browser tree
         metaModelBrowser.setEditedObject(this);
         // Navigate to the diagram editor immediately
@@ -1179,27 +1179,27 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     // Helpers
     // =========================================================================
 
-    /** Returns the session that owns the given diagram (or null). */
-    private PamelaEditorSession getSessionForDiagram(PamelaClassDiagram diagram) {
-        for (PamelaEditorSession session : sessions) {
-            if (session.getDiagrams().contains(diagram)) {
-                return session;
+    /** Returns the project that owns the given diagram (or null). */
+    private PamelaProject getProjectForDiagram(PamelaClassDiagram diagram) {
+        for (PamelaProject project : projects) {
+            if (project.getDiagrams().contains(diagram)) {
+                return project;
             }
         }
-        // Fallback: most recent session
-        return sessions.isEmpty() ? null : sessions.get(sessions.size() - 1);
+        // Fallback: most recent project
+        return projects.isEmpty() ? null : projects.get(projects.size() - 1);
     }
 
     /**
-     * Returns the session that the given element belongs to, or {@code null}.
-     * Used to decide which session's meta-model to show in the validation panel.
+     * Returns the project that the given element belongs to, or {@code null}.
+     * Used to decide which project's meta-model to show in the validation panel.
      */
-    private PamelaEditorSession getSessionForElement(Object element) {
-        if (element instanceof PamelaEditorSession) {
-            return (PamelaEditorSession) element;
+    private PamelaProject getProjectForElement(Object element) {
+        if (element instanceof PamelaProject) {
+            return (PamelaProject) element;
         }
         if (element instanceof SourceMetaModel) {
-            for (PamelaEditorSession s : sessions) {
+            for (PamelaProject s : projects) {
                 if (s.getMetaModel() == element) {
                     return s;
                 }
@@ -1207,7 +1207,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }
         if (element instanceof SourcePackage) {
             SourcePackage pkg = (SourcePackage) element;
-            for (PamelaEditorSession s : sessions) {
+            for (PamelaProject s : projects) {
                 if (s.getMetaModel() != null
                         && s.getMetaModel().getAllPackages().contains(pkg)) {
                     return s;
@@ -1216,7 +1216,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }
         if (element instanceof SourceModelEntity) {
             SourceModelEntity entity = (SourceModelEntity) element;
-            for (PamelaEditorSession s : sessions) {
+            for (PamelaProject s : projects) {
                 if (s.getMetaModel() != null
                         && s.getMetaModel().getEntity(entity.getQualifiedName()) == entity) {
                     return s;
@@ -1224,7 +1224,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             }
         }
         if (element instanceof SourceModelProperty) {
-            return getSessionForElement(
+            return getProjectForElement(
                     ((SourceModelProperty) element).getModelEntity());
         }
         return null;

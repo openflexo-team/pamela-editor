@@ -7,13 +7,13 @@ import javax.swing.JFileChooser;
 
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
-import org.openflexo.pamela.editor.ui.PamelaEditorSession;
+import org.openflexo.pamela.editor.ui.PamelaProject;
 
 /**
  * Contextual action: opens a directory chooser and adds the selected directory
  * as a source folder of the target metamodel.
  *
- * <p>Applies to {@link PamelaEditorSession} and {@link SourceMetaModel} nodes.</p>
+ * <p>Applies to {@link PamelaProject} and {@link SourceMetaModel} nodes.</p>
  *
  * <p>The core logic lives in the static helper
  * {@link #addSourceFolder(SourceMetaModel, File, Component)} so that
@@ -29,7 +29,7 @@ public class AddSourceFolderAction implements ContextualAction {
 
     @Override
     public boolean isApplicable(Object target) {
-        return target instanceof PamelaEditorSession
+        return target instanceof PamelaProject
                 || target instanceof SourceMetaModel;
     }
 
@@ -38,16 +38,16 @@ public class AddSourceFolderAction implements ContextualAction {
         SourceMetaModel model;
         File projectDir = null;
 
-        if (target instanceof PamelaEditorSession) {
-            PamelaEditorSession session = (PamelaEditorSession) target;
-            model = session.getMetaModel();
-            if (session.getPamelaFile() != null) {
-                projectDir = session.getPamelaFile().getParentFile();
+        if (target instanceof PamelaProject) {
+            PamelaProject project = (PamelaProject) target;
+            model = project.getMetaModel();
+            if (project.getPamelaFile() != null) {
+                projectDir = project.getPamelaFile().getParentFile();
             }
         } else {
             model = (SourceMetaModel) target;
-            // Resolve the project directory from the owning session
-            for (PamelaEditorSession s : app.getSessions()) {
+            // Resolve the project directory from the owning project
+            for (PamelaProject s : app.getProjects()) {
                 if (s.getMetaModel() == model && s.getPamelaFile() != null) {
                     projectDir = s.getPamelaFile().getParentFile();
                     break;

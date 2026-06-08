@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
-    dataClassName="org.openflexo.pamela.editor.ui.PamelaEditorSession" name="Inspector">
+    dataClassName="org.openflexo.pamela.editor.ui.PamelaProject" name="Inspector">
     <Label name="NameLabel" label="project_name" index="0"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="NameTF" index="1" data="data.metaModel.name" readOnly="true"

@@ -3,7 +3,7 @@ package org.openflexo.pamela.editor.ui.diagram;
 import javax.swing.JComponent;
 
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
-import org.openflexo.pamela.editor.ui.PamelaEditorSession;
+import org.openflexo.pamela.editor.ui.PamelaProject;
 
 /**
  * Orchestrates the Diana rendering of a single {@link PamelaClassDiagram}.
@@ -26,13 +26,13 @@ import org.openflexo.pamela.editor.ui.PamelaEditorSession;
  */
 public class PamelaClassDiagramEditor {
 
-    private final PamelaEditorSession session;
+    private final PamelaProject session;
     private final PamelaClassDiagram diagram;
 
     private PamelaClassDiagramDrawing drawing;
     private DianaDrawingEditor dianaEditor;
 
-    public PamelaClassDiagramEditor(PamelaEditorSession session, PamelaClassDiagram diagram) {
+    public PamelaClassDiagramEditor(PamelaProject session, PamelaClassDiagram diagram) {
         this.session = session;
         this.diagram = diagram;
     }
@@ -79,7 +79,7 @@ public class PamelaClassDiagramEditor {
     }
 
     /** Returns the session this editor belongs to. */
-    public PamelaEditorSession getSession() {
+    public PamelaProject getSession() {
         return session;
     }
 

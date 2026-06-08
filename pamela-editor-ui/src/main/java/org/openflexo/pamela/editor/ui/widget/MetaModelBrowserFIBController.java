@@ -9,7 +9,7 @@ import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
 import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
-import org.openflexo.pamela.editor.ui.PamelaEditorSession;
+import org.openflexo.pamela.editor.ui.PamelaProject;
 
 /**
  * FIB controller for the {@link MetaModelBrowser}.
@@ -68,7 +68,7 @@ public class MetaModelBrowserFIBController extends PamelaEditorFIBController<Pam
 
     @Override
     protected ImageIcon retrieveIconForObject(Object object) {
-        if (object instanceof PamelaEditorSession) {
+        if (object instanceof PamelaProject) {
             return PamelaEditorIconLibrary.SESSION_ICON;
         }
         if (object instanceof PamelaClassDiagram) {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   MetaModelSummaryView.fib
-  Central view shown when a SourceMetaModel or PamelaEditorSession is selected.
+  Central view shown when a SourceMetaModel or PamelaProject is selected.
 
   Layout (top → bottom):
     1. Header     — icon 64×64 + model name, centred

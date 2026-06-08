@@ -10,7 +10,7 @@ import org.openflexo.rm.ResourceLocator;
 /**
  * Left-top browser panel.  Shows all open sessions and their content as a tree:
  * <pre>
- * PamelaEditorSession (project name)
+ * PamelaProject (project name)
  * ├── Diagrams
  * │   └── PamelaClassDiagram
  * └── Packages

@@ -24,21 +24,21 @@ import org.openflexo.pamela.factory.EditingContextImpl;
  *   <li>{@link #pamelaFile} — the {@code .pamela} file on disk</li>
  *   <li>{@link #metaModel} — built by Spoon analysis (from pamela-editor-core)</li>
  *   <li>{@link #diagrams} — loaded from sidecar {@code .diagram.json} files</li>
- *   <li>{@link #diagramFactory} — PAMELA factory for diagram model objects (one per session,
- *       owns the session's {@link EditingContextImpl})</li>
+ *   <li>{@link #diagramFactory} — PAMELA factory for diagram model objects (one per project,
+ *       owns the project's {@link EditingContextImpl})</li>
  * </ul>
  * </p>
  */
-public class PamelaEditorSession {
+public class PamelaProject {
 
     private static final Logger logger =
-            Logger.getLogger(PamelaEditorSession.class.getPackage().getName());
+            Logger.getLogger(PamelaProject.class.getPackage().getName());
 
     private final File pamelaFile;
     private final SourceMetaModel metaModel;
     private final List<PamelaClassDiagram> diagrams;
 
-    /** PAMELA model factory for this session's diagrams. */
+    /** PAMELA model factory for this project's diagrams. */
     private final PamelaClassDiagramFactory diagramFactory;
 
     /**
@@ -47,12 +47,12 @@ public class PamelaEditorSession {
      */
     private SwingToolFactory toolFactory;
 
-    public PamelaEditorSession(File pamelaFile, SourceMetaModel metaModel) {
+    public PamelaProject(File pamelaFile, SourceMetaModel metaModel) {
         this.pamelaFile = pamelaFile;
         this.metaModel = metaModel;
         this.diagrams = new ArrayList<>();
 
-        // Create a dedicated editing context and diagram factory for this session
+        // Create a dedicated editing context and diagram factory for this project
         EditingContextImpl editingContext = new EditingContextImpl();
         editingContext.createUndoManager();
         PamelaClassDiagramFactory factory = null;
@@ -84,7 +84,7 @@ public class PamelaEditorSession {
     }
 
     /**
-     * The class diagrams belonging to this session (loaded from sidecar files).
+     * The class diagrams belonging to this project (loaded from sidecar files).
      *
      * @return an unmodifiable view
      */
@@ -105,7 +105,7 @@ public class PamelaEditorSession {
     // -------------------------------------------------------------------------
 
     /**
-     * Returns the {@link PamelaClassDiagramFactory} for this session.
+     * Returns the {@link PamelaClassDiagramFactory} for this project.
      * May be {@code null} if factory creation failed (see constructor log).
      */
     public PamelaClassDiagramFactory getDiagramFactory() {
@@ -134,6 +134,6 @@ public class PamelaEditorSession {
         String name = (metaModel != null && metaModel.getName() != null)
                 ? metaModel.getName()
                 : (pamelaFile != null ? pamelaFile.getName() : "?");
-        return "PamelaEditorSession(" + name + ")";
+        return "PamelaProject(" + name + ")";
     }
 }
