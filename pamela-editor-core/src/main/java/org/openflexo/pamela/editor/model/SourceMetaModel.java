@@ -803,7 +803,8 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         newInterface.setSimpleName(simpleName);
         newInterface.addModifier(ModifierKind.PUBLIC);
 
-        // Add @ModelEntity annotation
+        // Add @ModelEntity annotation (AST-based: this is a brand-new file with no
+        // existing text to edit, generated via DefaultJavaPrettyPrinter).
         CtAnnotation<?> modelEntityAnnotation = factory.Core().createAnnotation();
         modelEntityAnnotation.setAnnotationType(
                 factory.Type().createReference(ModelEntity.class));
@@ -829,6 +830,62 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         sourcePackage.addEntity(entity);
 
         return entity;
+    }
+
+    /**
+     * Turns an existing Java type — currently not a PAMELA entity — into one, by
+     * inserting an {@code @ModelEntity} annotation into its source, then
+     * registering it as a root type so it enters the meta-model on the next
+     * rebuild.
+     *
+     * <p>The target {@code CtType} is resolved from the already-built Spoon model
+     * (every file in the source directories was parsed by {@code buildModel()},
+     * not only the types reachable from the roots), so no re-parsing happens here.
+     * Only the affected {@code .java} file is rewritten. This is fast and safe to
+     * call on the Event Dispatch Thread; the caller is responsible for triggering
+     * the (background) {@link #rebuildMetaModel()} that actually re-analyses the
+     * source and materialises the new {@link SourceModelEntity}.</p>
+     *
+     * <p>Applicable to both interfaces and classes. {@code @ModelEntity} on a
+     * class is not yet fully supported and will surface a validation
+     * {@link Error} after the rebuild — this is intentional and handled by the
+     * normal validation flow.</p>
+     *
+     * @param file the Java file to promote (must not be {@code null})
+     * @throws IOException           if the source file cannot be written
+     * @throws IllegalStateException if the type cannot be located in the Spoon model
+     */
+    public void declareAsEntity(SourceJavaFile file) throws IOException {
+        String qualifiedName = file.getQualifiedName();
+        CtType<?> ctType = findType(qualifiedName);
+        if (ctType == null) {
+            throw new IllegalStateException(
+                    "Cannot declare entity: type not found in Spoon model: " + qualifiedName);
+        }
+        if (ctType.getPosition() == null || !ctType.getPosition().isValidPosition()) {
+            throw new IllegalStateException(
+                    "Cannot declare entity: no source position for " + qualifiedName);
+        }
+
+        File javaFile = file.getFile();
+
+        // Edit the source text directly: insert @ModelEntity above the declaration
+        // (using Spoon's position) and add the import. This is minimal-diff and
+        // avoids the Sniper whitespace defect on annotation insertion.
+        String source = new String(java.nio.file.Files.readAllBytes(javaFile.toPath()),
+                java.nio.charset.StandardCharsets.UTF_8);
+        int declarationStart = ctType.getPosition().getSourceStart();
+        String edited = SourceAnnotationEditor.addAnnotation(
+                source, declarationStart, "ModelEntity", ModelEntity.class.getName());
+        java.nio.file.Files.write(javaFile.toPath(),
+                edited.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+        // Register as a root type so the next rebuild materialises the entity,
+        // and drop the stale textual cache on the lightweight file wrapper.
+        if (!rootTypeNames.contains(qualifiedName)) {
+            addRootTypeName(qualifiedName);
+        }
+        file.invalidateContent();
     }
 
     /**

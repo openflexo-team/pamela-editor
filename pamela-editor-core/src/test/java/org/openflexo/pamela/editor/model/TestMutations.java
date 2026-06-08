@@ -469,4 +469,66 @@ public class TestMutations {
         assertTrue("After reload, ActivityNode should have no super-entities",
                 activityNoder.getDirectSuperEntities().isEmpty());
     }
+
+    // =========================================================================
+    // Test 9 — declareAsEntity
+    // =========================================================================
+
+    /**
+     * Promote the plain interface {@code Foo3} (which carries a comment and no
+     * {@code @ModelEntity}) into a PAMELA entity. Verifies:
+     * - In-memory: it becomes a root type.
+     * - On disk: {@code @ModelEntity} is inserted AND the original comment is
+     *   preserved (Sniper minimal-diff printing).
+     * - After rebuild and reload: {@code Foo3} is a discoverable entity.
+     */
+    @Test
+    public void testDeclareAsEntity() throws IOException {
+        // --- Setup ---
+        File workDir = tmp.newFolder("testDeclare");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        assertEquals("Foo3 is not a root, so only Foo1+Foo2 are entities",
+                2, mm.getEntities().size());
+
+        // Locate Foo3 as a non-entity Java file
+        SourcePackage pkg = mm.getPackage("test.model1");
+        assertNotNull(pkg);
+        SourceJavaFile foo3File = pkg.getNonEntityJavaFiles().stream()
+                .filter(f -> f.getSimpleName().equals("Foo3"))
+                .findFirst().orElse(null);
+        assertNotNull("Foo3 must be present as a non-entity java file", foo3File);
+        assertFalse("Foo3 must not be a model entity yet", foo3File.isPotentialModelEntity());
+
+        // --- Mutate ---
+        mm.declareAsEntity(foo3File);
+
+        // --- In-memory assertions ---
+        assertTrue("Foo3 must be registered as a root type",
+                mm.getRootTypeNames().contains("test.model1.Foo3"));
+
+        // --- File assertions (Sniper diff-minimal write) ---
+        File foo3OnDisk = new File(srcCopy, "Foo3.java");
+        String content = new String(Files.readAllBytes(foo3OnDisk.toPath()));
+        assertTrue("@ModelEntity must be inserted", content.contains("@ModelEntity"));
+        assertTrue("Import must be inserted",
+                content.contains("import org.openflexo.pamela.annotations.ModelEntity;"));
+        assertTrue("Original comment must be preserved (minimal-diff text edit)",
+                content.contains("This is not a PAMELA entity"));
+
+        // --- Rebuild: Foo3 should now materialise as an entity ---
+        mm.rebuildMetaModel();
+        assertNotNull("Foo3 must now be an entity", mm.getEntity("test.model1.Foo3"));
+        assertEquals("Entity count must now be 3", 3, mm.getEntities().size());
+
+        // --- Reload from disk ---
+        File pamelaFile2 = new File(workDir, "test2.pamela");
+        writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1", "test.model1.Foo3");
+        SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
+        assertNotNull("Foo3 must be discoverable after reload", mm2.getEntity("test.model1.Foo3"));
+        assertEquals("After reload, entity count must be 3", 3, mm2.getEntities().size());
+    }
 }
