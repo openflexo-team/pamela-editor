@@ -12,7 +12,7 @@
         constraints="twocols(isLabel=false;expandHorizontally=true;expandVertically=false)" />
 
     <Label id="4" label="Entities" constraints="twocols(isLabel=true;expandHorizontally=false;expandVertically=false)" />
-    <TextField id="5" data="data.entities.size" readOnly="true"
+    <TextField id="5" data="data.entities.size.toString" readOnly="true"
         constraints="twocols(isLabel=false;expandHorizontally=false;expandVertically=false)" />
 
 </Panel>

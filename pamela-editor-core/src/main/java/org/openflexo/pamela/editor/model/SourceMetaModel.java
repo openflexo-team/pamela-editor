@@ -1,5 +1,6 @@
 package org.openflexo.pamela.editor.model;
 
+import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -70,7 +71,19 @@ import spoon.reflect.reference.CtTypeReference;
  * {@link SourceModelProperty} pairs; resolve
  * {@link SourceType#getModelEntity()} by qualified-name lookup.
  */
-public class SourceMetaModel implements SourceElement {
+public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.HasPropertyChangeSupport {
+
+    private final PropertyChangeSupport pcSupport = new PropertyChangeSupport(this);
+
+    @Override
+    public PropertyChangeSupport getPropertyChangeSupport() {
+        return pcSupport;
+    }
+
+    @Override
+    public String getDeletedProperty() {
+        return null;
+    }
 
     // Internal Spoon reference — never exposed in the public API
     private CtModel ctModel;
@@ -106,7 +119,20 @@ public class SourceMetaModel implements SourceElement {
      * @param directory a directory containing {@code .java} source files
      */
     public void addSourceDirectory(File directory) {
+        List<File> old = new ArrayList<>(sourceDirectories);
         sourceDirectories.add(directory);
+        pcSupport.firePropertyChange("sourceDirectories", old, Collections.unmodifiableList(sourceDirectories));
+    }
+
+    /**
+     * Removes a previously registered source directory.
+     * Has no effect if the directory is not in the list.
+     */
+    public void removeSourceDirectory(File directory) {
+        List<File> old = new ArrayList<>(sourceDirectories);
+        if (sourceDirectories.remove(directory)) {
+            pcSupport.firePropertyChange("sourceDirectories", old, Collections.unmodifiableList(sourceDirectories));
+        }
     }
 
     /**
@@ -116,7 +142,20 @@ public class SourceMetaModel implements SourceElement {
      * @param qualifiedName fully qualified name, e.g. {@code "org.example.Person"}
      */
     public void addRootTypeName(String qualifiedName) {
+        List<String> old = new ArrayList<>(rootTypeNames);
         rootTypeNames.add(qualifiedName);
+        pcSupport.firePropertyChange("rootTypeNames", old, Collections.unmodifiableList(rootTypeNames));
+    }
+
+    /**
+     * Removes a previously registered root type name.
+     * Has no effect if the name is not in the list.
+     */
+    public void removeRootTypeName(String qualifiedName) {
+        List<String> old = new ArrayList<>(rootTypeNames);
+        if (rootTypeNames.remove(qualifiedName)) {
+            pcSupport.firePropertyChange("rootTypeNames", old, Collections.unmodifiableList(rootTypeNames));
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -799,6 +838,58 @@ public class SourceMetaModel implements SourceElement {
      */
     public List<Issue> getIssues() {
         return Collections.unmodifiableList(issues);
+    }
+
+    /** Returns the number of packages in this metamodel. */
+    public int getPackagesCount() {
+        return packages.size();
+    }
+
+    /** Returns the number of entities in this metamodel. */
+    public int getEntitiesCount() {
+        return entities.size();
+    }
+
+    /** Returns the number of issues in this metamodel. */
+    public int getIssuesCount() {
+        return issues.size();
+    }
+
+    /**
+     * Returns the total number of declared properties across all entities in this metamodel.
+     * Useful as a quick metric in summary views.
+     */
+    public int getTotalPropertiesCount() {
+        int count = 0;
+        for (SourceModelEntity entity : entities.values()) {
+            count += entity.getDeclaredProperties().size();
+        }
+        return count;
+    }
+
+    /**
+     * Returns the number of abstract entities ({@code @ModelEntity(isAbstract=true)})
+     * in this metamodel.
+     */
+    public int getAbstractEntitiesCount() {
+        int count = 0;
+        for (SourceModelEntity entity : entities.values()) {
+            if (entity.isAbstract()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Returns the number of initializers across all entities in this metamodel.
+     */
+    public int getTotalInitializersCount() {
+        int count = 0;
+        for (SourceModelEntity entity : entities.values()) {
+            count += entity.getInitializers().size();
+        }
+        return count;
     }
 
     /**

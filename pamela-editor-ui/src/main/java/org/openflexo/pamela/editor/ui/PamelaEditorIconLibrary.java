@@ -78,6 +78,9 @@ public class PamelaEditorIconLibrary {
     public static final ImageIcon PACKAGE_ICON =
             buildIcon("Icons/Package_16x16.png");
 
+    public static final ImageIcon SOURCE_FOLDER_ICON =
+            buildIcon("Icons/SourceFolder.png");
+
     /**
      * Icon for a concrete {@link org.openflexo.pamela.editor.model.SourceModelEntity}.
      * Eclipse JDT-style purple rounded square with white "I" (interface marker).
