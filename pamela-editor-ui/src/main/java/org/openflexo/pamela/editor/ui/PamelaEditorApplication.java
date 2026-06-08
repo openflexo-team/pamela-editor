@@ -54,6 +54,9 @@ import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourceModelProperty;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourcePackage;
+import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
+import org.openflexo.pamela.editor.ui.action.ContextualAction;
+import org.openflexo.pamela.editor.ui.action.HelloWorldAction;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
 import org.openflexo.pamela.editor.ui.widget.DetailedBrowser;
 import org.openflexo.pamela.editor.ui.widget.MetaModelBrowser;
@@ -244,6 +247,41 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     /** Open sessions (projects). Exposed to the MetaModelBrowser FIB as {@code data.sessions}. */
     private final List<PamelaEditorSession> sessions = new ArrayList<>();
 
+    // -------------------------------------------------------------------------
+    // Contextual action registry
+    // -------------------------------------------------------------------------
+
+    /**
+     * All registered contextual actions, in registration order.
+     * Filtered by {@link #getActionsFor(Object)} on each right-click.
+     */
+    private final List<ContextualAction> registeredActions = new ArrayList<>();
+
+    /**
+     * Registers a contextual action so it appears in right-click menus when
+     * {@link ContextualAction#isApplicable(Object)} returns {@code true}.
+     */
+    public void registerAction(ContextualAction action) {
+        registeredActions.add(action);
+    }
+
+    /**
+     * Returns the subset of registered actions applicable to {@code target},
+     * in registration order.
+     */
+    public List<ContextualAction> getActionsFor(Object target) {
+        if (target == null) {
+            return Collections.emptyList();
+        }
+        List<ContextualAction> result = new ArrayList<>();
+        for (ContextualAction action : registeredActions) {
+            if (action.isApplicable(target)) {
+                result.add(action);
+            }
+        }
+        return result;
+    }
+
     /** The currently selected element (any Source* or PamelaClassDiagram). */
     private Object currentSelectedElement;
 
@@ -426,6 +464,10 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         // --- Menu bar ---
         menuBar = new PamelaEditorMenuBar(this);
         frame.setJMenuBar(menuBar);
+
+        // --- Contextual actions ---
+        registerAction(new AddSourceFolderAction());
+        registerAction(new HelloWorldAction());
 
         frame.validate();
         frame.pack();

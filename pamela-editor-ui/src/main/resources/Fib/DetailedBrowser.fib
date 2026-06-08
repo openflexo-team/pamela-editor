@@ -21,6 +21,7 @@
         showRootsHandle="true" root="data"
         selectionMode="SingleTreeSelection"
         doubleClickAction="controller.doubleClick(detailedBrowser.selected)"
+        rightClickAction="controller.rightClick(detailedBrowser.selected,event)"
         useScrollBar="true" selected="controller.selectedElement"
         name="detailedBrowser" rootVisible="true" readOnly="false"
         iteratorClassName="java.lang.Object"

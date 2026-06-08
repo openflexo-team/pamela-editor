@@ -38,6 +38,9 @@
 
 package org.openflexo.pamela.editor.ui;
 
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
@@ -47,6 +50,11 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
+
+import org.openflexo.pamela.editor.ui.action.ContextualAction;
 
 import org.openflexo.connie.annotations.NotificationUnsafe;
 import org.openflexo.gina.controller.FIBController;
@@ -207,6 +215,70 @@ public class PamelaEditorFIBController<T> extends FIBController implements Prope
 	public void propertyChange(PropertyChangeEvent evt) {
 		if (evt.getSource() instanceof ValidationReport) {
 			clearCachedIcons();
+		}
+	}
+
+	// =========================================================================
+	// Contextual menu helpers
+	// =========================================================================
+
+	/**
+	 * Builds and shows a {@link JPopupMenu} for the given target object, using the
+	 * contextual actions registered on {@code app}.
+	 *
+	 * <p>If {@code event} is a {@link MouseEvent}, the popup is positioned at the
+	 * event's on-screen coordinates. Otherwise it falls back to the current
+	 * mouse-pointer position.</p>
+	 *
+	 * <p>The menu is not shown when no applicable actions are found.</p>
+	 *
+	 * @param target the object that was right-clicked (may be null — no-op)
+	 * @param event  the raw event object passed by the Gina FIB binding (may be
+	 *               a {@link MouseEvent} or another type)
+	 * @param app    the running application instance
+	 */
+	protected static void showContextualMenu(Object target, Object event,
+	                                          PamelaEditorApplication app) {
+		if (target == null || app == null) {
+			return;
+		}
+
+		List<ContextualAction> actions = app.getActionsFor(target);
+		if (actions.isEmpty()) {
+			return;
+		}
+
+		JPopupMenu menu = new JPopupMenu();
+		boolean firstSection = true;
+		String lastGroup = null;
+
+		for (ContextualAction action : actions) {
+			// Simple grouping: if the action declares a group (optional extension point)
+			// add a separator between groups. For now all actions are in the same group.
+			if (!firstSection && lastGroup != null && !lastGroup.equals("default")) {
+				menu.add(new JSeparator());
+			}
+			lastGroup = "default";
+			firstSection = false;
+
+			JMenuItem item = new JMenuItem(action.getLabel());
+			if (action.getIcon() != null) {
+				item.setIcon(action.getIcon());
+			}
+			item.addActionListener(e -> action.perform(target, app));
+			menu.add(item);
+		}
+
+		// Determine popup location
+		if (event instanceof MouseEvent) {
+			MouseEvent me = (MouseEvent) event;
+			menu.show(me.getComponent(), me.getX(), me.getY());
+		} else {
+			// Fallback: show at current cursor position (screen coordinates)
+			Point screenPos = MouseInfo.getPointerInfo().getLocation();
+			menu.setLocation(screenPos.x, screenPos.y);
+			menu.setInvoker(menu);
+			menu.setVisible(true);
 		}
 	}
 

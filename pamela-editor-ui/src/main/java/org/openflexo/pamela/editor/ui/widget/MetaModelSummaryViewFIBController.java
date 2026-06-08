@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.logging.Logger;
 
 import javax.swing.Icon;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -14,6 +13,7 @@ import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
 import org.openflexo.gina.model.FIBComponent;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
+import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
 
 /**
  * FIB controller for {@link MetaModelSummaryView}.
@@ -53,27 +53,10 @@ public class MetaModelSummaryViewFIBController extends PamelaEditorFIBController
     /**
      * Opens a directory chooser dialog and adds the selected directory to the
      * metamodel's source directory list.
+     * Delegates to {@link AddSourceFolderAction#addSourceFolder} to avoid duplication.
      */
     public void addSourceDirectory() {
-        SourceMetaModel model = getDataObject();
-        if (model == null) {
-            return;
-        }
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Select source directory");
-        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        chooser.setAcceptAllFileFilterUsed(false);
-        if (projectDirectory != null && projectDirectory.exists()) {
-            chooser.setCurrentDirectory(projectDirectory);
-        }
-        JFrame parent = getParentFrame();
-        int result = chooser.showOpenDialog(parent);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File dir = chooser.getSelectedFile();
-            if (dir != null && !model.getSourceDirectories().contains(dir)) {
-                model.addSourceDirectory(dir);
-            }
-        }
+        AddSourceFolderAction.addSourceFolder(getDataObject(), projectDirectory, getParentFrame());
     }
 
     /**

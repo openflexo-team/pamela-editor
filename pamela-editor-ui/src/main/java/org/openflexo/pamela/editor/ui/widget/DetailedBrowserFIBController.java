@@ -97,6 +97,11 @@ public class DetailedBrowserFIBController extends PamelaEditorFIBController<Obje
         }
     }
 
+    /** Called on right-click — builds and shows the contextual menu. */
+    public void rightClick(Object object, Object event) {
+        showContextualMenu(object, event, application);
+    }
+
     // -------------------------------------------------------------------------
     // Icon resolution
     // -------------------------------------------------------------------------

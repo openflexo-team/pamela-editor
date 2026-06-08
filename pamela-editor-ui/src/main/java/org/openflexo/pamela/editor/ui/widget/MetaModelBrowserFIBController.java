@@ -57,9 +57,9 @@ public class MetaModelBrowserFIBController extends PamelaEditorFIBController<Pam
         }
     }
 
-    /** Called on right-click (contextual menu — deferred to a later sprint). */
+    /** Called on right-click — builds and shows the contextual menu. */
     public void rightClick(Object object, Object event) {
-        // TODO: contextual menu
+        showContextualMenu(object, event, getDataObject());
     }
 
     // -------------------------------------------------------------------------
