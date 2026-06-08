@@ -56,7 +56,6 @@ import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
 import org.openflexo.pamela.editor.ui.action.ContextualAction;
-import org.openflexo.pamela.editor.ui.action.HelloWorldAction;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
 import org.openflexo.pamela.editor.ui.widget.DetailedBrowser;
 import org.openflexo.pamela.editor.ui.widget.MetaModelBrowser;
@@ -467,7 +466,6 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
 
         // --- Contextual actions ---
         registerAction(new AddSourceFolderAction());
-        registerAction(new HelloWorldAction());
 
         frame.validate();
         frame.pack();
