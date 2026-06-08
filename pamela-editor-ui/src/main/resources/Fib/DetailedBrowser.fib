@@ -59,8 +59,7 @@
             dataClassName="org.openflexo.pamela.editor.model.SourcePackage"
             name="pkg"
             isEditable="false">
-            <Children id="52" name="entities" data="pkg.entities" />
-            <Children id="56" name="javaFiles" data="pkg.nonEntityJavaFiles" />
+            <Children id="52" name="members" data="pkg.members" />
         </BrowserElement>
 
         <BrowserElement id="90"

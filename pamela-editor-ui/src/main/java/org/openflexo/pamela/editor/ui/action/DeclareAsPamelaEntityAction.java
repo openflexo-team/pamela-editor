@@ -6,6 +6,7 @@ import javax.swing.JOptionPane;
 
 import org.openflexo.pamela.editor.model.SourceJavaFile;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
+import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaProject;
 
@@ -48,20 +49,31 @@ public class DeclareAsPamelaEntityAction implements ContextualAction {
             return;
         }
 
+        final String qualifiedName = file.getQualifiedName();
         try {
             model.declareAsEntity(file);
         } catch (IOException | IllegalStateException e) {
             JOptionPane.showMessageDialog(app.getFrame(),
-                    "Could not declare '" + file.getQualifiedName()
+                    "Could not declare '" + qualifiedName
                             + "' as a PAMELA entity:\n" + e.getMessage(),
                     "Declare as PAMELA Entity", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // Re-run Spoon analysis in the background so the new entity materialises.
+        // Re-run Spoon analysis in the background so the new entity materialises,
+        // then select it so the source view, inspector and detailed browser all
+        // refresh to the freshly annotated entity.
         PamelaProject project = findProject(model, app);
         if (project != null) {
-            app.rebuildProject(project);
+            app.rebuildProject(project, () -> {
+                SourceModelEntity entity = model.getEntity(qualifiedName);
+                if (entity != null) {
+                    // Select the new entity in the browser tree; this cascades to
+                    // the central view, inspector and detailed browser, keeping the
+                    // selection visually anchored on the same (now-entity) node.
+                    app.selectInBrowser(entity);
+                }
+            });
         }
     }
 

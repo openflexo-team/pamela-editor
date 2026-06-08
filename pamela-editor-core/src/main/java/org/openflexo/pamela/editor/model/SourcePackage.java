@@ -3,6 +3,7 @@ package org.openflexo.pamela.editor.model;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -121,6 +122,36 @@ public class SourcePackage implements SourceElement, HasPropertyChangeSupport {
         return javaFiles.stream()
                 .filter(f -> metaModel.getEntity(f.getQualifiedName()) == null)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * All browsable members of this package — {@link SourceModelEntity}s and
+     * non-entity {@link SourceJavaFile}s — merged into a single list sorted by
+     * simple name (case-insensitive).
+     *
+     * <p>The single, name-sorted list gives a <em>stable</em> ordering that
+     * survives the file → entity transition: when a Java file is declared as a
+     * {@code @ModelEntity} it keeps its alphabetical position and only its kind
+     * (and icon) changes, instead of jumping between separate "files" and
+     * "entities" groups.</p>
+     */
+    public List<SourceElement> getMembers() {
+        List<SourceElement> members = new ArrayList<>();
+        members.addAll(entities);
+        members.addAll(getNonEntityJavaFiles());
+        members.sort(Comparator.comparing(SourcePackage::memberSimpleName,
+                String.CASE_INSENSITIVE_ORDER));
+        return members;
+    }
+
+    private static String memberSimpleName(SourceElement member) {
+        if (member instanceof SourceModelEntity) {
+            return ((SourceModelEntity) member).getSimpleName();
+        }
+        if (member instanceof SourceJavaFile) {
+            return ((SourceJavaFile) member).getSimpleName();
+        }
+        return "";
     }
 
     /** Simple name: last segment of the qualified name, or {@code "<default>"}. */

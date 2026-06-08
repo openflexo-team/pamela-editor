@@ -5,7 +5,7 @@
     border="empty" trackViewPortWidth="true" width="250"
     dataClassName="org.openflexo.pamela.editor.ui.PamelaEditorApplication"
     trackViewPortHeight="true">
-    <Browser id="1" deepExploration="false" showFooter="false" rowHeight="18"
+    <Browser id="1" deepExploration="true" showFooter="false" rowHeight="18"
         showRootsHandle="true" root="data"
         selectionMode="SingleTreeSelection"
         doubleClickAction="controller.doubleClick(metaModelBrowser.selected)"
@@ -56,8 +56,7 @@
             dataClassName="org.openflexo.pamela.editor.model.SourcePackage"
             name="pkg"
             isEditable="false">
-            <Children id="12" name="entities" data="pkg.entities" />
-            <Children id="13" name="javaFiles" data="pkg.nonEntityJavaFiles" />
+            <Children id="12" name="members" data="pkg.members" />
         </BrowserElement>
 
         <BrowserElement id="6"

@@ -701,6 +701,18 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
      * updated before calling this method.</p>
      */
     public void rebuildProject(PamelaProject project) {
+        rebuildProject(project, null);
+    }
+
+    /**
+     * Re-runs Spoon analysis off the EDT, then refreshes the UI.
+     *
+     * @param project      the project to rebuild
+     * @param afterRebuild optional callback run on the EDT once the rebuild and
+     *                     UI refresh are complete (e.g. to select a newly
+     *                     materialised entity). May be {@code null}.
+     */
+    public void rebuildProject(PamelaProject project, Runnable afterRebuild) {
         if (project == null) {
             return;
         }
@@ -728,6 +740,11 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                             "Error",
                             javax.swing.JOptionPane.ERROR_MESSAGE);
                 }
+                // A rebuild recreates all Source* objects and may have changed files
+                // on disk. Drop cached views backed by those (everything except
+                // diagram editors) so they are recreated fresh from disk on next show.
+                invalidateSourceViews();
+
                 // Force Gina to refresh the browser tree and all summary statistics
                 java.beans.PropertyChangeSupport pcs = metaModel.getPropertyChangeSupport();
                 pcs.firePropertyChange("allPackages", null,
@@ -738,8 +755,21 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                 pcs.firePropertyChange("abstractEntitiesCount", -1, metaModel.getAbstractEntitiesCount());
                 pcs.firePropertyChange("totalInitializersCount", -1, metaModel.getTotalInitializersCount());
                 pcs.firePropertyChange("issuesCount", -1, metaModel.getIssuesCount());
+
+                if (afterRebuild != null) {
+                    afterRebuild.run();
+                }
             }
         }.execute();
+    }
+
+    /**
+     * Removes every cached central view except diagram editors (which are not
+     * affected by a meta-model rebuild). Called after a rebuild so that re-showing
+     * a {@code Source*} element rebuilds its view from the current source on disk.
+     */
+    private void invalidateSourceViews() {
+        viewCache.keySet().removeIf(key -> !(key instanceof PamelaClassDiagram));
     }
 
     public void closeProject(PamelaProject project) {
@@ -845,6 +875,24 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     /** Called from MetaModelBrowserFIBController on single-click. */
     private void onBrowserSelectionChanged(Object element) {
         setCurrentSelectedElement(element);
+    }
+
+    /**
+     * Selects {@code element} in the {@link MetaModelBrowser} tree, so the node is
+     * highlighted and scrolled into view. Setting the browser controller's
+     * selection cascades to {@link #setCurrentSelectedElement(Object)} via the
+     * registered listener, keeping the tree highlight, central view, inspector and
+     * detailed browser all in sync.
+     *
+     * <p>Used after a model mutation that recreates the selected element (e.g.
+     * declaring a Java file as an entity): the old node is gone from the refreshed
+     * tree, so we re-point the browser at the new object. Deferred via
+     * {@code invokeLater} so it runs after Gina has rebuilt the tree model from the
+     * just-fired refresh events.</p>
+     */
+    public void selectInBrowser(Object element) {
+        javax.swing.SwingUtilities.invokeLater(() ->
+                metaModelBrowser.getController().setSelectedElement(element));
     }
 
     // =========================================================================
