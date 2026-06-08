@@ -7,6 +7,7 @@ import org.openflexo.pamela.editor.diagram.EntityView;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.model.SourceImplementationClass;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
+import org.openflexo.pamela.editor.ui.PamelaProject;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourceModelInitializer;
 import org.openflexo.pamela.editor.model.SourceModelProperty;
@@ -109,6 +110,9 @@ public class DetailedBrowserFIBController extends PamelaEditorFIBController<Obje
 
     @Override
     protected ImageIcon retrieveIconForObject(Object object) {
+        if (object instanceof PamelaProject) {
+            return PamelaEditorIconLibrary.SESSION_ICON;
+        }
         if (object instanceof SourceMetaModel) {
             return PamelaEditorIconLibrary.METAMODEL_ICON;
         }
