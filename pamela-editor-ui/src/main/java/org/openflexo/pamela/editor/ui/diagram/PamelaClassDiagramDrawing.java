@@ -1,6 +1,7 @@
 package org.openflexo.pamela.editor.ui.diagram;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +20,10 @@ import org.openflexo.diana.GRProvider.ShapeGRProvider;
 import org.openflexo.diana.GRStructureVisitor;
 import org.openflexo.diana.GraphicalRepresentation;
 import org.openflexo.diana.ShapeGraphicalRepresentation;
+import org.openflexo.diana.connectors.ConnectorSpecification;
 import org.openflexo.diana.connectors.ConnectorSpecification.ConnectorType;
+import org.openflexo.diana.connectors.ConnectorSymbol.EndSymbolType;
+import org.openflexo.diana.connectors.ConnectorSymbol.StartSymbolType;
 import org.openflexo.diana.impl.DrawingImpl;
 import org.openflexo.diana.shapes.ShapeSpecification.ShapeType;
 import org.openflexo.pamela.editor.diagram.ComputedConnector;
@@ -92,6 +96,11 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                     gr.setHeight(ev.getHeight());
                     gr.setForeground(factory.makeForegroundStyle(Color.DARK_GRAY, 1.0f));
                     gr.setBackground(factory.makeColoredBackground(new Color(230, 240, 255)));
+                    // Bold, centered entity name; allow the «abstract» stereotype
+                    // line to wrap onto a second line.
+                    gr.setTextStyle(factory.makeTextStyle(
+                            Color.BLACK, new Font("SansSerif", Font.BOLD, 11)));
+                    gr.setIsMultilineAllowed(true);
                     gr.setIsSelectable(true);
                     gr.setIsFocusable(true);
                     gr.setIsReadOnly(false);
@@ -108,16 +117,32 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                         ComputedConnector cc, DianaModelFactory factory) {
                     ConnectorGraphicalRepresentation gr =
                         factory.makeConnectorGraphicalRepresentation(ConnectorType.LINE);
+                    // Connectors are drawn source → target:
+                    //  - INHERITANCE: sub-type → super-type
+                    //  - ASSOCIATION / COMPOSITION: owner → property type
+                    ConnectorSpecification spec = gr.getConnectorSpecification();
                     switch (cc.getType()) {
                         case INHERITANCE:
+                            // UML generalization: hollow triangle at the super-type end.
                             gr.setForeground(factory.makeForegroundStyle(Color.DARK_GRAY, 1.5f));
+                            spec.setEndSymbol(EndSymbolType.PLAIN_ARROW);
+                            spec.setEndSymbolSize(12.0);
                             break;
                         case COMPOSITION:
+                            // UML composition: filled diamond at the owner end,
+                            // open arrow at the part end.
                             gr.setForeground(factory.makeForegroundStyle(new Color(60, 60, 180), 1.5f));
+                            spec.setStartSymbol(StartSymbolType.FILLED_DIAMOND);
+                            spec.setStartSymbolSize(10.0);
+                            spec.setEndSymbol(EndSymbolType.ARROW);
+                            spec.setEndSymbolSize(8.0);
                             break;
                         case ASSOCIATION:
                         default:
+                            // UML association: open arrow at the type end.
                             gr.setForeground(factory.makeForegroundStyle(Color.GRAY, 1.0f));
+                            spec.setEndSymbol(EndSymbolType.ARROW);
+                            spec.setEndSymbolSize(8.0);
                             break;
                     }
                     return gr;
@@ -146,10 +171,10 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             }
         });
 
-        // 6. Dynamic text: entity label (simple name, or «abstract» + name)
+        // 6. Dynamic text: entity label (bold name, «abstract» stereotype if abstract)
         entityViewBinding.setDynamicPropertyValue(
             GraphicalRepresentation.TEXT,
-            new DataBinding<String>("drawable.entity != null ? drawable.entity.simpleName : drawable.qualifiedName"),
+            new DataBinding<String>("drawable.displayLabel"),
             false);
 
         // 7. Sync X/Y back to EntityView on user drag

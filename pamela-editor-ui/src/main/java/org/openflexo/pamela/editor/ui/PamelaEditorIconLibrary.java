@@ -75,7 +75,7 @@ public class PamelaEditorIconLibrary {
      * Reuses the network icon until a dedicated diagram icon is designed.
      */
     public static final ImageIcon DIAGRAM_ICON =
-            buildIcon("Icons/Network.png");
+            buildIcon("Icons/ClassDiagram_16x16.png");
 
     /**
      * Icon for a {@link org.openflexo.pamela.editor.model.SourcePackage}.

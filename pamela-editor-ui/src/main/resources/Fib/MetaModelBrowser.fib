@@ -7,6 +7,7 @@
     trackViewPortHeight="true">
     <Browser id="1" deepExploration="true" showFooter="false" rowHeight="18"
         showRootsHandle="true" root="data"
+        allowsExternalDragAndDrop="true"
         selectionMode="SingleTreeSelection"
         doubleClickAction="controller.doubleClick(metaModelBrowser.selected)"
         rightClickAction="controller.rightClick(metaModelBrowser.selected,event)"

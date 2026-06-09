@@ -66,4 +66,13 @@ public interface EntityView extends AccessibleProxyObject {
     SourceModelEntity getEntity();
 
     void setEntity(SourceModelEntity entity);
+
+    /**
+     * The label rendered in the UML box: the entity simple name, prefixed with
+     * an {@code «abstract»} stereotype line when the entity is abstract.
+     * Computed from the resolved {@link #getEntity()}; falls back to the simple
+     * part of {@link #getQualifiedName()} when the entity is not yet resolved.
+     * Not managed by PAMELA — implemented in {@link EntityViewImpl}.
+     */
+    String getDisplayLabel();
 }

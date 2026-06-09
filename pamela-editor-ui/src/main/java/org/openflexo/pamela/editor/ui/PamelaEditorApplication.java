@@ -57,6 +57,7 @@ import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.action.AddAsRootTypeAction;
 import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsPamelaEntityAction;
+import org.openflexo.pamela.editor.ui.action.NewClassDiagramAction;
 import org.openflexo.pamela.editor.ui.action.ContextualAction;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
 import org.openflexo.pamela.editor.ui.widget.DetailedBrowser;
@@ -295,6 +296,17 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
      */
     private boolean settingSelectedElement = false;
 
+    // --- Browser drag-to-diagram coordination ---
+    // While the user holds the mouse down on the MetaModelBrowser tree (a potential
+    // drag), the central view switch is deferred so the active diagram stays visible
+    // and droppable. The switch is committed on mouse release only if no drag occurred.
+    /** True between mousePressed and mouseReleased/dragDropEnd on the browser tree. */
+    private boolean browserPressActive = false;
+    /** True if a drag gesture started during the current browser press. */
+    private boolean browserDragOccurred = false;
+    /** Element whose central-view switch was deferred during a browser press. */
+    private Object deferredCentralViewElement;
+
     private PamelaEditorMenuBar menuBar;
     LocalizedEditor localizedEditor;
 
@@ -401,6 +413,13 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         metaModelBrowser.getController().getPropertyChangeSupport()
                 .addPropertyChangeListener("selectedElement", evt ->
                         onBrowserSelectionChanged(evt.getNewValue()));
+        // Enable dragging entities from the browser onto class diagrams.
+        // Deferred so the Gina browser JTree is realised before we look it up.
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            if (!metaModelBrowser.enableEntityDrag()) {
+                logger.warning("Could not enable entity drag: browser JTree not found");
+            }
+        });
 
         // --- Left column: DetailedBrowser (bottom) ---
         detailedBrowser = new DetailedBrowser(this);
@@ -470,6 +489,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         registerAction(new AddSourceFolderAction());
         registerAction(new AddAsRootTypeAction());
         registerAction(new DeclareAsPamelaEntityAction());
+        registerAction(new NewClassDiagramAction());
 
         frame.validate();
         frame.pack();
@@ -836,8 +856,16 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                 e.printStackTrace();
             }
             try {
-                // 3. Open or navigate the central view
-                openOrSwitchCentralView(element);
+                // 3. Open or navigate the central view.
+                //    If the user is pressing in the browser (a potential drag onto a
+                //    diagram), defer the switch: keep the current diagram visible so it
+                //    remains a valid drop target. The switch is committed on mouse
+                //    release only if no drag happened (see onBrowserMouseReleased).
+                if (browserPressActive) {
+                    deferredCentralViewElement = element;
+                } else {
+                    openOrSwitchCentralView(element);
+                }
             } catch (Exception e) {
                 logger.warning("Central view switch failed: " + e.getMessage());
                 e.printStackTrace();
@@ -875,6 +903,46 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     /** Called from MetaModelBrowserFIBController on single-click. */
     private void onBrowserSelectionChanged(Object element) {
         setCurrentSelectedElement(element);
+    }
+
+    // =========================================================================
+    // Browser drag-to-diagram coordination (see field declarations above)
+    // =========================================================================
+
+    /** The user pressed the mouse on the browser tree — a drag may be starting. */
+    public void onBrowserMousePressed() {
+        browserPressActive = true;
+        browserDragOccurred = false;
+        deferredCentralViewElement = null;
+    }
+
+    /** A drag gesture was recognized on the browser tree (so it is a drag, not a click). */
+    public void onBrowserDragStarted() {
+        browserDragOccurred = true;
+    }
+
+    /**
+     * The mouse was released on the browser tree. If this was a plain click (no
+     * drag), commit the central-view switch that was deferred during the press.
+     */
+    public void onBrowserMouseReleased() {
+        browserPressActive = false;
+        Object pending = deferredCentralViewElement;
+        deferredCentralViewElement = null;
+        if (!browserDragOccurred && pending != null) {
+            openOrSwitchCentralView(pending);
+        }
+    }
+
+    /**
+     * A browser drag-and-drop operation finished (drop or cancel). Clears the
+     * press state without committing the deferred view switch, so the diagram the
+     * entity was dropped on stays the active central view.
+     */
+    public void onBrowserDragEnded() {
+        browserPressActive = false;
+        browserDragOccurred = false;
+        deferredCentralViewElement = null;
     }
 
     /**
@@ -1156,21 +1224,51 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     // New diagram action
     // =========================================================================
 
-    /** Creates a new {@link PamelaClassDiagram} for the most recently opened project. */
+    /**
+     * Menu entry point: creates a new {@link PamelaClassDiagram} for the active
+     * project (the one owning the current selection, or the most recently opened
+     * one as a fallback). Prompts the user for a diagram name.
+     */
     public void newDiagram() {
-        if (projects.isEmpty()) {
+        PamelaProject project = getProjectForElement(currentSelectedElement);
+        if (project == null && !projects.isEmpty()) {
+            project = projects.get(projects.size() - 1);
+        }
+        if (project == null) {
             return;
         }
-        PamelaProject project = projects.get(projects.size() - 1);
-        if (project.getDiagramFactory() == null) {
-            return;
+        newDiagram(project);
+    }
+
+    /**
+     * Creates a new {@link PamelaClassDiagram} at the root of the given project,
+     * prompting the user for its name, then opens it in the central view.
+     *
+     * @param project the project to add the diagram to
+     * @return the created diagram, or {@code null} if the user cancelled or no
+     *         diagram factory is available
+     */
+    public PamelaClassDiagram newDiagram(PamelaProject project) {
+        if (project == null || project.getDiagramFactory() == null) {
+            return null;
         }
-        PamelaClassDiagram diagram = project.getDiagramFactory().newDiagram("New diagram");
+        String name = (String) javax.swing.JOptionPane.showInputDialog(
+                frame, "Diagram name:", "New Class Diagram",
+                javax.swing.JOptionPane.PLAIN_MESSAGE, null, null, "New diagram");
+        if (name == null || name.trim().isEmpty()) {
+            return null; // cancelled or empty
+        }
+        PamelaClassDiagram diagram = project.getDiagramFactory().newDiagram(name.trim());
         project.addDiagram(diagram);
-        // Refresh browser tree
-        metaModelBrowser.setEditedObject(this);
+        // Force the MetaModelBrowser to rebuild so the new diagram node appears under
+        // the project. The projects list content is unchanged (only a project's internal
+        // diagrams list grew), so we pass null as old value to bypass the equals() guard
+        // in PropertyChangeSupport and guarantee the event fires.
+        pcSupport.firePropertyChange("projects", null,
+                Collections.unmodifiableList(projects));
         // Navigate to the diagram editor immediately
         openOrSwitchCentralView(diagram);
+        return diagram;
     }
 
     // =========================================================================

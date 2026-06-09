@@ -47,7 +47,7 @@
             dataClassName="org.openflexo.pamela.editor.ui.PamelaProject"
             name="project"
             isEditable="false">
-            <Children id="50" name="diagrams" data="project.diagrams" />
+            <!-- Diagrams appear only in the MetaModelBrowser, not in the DetailedBrowser. -->
             <Children id="51" name="packages" data="project.metaModel.allPackages" />
         </BrowserElement>
 

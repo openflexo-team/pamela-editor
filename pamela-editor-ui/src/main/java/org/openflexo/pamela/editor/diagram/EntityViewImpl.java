@@ -20,4 +20,19 @@ public abstract class EntityViewImpl implements EntityView {
     public void setEntity(SourceModelEntity entity) {
         this.entity = entity;
     }
+
+    @Override
+    public String getDisplayLabel() {
+        if (entity != null) {
+            String simple = entity.getSimpleName();
+            return entity.isAbstract() ? ("« abstract »\n" + simple) : simple;
+        }
+        // Entity not resolved yet — derive the simple name from the qualified name.
+        String qn = getQualifiedName();
+        if (qn == null) {
+            return "";
+        }
+        int dot = qn.lastIndexOf('.');
+        return (dot >= 0) ? qn.substring(dot + 1) : qn;
+    }
 }

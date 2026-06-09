@@ -2,7 +2,9 @@ package org.openflexo.pamela.editor.ui.diagram;
 
 import javax.swing.JComponent;
 
+import org.openflexo.pamela.editor.diagram.EntityView;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
+import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.ui.PamelaProject;
 
 /**
@@ -68,7 +70,13 @@ public class PamelaClassDiagramEditor {
     // Public API
     // -------------------------------------------------------------------------
 
-    /** Returns the Swing component to embed in the central tab pane. */
+    /**
+     * Returns the Swing component to embed in the central tab pane.
+     *
+     * <p>The drop target for browser-to-diagram drag-and-drop is wired by Diana
+     * itself through {@link DianaDrawingEditor#makeDropListener}, so no Swing
+     * {@code DropTarget} is installed here.</p>
+     */
     public JComponent getView() {
         return getDianaEditor().getDrawingView();
     }
@@ -92,6 +100,27 @@ public class PamelaClassDiagramEditor {
         if (drawing != null) {
             drawing.updateGraphicalObjectsHierarchy();
         }
+    }
+
+    /**
+     * Adds an entity to the diagram at the given logical position, then refreshes
+     * the drawing so the new shape and all connectors towards already-present
+     * entities appear automatically.
+     *
+     * <p>If the entity is already present (same qualified name), this is a no-op
+     * and returns the existing {@link EntityView} — entities are never duplicated.</p>
+     *
+     * <p>Delegates to {@link DianaDrawingEditor#addEntity(SourceModelEntity, double, double)},
+     * which holds the actual model-mutation logic so the Diana drop delegate can
+     * reuse it directly.</p>
+     *
+     * @param entity the source entity to represent (must not be null)
+     * @param x      logical X position on the canvas (drawing coordinates)
+     * @param y      logical Y position on the canvas (drawing coordinates)
+     * @return the {@link EntityView} representing the entity (new or existing)
+     */
+    public EntityView addEntity(SourceModelEntity entity, double x, double y) {
+        return getDianaEditor().addEntity(entity, x, y);
     }
 
     /** The tab title shown in the central pane. */
