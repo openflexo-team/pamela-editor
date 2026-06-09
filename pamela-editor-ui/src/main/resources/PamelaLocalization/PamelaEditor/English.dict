@@ -37,6 +37,7 @@ fixed=Fixed
 foreground_inspector=Foreground inspector
 help=Help
 identifier=Identifier
+inspectors=Inspectors
 layout_constraints=Layout constraints
 layout_manager=Layout manager
 layout_manager_inspector=Layout manager inspector

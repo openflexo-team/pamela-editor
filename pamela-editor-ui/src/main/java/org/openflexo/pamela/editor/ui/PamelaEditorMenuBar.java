@@ -25,6 +25,7 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
 import org.openflexo.diana.control.DianaInteractiveEditor;
+import org.openflexo.diana.swing.control.tools.JDianaDialogInspectors;
 import org.openflexo.pamela.editor.ui.diagram.DianaDrawingEditor;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
 import org.openflexo.pamela.undo.UndoManager;
@@ -139,6 +140,8 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
 
         viewMenu.add(backItem);
         viewMenu.add(forwardItem);
+        viewMenu.addSeparator();
+        addInspectorItems(viewMenu);
 
         // ------------------------------------------------------------------ Edit menu
         copyItem = makeSynchronizedMenuItem(
@@ -277,6 +280,64 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
         add(viewMenu);
         add(toolsMenu);
         add(helpMenu);
+    }
+
+    // =========================================================================
+    // Diana inspectors (View menu)
+    // =========================================================================
+
+    /**
+     * Adds the Diana floating-inspector toggles directly at the root of the
+     * given menu (the <i>View</i> menu): one item per inspector dialog
+     * (location/size, shape, connector, foreground, background, text, shadow,
+     * control, layout manager).
+     *
+     * <p>Each item is a {@link WindowMenuItem} whose checked state mirrors the
+     * dialog visibility. The dialogs are created lazily here (first getter call)
+     * and staggered near the top-right of the main frame so they do not stack on
+     * top of one another. They follow the selection of the active diagram editor
+     * because {@code PamelaEditorApplication.attachDianaTools(...)} calls
+     * {@code inspectors.attachToEditor(...)} whenever a diagram view becomes
+     * active.</p>
+     */
+    private void addInspectorItems(JMenu menu) {
+        JDianaDialogInspectors insp = application.inspectors;
+
+        int i = 0;
+        i = addInspectorItem(menu, "location_size_inspector",
+                insp.getLocationSizeInspector(), i);
+        i = addInspectorItem(menu, "shape_inspector",
+                insp.getShapeInspector(), i);
+        i = addInspectorItem(menu, "connector_inspector",
+                insp.getConnectorInspector(), i);
+        menu.addSeparator();
+        i = addInspectorItem(menu, "foreground_inspector",
+                insp.getForegroundStyleInspector(), i);
+        i = addInspectorItem(menu, "background_inspector",
+                insp.getBackgroundStyleInspector(), i);
+        i = addInspectorItem(menu, "text_inspector",
+                insp.getTextPropertiesInspector(), i);
+        i = addInspectorItem(menu, "shadow_inspector",
+                insp.getShadowStyleInspector(), i);
+        menu.addSeparator();
+        i = addInspectorItem(menu, "control_inspector",
+                insp.getControlInspector(), i);
+        i = addInspectorItem(menu, "layout_manager_inspector",
+                insp.getLayoutManagersInspector(), i);
+    }
+
+    /**
+     * Adds one inspector toggle to {@code menu}, positioning the dialog at a
+     * staggered offset {@code index} from the top-right of the frame, and
+     * returns {@code index + 1}.
+     */
+    private int addInspectorItem(JMenu menu, String labelKey, Window dialog, int index) {
+        // Stagger dialogs vertically along the right edge of the frame.
+        int x = application.frame.getX() + application.frame.getWidth() - 360;
+        int y = application.frame.getY() + 40 + index * 30;
+        dialog.setLocation(Math.max(0, x), Math.max(0, y));
+        menu.add(new WindowMenuItem(loc(labelKey), dialog));
+        return index + 1;
     }
 
     // =========================================================================

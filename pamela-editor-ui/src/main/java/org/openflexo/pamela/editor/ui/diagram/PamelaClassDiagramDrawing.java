@@ -105,6 +105,8 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                     gr.setTextStyle(factory.makeTextStyle(
                             Color.BLACK, new Font("SansSerif", Font.BOLD, 11)));
                     gr.setIsMultilineAllowed(true);
+                    // Keep the label centered inside the box (not floating).
+                    gr.setIsFloatingLabel(false);
                     gr.setIsSelectable(true);
                     gr.setIsFocusable(true);
                     gr.setIsReadOnly(false);

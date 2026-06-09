@@ -37,6 +37,7 @@ fixed=fixed
 foreground_inspector=foreground_inspector
 help=help
 identifier=identifier
+inspectors=Inspecteurs
 layout_constraints=layout_constraints
 layout_manager=layout_manager
 layout_manager_inspector=layout_manager_inspector
