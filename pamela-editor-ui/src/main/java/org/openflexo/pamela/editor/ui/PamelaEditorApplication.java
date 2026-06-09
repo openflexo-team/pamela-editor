@@ -28,6 +28,7 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -58,6 +59,8 @@ import org.openflexo.pamela.editor.ui.action.AddAsRootTypeAction;
 import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsPamelaEntityAction;
 import org.openflexo.pamela.editor.ui.action.NewClassDiagramAction;
+import org.openflexo.pamela.editor.ui.action.RenameClassDiagramAction;
+import org.openflexo.pamela.editor.ui.action.DeleteClassDiagramAction;
 import org.openflexo.pamela.editor.ui.action.ContextualAction;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
 import org.openflexo.pamela.editor.ui.widget.DetailedBrowser;
@@ -490,6 +493,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         registerAction(new AddAsRootTypeAction());
         registerAction(new DeclareAsPamelaEntityAction());
         registerAction(new NewClassDiagramAction());
+        registerAction(new RenameClassDiagramAction());
+        registerAction(new DeleteClassDiagramAction());
 
         frame.validate();
         frame.pack();
@@ -541,6 +546,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                 try {
                     java.util.List<String> diagramFileNames =
                             SourceMetaModelSerializer.loadDiagramFileNames(pamelaFile);
+                    // Remember which sidecars this project had on disk, so a later
+                    // save can purge the files of deleted diagrams.
+                    project.setKnownSidecarFiles(diagramFileNames);
                     for (String fileName : diagramFileNames) {
                         File diagramFile = new File(projectDir, fileName);
                         if (diagramFile.exists()) {
@@ -586,11 +594,11 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     logger.severe("Failed to open project "
                             + pamelaFile + ": " + cause.getMessage());
                     cause.printStackTrace();
-                    javax.swing.JOptionPane.showMessageDialog(
+                    JOptionPane.showMessageDialog(
                             frame,
                             "Failed to open project:\n" + cause.getMessage(),
                             "Error",
-                            javax.swing.JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.ERROR_MESSAGE);
                 }
             }
         }.execute();
@@ -659,11 +667,11 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     Throwable cause = (e.getCause() != null) ? e.getCause() : e;
                     logger.severe("Failed to create project: " + cause.getMessage());
                     cause.printStackTrace();
-                    javax.swing.JOptionPane.showMessageDialog(
+                    JOptionPane.showMessageDialog(
                             frame,
                             loc("error_creating_project") + "\n" + cause.getMessage(),
                             loc("error"),
-                            javax.swing.JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.ERROR_MESSAGE);
                 }
             }
         }.execute();
@@ -679,6 +687,18 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if (project == null && !projects.isEmpty()) {
             project = projects.get(projects.size() - 1);
         }
+        saveProject(project);
+    }
+
+    /**
+     * Persists a project: reconciles the project directory with the in-memory model.
+     * Writes each diagram to {@code <id>.diagram}, updates the {@code .pamela}
+     * {@code "diagrams"} list, purges sidecars of deleted diagrams, and clears the
+     * project's dirty flag.
+     *
+     * @param project the project to save (no-op if {@code null})
+     */
+    public void saveProject(PamelaProject project) {
         if (project == null) {
             return;
         }
@@ -687,10 +707,10 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             projectDir = new java.io.File(".");
         }
 
-        // 1. Save diagram sidecars and collect their file names
+        // 1. Write each diagram to <id>.diagram; collect the current file-name set.
         java.util.List<String> diagramFileNames = new java.util.ArrayList<>();
         for (PamelaClassDiagram diagram : project.getDiagrams()) {
-            String fileName = PamelaClassDiagramSerializer.sidecarFileName(diagram.getName());
+            String fileName = PamelaClassDiagramSerializer.sidecarFileName(diagram.getId());
             diagramFileNames.add(fileName);
             File diagramFile = new File(projectDir, fileName);
             try {
@@ -701,7 +721,20 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             }
         }
 
-        // 2. Save the .pamela file (includes the diagrams list)
+        // 2. Purge sidecars the project previously had but no longer does (deletions
+        //    and any stale file names from a manual rename). Only files this project
+        //    tracked are touched, never unrelated .diagram files.
+        for (String stale : project.getKnownSidecarFiles()) {
+            if (!diagramFileNames.contains(stale)) {
+                File staleFile = new File(projectDir, stale);
+                if (staleFile.exists() && !staleFile.delete()) {
+                    logger.warning("Could not delete obsolete diagram sidecar: " + staleFile);
+                }
+            }
+        }
+        project.setKnownSidecarFiles(diagramFileNames);
+
+        // 3. Save the .pamela file (includes the diagrams list).
         try {
             SourceMetaModelSerializer.save(
                     project.getMetaModel(),
@@ -710,6 +743,35 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         } catch (Exception e) {
             logger.severe("Failed to save project: " + e.getMessage());
         }
+
+        // 4. Clear dirty state and refresh the window title.
+        project.setDirty(false);
+        updateFrameTitle();
+    }
+
+    /**
+     * Marks a project as having unsaved changes and refreshes the window title.
+     * Central entry point for all diagram mutations (create/delete/rename, entity
+     * add/remove, shape move/resize).
+     */
+    public void markProjectDirty(PamelaProject project) {
+        if (project == null || project.isDirty()) {
+            return;
+        }
+        project.setDirty(true);
+        updateFrameTitle();
+    }
+
+    /** Updates the window title, appending " *" when any open project has unsaved changes. */
+    private void updateFrameTitle() {
+        boolean anyDirty = false;
+        for (PamelaProject p : projects) {
+            if (p.isDirty()) {
+                anyDirty = true;
+                break;
+            }
+        }
+        frame.setTitle("PAMELA Editor" + (anyDirty ? " *" : ""));
     }
 
     /** Closes a project and removes all related views and browser entries. */
@@ -754,16 +816,26 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     Throwable cause = (e.getCause() != null) ? e.getCause() : e;
                     logger.severe("Rebuild failed: " + cause.getMessage());
                     cause.printStackTrace();
-                    javax.swing.JOptionPane.showMessageDialog(
+                    JOptionPane.showMessageDialog(
                             frame,
                             "Rebuild failed:\n" + cause.getMessage(),
                             "Error",
-                            javax.swing.JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.ERROR_MESSAGE);
                 }
                 // A rebuild recreates all Source* objects and may have changed files
                 // on disk. Drop cached views backed by those (everything except
                 // diagram editors) so they are recreated fresh from disk on next show.
                 invalidateSourceViews();
+
+                // Diagram editors are kept across a rebuild, but their EntityView.entity
+                // references now point at stale instances (and entities may have appeared
+                // or disappeared). Re-resolve them and restyle unresolved placeholders.
+                for (PamelaClassDiagram diagram : project.getDiagrams()) {
+                    PamelaClassDiagramEditor editor = diagramEditors.get(diagram);
+                    if (editor != null) {
+                        editor.refreshEntityResolution();
+                    }
+                }
 
                 // Force Gina to refresh the browser tree and all summary statistics
                 java.beans.PropertyChangeSupport pcs = metaModel.getPropertyChangeSupport();
@@ -795,6 +867,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     public void closeProject(PamelaProject project) {
         if (project == null) {
             return;
+        }
+        if (!confirmSaveIfDirty(project)) {
+            return; // user cancelled the close
         }
         // Invalidate all diagram views belonging to this project
         for (PamelaClassDiagram diagram : project.getDiagrams()) {
@@ -1121,6 +1196,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             PamelaProject project = getProjectForDiagram(diagram);
             PamelaClassDiagramEditor editor =
                     new PamelaClassDiagramEditor(project, diagram);
+            // Mark the project dirty whenever the diagram is mutated (entity added/
+            // removed, shape moved/resized) so the change is offered for saving.
+            editor.installDirtyTracking(() -> markProjectDirty(project));
             diagramEditors.put(diagram, editor);
             return editor.getView();
         }
@@ -1252,14 +1330,17 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if (project == null || project.getDiagramFactory() == null) {
             return null;
         }
-        String name = (String) javax.swing.JOptionPane.showInputDialog(
+        String name = (String) JOptionPane.showInputDialog(
                 frame, "Diagram name:", "New Class Diagram",
-                javax.swing.JOptionPane.PLAIN_MESSAGE, null, null, "New diagram");
+                JOptionPane.PLAIN_MESSAGE, null, null, "New diagram");
         if (name == null || name.trim().isEmpty()) {
             return null; // cancelled or empty
         }
         PamelaClassDiagram diagram = project.getDiagramFactory().newDiagram(name.trim());
+        // Assign a stable, project-unique id (the sidecar file-name stem).
+        diagram.setId(project.generateDiagramId(name.trim()));
         project.addDiagram(diagram);
+        markProjectDirty(project);
         // Force the MetaModelBrowser to rebuild so the new diagram node appears under
         // the project. The projects list content is unchanged (only a project's internal
         // diagrams list grew), so we pass null as old value to bypass the equals() guard
@@ -1271,6 +1352,62 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         return diagram;
     }
 
+    /**
+     * Renames a diagram (display name only; its stable id and file are unchanged),
+     * marks the project dirty, and refreshes the browser label and central title.
+     */
+    public void renameDiagram(PamelaClassDiagram diagram) {
+        PamelaProject project = getProjectForDiagram(diagram);
+        if (diagram == null || project == null) {
+            return;
+        }
+        String newName = (String) JOptionPane.showInputDialog(
+                frame, "Diagram name:", "Rename Class Diagram",
+                JOptionPane.PLAIN_MESSAGE, null, null, diagram.getName());
+        if (newName == null) {
+            return; // cancelled
+        }
+        newName = newName.trim();
+        if (newName.isEmpty() || newName.equals(diagram.getName())) {
+            return;
+        }
+        diagram.setName(newName);
+        markProjectDirty(project);
+        // Refresh the browser node label and the central title if this diagram is shown.
+        pcSupport.firePropertyChange("projects", null,
+                Collections.unmodifiableList(projects));
+        if (currentHistoryElement == diagram) {
+            centralTitleLabel.setText(titleFor(diagram));
+        }
+    }
+
+    /**
+     * Deletes a diagram after confirmation: removes it from the project, discards its
+     * cached view/editor, and marks the project dirty. The {@code .diagram} file is
+     * removed from disk on the next save (purge in {@link #saveProject(PamelaProject)}).
+     */
+    public void deleteDiagram(PamelaClassDiagram diagram) {
+        PamelaProject project = getProjectForDiagram(diagram);
+        if (diagram == null || project == null) {
+            return;
+        }
+        int choice = JOptionPane.showConfirmDialog(frame,
+                "Delete diagram \"" + diagram.getName() + "\"?\n"
+                        + "Its .diagram file will be removed when the project is saved.",
+                "Delete Class Diagram",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (choice != JOptionPane.YES_OPTION) {
+            return;
+        }
+        invalidateCachedView(diagram);
+        diagramEditors.remove(diagram);
+        project.removeDiagram(diagram);
+        markProjectDirty(project);
+        pcSupport.firePropertyChange("projects", null,
+                Collections.unmodifiableList(projects));
+    }
+
     // =========================================================================
     // Application lifecycle
     // =========================================================================
@@ -1280,10 +1417,44 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         frame.setVisible(true);
     }
 
-    /** Exits the application. */
+    /** Exits the application, prompting to save each project with unsaved changes. */
     public void quit() {
+        for (PamelaProject p : new ArrayList<>(projects)) {
+            if (!confirmSaveIfDirty(p)) {
+                return; // user cancelled → abort quit
+            }
+        }
         frame.dispose();
         System.exit(0);
+    }
+
+    /**
+     * If the project has unsaved changes, asks the user whether to save. Saves on
+     * "Yes", proceeds on "No", and reports cancellation.
+     *
+     * @return {@code true} to proceed with the close/quit, {@code false} to abort
+     */
+    private boolean confirmSaveIfDirty(PamelaProject project) {
+        if (project == null || !project.isDirty()) {
+            return true;
+        }
+        String name = (project.getMetaModel() != null
+                && project.getMetaModel().getName() != null)
+                ? project.getMetaModel().getName()
+                : project.getPamelaFile().getName();
+        int choice = JOptionPane.showConfirmDialog(frame,
+                "Save changes to \"" + name + "\" before closing?",
+                "Unsaved Changes",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (choice == JOptionPane.CANCEL_OPTION
+                || choice == JOptionPane.CLOSED_OPTION) {
+            return false;
+        }
+        if (choice == JOptionPane.YES_OPTION) {
+            saveProject(project);
+        }
+        return true;
     }
 
     // =========================================================================

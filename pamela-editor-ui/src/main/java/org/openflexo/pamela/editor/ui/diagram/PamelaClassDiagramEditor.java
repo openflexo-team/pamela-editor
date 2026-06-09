@@ -1,5 +1,10 @@
 package org.openflexo.pamela.editor.ui.diagram;
 
+import java.beans.PropertyChangeListener;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
+
 import javax.swing.JComponent;
 
 import org.openflexo.pamela.editor.diagram.EntityView;
@@ -33,6 +38,11 @@ public class PamelaClassDiagramEditor {
 
     private PamelaClassDiagramDrawing drawing;
     private DianaDrawingEditor dianaEditor;
+
+    private boolean dirtyTrackingInstalled;
+    private Runnable onDirty;
+    private final Set<EntityView> trackedViews =
+            Collections.newSetFromMap(new IdentityHashMap<>());
 
     public PamelaClassDiagramEditor(PamelaProject session, PamelaClassDiagram diagram) {
         this.session = session;
@@ -100,6 +110,57 @@ public class PamelaClassDiagramEditor {
         if (drawing != null) {
             drawing.updateGraphicalObjectsHierarchy();
         }
+    }
+
+    /**
+     * Re-resolves the entity references of all entity views against the (rebuilt)
+     * meta-model and restyles unresolved boxes. Call after a project rebuild.
+     */
+    public void refreshEntityResolution() {
+        if (drawing != null) {
+            drawing.refreshEntityResolution();
+        }
+    }
+
+    /**
+     * Installs listeners that invoke {@code onDirty} whenever the diagram is mutated:
+     * an entity view is added/removed (the {@code entityViews} collection changes) or a
+     * shape is moved/resized (an {@link EntityView}'s {@code x/y/width/height} changes).
+     * Idempotent — only the first call takes effect.
+     *
+     * @param onDirty callback run on any diagram mutation (e.g. mark the project dirty)
+     */
+    public void installDirtyTracking(Runnable onDirty) {
+        if (dirtyTrackingInstalled) {
+            return;
+        }
+        dirtyTrackingInstalled = true;
+        this.onDirty = onDirty;
+
+        // Collection add/remove → dirty; also start tracking geometry of added views.
+        diagram.getPropertyChangeSupport().addPropertyChangeListener(
+                PamelaClassDiagram.ENTITY_VIEWS, evt -> {
+                    onDirty.run();
+                    if (evt.getNewValue() instanceof EntityView) {
+                        trackViewGeometry((EntityView) evt.getNewValue());
+                    }
+                });
+
+        for (EntityView ev : diagram.getEntityViews()) {
+            trackViewGeometry(ev);
+        }
+    }
+
+    /** Registers a geometry listener on an entity view (once) so moves/resizes mark dirty. */
+    private void trackViewGeometry(EntityView ev) {
+        if (ev == null || onDirty == null || !trackedViews.add(ev)) {
+            return;
+        }
+        PropertyChangeListener geom = evt -> onDirty.run();
+        ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.X, geom);
+        ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.Y, geom);
+        ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.WIDTH, geom);
+        ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.HEIGHT, geom);
     }
 
     /**

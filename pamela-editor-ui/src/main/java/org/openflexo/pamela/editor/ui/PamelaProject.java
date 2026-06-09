@@ -3,12 +3,16 @@ package org.openflexo.pamela.editor.ui;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.openflexo.diana.swing.control.SwingToolFactory;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagramFactory;
+import org.openflexo.pamela.editor.diagram.PamelaClassDiagramSerializer;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.exceptions.ModelDefinitionException;
 import org.openflexo.pamela.factory.EditingContextImpl;
@@ -23,7 +27,7 @@ import org.openflexo.pamela.factory.EditingContextImpl;
  * <ul>
  *   <li>{@link #pamelaFile} — the {@code .pamela} file on disk</li>
  *   <li>{@link #metaModel} — built by Spoon analysis (from pamela-editor-core)</li>
- *   <li>{@link #diagrams} — loaded from sidecar {@code .diagram.json} files</li>
+ *   <li>{@link #diagrams} — loaded from sidecar {@code .diagram} files</li>
  *   <li>{@link #diagramFactory} — PAMELA factory for diagram model objects (one per project,
  *       owns the project's {@link EditingContextImpl})</li>
  * </ul>
@@ -40,6 +44,16 @@ public class PamelaProject {
 
     /** PAMELA model factory for this project's diagrams. */
     private final PamelaClassDiagramFactory diagramFactory;
+
+    /** True when the project has unsaved diagram changes (positions, create/delete/rename…). */
+    private boolean dirty = false;
+
+    /**
+     * Sidecar file names ({@code <id>.diagram}) believed to be on disk for this
+     * project: seeded from the {@code .pamela} {@code "diagrams"} list at load,
+     * refreshed after each save. Used to purge files of deleted diagrams.
+     */
+    private final Set<String> knownSidecarFiles = new LinkedHashSet<>();
 
     /**
      * Diana tool factory shared with the application.
@@ -98,6 +112,60 @@ public class PamelaProject {
 
     public void removeDiagram(PamelaClassDiagram diagram) {
         diagrams.remove(diagram);
+    }
+
+    /**
+     * Generates a stable, project-unique id for a new diagram: {@code slugify(name)}
+     * plus a {@code -N} suffix if that slug is already used by another diagram.
+     */
+    public String generateDiagramId(String name) {
+        String base = PamelaClassDiagramSerializer.slugify(name);
+        Set<String> existing = new HashSet<>();
+        for (PamelaClassDiagram d : diagrams) {
+            if (d.getId() != null) {
+                existing.add(d.getId());
+            }
+        }
+        if (!existing.contains(base)) {
+            return base;
+        }
+        int n = 2;
+        while (existing.contains(base + "-" + n)) {
+            n++;
+        }
+        return base + "-" + n;
+    }
+
+    // -------------------------------------------------------------------------
+    // Dirty state and sidecar tracking (diagram lifecycle)
+    // -------------------------------------------------------------------------
+
+    /** True when the project has unsaved changes. */
+    public boolean isDirty() {
+        return dirty;
+    }
+
+    /** Sets the dirty flag (cleared on save, set on any diagram mutation). */
+    public void setDirty(boolean dirty) {
+        this.dirty = dirty;
+    }
+
+    /** Marks the project as having unsaved changes. */
+    public void markDirty() {
+        this.dirty = true;
+    }
+
+    /** Sidecar file names this project is known to have on disk (for purge-on-save). */
+    public Set<String> getKnownSidecarFiles() {
+        return knownSidecarFiles;
+    }
+
+    /** Replaces the known-sidecar set (called at load and after each save). */
+    public void setKnownSidecarFiles(java.util.Collection<String> fileNames) {
+        knownSidecarFiles.clear();
+        if (fileNames != null) {
+            knownSidecarFiles.addAll(fileNames);
+        }
     }
 
     // -------------------------------------------------------------------------

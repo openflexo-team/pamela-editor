@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.openflexo.connie.DataBinding;
 import org.openflexo.diana.ConnectorGraphicalRepresentation;
+import org.openflexo.diana.Drawing.ShapeNode;
 import org.openflexo.diana.DianaModelFactory;
 import org.openflexo.diana.DrawingGraphicalRepresentation;
 import org.openflexo.diana.GRBinding.ConnectorGRBinding;
@@ -54,6 +55,7 @@ import org.openflexo.pamela.editor.model.SourceMetaModel;
 public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
 
     private final SourceMetaModel metaModel;
+    private final DianaModelFactory factory;
 
     private ShapeGRBinding<EntityView> entityViewBinding;
     private ConnectorGRBinding<ComputedConnector> connectorBinding;
@@ -63,6 +65,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                                      DianaModelFactory factory) {
         super(diagram, factory, PersistenceMode.SharedGraphicalRepresentations);
         this.metaModel = metaModel;
+        this.factory = factory;
     }
 
     @Override
@@ -94,10 +97,11 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                     gr.setY(ev.getY());
                     gr.setWidth(ev.getWidth());
                     gr.setHeight(ev.getHeight());
-                    gr.setForeground(factory.makeForegroundStyle(Color.DARK_GRAY, 1.0f));
-                    gr.setBackground(factory.makeColoredBackground(new Color(230, 240, 255)));
-                    // Bold, centered entity name; allow the «abstract» stereotype
-                    // line to wrap onto a second line.
+                    // Resolve the entity now so the box is styled correctly on first draw.
+                    resolveEntity(ev);
+                    applyEntityViewStyle(gr, ev, factory);
+                    // Bold, centered entity name; allow the «abstract»/«unresolved»
+                    // stereotype line to wrap onto a second line.
                     gr.setTextStyle(factory.makeTextStyle(
                             Color.BLACK, new Font("SansSerif", Font.BOLD, 11)));
                     gr.setIsMultilineAllowed(true);
@@ -258,9 +262,47 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         return entity;
     }
 
+    /**
+     * Styles an entity-view box: normal (blue) when its entity is resolved, or a
+     * red/pink "unresolved" placeholder when the entity is absent from the meta-model.
+     */
+    private void applyEntityViewStyle(ShapeGraphicalRepresentation gr,
+                                      EntityView ev, DianaModelFactory f) {
+        boolean unresolved = ev.getEntity() == null;
+        if (unresolved) {
+            gr.setForeground(f.makeForegroundStyle(new Color(190, 70, 70), 1.0f));
+            gr.setBackground(f.makeColoredBackground(new Color(245, 228, 228)));
+        } else {
+            gr.setForeground(f.makeForegroundStyle(Color.DARK_GRAY, 1.0f));
+            gr.setBackground(f.makeColoredBackground(new Color(230, 240, 255)));
+        }
+    }
+
     // =========================================================================
     // Public API
     // =========================================================================
+
+    /**
+     * Re-resolves every {@link EntityView}'s entity reference against the (rebuilt)
+     * meta-model, restyles the boxes (resolved vs unresolved placeholder), and
+     * re-walks the drawing. Call after a metamodel rebuild: the previous entity
+     * references point at stale instances, and entities may have appeared/disappeared.
+     */
+    public void refreshEntityResolution() {
+        for (EntityView ev : getModel().getEntityViews()) {
+            SourceModelEntity e = (metaModel != null && ev.getQualifiedName() != null)
+                    ? metaModel.getEntity(ev.getQualifiedName()) : null;
+            ev.setEntity(e); // overwrite the (possibly stale) reference, may be null
+            ShapeNode<EntityView> node = getShapeNode(ev);
+            if (node != null
+                    && node.getGraphicalRepresentation() instanceof ShapeGraphicalRepresentation) {
+                applyEntityViewStyle(
+                        (ShapeGraphicalRepresentation) node.getGraphicalRepresentation(),
+                        ev, factory);
+            }
+        }
+        updateGraphicalObjectsHierarchy();
+    }
 
     /** Returns the {@link SourceMetaModel} used to compute connectors. */
     public SourceMetaModel getMetaModel() {

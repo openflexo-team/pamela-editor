@@ -27,12 +27,9 @@ public abstract class EntityViewImpl implements EntityView {
             String simple = entity.getSimpleName();
             return entity.isAbstract() ? ("« abstract »\n" + simple) : simple;
         }
-        // Entity not resolved yet — derive the simple name from the qualified name.
+        // Unresolved: the entity is absent from the meta-model (removed or renamed
+        // in the source). Show the qualified name with a clear marker.
         String qn = getQualifiedName();
-        if (qn == null) {
-            return "";
-        }
-        int dot = qn.lastIndexOf('.');
-        return (dot >= 0) ? qn.substring(dot + 1) : qn;
+        return "« unresolved »\n" + (qn != null ? qn : "?");
     }
 }

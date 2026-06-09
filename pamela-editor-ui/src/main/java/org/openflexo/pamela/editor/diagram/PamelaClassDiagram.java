@@ -21,8 +21,20 @@ import org.openflexo.pamela.annotations.Setter;
 @ImplementationClass(PamelaClassDiagramImpl.class)
 public interface PamelaClassDiagram extends AccessibleProxyObject {
 
+    String ID = "id";
     String NAME = "name";
     String ENTITY_VIEWS = "entityViews";
+
+    /**
+     * Stable identifier, assigned at creation and never changed. Used as the
+     * sidecar file-name stem ({@code <id>.diagram}). Decoupled from {@link #getName()}
+     * so that renaming a diagram never renames or orphans its file.
+     */
+    @Getter(ID)
+    String getId();
+
+    @Setter(ID)
+    void setId(String id);
 
     @Getter(NAME)
     String getName();

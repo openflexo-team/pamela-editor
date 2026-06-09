@@ -12,7 +12,7 @@ import org.openflexo.pamela.editor.model.SourceModelEntity;
  *
  * <p>The five PAMELA-managed properties ({@code qualifiedName}, {@code x},
  * {@code y}, {@code width}, {@code height}) are persisted in the sidecar
- * {@code .diagram.json} file.</p>
+ * {@code .diagram} file.</p>
  *
  * <p>{@code entity} is <em>transient</em>: it is resolved at load time from
  * the {@link org.openflexo.pamela.editor.model.SourceMetaModel} and is never

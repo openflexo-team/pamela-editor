@@ -14,11 +14,12 @@ import org.openflexo.pamela.editor.ui.PamelaProject;
 
 /**
  * Serializes and deserializes a {@link PamelaClassDiagram} to/from a
- * {@code .diagram.json} sidecar file.
+ * {@code .diagram} sidecar file (JSON content).
  *
  * <h3>File format</h3>
  * <pre>
  * {
+ *   "id": "overview",
  *   "name": "Overview",
  *   "entityViews": [
  *     {
@@ -32,12 +33,13 @@ import org.openflexo.pamela.editor.ui.PamelaProject;
  * }
  * </pre>
  *
- * <p>Only positional data is stored. The transient {@code entity} reference
- * on {@link EntityView} is resolved at load time via the session's
+ * <p>Only the stable {@code id}, the display {@code name} and positional data are
+ * stored. The transient {@code entity} reference on {@link EntityView} is resolved
+ * at load time via the session's
  * {@link org.openflexo.pamela.editor.model.SourceMetaModel}.</p>
  *
- * <p>The file name is derived from {@link PamelaClassDiagram#getName()} by
- * replacing spaces with underscores and appending {@code .diagram.json}.</p>
+ * <p>The file name is {@code <id>.diagram}, where {@code id} is the diagram's stable
+ * identifier (decoupled from its display name — see {@link #sidecarFileName(String)}).</p>
  */
 public class PamelaClassDiagramSerializer {
 
@@ -54,19 +56,37 @@ public class PamelaClassDiagramSerializer {
     // File name convention
     // -------------------------------------------------------------------------
 
+    /** Sidecar file extension (JSON content). */
+    public static final String EXTENSION = ".diagram";
+
     /**
-     * Returns the sidecar file name for a diagram with the given name.
-     * Spaces are replaced with underscores; the extension {@code .diagram.json}
-     * is appended.
+     * Returns the sidecar file name for a diagram with the given stable id:
+     * {@code "<id>.diagram"}.
      *
-     * @param diagramName the diagram's display name (e.g. {@code "Overview"})
-     * @return the file name (e.g. {@code "Overview.diagram.json"})
+     * @param diagramId the diagram's stable id (e.g. {@code "overview"})
+     * @return the file name (e.g. {@code "overview.diagram"})
      */
-    public static String sidecarFileName(String diagramName) {
-        if (diagramName == null || diagramName.isEmpty()) {
-            return "Untitled.diagram.json";
+    public static String sidecarFileName(String diagramId) {
+        String id = (diagramId == null || diagramId.isEmpty()) ? "untitled" : diagramId;
+        return id + EXTENSION;
+    }
+
+    /**
+     * Turns a display name into a filesystem/VCS-friendly base id: lower-cased,
+     * non-alphanumeric runs collapsed to a single {@code '-'}, trimmed of leading
+     * and trailing dashes. Never returns an empty string.
+     *
+     * @param name the diagram display name (may be null/empty)
+     * @return a slug such as {@code "my-overview"} (or {@code "diagram"} as a fallback)
+     */
+    public static String slugify(String name) {
+        if (name == null) {
+            return "diagram";
         }
-        return diagramName.replace(' ', '_') + ".diagram.json";
+        String slug = name.trim().toLowerCase()
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-+)|(-+$)", "");
+        return slug.isEmpty() ? "diagram" : slug;
     }
 
     // -------------------------------------------------------------------------
@@ -74,7 +94,7 @@ public class PamelaClassDiagramSerializer {
     // -------------------------------------------------------------------------
 
     /**
-     * Loads a {@link PamelaClassDiagram} from a {@code .diagram.json} file.
+     * Loads a {@link PamelaClassDiagram} from a {@code .diagram} file.
      *
      * <p>Entity views are created via {@link PamelaProject#getDiagramFactory()}.
      * The transient {@code entity} reference is resolved immediately if the
@@ -102,6 +122,14 @@ public class PamelaClassDiagramSerializer {
         JsonNode root = MAPPER.readTree(diagramFile);
 
         PamelaClassDiagram diagram = factory.newInstance(PamelaClassDiagram.class);
+
+        // id — stable identifier; fall back to the file-name stem for legacy files
+        JsonNode idNode = root.get("id");
+        if (idNode != null && !idNode.isNull() && !idNode.asText().isEmpty()) {
+            diagram.setId(idNode.asText());
+        } else {
+            diagram.setId(stemOf(diagramFile));
+        }
 
         // name
         JsonNode nameNode = root.get("name");
@@ -139,7 +167,7 @@ public class PamelaClassDiagramSerializer {
     // -------------------------------------------------------------------------
 
     /**
-     * Saves a {@link PamelaClassDiagram} to a {@code .diagram.json} file.
+     * Saves a {@link PamelaClassDiagram} to a {@code .diagram} file.
      *
      * <p>Parent directories are created as needed. The file is overwritten if
      * it already exists.</p>
@@ -155,6 +183,7 @@ public class PamelaClassDiagramSerializer {
         }
 
         ObjectNode root = MAPPER.createObjectNode();
+        root.put("id", diagram.getId() != null ? diagram.getId() : "");
         root.put("name", diagram.getName() != null ? diagram.getName() : "");
 
         ArrayNode viewsArray = MAPPER.createArrayNode();
@@ -173,5 +202,15 @@ public class PamelaClassDiagramSerializer {
         root.set("entityViews", viewsArray);
 
         MAPPER.writeValue(diagramFile, root);
+    }
+
+    /** Returns the file name without its {@code .diagram} (or any) extension. */
+    private static String stemOf(File file) {
+        String n = file.getName();
+        if (n.endsWith(EXTENSION)) {
+            return n.substring(0, n.length() - EXTENSION.length());
+        }
+        int dot = n.lastIndexOf('.');
+        return (dot > 0) ? n.substring(0, dot) : n;
     }
 }
