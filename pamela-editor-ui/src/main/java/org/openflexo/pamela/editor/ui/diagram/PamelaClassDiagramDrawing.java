@@ -771,7 +771,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     private static ImageIcon iconForCompartment(Compartment c) {
         switch (c) {
             case PROPERTIES: return PamelaEditorIconLibrary.PROPERTY_ICON;
-            case METHODS:    return PamelaEditorIconLibrary.INITIALIZER_ICON;
+            case METHODS:    return PamelaEditorIconLibrary.METHOD_ICON;
             case INITIALIZERS:
             default:         return PamelaEditorIconLibrary.INITIALIZER_ICON;
         }
