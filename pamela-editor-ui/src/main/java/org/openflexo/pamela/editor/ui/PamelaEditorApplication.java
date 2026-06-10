@@ -169,6 +169,12 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     final JFrame frame;
     private JXMultiSplitPane splitPane;
 
+    // Status bar (bottom of the main window): progress bar + message, shown during
+    // background project load / rebuild (Spoon analysis).
+    private javax.swing.JProgressBar progressBar;
+    private javax.swing.JLabel statusLabel;
+    private int activeBuilds; // ref-count so concurrent loads don't hide the bar early
+
     private final SwingToolFactory toolFactory;
     private final FlexoFileChooser fileChooser;
     private final FileSystemResourceLocatorImpl resourceLocator;
@@ -483,6 +489,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
 
         frame.getContentPane().setLayout(new BorderLayout());
         frame.getContentPane().add(splitPane, BorderLayout.CENTER);
+        frame.getContentPane().add(buildStatusBar(), BorderLayout.SOUTH);
 
         // --- Menu bar ---
         menuBar = new PamelaEditorMenuBar(this);
@@ -526,12 +533,19 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }
 
         // Run Spoon analysis on a background thread to avoid blocking the EDT.
-        new javax.swing.SwingWorker<PamelaProject, Void>() {
+        buildStarted("Opening " + pamelaFile.getName() + "…");
+        new javax.swing.SwingWorker<PamelaProject, String>() {
 
             @Override
             protected PamelaProject doInBackground() throws Exception {
-                // 1. Build meta-model (heavy — runs Spoon / javac)
-                SourceMetaModel metaModel = SourceMetaModelSerializer.load(pamelaFile);
+                // 1. Build meta-model (heavy — runs Spoon / javac). Report progress via
+                //    SwingWorker (setProgress drives the bar, publish carries the message).
+                org.openflexo.pamela.editor.model.BuildProgressListener pl =
+                        (fraction, message) -> {
+                            setProgress(Math.max(0, Math.min(100, (int) Math.round(fraction * 100))));
+                            publish(message);
+                        };
+                SourceMetaModel metaModel = SourceMetaModelSerializer.load(pamelaFile, pl);
                 logger.info(metaModel.prettyPrint());
 
                 // 2. Create project (lightweight)
@@ -574,6 +588,13 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             }
 
             @Override
+            protected void process(java.util.List<String> chunks) {
+                if (!chunks.isEmpty()) {
+                    buildProgress(getProgress(), chunks.get(chunks.size() - 1));
+                }
+            }
+
+            @Override
             protected void done() {
                 // Back on the EDT — safe to update UI
                 try {
@@ -599,6 +620,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                             "Failed to open project:\n" + cause.getMessage(),
                             "Error",
                             JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    buildFinished();
                 }
             }
         }.execute();
@@ -800,12 +823,30 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }
         SourceMetaModel metaModel = project.getMetaModel();
 
-        new javax.swing.SwingWorker<Void, Void>() {
+        buildStarted("Rebuilding " + metaModel.getName() + "…");
+        new javax.swing.SwingWorker<Void, String>() {
             @Override
             protected Void doInBackground() {
-                metaModel.rebuildMetaModel();
+                org.openflexo.pamela.editor.model.BuildProgressListener pl =
+                        (fraction, message) -> {
+                            setProgress(Math.max(0, Math.min(100, (int) Math.round(fraction * 100))));
+                            publish(message);
+                        };
+                metaModel.setProgressListener(pl);
+                try {
+                    metaModel.rebuildMetaModel();
+                } finally {
+                    metaModel.setProgressListener(null);
+                }
                 logger.info("Rebuild complete: " + metaModel.prettyPrint());
                 return null;
+            }
+
+            @Override
+            protected void process(java.util.List<String> chunks) {
+                if (!chunks.isEmpty()) {
+                    buildProgress(getProgress(), chunks.get(chunks.size() - 1));
+                }
             }
 
             @Override
@@ -848,8 +889,12 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                 pcs.firePropertyChange("totalInitializersCount", -1, metaModel.getTotalInitializersCount());
                 pcs.firePropertyChange("issuesCount", -1, metaModel.getIssuesCount());
 
-                if (afterRebuild != null) {
-                    afterRebuild.run();
+                try {
+                    if (afterRebuild != null) {
+                        afterRebuild.run();
+                    }
+                } finally {
+                    buildFinished();
                 }
             }
         }.execute();
@@ -862,6 +907,63 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
      */
     private void invalidateSourceViews() {
         viewCache.keySet().removeIf(key -> !(key instanceof PamelaClassDiagram));
+    }
+
+    // =========================================================================
+    // Status bar / progress (bottom of the main window)
+    // =========================================================================
+
+    /** Builds the bottom status bar: a message label plus a determinate progress bar. */
+    private javax.swing.JComponent buildStatusBar() {
+        statusLabel = new javax.swing.JLabel(" ");
+        statusLabel.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 6, 0, 6));
+
+        progressBar = new javax.swing.JProgressBar(0, 100);
+        progressBar.setStringPainted(true);
+        progressBar.setPreferredSize(new java.awt.Dimension(220,
+                progressBar.getPreferredSize().height));
+
+        JPanel bar = new JPanel(new BorderLayout(6, 0));
+        bar.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                javax.swing.BorderFactory.createMatteBorder(1, 0, 0, 0, java.awt.Color.LIGHT_GRAY),
+                javax.swing.BorderFactory.createEmptyBorder(2, 6, 2, 6)));
+        bar.add(statusLabel, BorderLayout.CENTER);
+        bar.add(progressBar, BorderLayout.EAST);
+
+        // Idle by default — shown only while a build is running.
+        statusLabel.setVisible(false);
+        progressBar.setVisible(false);
+        return bar;
+    }
+
+    /** EDT: a background build started — reveal the status bar. Ref-counted. */
+    private void buildStarted(String message) {
+        activeBuilds++;
+        statusLabel.setText(message);
+        progressBar.setValue(0);
+        progressBar.setString("0%");
+        statusLabel.setVisible(true);
+        progressBar.setVisible(true);
+    }
+
+    /** EDT: update the running build's progress (0–100) and message. */
+    private void buildProgress(int percent, String message) {
+        int clamped = Math.max(0, Math.min(100, percent));
+        progressBar.setValue(clamped);
+        progressBar.setString(clamped + "%");
+        if (message != null) {
+            statusLabel.setText(message);
+        }
+    }
+
+    /** EDT: a background build finished — hide the status bar when none remain. */
+    private void buildFinished() {
+        activeBuilds = Math.max(0, activeBuilds - 1);
+        if (activeBuilds == 0) {
+            statusLabel.setVisible(false);
+            progressBar.setVisible(false);
+            statusLabel.setText(" ");
+        }
     }
 
     public void closeProject(PamelaProject project) {

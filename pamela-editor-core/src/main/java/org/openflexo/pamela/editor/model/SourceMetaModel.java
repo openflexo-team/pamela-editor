@@ -98,6 +98,20 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
     private final List<File> sourceDirectories;
     private final List<String> rootTypeNames;
 
+    // Build cache (approach B, see source-metamodel-design.md §18). When a cache
+    // file is set, buildMetaModel() restricts the Spoon parse to the reachable
+    // entity files recorded by a previous full build, as long as the directory
+    // fingerprint is unchanged. Null = no caching (always full parse).
+    private File buildCacheFile;
+
+    // Set by buildMetaModel() for the current build: the subset of source files
+    // Spoon should parse, or null to parse the whole source directories.
+    private java.util.Set<File> restrictedInputFiles;
+
+    // Optional progress listener, notified during buildMetaModel() (parse + phases).
+    // Null = no progress reporting. Called on the build thread (never the EDT).
+    private BuildProgressListener progressListener;
+
     // Public model
     private String name;
     private final Map<String, SourcePackage> packages;            // key = qualified package name
@@ -287,11 +301,42 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
      * registered.
      */
     public void buildMetaModel() {
+        // Build-cache decision (approach B): if a fresh cache exists, restrict the
+        // Spoon parse to the reachable entity files it recorded; otherwise parse the
+        // whole source directories and (re)write the cache after the build.
+        String fingerprint = null;
+        boolean cacheHit = false;
+        if (buildCacheFile != null) {
+            fingerprint = SourceBuildCache.fingerprint(sourceDirectories, rootTypeNames);
+            SourceBuildCache cache = SourceBuildCache.load(buildCacheFile);
+            if (cache != null && cache.matches(fingerprint)) {
+                java.util.Set<File> files = cache.resolveFiles(buildCacheFile.getParentFile());
+                if (files != null) {
+                    restrictedInputFiles = files;
+                    cacheHit = true;
+                }
+            }
+        }
+        if (!cacheHit) {
+            restrictedInputFiles = null; // full parse
+        }
+
+        reportProgress(0.0, cacheHit ? "Loading from cache…" : "Parsing source files…");
+
         Launcher launcher = new Launcher();
         launcher.getEnvironment().setNoClasspath(true);
         launcher.getEnvironment().setAutoImports(true);
-        for (File dir : sourceDirectories) {
-            launcher.addInputResource(dir.getAbsolutePath());
+        if (progressListener != null) {
+            launcher.getEnvironment().setSpoonProgress(new SpoonProgressAdapter(progressListener));
+        }
+        if (restrictedInputFiles != null) {
+            for (File f : restrictedInputFiles) {
+                launcher.addInputResource(f.getAbsolutePath());
+            }
+        } else {
+            for (File dir : sourceDirectories) {
+                launcher.addInputResource(dir.getAbsolutePath());
+            }
         }
         ctModel = launcher.buildModel();
 
@@ -303,16 +348,83 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         }
 
         // Phase 1 — discovery
+        reportProgress(SpoonProgressAdapter.COMPLETE_AT, "Discovering entities…");
         phase1Discovery();
 
         // Phase 2 — properties and impl classes
+        reportProgress(0.97, "Building properties…");
         phase2Properties();
 
         // Phase 3 — resolution
+        reportProgress(0.99, "Resolving references…");
         phase3Resolution();
+
+        // On a full (cache-miss) build, record the resolved reachable file set so the
+        // next open with an unchanged fingerprint can take the fast path.
+        if (buildCacheFile != null && !cacheHit) {
+            SourceBuildCache.save(buildCacheFile, fingerprint,
+                    getResolvedSourceFiles(), buildCacheFile.getParentFile());
+        }
+
+        reportProgress(1.0, "Done");
 
         pcSupport.firePropertyChange("entities", null, Collections.unmodifiableMap(entities));
         pcSupport.firePropertyChange("allPackages", null, new ArrayList<>(packages.values()));
+    }
+
+    /**
+     * Sets an optional listener notified of build progress during
+     * {@link #buildMetaModel()} (Spoon parse stages + the three resolution phases).
+     * The listener is invoked on the build thread; a Swing client must marshal updates
+     * onto the EDT. Pass {@code null} to disable progress reporting.
+     */
+    public void setProgressListener(BuildProgressListener progressListener) {
+        this.progressListener = progressListener;
+    }
+
+    private void reportProgress(double fraction, String message) {
+        if (progressListener != null) {
+            progressListener.progress(fraction, message);
+        }
+    }
+
+    /**
+     * Sets the build-cache sidecar file (approach B, see
+     * {@code source-metamodel-design.md §18}). When set, {@link #buildMetaModel()}
+     * parses only the reachable entity files recorded by a previous full build as
+     * long as the source-directory fingerprint is unchanged, falling back to a full
+     * parse (and rewriting the cache) otherwise. Pass {@code null} to disable
+     * caching.
+     */
+    public void setBuildCacheFile(File buildCacheFile) {
+        this.buildCacheFile = buildCacheFile;
+    }
+
+    /** The build-cache sidecar file, or {@code null} if caching is disabled. */
+    public File getBuildCacheFile() {
+        return buildCacheFile;
+    }
+
+    /**
+     * The set of source files the analysis actually resolved a {@code CtType} from —
+     * the compilation-unit file of every entity plus that of every resolved
+     * implementation class. This is the minimal input set that reproduces the
+     * meta-model and is what the build cache stores (see §18.2).
+     */
+    public java.util.Set<File> getResolvedSourceFiles() {
+        java.util.LinkedHashSet<File> files = new java.util.LinkedHashSet<>();
+        for (SourceModelEntity entity : entities.values()) {
+            SourceCompilationUnit cu = entity.getCompilationUnit();
+            if (cu != null && cu.getFile() != null) {
+                files.add(cu.getFile());
+            }
+            SourceImplementationClass impl = entity.getImplementationClass();
+            if (impl != null && impl.getCompilationUnit() != null
+                    && impl.getCompilationUnit().getFile() != null) {
+                files.add(impl.getCompilationUnit().getFile());
+            }
+        }
+        return files;
     }
 
     /**

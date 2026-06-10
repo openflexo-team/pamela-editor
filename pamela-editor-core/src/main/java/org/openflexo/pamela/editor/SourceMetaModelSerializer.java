@@ -69,6 +69,21 @@ public class SourceMetaModelSerializer {
      *                     source directory listed in the file does not exist on disk
      */
     public static SourceMetaModel load(File pamelaFile) throws IOException {
+        return load(pamelaFile, null);
+    }
+
+    /**
+     * Loads a {@link SourceMetaModel} from a {@code .pamela} project file, reporting
+     * build progress to the given listener (parse stages + resolution phases).
+     *
+     * @param pamelaFile       the {@code .pamela} file to load; must exist
+     * @param progressListener optional progress listener (may be {@code null})
+     * @return a fully built {@link SourceMetaModel}
+     * @throws IOException as {@link #load(File)}
+     */
+    public static SourceMetaModel load(File pamelaFile,
+            org.openflexo.pamela.editor.model.BuildProgressListener progressListener)
+            throws IOException {
         if (!pamelaFile.exists()) {
             throw new IOException("Project file not found: " + pamelaFile.getAbsolutePath());
         }
@@ -119,6 +134,14 @@ public class SourceMetaModelSerializer {
             }
         }
 
+        // Enable the build cache (approach B, see source-metamodel-design.md §18): a
+        // hidden sidecar next to the .pamela file lets buildMetaModel() restrict the
+        // Spoon parse to the reachable entity files when the directory fingerprint is
+        // unchanged. Both this initial load and later in-editor rebuilds benefit.
+        mm.setBuildCacheFile(
+                org.openflexo.pamela.editor.model.SourceBuildCache.cacheFileFor(pamelaFile));
+
+        mm.setProgressListener(progressListener);
         mm.buildMetaModel();
         return mm;
     }
