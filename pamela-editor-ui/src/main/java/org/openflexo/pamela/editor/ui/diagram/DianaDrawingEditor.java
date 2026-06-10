@@ -91,6 +91,9 @@ public class DianaDrawingEditor extends JDianaInteractiveEditor<PamelaClassDiagr
 
         EntityView ev = getFactory().newEntityView(qualifiedName, x, y, 200.0, 120.0);
         ev.setEntity(entity);
+        // Default to the optimal (content-fitting) size for the dropped entity.
+        ev.setWidth(getDrawing().optimalWidth(ev));
+        ev.setHeight(getDrawing().optimalHeight(ev));
         diagram.addToEntityViews(ev);
         getDrawing().updateGraphicalObjectsHierarchy();
         logger.fine("Added entity " + qualifiedName + " to diagram at " + x + "," + y);
