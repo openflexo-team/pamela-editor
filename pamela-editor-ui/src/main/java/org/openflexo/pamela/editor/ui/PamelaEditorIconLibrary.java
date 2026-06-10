@@ -116,10 +116,15 @@ public class PamelaEditorIconLibrary {
 
     /**
      * Icon for a {@link org.openflexo.pamela.editor.model.SourceModelInitializer}.
-     * Eclipse JDT-style red circle with white play-triangle — method marker.
      */
     public static final ImageIcon INITIALIZER_ICON =
-            buildIcon("Icons/Method_16x16.png");
+            buildIcon("Icons/Initializer_16x16.png");
+
+    /**
+     * Icon for a method
+     */
+    public static final ImageIcon METHOD_ICON =
+            buildIcon("Icons/JavaIcons/methpub_obj.gif");
 
     /**
      * Icon for a {@link org.openflexo.pamela.editor.model.SourceImplementationClass}.
