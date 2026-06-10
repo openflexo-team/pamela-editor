@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +88,11 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
 
     // Internal Spoon reference — never exposed in the public API
     private CtModel ctModel;
+
+    // Index of all top-level Spoon types by qualified name, built once after
+    // buildModel(). Replaces the previous O(types) linear scan of
+    // ctModel.getAllTypes() that findType() ran on every call. See findType().
+    private Map<String, CtType<?>> typeIndex;
 
     // Construction inputs
     private final List<File> sourceDirectories;
@@ -288,6 +294,13 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
             launcher.addInputResource(dir.getAbsolutePath());
         }
         ctModel = launcher.buildModel();
+
+        // Index every top-level type by qualified name once, so findType() is O(1)
+        // instead of rebuilding and scanning ctModel.getAllTypes() on each call.
+        typeIndex = new HashMap<>();
+        for (CtType<?> t : ctModel.getAllTypes()) {
+            typeIndex.put(t.getQualifiedName(), t);
+        }
 
         // Phase 1 — discovery
         phase1Discovery();
@@ -670,6 +683,10 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
      * @return the Spoon type or {@code null} if not found
      */
     private CtType<?> findType(String qualifiedName) {
+        if (typeIndex != null) {
+            return typeIndex.get(qualifiedName);
+        }
+        // Fallback (index not yet built): linear scan.
         return ctModel.getAllTypes().stream()
                 .filter(t -> t.getQualifiedName().equals(qualifiedName))
                 .findFirst()
@@ -743,6 +760,15 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         SourceCompilationUnit cu = compilationUnits.remove(oldKey);
         if (cu != null) {
             compilationUnits.put(newKey, cu);
+        }
+
+        // Re-key the type index: the same CtType instance now reports newKey as
+        // its qualified name, so move its entry from oldKey to newKey.
+        if (typeIndex != null) {
+            CtType<?> ctType = typeIndex.remove(oldKey);
+            if (ctType != null) {
+                typeIndex.put(newKey, ctType);
+            }
         }
     }
 
@@ -828,6 +854,12 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         entities.put(qualifiedName, entity);
         compilationUnits.put(qualifiedName, scu);
         sourcePackage.addEntity(entity);
+
+        // Keep the type index in sync so a subsequent findType() resolves it
+        // without falling back to a full scan.
+        if (typeIndex != null) {
+            typeIndex.put(qualifiedName, newInterface);
+        }
 
         return entity;
     }
