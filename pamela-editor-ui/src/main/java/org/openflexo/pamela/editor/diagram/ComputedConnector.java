@@ -60,6 +60,38 @@ public class ComputedConnector {
         return property;
     }
 
+    /**
+     * Equality by value — the relationship type and the two endpoint views (by
+     * identity, stable across rebuilds) and the originating property (by identity).
+     * Diana reconciles drawables by {@code drawable.getDrawable() == ...}, so the
+     * drawing interns connectors by value to hand back a stable instance across walks
+     * (otherwise each walk would create duplicate/orphan connector nodes and Diana
+     * would log "something strange … see isValid()").
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ComputedConnector)) {
+            return false;
+        }
+        ComputedConnector that = (ComputedConnector) o;
+        return type == that.type
+                && sourceView == that.sourceView
+                && targetView == that.targetView
+                && property == that.property;
+    }
+
+    @Override
+    public int hashCode() {
+        int h = type.hashCode();
+        h = 31 * h + System.identityHashCode(sourceView);
+        h = 31 * h + System.identityHashCode(targetView);
+        h = 31 * h + System.identityHashCode(property);
+        return h;
+    }
+
     @Override
     public String toString() {
         return "ComputedConnector(" + type + ", "

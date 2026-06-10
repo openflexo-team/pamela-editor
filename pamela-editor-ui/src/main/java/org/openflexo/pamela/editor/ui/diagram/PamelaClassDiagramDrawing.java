@@ -84,9 +84,12 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     private static final double ROW_HEIGHT = 16.0;
     /** Height of an empty compartment (nothing to show). */
     private static final double EMPTY_COMPARTMENT_HEIGHT = 5.0;
-    /** Left/top inset of the compartment text. */
-    private static final double TEXT_INSET_X = 4.0;
+    /** Top inset of an item-row label. */
     private static final double TEXT_INSET_Y = 2.0;
+    /** Left inset of an item-row icon inside its row. */
+    private static final double ROW_ICON_INSET = 2.0;
+    /** X where an item-row label starts (after its icon). */
+    private static final double ROW_TEXT_INSET_X = ROW_ICON_INSET + ICON_SIZE + 2.0;
     /** Right padding added to a compartment line when computing the optimal width. */
     private static final double COMPARTMENT_RIGHT_PAD = 8.0;
     /** Minimum box width (floor of the content-based width heuristic). */
@@ -112,7 +115,21 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     private ShapeGRBinding<EntityView> entityInitializersBinding;
     private ShapeGRBinding<EntityView> entityPropertiesBinding;
     private ShapeGRBinding<EntityView> entityMethodsBinding;
+    private ShapeGRBinding<CompartmentItem> itemRowBinding;
     private ConnectorGRBinding<ComputedConnector> connectorBinding;
+
+    /**
+     * Pool of canonical {@link CompartmentItem} instances, keyed by value. Diana's
+     * structure reconciliation reuses a node only for the <em>same drawable
+     * instance</em>, so we must hand back the same instance for an unchanged row across
+     * successive walks (otherwise every walk creates duplicate/orphan nodes and Diana
+     * logs "something strange … see isValid()"). A row whose text changes yields a new
+     * value → a new instance → the node is correctly recreated with up-to-date content.
+     */
+    private final Map<CompartmentItem, CompartmentItem> itemPool = new HashMap<>();
+
+    /** Same interning rationale as {@link #itemPool}, for the computed connectors. */
+    private final Map<ComputedConnector, ComputedConnector> connectorPool = new HashMap<>();
 
     public PamelaClassDiagramDrawing(PamelaClassDiagram diagram,
                                      SourceMetaModel metaModel,
@@ -271,6 +288,19 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                 }
             });
 
+        // 2e. Shape binding for one ITEM ROW inside a compartment — a full-width row
+        //     carrying the element's icon (image background, natural size at the left)
+        //     and its left-aligned label. One node per item; reconciled by value
+        //     (CompartmentItem.equals on entity-view + compartment + index + text).
+        itemRowBinding = bindShape(CompartmentItem.class, "compartmentItem",
+            new ShapeGRProvider<CompartmentItem>() {
+                @Override
+                public ShapeGraphicalRepresentation provideGR(
+                        CompartmentItem item, DianaModelFactory factory) {
+                    return makeItemRowGR(item, factory);
+                }
+            });
+
         // 3. Connector binding for ComputedConnector
         connectorBinding = bindConnector(ComputedConnector.class, "connector",
             entityViewBinding, entityViewBinding,
@@ -343,6 +373,32 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             }
         });
 
+        // 4d. Walkers: draw one item row per element, as children of each compartment.
+        entityInitializersBinding.addToWalkers(new GRStructureVisitor<EntityView>() {
+            @Override
+            public void visit(EntityView ev) {
+                for (CompartmentItem item : itemsFor(ev, Compartment.INITIALIZERS)) {
+                    drawShape(itemRowBinding, item);
+                }
+            }
+        });
+        entityPropertiesBinding.addToWalkers(new GRStructureVisitor<EntityView>() {
+            @Override
+            public void visit(EntityView ev) {
+                for (CompartmentItem item : itemsFor(ev, Compartment.PROPERTIES)) {
+                    drawShape(itemRowBinding, item);
+                }
+            }
+        });
+        entityMethodsBinding.addToWalkers(new GRStructureVisitor<EntityView>() {
+            @Override
+            public void visit(EntityView ev) {
+                for (CompartmentItem item : itemsFor(ev, Compartment.METHODS)) {
+                    drawShape(itemRowBinding, item);
+                }
+            }
+        });
+
         // 5. Walker: draw computed connectors
         drawingBinding.addToWalkers(new GRStructureVisitor<PamelaClassDiagram>() {
             @Override
@@ -410,8 +466,8 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             for (SourceModelEntity superEntity : sourceEntity.getDirectSuperEntities()) {
                 EntityView targetView = viewByName.get(superEntity.getQualifiedName());
                 if (targetView != null) {
-                    result.add(new ComputedConnector(
-                            RelationshipType.INHERITANCE, sourceView, targetView, null));
+                    result.add(internConnector(new ComputedConnector(
+                            RelationshipType.INHERITANCE, sourceView, targetView, null)));
                 }
             }
 
@@ -428,11 +484,21 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                 RelationshipType type = prop.isEmbedded()
                         ? RelationshipType.COMPOSITION
                         : RelationshipType.ASSOCIATION;
-                result.add(new ComputedConnector(type, sourceView, targetView, prop));
+                result.add(internConnector(new ComputedConnector(type, sourceView, targetView, prop)));
             }
         }
 
         return result;
+    }
+
+    /** Returns the canonical (interned) instance for a connector value. */
+    private ComputedConnector internConnector(ComputedConnector cc) {
+        ComputedConnector canonical = connectorPool.get(cc);
+        if (canonical == null) {
+            connectorPool.put(cc, cc);
+            canonical = cc;
+        }
+        return canonical;
     }
 
     /**
@@ -598,11 +664,12 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         for (String line : ev.getDisplayLabel().split("\n")) {
             w = Math.max(w, stringWidth(HEADER_FONT, line) + headerMargin);
         }
-        // Compartments: longest item line plus left inset and right padding.
+        // Compartments: each item line is preceded by its icon, so reserve the icon
+        // offset (ROW_TEXT_INSET_X) plus the text width and a right padding.
         for (Compartment c : Compartment.values()) {
             for (String line : compartmentLines(ev, c)) {
                 w = Math.max(w, stringWidth(COMPARTMENT_FONT, line)
-                        + TEXT_INSET_X + COMPARTMENT_RIGHT_PAD);
+                        + ROW_TEXT_INSET_X + COMPARTMENT_RIGHT_PAD);
             }
         }
         return Math.ceil(w);
@@ -650,9 +717,9 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                 avail + " * " + natural + " / " + sum));
     }
 
-    /** Builds a compartment GR: white box spanning the container width, with the item
-     *  list as a top-left multiline label. Vertical geometry is constraint-driven
-     *  (see {@link #applyCompartmentConstraints}). */
+    /** Builds a compartment GR: a white bordered box spanning the container width. It
+     *  carries no text itself — its items are drawn as child rows (see makeItemRowGR).
+     *  Vertical geometry is constraint-driven (see {@link #applyCompartmentConstraints}). */
     private ShapeGraphicalRepresentation makeCompartmentGR(
             EntityView ev, Compartment c, DianaModelFactory f) {
         List<String> lines = compartmentLines(ev, c);
@@ -666,14 +733,6 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         gr.setBackground(f.makeColoredBackground(Color.WHITE));
         gr.setForeground(f.makeForegroundStyle(Color.DARK_GRAY, 1.0f));
         gr.setShadowStyle(f.makeNoneShadowStyle());
-        gr.setTextStyle(f.makeTextStyle(Color.BLACK, COMPARTMENT_FONT));
-        applyCompartmentText(gr, lines);
-        gr.setIsMultilineAllowed(true);
-        gr.setIsFloatingLabel(true);
-        gr.setAbsoluteTextX(TEXT_INSET_X);
-        gr.setAbsoluteTextY(TEXT_INSET_Y);
-        gr.setHorizontalTextAlignment(HorizontalTextAlignment.LEFT);
-        gr.setVerticalTextAlignment(VerticalTextAlignment.TOP);
         // Non-interactive: clicks/drag target the container.
         gr.setIsSelectable(false);
         gr.setIsFocusable(false);
@@ -681,8 +740,75 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         return gr;
     }
 
-    private void applyCompartmentText(ShapeGraphicalRepresentation gr, List<String> lines) {
-        gr.setText(String.join("\n", lines));
+    /** Icon shown at the left of each item row, by compartment kind. */
+    private static ImageIcon iconForCompartment(Compartment c) {
+        switch (c) {
+            case PROPERTIES: return PamelaEditorIconLibrary.PROPERTY_ICON;
+            case METHODS:    return PamelaEditorIconLibrary.INITIALIZER_ICON;
+            case INITIALIZERS:
+            default:         return PamelaEditorIconLibrary.INITIALIZER_ICON;
+        }
+    }
+
+    /** The item rows of a compartment, in order, each carrying its text and kind icon.
+     *  Instances are interned (see {@link #itemPool}) so an unchanged row keeps a stable
+     *  identity across walks. */
+    private List<CompartmentItem> itemsFor(EntityView ev, Compartment c) {
+        List<String> lines = compartmentLines(ev, c);
+        List<CompartmentItem> items = new ArrayList<>(lines.size());
+        ImageIcon icon = iconForCompartment(c);
+        for (int i = 0; i < lines.size(); i++) {
+            CompartmentItem item = new CompartmentItem(ev, c, i, lines.get(i), icon);
+            CompartmentItem canonical = itemPool.get(item);
+            if (canonical == null) {
+                itemPool.put(item, item);
+                canonical = item;
+            }
+            items.add(canonical);
+        }
+        return items;
+    }
+
+    /** Builds an item-row GR: full-width row with the element icon as a natural-size,
+     *  top-left image background and the element label floating to its right. */
+    private ShapeGraphicalRepresentation makeItemRowGR(CompartmentItem item, DianaModelFactory f) {
+        double y = item.index * ROW_HEIGHT;
+        ShapeGraphicalRepresentation gr =
+            f.makeShapeGraphicalRepresentation(ShapeType.RECTANGLE);
+        gr.setX(0);
+        gr.setY(y);
+        gr.setWidth(100);
+        gr.setHeight(ROW_HEIGHT);
+        gr.setXConstraints(new DataBinding<Double>("0"));
+        gr.setWidthConstraints(new DataBinding<Double>("parent.width"));
+        gr.setYConstraints(new DataBinding<Double>(String.valueOf(y)));
+        gr.setHeightConstraints(new DataBinding<Double>(String.valueOf(ROW_HEIGHT)));
+        // Icon: drawn at natural size at the row's left (no stretch), rest transparent.
+        ImageIcon icon = item.icon;
+        if (icon != null && icon.getImage() != null) {
+            BackgroundImageBackgroundStyle bg = f.makeImageBackground(icon.getImage());
+            bg.setFitToShape(false);
+            bg.setImageBackgroundType(ImageBackgroundType.TRANSPARENT);
+            bg.setDeltaX(ROW_ICON_INSET);
+            bg.setDeltaY((ROW_HEIGHT - ICON_SIZE) / 2);
+            gr.setBackground(bg);
+        } else {
+            gr.setBackground(f.makeEmptyBackground());
+        }
+        gr.setForeground(f.makeNoneForegroundStyle());
+        gr.setShadowStyle(f.makeNoneShadowStyle());
+        gr.setTextStyle(f.makeTextStyle(Color.BLACK, COMPARTMENT_FONT));
+        gr.setText(item.text);
+        gr.setIsMultilineAllowed(false);
+        gr.setIsFloatingLabel(true);
+        gr.setAbsoluteTextX(ROW_TEXT_INSET_X);
+        gr.setAbsoluteTextY(TEXT_INSET_Y);
+        gr.setHorizontalTextAlignment(HorizontalTextAlignment.LEFT);
+        gr.setVerticalTextAlignment(VerticalTextAlignment.TOP);
+        gr.setIsSelectable(false);
+        gr.setIsFocusable(false);
+        gr.setIsReadOnly(true);
+        return gr;
     }
 
     /** Returns the binding for a compartment kind. */
@@ -695,22 +821,22 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     }
 
     /**
-     * Recomputes and re-applies the content of the three compartments (text and the
-     * proportional geometry constraints) for one entity view. Called after a metamodel
-     * rebuild, where the entity content — and thus the natural heights driving the
-     * proportions — may have changed but the existing nodes are not re-provided.
-     * Re-setting a constraint binding re-registers its value-change listener, which
-     * re-evaluates immediately, so the new layout takes effect at once.
+     * Recomputes and re-applies the proportional geometry constraints of the three
+     * compartments for one entity view. Called after a metamodel rebuild, where the
+     * entity content — and thus the natural heights driving the proportions — may have
+     * changed but the existing compartment nodes are not re-provided. The item rows
+     * themselves are reconciled by the walkers (by {@link CompartmentItem} value), so
+     * only the compartment proportions need an explicit refresh here. Re-setting a
+     * constraint binding re-registers its value-change listener, which re-evaluates
+     * immediately, so the new layout takes effect at once.
      */
     private void applyCompartmentGeometry(EntityView ev) {
         for (Compartment c : Compartment.values()) {
             ShapeNode<EntityView> node = getShapeNode(ev, compartmentBinding(c));
             if (node != null
                     && node.getGraphicalRepresentation() instanceof ShapeGraphicalRepresentation) {
-                ShapeGraphicalRepresentation gr =
-                        (ShapeGraphicalRepresentation) node.getGraphicalRepresentation();
-                applyCompartmentText(gr, compartmentLines(ev, c));
-                applyCompartmentConstraints(gr, ev, c);
+                applyCompartmentConstraints(
+                        (ShapeGraphicalRepresentation) node.getGraphicalRepresentation(), ev, c);
             }
         }
     }
@@ -762,5 +888,51 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     /** Returns the {@link SourceMetaModel} used to compute connectors. */
     public SourceMetaModel getMetaModel() {
         return metaModel;
+    }
+
+    /**
+     * Transient drawable for one element row inside a compartment (an initializer, a
+     * model property or a method). Diana reconciles drawables by {@code equals}, so the
+     * identity is the owning entity view (by reference, stable across rebuilds), the
+     * compartment kind, the row index and the displayed text — a content change thus
+     * recreates the row with up-to-date text/icon, an unchanged row is reused. Not a
+     * {@code @ModelEntity}.
+     */
+    private static final class CompartmentItem {
+        final EntityView ev;
+        final Compartment kind;
+        final int index;
+        final String text;
+        final ImageIcon icon;
+
+        CompartmentItem(EntityView ev, Compartment kind, int index, String text, ImageIcon icon) {
+            this.ev = ev;
+            this.kind = kind;
+            this.index = index;
+            this.text = text;
+            this.icon = icon;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof CompartmentItem)) {
+                return false;
+            }
+            CompartmentItem that = (CompartmentItem) o;
+            return ev == that.ev && kind == that.kind && index == that.index
+                    && java.util.Objects.equals(text, that.text);
+        }
+
+        @Override
+        public int hashCode() {
+            int h = System.identityHashCode(ev);
+            h = 31 * h + kind.hashCode();
+            h = 31 * h + index;
+            h = 31 * h + (text == null ? 0 : text.hashCode());
+            return h;
+        }
     }
 }
