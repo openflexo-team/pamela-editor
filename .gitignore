@@ -20,3 +20,6 @@ build/
 /bugs.txt
 /infer-out/
 .java-version
+
+# pamela-editor build cache sidecars (regenerable, see source-metamodel-design.md §18)
+*.pamela.cache
