@@ -99,6 +99,11 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     private static final Font HEADER_FONT = new Font("SansSerif", Font.BOLD, 11);
     private static final Font COMPARTMENT_FONT = new Font("SansSerif", Font.PLAIN, 10);
 
+    /** Background tints highlighting a selected / focused item row (light enough to
+     *  keep the black label readable). */
+    private static final Color ROW_SELECTED_BG = new Color(184, 207, 244);
+    private static final Color ROW_FOCUSED_BG = new Color(223, 233, 249);
+
     /** Off-screen graphics used only to measure string widths (FontMetrics). */
     private static final java.awt.Graphics MEASURE_GRAPHICS =
             new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).getGraphics();
@@ -116,6 +121,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     private ShapeGRBinding<EntityView> entityPropertiesBinding;
     private ShapeGRBinding<EntityView> entityMethodsBinding;
     private ShapeGRBinding<CompartmentItem> itemRowBinding;
+    private ShapeGRBinding<CompartmentItem> itemIconBinding;
     private ConnectorGRBinding<ComputedConnector> connectorBinding;
 
     /**
@@ -301,6 +307,19 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                 }
             });
 
+        // 2f. Shape binding for the ITEM ICON — a fixed 16×16 square at the left of a
+        //     row, with the element icon as an image background. Reuses the same
+        //     CompartmentItem drawable, drawn as a child of the row, so the row's own
+        //     background stays free to be tinted on selection/focus.
+        itemIconBinding = bindShape(CompartmentItem.class, "compartmentItemIcon",
+            new ShapeGRProvider<CompartmentItem>() {
+                @Override
+                public ShapeGraphicalRepresentation provideGR(
+                        CompartmentItem item, DianaModelFactory factory) {
+                    return makeItemIconGR(item, factory);
+                }
+            });
+
         // 3. Connector binding for ComputedConnector
         connectorBinding = bindConnector(ComputedConnector.class, "connector",
             entityViewBinding, entityViewBinding,
@@ -396,6 +415,14 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                 for (CompartmentItem item : itemsFor(ev, Compartment.METHODS)) {
                     drawShape(itemRowBinding, item);
                 }
+            }
+        });
+
+        // 4e. Walker: draw the element icon as a child of its row.
+        itemRowBinding.addToWalkers(new GRStructureVisitor<CompartmentItem>() {
+            @Override
+            public void visit(CompartmentItem item) {
+                drawShape(itemIconBinding, item);
             }
         });
 
@@ -769,8 +796,9 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         return items;
     }
 
-    /** Builds an item-row GR: full-width row with the element icon as a natural-size,
-     *  top-left image background and the element label floating to its right. */
+    /** Builds an item-row GR: a full-width row carrying the element label (its icon is
+     *  a separate child shape, see {@link #makeItemIconGR}). The row background is
+     *  transparent normally and tinted on focus/selection. */
     private ShapeGraphicalRepresentation makeItemRowGR(CompartmentItem item, DianaModelFactory f) {
         double y = item.index * ROW_HEIGHT;
         ShapeGraphicalRepresentation gr =
@@ -783,18 +811,8 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         gr.setWidthConstraints(new DataBinding<Double>("parent.width"));
         gr.setYConstraints(new DataBinding<Double>(String.valueOf(y)));
         gr.setHeightConstraints(new DataBinding<Double>(String.valueOf(ROW_HEIGHT)));
-        // Icon: drawn at natural size at the row's left (no stretch), rest transparent.
-        ImageIcon icon = item.icon;
-        if (icon != null && icon.getImage() != null) {
-            BackgroundImageBackgroundStyle bg = f.makeImageBackground(icon.getImage());
-            bg.setFitToShape(false);
-            bg.setImageBackgroundType(ImageBackgroundType.TRANSPARENT);
-            bg.setDeltaX(ROW_ICON_INSET);
-            bg.setDeltaY((ROW_HEIGHT - ICON_SIZE) / 2);
-            gr.setBackground(bg);
-        } else {
-            gr.setBackground(f.makeEmptyBackground());
-        }
+        // Transparent normally; the icon is drawn on top by a separate child shape.
+        gr.setBackground(f.makeEmptyBackground());
         gr.setForeground(f.makeNoneForegroundStyle());
         gr.setShadowStyle(f.makeNoneShadowStyle());
         gr.setTextStyle(f.makeTextStyle(Color.BLACK, COMPARTMENT_FONT));
@@ -805,6 +823,51 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         gr.setAbsoluteTextY(TEXT_INSET_Y);
         gr.setHorizontalTextAlignment(HorizontalTextAlignment.LEFT);
         gr.setVerticalTextAlignment(VerticalTextAlignment.TOP);
+        // Item rows ARE selectable/focusable (the container, header, icon and
+        // compartments are not — so a click on a member selects the member, while a
+        // drag on the box chrome still moves the whole container).
+        gr.setIsSelectable(true);
+        gr.setIsFocusable(true);
+        gr.setIsReadOnly(true);
+        // Highlight via a background tint (the icon sits on a separate child shape, so
+        // it stays visible over the tint).
+        gr.setHasFocusedBackground(true);
+        gr.setFocusedBackground(f.makeColoredBackground(ROW_FOCUSED_BG));
+        gr.setHasSelectedBackground(true);
+        gr.setSelectedBackground(f.makeColoredBackground(ROW_SELECTED_BG));
+        // A row is not resizable; show only the highlight, not the resize control
+        // points, on focus/selection.
+        gr.setDrawControlPointsWhenSelected(false);
+        gr.setDrawControlPointsWhenFocused(false);
+        return gr;
+    }
+
+    /** Builds the icon GR for a row: a fixed 16×16 square at the row's left with the
+     *  element icon as a transparent, fit-to-shape image background; non-interactive,
+     *  so clicks fall through to the row. */
+    private ShapeGraphicalRepresentation makeItemIconGR(CompartmentItem item, DianaModelFactory f) {
+        double iconY = (ROW_HEIGHT - ICON_SIZE) / 2;
+        ShapeGraphicalRepresentation gr =
+            f.makeShapeGraphicalRepresentation(ShapeType.RECTANGLE);
+        gr.setX(ROW_ICON_INSET);
+        gr.setY(iconY);
+        gr.setWidth(ICON_SIZE);
+        gr.setHeight(ICON_SIZE);
+        gr.setXConstraints(new DataBinding<Double>(String.valueOf(ROW_ICON_INSET)));
+        gr.setYConstraints(new DataBinding<Double>(String.valueOf(iconY)));
+        gr.setWidthConstraints(new DataBinding<Double>(String.valueOf(ICON_SIZE)));
+        gr.setHeightConstraints(new DataBinding<Double>(String.valueOf(ICON_SIZE)));
+        ImageIcon icon = item.icon;
+        if (icon != null && icon.getImage() != null) {
+            BackgroundImageBackgroundStyle bg = f.makeImageBackground(icon.getImage());
+            bg.setFitToShape(true);
+            bg.setImageBackgroundType(ImageBackgroundType.TRANSPARENT);
+            gr.setBackground(bg);
+        } else {
+            gr.setBackground(f.makeEmptyBackground());
+        }
+        gr.setForeground(f.makeNoneForegroundStyle());
+        gr.setShadowStyle(f.makeNoneShadowStyle());
         gr.setIsSelectable(false);
         gr.setIsFocusable(false);
         gr.setIsReadOnly(true);
