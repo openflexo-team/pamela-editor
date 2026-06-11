@@ -202,6 +202,26 @@ public class SourceCompilationUnit implements SourceElement {
         Files.write(file.toPath(), source.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Returns the top-level types declared in this compilation unit, in source order.
+     *
+     * <p>This method is intentionally exposed in the public API despite the general
+     * rule of not leaking Spoon types — the Spoon outline view is inherently a Spoon
+     * view and needs direct access to {@link CtType} instances (see
+     * {@code ui-design.md §19.3}, decision D2).</p>
+     *
+     * @return an unmodifiable list of declared types; never {@code null}
+     */
+    public List<CtType<?>> getRootTypes() {
+        if (ctCompilationUnit != null) {
+            return Collections.unmodifiableList(ctCompilationUnit.getDeclaredTypes());
+        }
+        if (ctInterface != null) {
+            return Collections.singletonList(ctInterface);
+        }
+        return Collections.emptyList();
+    }
+
     @Override
     public String toString() {
         return "SourceCompilationUnit(" + primaryTypeName + ")";

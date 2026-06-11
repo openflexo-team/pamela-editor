@@ -134,6 +134,74 @@ public class PamelaEditorIconLibrary {
             buildIcon("Icons/Class_16x16.png");
 
     // -------------------------------------------------------------------------
+    // Spoon outline icons — Eclipse / JDT style
+    // -------------------------------------------------------------------------
+
+    // Types
+    public static final ImageIcon JAVA_INTERFACE_ICON =
+            buildIcon("Icons/JavaIcons/int_obj.gif");
+    public static final ImageIcon JAVA_INTERFACE_DEFAULT_ICON =
+            buildIcon("Icons/JavaIcons/int_default_obj.gif");
+    public static final ImageIcon JAVA_CLASS_ICON =
+            buildIcon("Icons/JavaIcons/class_obj.gif");
+    public static final ImageIcon JAVA_CLASS_DEFAULT_ICON =
+            buildIcon("Icons/JavaIcons/class_default_obj.gif");
+    public static final ImageIcon JAVA_ENUM_ICON =
+            buildIcon("Icons/JavaIcons/enum_obj.gif");
+    public static final ImageIcon JAVA_ENUM_PRIVATE_ICON =
+            buildIcon("Icons/JavaIcons/enum_private_obj.gif");
+    public static final ImageIcon JAVA_ENUM_PROTECTED_ICON =
+            buildIcon("Icons/JavaIcons/enum_protected_obj.gif");
+    public static final ImageIcon JAVA_ENUM_DEFAULT_ICON =
+            buildIcon("Icons/JavaIcons/enum_default_obj.gif");
+    public static final ImageIcon JAVA_ANNOTATION_TYPE_ICON =
+            buildIcon("Icons/JavaIcons/int_obj.gif");  // annotation @interface ≈ interface
+
+    // Inner types
+    public static final ImageIcon JAVA_INNER_CLASS_PUBLIC_ICON =
+            buildIcon("Icons/JavaIcons/innerclass_public_obj.gif");
+    public static final ImageIcon JAVA_INNER_CLASS_PROTECTED_ICON =
+            buildIcon("Icons/JavaIcons/innerclass_protected_obj.gif");
+    public static final ImageIcon JAVA_INNER_CLASS_PRIVATE_ICON =
+            buildIcon("Icons/JavaIcons/innerclass_private_obj.gif");
+    public static final ImageIcon JAVA_INNER_CLASS_DEFAULT_ICON =
+            buildIcon("Icons/JavaIcons/innerclass_default_obj.gif");
+    public static final ImageIcon JAVA_INNER_INTERFACE_PUBLIC_ICON =
+            buildIcon("Icons/JavaIcons/innerinterface_public_obj.gif");
+    public static final ImageIcon JAVA_INNER_INTERFACE_PROTECTED_ICON =
+            buildIcon("Icons/JavaIcons/innerinterface_protected_obj.gif");
+    public static final ImageIcon JAVA_INNER_INTERFACE_PRIVATE_ICON =
+            buildIcon("Icons/JavaIcons/innerinterface_private_obj.gif");
+    public static final ImageIcon JAVA_INNER_INTERFACE_DEFAULT_ICON =
+            buildIcon("Icons/JavaIcons/innerinterface_default_obj.gif");
+
+    // Methods
+    public static final ImageIcon JAVA_METHOD_PUBLIC_ICON =
+            buildIcon("Icons/JavaIcons/methpub_obj.gif");
+    public static final ImageIcon JAVA_METHOD_PROTECTED_ICON =
+            buildIcon("Icons/JavaIcons/methpro_obj.gif");
+    public static final ImageIcon JAVA_METHOD_PRIVATE_ICON =
+            buildIcon("Icons/JavaIcons/methpri_obj.gif");
+    public static final ImageIcon JAVA_METHOD_DEFAULT_ICON =
+            buildIcon("Icons/JavaIcons/methdef_obj.gif");
+
+    // Fields
+    public static final ImageIcon JAVA_FIELD_PUBLIC_ICON =
+            buildIcon("Icons/JavaIcons/field_public_obj.gif");
+    public static final ImageIcon JAVA_FIELD_PROTECTED_ICON =
+            buildIcon("Icons/JavaIcons/field_protected_obj.gif");
+    public static final ImageIcon JAVA_FIELD_PRIVATE_ICON =
+            buildIcon("Icons/JavaIcons/field_private_obj.gif");
+    public static final ImageIcon JAVA_FIELD_DEFAULT_ICON =
+            buildIcon("Icons/JavaIcons/field_default_obj.gif");
+
+    /** Public field in a class (backward-compat alias). */
+    public static final ImageIcon FIELD_ICON = JAVA_FIELD_PUBLIC_ICON;
+
+    /** Constructor (uses the public method icon — same visual). */
+    public static final ImageIcon CONSTRUCTOR_ICON = JAVA_METHOD_PUBLIC_ICON;
+
+    // -------------------------------------------------------------------------
     // Validation icons (pre-existing)
     // -------------------------------------------------------------------------
 

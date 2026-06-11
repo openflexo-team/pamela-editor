@@ -22,12 +22,13 @@ public class JavaFileView extends JPanel {
     private static final Logger logger = Logger.getLogger(JavaFileView.class.getPackage().getName());
 
     private final SourceJavaFile javaFile;
+    private final RSyntaxTextArea textArea;
 
     public JavaFileView(SourceJavaFile javaFile) {
         super(new BorderLayout());
         this.javaFile = javaFile;
 
-        RSyntaxTextArea textArea = new RSyntaxTextArea();
+        textArea = new RSyntaxTextArea();
         textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
         textArea.setEditable(false);
         textArea.setCodeFoldingEnabled(true);
@@ -49,5 +50,19 @@ public class JavaFileView extends JPanel {
 
     public SourceJavaFile getJavaFile() {
         return javaFile;
+    }
+
+    /**
+     * Scrolls the view to the given 1-based line number and moves the caret there.
+     * Mirrors {@link SourceCodeView#scrollToLine(int)}.
+     */
+    public void scrollToLine(int line) {
+        try {
+            int offset = textArea.getLineStartOffset(line - 1);
+            textArea.setCaretPosition(offset);
+            textArea.requestFocus();
+        } catch (Exception e) {
+            // line out of range — ignore
+        }
     }
 }

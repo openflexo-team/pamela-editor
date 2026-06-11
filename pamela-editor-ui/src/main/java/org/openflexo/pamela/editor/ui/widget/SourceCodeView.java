@@ -169,6 +169,27 @@ public class SourceCodeView extends JPanel {
         return entity.getSimpleName();
     }
 
+    /**
+     * Scrolls the source view to the given 1-based line number and moves the
+     * caret there. Called from the Spoon outline view when the user clicks an
+     * element (ui-design.md §19.3, decision D6).
+     *
+     * @param line 1-based line number; values &lt; 1 are ignored
+     */
+    public void scrollToLine(int line) {
+        if (line < 1) {
+            return;
+        }
+        try {
+            int offset = textArea.getLineStartOffset(line - 1);
+            textArea.setCaretPosition(offset);
+            textArea.scrollRectToVisible(textArea.modelToView(offset));
+            textArea.requestFocus();
+        } catch (BadLocationException e) {
+            // line out of range — ignore silently
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------

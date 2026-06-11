@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MetaModelStatisticsContextView.fib
+  ContextPanel statistics view for a SourceMetaModel (ui-design.md §19.2).
+
+  Shows the statistical counters as a grid, no header/tables (those stay in
+  MetaModelSummaryView in the central view).
+-->
+<Panel id="0" font="SansSerif,0,11" darkLevel="0" useScrollBar="false" layout="border" name="MetaModelStatisticsContextView"
+    dataClassName="org.openflexo.pamela.editor.model.SourceMetaModel"
+    trackViewPortWidth="true" trackViewPortHeight="true"
+    borderTop="0" borderLeft="0" borderBottom="0" borderRight="0" border="empty">
+
+    <Panel id="10" layout="grid" cols="2" rows="6" hGap="6" vGap="3"
+        border="rounded3d" borderTitle="statistics"
+        borderTop="12" borderLeft="8" borderBottom="8" borderRight="8"
+        constraints="border(location=north;expandHorizontally=true)"
+        name="StatisticsPanel">
+
+        <Label id="11" label="packages" align="right" localize="true" constraints="grid(x=0;y=0)" name="PkgLabel" />
+        <TextField id="12" data="data.packagesCount.toString" readOnly="true" columns="5"
+            constraints="grid(x=1;y=0)" name="PkgValue" />
+
+        <Label id="13" label="entities" align="right" localize="true" constraints="grid(x=0;y=1)" name="EntityLabel" />
+        <TextField id="14" data="data.entitiesCount.toString" readOnly="true" columns="5"
+            constraints="grid(x=1;y=1)" name="EntityValue" />
+
+        <Label id="15" label="abstract_entities" align="right" localize="true" constraints="grid(x=0;y=2)" name="AbstractLabel" />
+        <TextField id="16" data="data.abstractEntitiesCount.toString" readOnly="true" columns="5"
+            constraints="grid(x=1;y=2)" name="AbstractValue" />
+
+        <Label id="17" label="properties" align="right" localize="true" constraints="grid(x=0;y=3)" name="PropLabel" />
+        <TextField id="18" data="data.totalPropertiesCount.toString" readOnly="true" columns="5"
+            constraints="grid(x=1;y=3)" name="PropValue" />
+
+        <Label id="19" label="initializers" align="right" localize="true" constraints="grid(x=0;y=4)" name="InitLabel" />
+        <TextField id="20" data="data.totalInitializersCount.toString" readOnly="true" columns="5"
+            constraints="grid(x=1;y=4)" name="InitValue" />
+
+        <Label id="21" label="issues" align="right" localize="true" constraints="grid(x=0;y=5)" name="IssueLabel" />
+        <TextField id="22" data="data.issuesCount.toString" readOnly="true" columns="5"
+            constraints="grid(x=1;y=5)" name="IssueValue" />
+
+    </Panel>
+
+    <LocalizedDictionary id="90">
+        <Localized id="91" lang="English" value="Statistics"         key="statistics" />
+        <Localized id="92" lang="French"  value="Statistiques"       key="statistics" />
+        <Localized id="93" lang="English" value="Packages"           key="packages" />
+        <Localized id="94" lang="French"  value="Packages"           key="packages" />
+        <Localized id="95" lang="English" value="Entities"           key="entities" />
+        <Localized id="96" lang="French"  value="Entités"            key="entities" />
+        <Localized id="97" lang="English" value="Abstract entities"  key="abstract_entities" />
+        <Localized id="98" lang="French"  value="Entités abstraites" key="abstract_entities" />
+        <Localized id="99" lang="English" value="Properties"         key="properties" />
+        <Localized id="100" lang="French" value="Propriétés"         key="properties" />
+        <Localized id="101" lang="English" value="Initializers"      key="initializers" />
+        <Localized id="102" lang="French"  value="Initialiseurs"     key="initializers" />
+        <Localized id="103" lang="English" value="Issues"            key="issues" />
+        <Localized id="104" lang="French"  value="Problèmes"         key="issues" />
+    </LocalizedDictionary>
+
+</Panel>

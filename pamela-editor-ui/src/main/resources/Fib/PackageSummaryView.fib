@@ -4,9 +4,10 @@
   Central view shown when a SourcePackage is selected.
 
   Layout (top → bottom):
-    1. Header     — package icon 64×64 + qualified name, centred
-    2. Entities   — FlatDesign table with icon + entity name
-    3. Statistics — read-only metrics in rounded3d titled panel, grid 4 cols
+    1. Header   — package icon 64×64 + qualified name, centred
+    2. Entities — FlatDesign table with icon + entity name
+
+  Statistics have moved to PackageStatisticsContextView.fib (ContextPanel, §19.2).
 -->
 <Panel id="0" darkLevel="0" useScrollBar="true" layout="twocols"
     height="600" name="PackageSummaryView"
@@ -75,50 +76,13 @@
 
     </Panel>
 
-    <!-- ================================================================ -->
-    <!-- 3. STATISTICS — rounded3d with title, grid 4 cols × 2 rows       -->
-    <!-- ================================================================ -->
-    <Panel id="20" layout="grid" cols="4" rows="2" hGap="6" vGap="4"
-        border="rounded3d" borderTitle="statistics"
-        borderTop="12" borderLeft="8" borderBottom="8" borderRight="8"
-        constraints="twocols(expandHorizontally=true;expandVertically=false;location=center;insetsTop=10;insetsBottom=10;insetsLeft=10;insetsRight=10)"
-        name="StatisticsPanel">
-
-        <!-- Row 0 -->
-        <Label id="50" label="entities" align="right" localize="true"
-            constraints="grid(x=0;y=0)" name="StatEntitiesLabel" />
-        <TextField id="51" data="data.entitiesCount.toString" readOnly="true" columns="4"
-            constraints="grid(x=1;y=0)" name="StatEntitiesValue" />
-        <Label id="52" label="properties" align="right" localize="true"
-            constraints="grid(x=2;y=0)" name="StatPropertiesLabel" />
-        <TextField id="53" data="data.totalPropertiesCount.toString" readOnly="true" columns="4"
-            constraints="grid(x=3;y=0)" name="StatPropertiesValue" />
-
-        <!-- Row 1 -->
-        <Label id="54" label="abstract_entities" align="right" localize="true"
-            constraints="grid(x=0;y=1)" name="StatAbstractLabel" />
-        <TextField id="55" data="data.abstractEntitiesCount.toString" readOnly="true" columns="4"
-            constraints="grid(x=1;y=1)" name="StatAbstractValue" />
-        <Label id="56" label="" align="right"
-            constraints="grid(x=2;y=1)" name="StatEmptyLabel" />
-        <Label id="57" label=""
-            constraints="grid(x=3;y=1)" name="StatEmptyValue" />
-
-    </Panel>
-
     <LocalizedDictionary id="90">
-        <Localized id="91"  lang="English" value="Entities"           key="entities" />
-        <Localized id="92"  lang="French"  value="Entités"            key="entities" />
-        <Localized id="93"  lang="English" value="Abstract entities"  key="abstract_entities" />
-        <Localized id="94"  lang="French"  value="Entités abstraites" key="abstract_entities" />
-        <Localized id="95"  lang="English" value="Properties"         key="properties" />
-        <Localized id="96"  lang="French"  value="Propriétés"         key="properties" />
-        <Localized id="97"  lang="English" value="Name"               key="name" />
-        <Localized id="98"  lang="French"  value="Nom"                key="name" />
-        <Localized id="99"  lang="English" value="Abstract"           key="abstract" />
-        <Localized id="100" lang="French"  value="Abstraite"          key="abstract" />
-        <Localized id="101" lang="English" value="Statistics"         key="statistics" />
-        <Localized id="102" lang="French"  value="Statistiques"       key="statistics" />
+        <Localized id="91" lang="English" value="Entities"  key="entities" />
+        <Localized id="92" lang="French"  value="Entités"   key="entities" />
+        <Localized id="97" lang="English" value="Name"      key="name" />
+        <Localized id="98" lang="French"  value="Nom"       key="name" />
+        <Localized id="99" lang="English" value="Abstract"  key="abstract" />
+        <Localized id="100" lang="French" value="Abstraite" key="abstract" />
     </LocalizedDictionary>
 
 </Panel>

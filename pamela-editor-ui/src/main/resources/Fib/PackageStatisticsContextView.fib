@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PackageStatisticsContextView.fib
+  ContextPanel statistics view for a SourcePackage (ui-design.md §19.2).
+-->
+<Panel id="0" font="SansSerif,0,11" darkLevel="0" useScrollBar="false" layout="border" name="PackageStatisticsContextView"
+    dataClassName="org.openflexo.pamela.editor.model.SourcePackage"
+    trackViewPortWidth="true" trackViewPortHeight="true"
+    borderTop="0" borderLeft="0" borderBottom="0" borderRight="0" border="empty">
+
+    <Panel id="10" layout="grid" cols="2" rows="3" hGap="6" vGap="3"
+        border="rounded3d" borderTitle="statistics"
+        borderTop="12" borderLeft="8" borderBottom="8" borderRight="8"
+        constraints="border(location=north;expandHorizontally=true)"
+        name="StatisticsPanel">
+
+        <Label id="11" label="entities" align="right" localize="true" constraints="grid(x=0;y=0)" name="EntityLabel" />
+        <TextField id="12" data="data.entitiesCount.toString" readOnly="true" columns="5"
+            constraints="grid(x=1;y=0)" name="EntityValue" />
+
+        <Label id="13" label="abstract_entities" align="right" localize="true" constraints="grid(x=0;y=1)" name="AbstractLabel" />
+        <TextField id="14" data="data.abstractEntitiesCount.toString" readOnly="true" columns="5"
+            constraints="grid(x=1;y=1)" name="AbstractValue" />
+
+        <Label id="15" label="properties" align="right" localize="true" constraints="grid(x=0;y=2)" name="PropLabel" />
+        <TextField id="16" data="data.totalPropertiesCount.toString" readOnly="true" columns="5"
+            constraints="grid(x=1;y=2)" name="PropValue" />
+
+    </Panel>
+
+    <LocalizedDictionary id="90">
+        <Localized id="91" lang="English" value="Statistics"         key="statistics" />
+        <Localized id="92" lang="French"  value="Statistiques"       key="statistics" />
+        <Localized id="93" lang="English" value="Entities"           key="entities" />
+        <Localized id="94" lang="French"  value="Entités"            key="entities" />
+        <Localized id="95" lang="English" value="Abstract entities"  key="abstract_entities" />
+        <Localized id="96" lang="French"  value="Entités abstraites" key="abstract_entities" />
+        <Localized id="97" lang="English" value="Properties"         key="properties" />
+        <Localized id="98" lang="French"  value="Propriétés"         key="properties" />
+    </LocalizedDictionary>
+
+</Panel>

@@ -6,7 +6,8 @@
   Layout (top → bottom):
     1. Header     — icon 64×64 + model name, centred
     2. Definition — source directories table + root types table (no decoration)
-    3. Statistics — read-only metrics in rounded3d titled panel, twocols key/value
+
+  Statistics have moved to MetaModelStatisticsContextView.fib (ContextPanel, §19.2).
 -->
 <Panel id="0" darkLevel="0" useScrollBar="true" layout="twocols"
     height="600" name="MetaModelSummaryView"
@@ -116,63 +117,7 @@
 
     </Panel>
 
-    <!-- ================================================================ -->
-    <!-- 3. STATISTICS — rounded3d with title, grid 4 cols × 3 rows      -->
-    <!--    col0: label | col1: value | col2: label | col3: value        -->
-    <!-- ================================================================ -->
-    <Panel id="20" layout="grid" cols="4" rows="3" hGap="6" vGap="4"
-        border="rounded3d" borderTitle="statistics"
-        borderTop="12" borderLeft="8" borderBottom="8" borderRight="8"
-        constraints="twocols(expandHorizontally=true;expandVertically=false;location=center;insetsTop=10;insetsBottom=10;insetsLeft=10;insetsRight=10)"
-        name="StatisticsPanel">
-
-        <!-- Row 0: packages | value | properties | value -->
-        <Label id="22" label="packages" align="right" localize="true"
-            constraints="grid(x=0;y=0)" name="PackagesLabel" />
-        <TextField id="23" data="data.packagesCount.toString" readOnly="true" columns="4"
-            constraints="grid(x=1;y=0)" name="PackagesValue" />
-        <Label id="24" label="properties" align="right" localize="true"
-            constraints="grid(x=2;y=0)" name="PropertiesLabel" />
-        <TextField id="25" data="data.totalPropertiesCount.toString" readOnly="true" columns="4"
-            constraints="grid(x=3;y=0)" name="PropertiesValue" />
-
-        <!-- Row 1: entities | value | initializers | value -->
-        <Label id="26" label="entities" align="right" localize="true"
-            constraints="grid(x=0;y=1)" name="EntitiesLabel" />
-        <TextField id="27" data="data.entitiesCount.toString" readOnly="true" columns="4"
-            constraints="grid(x=1;y=1)" name="EntitiesValue" />
-        <Label id="28" label="initializers" align="right" localize="true"
-            constraints="grid(x=2;y=1)" name="InitializersLabel" />
-        <TextField id="29" data="data.totalInitializersCount.toString" readOnly="true" columns="4"
-            constraints="grid(x=3;y=1)" name="InitializersValue" />
-
-        <!-- Row 2: abstract entities | value | issues | value -->
-        <Label id="30" label="abstract_entities" align="right" localize="true"
-            constraints="grid(x=0;y=2)" name="AbstractLabel" />
-        <TextField id="31" data="data.abstractEntitiesCount.toString" readOnly="true" columns="4"
-            constraints="grid(x=1;y=2)" name="AbstractValue" />
-        <Label id="32" label="issues" align="right" localize="true"
-            constraints="grid(x=2;y=2)" name="IssuesLabel" />
-        <TextField id="33" data="data.issuesCount.toString" readOnly="true" columns="4"
-            constraints="grid(x=3;y=2)" name="IssuesValue" />
-
-    </Panel>
-
     <LocalizedDictionary id="90">
-        <Localized id="91"  lang="English" value="Statistics"          key="statistics" />
-        <Localized id="92"  lang="French"  value="Statistiques"        key="statistics" />
-        <Localized id="93"  lang="English" value="Packages"            key="packages" />
-        <Localized id="94"  lang="French"  value="Packages"            key="packages" />
-        <Localized id="95"  lang="English" value="Entities"            key="entities" />
-        <Localized id="96"  lang="French"  value="Entités"             key="entities" />
-        <Localized id="97"  lang="English" value="Abstract entities"   key="abstract_entities" />
-        <Localized id="98"  lang="French"  value="Entités abstraites"  key="abstract_entities" />
-        <Localized id="99"  lang="English" value="Properties"          key="properties" />
-        <Localized id="100" lang="French"  value="Propriétés"          key="properties" />
-        <Localized id="101" lang="English" value="Initializers"        key="initializers" />
-        <Localized id="102" lang="French"  value="Initialiseurs"       key="initializers" />
-        <Localized id="103" lang="English" value="Issues"              key="issues" />
-        <Localized id="104" lang="French"  value="Problèmes"           key="issues" />
         <Localized id="107" lang="English" value="Source directories"  key="source_directories" />
         <Localized id="108" lang="French"  value="Répertoires sources" key="source_directories" />
         <Localized id="109" lang="English" value="Root types"          key="root_types" />

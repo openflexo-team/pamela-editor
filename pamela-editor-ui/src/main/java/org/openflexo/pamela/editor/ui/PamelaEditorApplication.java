@@ -69,6 +69,7 @@ import org.openflexo.pamela.editor.ui.action.RemoveFromDiagramAction;
 import org.openflexo.pamela.editor.ui.action.ShowSourceCodeAction;
 import org.openflexo.pamela.editor.ui.action.ContextualAction;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
+import org.openflexo.pamela.editor.ui.widget.ContextPanel;
 import org.openflexo.pamela.editor.ui.widget.DetailedBrowser;
 import org.openflexo.pamela.editor.ui.widget.MetaModelBrowser;
 import org.openflexo.pamela.editor.ui.widget.MetaModelSummaryView;
@@ -254,8 +255,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     /** Inspector controller — manages .inspector files and type-dispatch. */
     private final PamelaEditorInspectorController inspectorController;
 
-    /** Placeholder for the right-bottom validation area. */
-    private final JPanel validationArea;
+    /** Context-sensitive complementary panel (right-bottom, ui-design.md §19). */
+    private final ContextPanel contextPanel;
 
     // -------------------------------------------------------------------------
     // Application state
@@ -492,10 +493,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         // --- Right column: inspector controller (top) ---
         inspectorController = new PamelaEditorInspectorController();
 
-        // --- Right column: validation area (bottom) ---
-        validationArea = new JPanel(new BorderLayout());
-        validationArea.add(new JLabel("Validation panel", JLabel.CENTER),
-                BorderLayout.CENTER);
+        // --- Right column: context panel (bottom, ui-design.md §19) ---
+        contextPanel = new ContextPanel(this);
 
         // --- Multi-split layout ---
         Split<?> defaultLayout = getDefaultLayout();
@@ -541,7 +540,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         splitPane.add(detailedBrowser,   LayoutPosition.BOTTOM_LEFT.name());
         splitPane.add(centerColumn,      LayoutPosition.CENTER.name());
         splitPane.add(inspectorController.getRootPane(), LayoutPosition.TOP_RIGHT.name());
-        splitPane.add(validationArea,    LayoutPosition.BOTTOM_RIGHT.name());
+        splitPane.add(contextPanel,      LayoutPosition.BOTTOM_RIGHT.name());
 
         frame.getContentPane().setLayout(new BorderLayout());
         frame.getContentPane().add(splitPane, BorderLayout.CENTER);
@@ -576,6 +575,58 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
      */
     public List<PamelaProject> getProjects() {
         return Collections.unmodifiableList(projects);
+    }
+
+    /**
+     * Returns the {@link SourceMetaModel} of the currently active project
+     * (the one owning {@link #currentHistoryElement}), or {@code null} if none.
+     */
+    public SourceMetaModel getActiveMetaModel() {
+        for (PamelaProject project : projects) {
+            if (isElementInProject(currentHistoryElement, project)) {
+                return project.getMetaModel();
+            }
+        }
+        // Fallback: return the first project's metamodel if available
+        return projects.isEmpty() ? null : projects.get(0).getMetaModel();
+    }
+
+    private boolean isElementInProject(Object element, PamelaProject project) {
+        if (element == null) return false;
+        SourceMetaModel mm = project.getMetaModel();
+        if (mm == null) return false;
+        if (element == mm) return true;
+        if (element instanceof SourcePackage) {
+            return mm.getAllPackages().contains(element);
+        }
+        if (element instanceof SourceModelEntity) {
+            return mm.getEntities().containsValue((SourceModelEntity) element);
+        }
+        if (element instanceof SourceJavaFile) {
+            SourceJavaFile f = (SourceJavaFile) element;
+            for (SourcePackage pkg : mm.getAllPackages()) {
+                if (pkg.getJavaFiles().contains(f)) return true;
+            }
+        }
+        if (project.getDiagrams() != null && project.getDiagrams().contains(element)) return true;
+        return false;
+    }
+
+    /**
+     * Scrolls the currently active {@link SourceCodeView} to the given 1-based line.
+     * Called by the Spoon Outline panel when the user clicks a member (ui-design.md §19.3).
+     */
+    public void scrollSourceViewToLine(int line) {
+        if (currentHistoryElement == null) return;
+        JComponent view = viewCache.get(currentHistoryElement);
+        if (view instanceof SourceCodeView) {
+            // Clear any property highlight that may have been set by the DetailedBrowser
+            // so that a click in the SpoonOutlineView starts from a clean state.
+            ((SourceCodeView) view).clearHighlights();
+            ((SourceCodeView) view).scrollToLine(line);
+        } else if (view instanceof JavaFileView) {
+            ((JavaFileView) view).scrollToLine(line);
+        }
     }
 
     /**
@@ -1122,6 +1173,10 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     logger.warning("Central view switch failed: " + e.getMessage());
                     e.printStackTrace();
                 }
+            } else {
+                // Soft-selection (diagram canvas click): update context panel without
+                // switching the central view (ui-design.md §18.2, §19.4).
+                contextPanel.setDiagramSelection(element);
             }
         } finally {
             settingSelectedElement = false;
@@ -1245,6 +1300,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             if (view instanceof SourceCodeView) {
                 ((SourceCodeView) view).highlightProperty(prop);
             }
+            // Reflect the selection in the SpoonOutlineView (context panel)
+            contextPanel.selectPropertyMethods(prop);
             return;
         }
 
@@ -1332,6 +1389,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         } else {
             detachDianaTools();
         }
+
+        // Update the context panel (ui-design.md §19)
+        contextPanel.showFor(element);
     }
 
     /**

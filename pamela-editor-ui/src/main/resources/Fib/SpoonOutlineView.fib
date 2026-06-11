@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpoonOutlineView.fib
+  Spoon-based Java Outline panel (ui-design.md §19.3).
+
+  The root data object is a SpoonOutlineModel.
+  The browser root is the SpoonOutlineModel itself (rootVisible=false);
+  its BrowserElement's <Children> exposes rootTypes, which are CtType instances.
+  Each Spoon type node then exposes its members via controller.membersOf(type).
+-->
+<Panel id="0" font="SansSerif,0,11" darkLevel="0" layout="border" name="SpoonOutlineView"
+    dataClassName="org.openflexo.pamela.editor.ui.widget.SpoonOutlineModel"
+    controllerClassName="org.openflexo.pamela.editor.ui.widget.SpoonOutlineController"
+    trackViewPortWidth="true" trackViewPortHeight="true"
+    borderTop="0" borderLeft="0" borderBottom="0" borderRight="0" border="empty">
+
+    <!-- Loading indicator (visible only while an on-demand parse is running) -->
+    <Label id="1" label="Parsing source file..." localize="false"
+        align="center" font="SansSerif,2,11"
+        visible="data.loading"
+        constraints="border(location=north)" name="LoadingLabel" />
+
+    <Browser id="10"
+        root="data"
+        iteratorClassName="java.lang.Object"
+        name="outlineBrowser"
+        selected="controller.outlineSelection"
+        clickAction="controller.onElementSelected(outlineBrowser.selected)"
+        selectionMode="DiscontiguousTreeSelection"
+        rootVisible="false"
+        showFooter="false"
+        rowHeight="18"
+        constraints="border(location=center;expandHorizontally=true;expandVertically=true)"
+        deepExploration="false">
+
+        <!-- Root: SpoonOutlineModel — hidden, exposes the list of types -->
+        <BrowserElement id="20"
+            dataClassName="org.openflexo.pamela.editor.ui.widget.SpoonOutlineModel"
+            name="model" label="&quot;root&quot;" icon="null" filtered="false" defaultVisible="true">
+            <Children name="types" data="model.rootTypes" />
+        </BrowserElement>
+
+        <!-- CtInterface (covers @ModelEntity and plain interfaces) -->
+        <BrowserElement id="30"
+            dataClassName="spoon.reflect.declaration.CtInterface"
+            name="iface" label="controller.labelForObject(iface)"
+            icon="controller.iconForObject(iface)" filtered="false" defaultVisible="true">
+            <Children name="members" data="controller.membersOf(iface)" />
+        </BrowserElement>
+
+        <!-- CtClass (covers concrete and abstract classes) -->
+        <BrowserElement id="31"
+            dataClassName="spoon.reflect.declaration.CtClass"
+            name="clazz" label="controller.labelForObject(clazz)"
+            icon="controller.iconForObject(clazz)" filtered="false" defaultVisible="true">
+            <Children name="members" data="controller.membersOf(clazz)" />
+        </BrowserElement>
+
+        <!-- CtEnum -->
+        <BrowserElement id="32"
+            dataClassName="spoon.reflect.declaration.CtEnum"
+            name="enumType" label="controller.labelForObject(enumType)"
+            icon="controller.iconForObject(enumType)" filtered="false" defaultVisible="true">
+            <Children name="members" data="controller.membersOf(enumType)" />
+        </BrowserElement>
+
+        <!-- CtAnnotationType -->
+        <BrowserElement id="33"
+            dataClassName="spoon.reflect.declaration.CtAnnotationType"
+            name="annotType" label="controller.labelForObject(annotType)"
+            icon="controller.iconForObject(annotType)" filtered="false" defaultVisible="true">
+            <Children name="members" data="controller.membersOf(annotType)" />
+        </BrowserElement>
+
+        <!-- CtMethod -->
+        <BrowserElement id="40"
+            dataClassName="spoon.reflect.declaration.CtMethod"
+            name="method" label="controller.labelForObject(method)"
+            icon="controller.iconForObject(method)" filtered="false" defaultVisible="true">
+        </BrowserElement>
+
+        <!-- CtConstructor -->
+        <BrowserElement id="41"
+            dataClassName="spoon.reflect.declaration.CtConstructor"
+            name="ctor" label="controller.labelForObject(ctor)"
+            icon="controller.iconForObject(ctor)" filtered="false" defaultVisible="true">
+        </BrowserElement>
+
+        <!-- CtField -->
+        <BrowserElement id="42"
+            dataClassName="spoon.reflect.declaration.CtField"
+            name="field" label="controller.labelForObject(field)"
+            icon="controller.iconForObject(field)" filtered="false" defaultVisible="true">
+        </BrowserElement>
+
+        <!-- CtEnumValue -->
+        <BrowserElement id="43"
+            dataClassName="spoon.reflect.declaration.CtEnumValue"
+            name="enumVal" label="controller.labelForObject(enumVal)"
+            icon="controller.iconForObject(enumVal)" filtered="false" defaultVisible="true">
+        </BrowserElement>
+
+    </Browser>
+
+</Panel>
