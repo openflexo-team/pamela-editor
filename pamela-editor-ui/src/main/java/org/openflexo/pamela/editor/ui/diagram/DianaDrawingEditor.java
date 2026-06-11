@@ -1,11 +1,17 @@
 package org.openflexo.pamela.editor.ui.diagram;
 
+import java.awt.Component;
+import java.awt.Point;
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
+import org.openflexo.diana.Drawing.DrawingTreeNode;
 import org.openflexo.diana.swing.JDianaInteractiveEditor;
 import org.openflexo.diana.swing.control.SwingToolFactory;
 import org.openflexo.diana.swing.control.tools.DianaViewDropListener;
 import org.openflexo.diana.swing.view.JDianaView;
+import org.openflexo.diana.view.DianaView;
 import org.openflexo.pamela.editor.diagram.EntityView;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagramFactory;
@@ -27,10 +33,75 @@ public class DianaDrawingEditor extends JDianaInteractiveEditor<PamelaClassDiagr
     private static final Logger logger =
             Logger.getLogger(DianaDrawingEditor.class.getPackage().getName());
 
+    /**
+     * Callback invoked on every selection change with the model element of the first
+     * selected node ({@code null} when the selection is empty). Wired by the
+     * application to its <em>soft</em> selection path (inspector + detailed browser,
+     * no central-view switch — see {@code ui-design.md §18.2}).
+     */
+    private Consumer<Object> selectionListener;
+
+    /** Callback that shows the shared contextual menu for a list of target facets. */
+    private ContextualMenuHandler contextualMenuHandler;
+
+    /**
+     * Shows the shared application contextual menu at {@code (x, y)} in {@code invoker},
+     * for the ordered list of target facets (see {@code ui-design.md §18.4}).
+     */
+    @FunctionalInterface
+    public interface ContextualMenuHandler {
+        void show(List<Object> facets, Component invoker, int x, int y);
+    }
+
     public DianaDrawingEditor(PamelaClassDiagramDrawing drawing,
                               PamelaClassDiagramFactory factory,
                               SwingToolFactory toolFactory) {
         super(drawing, factory, toolFactory);
+    }
+
+    /** Sets the selection callback (see {@link #selectionListener}). */
+    public void setSelectionListener(Consumer<Object> selectionListener) {
+        this.selectionListener = selectionListener;
+    }
+
+    /** Sets the contextual-menu callback (see {@link #contextualMenuHandler}). */
+    public void setContextualMenuHandler(ContextualMenuHandler handler) {
+        this.contextualMenuHandler = handler;
+    }
+
+    /**
+     * Diana selection hook. Maps the first selected node to its model element and
+     * forwards it to {@link #selectionListener}. {@code super} is called first so the
+     * Diana floating style inspectors still refresh.
+     */
+    @Override
+    protected void fireSelectionUpdated() {
+        super.fireSelectionUpdated();
+        if (selectionListener == null) {
+            return;
+        }
+        Object element = null;
+        List<DrawingTreeNode<?, ?>> sel = getSelectedObjects();
+        if (sel != null && !sel.isEmpty()) {
+            element = getDrawing().modelElementFor(sel.get(0));
+        }
+        selectionListener.accept(element);
+    }
+
+    /**
+     * Builds the target-facet list for the right-clicked node and shows the shared
+     * contextual menu through {@link #contextualMenuHandler}. Called by
+     * {@link PamelaShowContextualMenuControl}.
+     */
+    public void showContextualMenu(DrawingTreeNode<?, ?> dtn, DianaView<?, ?> view, Point p) {
+        if (contextualMenuHandler == null || !(view instanceof Component)) {
+            return;
+        }
+        List<Object> facets = getDrawing().facetsFor(dtn);
+        if (facets.isEmpty()) {
+            return;
+        }
+        contextualMenuHandler.show(facets, (Component) view, p.x, p.y);
     }
 
     @Override

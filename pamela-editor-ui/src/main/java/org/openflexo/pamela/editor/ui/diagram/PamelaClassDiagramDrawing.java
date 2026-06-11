@@ -17,6 +17,7 @@ import org.openflexo.diana.BackgroundImageBackgroundStyle;
 import org.openflexo.diana.BackgroundImageBackgroundStyle.ImageBackgroundType;
 import org.openflexo.diana.ConnectorGraphicalRepresentation;
 import org.openflexo.diana.ContainerGraphicalRepresentation;
+import org.openflexo.diana.Drawing.DrawingTreeNode;
 import org.openflexo.diana.Drawing.ShapeNode;
 import org.openflexo.diana.DianaModelFactory;
 import org.openflexo.diana.DrawingGraphicalRepresentation;
@@ -48,6 +49,8 @@ import org.openflexo.pamela.editor.model.SourceModelInitializer;
 import org.openflexo.pamela.editor.model.SourceModelProperty;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import org.openflexo.pamela.factory.EditingContext;
+import org.openflexo.pamela.factory.PamelaModelFactory;
 
 /**
  * Diana drawing for a {@link PamelaClassDiagram}.
@@ -113,6 +116,9 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
 
     private final SourceMetaModel metaModel;
     private final DianaModelFactory factory;
+    /** Editing context of the diagram factory — needed to register the right-click
+     *  {@link PamelaShowContextualMenuControl} on the interactive GRs. */
+    private final EditingContext editingContext;
 
     private ShapeGRBinding<EntityView> entityViewBinding;
     private ShapeGRBinding<EntityView> entityHeaderBinding;
@@ -143,6 +149,8 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         super(diagram, factory, PersistenceMode.UniqueGraphicalRepresentations);
         this.metaModel = metaModel;
         this.factory = factory;
+        this.editingContext = (factory instanceof PamelaModelFactory)
+                ? ((PamelaModelFactory) factory).getEditingContext() : null;
     }
 
     @Override
@@ -158,6 +166,8 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                         DrawingGraphicalRepresentation gr =
                                 factory.makeDrawingGraphicalRepresentation();
                         gr.setDrawWorkingArea(false);
+                        // Right-click on the empty canvas → diagram-level contextual menu.
+                        addContextualMenuControl(gr);
                         return gr;
                     }
                 });
@@ -187,6 +197,8 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                     gr.setIsSelectable(true);
                     gr.setIsFocusable(true);
                     gr.setIsReadOnly(false);
+                    // Right-click on the box → entity contextual menu (+ diagram-specific).
+                    addContextualMenuControl(gr);
                     return gr;
                 }
             });
@@ -839,7 +851,21 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         // points, on focus/selection.
         gr.setDrawControlPointsWhenSelected(false);
         gr.setDrawControlPointsWhenFocused(false);
+        // Right-click on a row → contextual menu for its property/initializer/method.
+        addContextualMenuControl(gr);
         return gr;
+    }
+
+    /**
+     * Registers the right-click {@link PamelaShowContextualMenuControl} on a GR, so a
+     * right mouse button click on it opens the shared contextual menu (no-op when the
+     * editing context is unavailable). Attached to the interactive GRs only: the
+     * container (entity box), the item rows and the drawing background.
+     */
+    private void addContextualMenuControl(GraphicalRepresentation gr) {
+        if (editingContext != null) {
+            gr.addToMouseClickControls(new PamelaShowContextualMenuControl(editingContext));
+        }
     }
 
     /** Builds the icon GR for a row: a fixed 16×16 square at the row's left with the
@@ -951,6 +977,108 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     /** Returns the {@link SourceMetaModel} used to compute connectors. */
     public SourceMetaModel getMetaModel() {
         return metaModel;
+    }
+
+    // =========================================================================
+    // Node → model element mapping (selection and contextual menus)
+    // =========================================================================
+
+    /**
+     * Maps a selected drawing node to the model element it represents, for the
+     * application selection model (inspector / detailed browser):
+     * <ul>
+     *   <li>an entity box → its resolved {@link SourceModelEntity} (or the
+     *       {@link EntityView} itself if unresolved);</li>
+     *   <li>a compartment row → the {@code Source*} element it stands for, resolved
+     *       <em>live</em> against the current entity (see {@link #sourceElementFor});</li>
+     *   <li>the drawing background → the {@link PamelaClassDiagram}.</li>
+     * </ul>
+     * Returns {@code null} if the node maps to nothing inspectable.
+     */
+    public Object modelElementFor(DrawingTreeNode<?, ?> node) {
+        if (node == null) {
+            return null;
+        }
+        Object d = node.getDrawable();
+        if (d instanceof EntityView) {
+            SourceModelEntity e = ((EntityView) d).getEntity();
+            return (e != null) ? e : d;
+        }
+        if (d instanceof CompartmentItem) {
+            Object src = sourceElementFor((CompartmentItem) d);
+            return (src != null) ? src : ((CompartmentItem) d).ev.getEntity();
+        }
+        if (d instanceof PamelaClassDiagram) {
+            return d;
+        }
+        return null;
+    }
+
+    /**
+     * The ordered list of contextual-menu target facets for a right-clicked node
+     * (see {@code ui-design.md §18.4}): for an entity box, the resolved entity (so
+     * the diagram offers the same actions as the browser) <em>then</em> the
+     * {@link EntityView} (for diagram-specific actions like "Remove from diagram");
+     * for a row, the underlying {@code Source*}; for the background, the diagram.
+     */
+    public List<Object> facetsFor(DrawingTreeNode<?, ?> node) {
+        List<Object> facets = new ArrayList<>();
+        if (node == null) {
+            return facets;
+        }
+        Object d = node.getDrawable();
+        if (d instanceof EntityView) {
+            EntityView ev = (EntityView) d;
+            if (ev.getEntity() != null) {
+                facets.add(ev.getEntity());
+            }
+            facets.add(ev);
+        }
+        else if (d instanceof CompartmentItem) {
+            Object src = sourceElementFor((CompartmentItem) d);
+            if (src != null) {
+                facets.add(src);
+            }
+        }
+        else if (d instanceof PamelaClassDiagram) {
+            facets.add(d);
+        }
+        return facets;
+    }
+
+    /**
+     * Resolves a compartment row to its {@code Source*} element ({@link SourceModelProperty},
+     * {@link SourceModelInitializer} or {@link SourceCustomMethod}) against the
+     * <em>current</em> entity, exploiting that {@link #compartmentLines} builds each
+     * compartment in the same order as the underlying model collection. Resolved live
+     * (never stored on the interned {@link CompartmentItem}) so it stays correct across
+     * metamodel rebuilds. Returns {@code null} if the entity is unresolved or the
+     * content shrank under the row index since the last walk.
+     */
+    private Object sourceElementFor(CompartmentItem item) {
+        SourceModelEntity e = (item != null) ? item.ev.getEntity() : null;
+        if (e == null) {
+            return null;
+        }
+        switch (item.kind) {
+            case INITIALIZERS: {
+                List<SourceModelInitializer> l = e.getInitializers();
+                return (item.index < l.size()) ? l.get(item.index) : null;
+            }
+            case PROPERTIES: {
+                List<SourceModelProperty> l = new ArrayList<>(e.getDeclaredProperties().values());
+                return (item.index < l.size()) ? l.get(item.index) : null;
+            }
+            case METHODS: {
+                if (e.getImplementationClass() == null) {
+                    return null;
+                }
+                List<SourceCustomMethod> l = e.getImplementationClass().getCustomMethods();
+                return (item.index < l.size()) ? l.get(item.index) : null;
+            }
+            default:
+                return null;
+        }
     }
 
     /**

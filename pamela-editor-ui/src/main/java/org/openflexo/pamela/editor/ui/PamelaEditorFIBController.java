@@ -44,17 +44,13 @@ import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
-import javax.swing.JMenuItem;
-import javax.swing.JPopupMenu;
-import javax.swing.JSeparator;
-
-import org.openflexo.pamela.editor.ui.action.ContextualAction;
 
 import org.openflexo.connie.annotations.NotificationUnsafe;
 import org.openflexo.gina.controller.FIBController;
@@ -242,43 +238,17 @@ public class PamelaEditorFIBController<T> extends FIBController implements Prope
 		if (target == null || app == null) {
 			return;
 		}
-
-		List<ContextualAction> actions = app.getActionsFor(target);
-		if (actions.isEmpty()) {
-			return;
-		}
-
-		JPopupMenu menu = new JPopupMenu();
-		boolean firstSection = true;
-		String lastGroup = null;
-
-		for (ContextualAction action : actions) {
-			// Simple grouping: if the action declares a group (optional extension point)
-			// add a separator between groups. For now all actions are in the same group.
-			if (!firstSection && lastGroup != null && !lastGroup.equals("default")) {
-				menu.add(new JSeparator());
-			}
-			lastGroup = "default";
-			firstSection = false;
-
-			JMenuItem item = new JMenuItem(action.getLabel());
-			if (action.getIcon() != null) {
-				item.setIcon(action.getIcon());
-			}
-			item.addActionListener(e -> action.perform(target, app));
-			menu.add(item);
-		}
-
-		// Determine popup location
+		// Delegate to the application's shared menu builder (single facet for browsers).
+		// The diagram uses a multi-facet variant — see ui-design.md §18.4.
 		if (event instanceof MouseEvent) {
 			MouseEvent me = (MouseEvent) event;
-			menu.show(me.getComponent(), me.getX(), me.getY());
+			app.showContextualMenuFor(Collections.singletonList(target),
+					me.getComponent(), me.getX(), me.getY());
 		} else {
-			// Fallback: show at current cursor position (screen coordinates)
+			// Fallback: no source component → show at the current cursor (screen coords).
 			Point screenPos = MouseInfo.getPointerInfo().getLocation();
-			menu.setLocation(screenPos.x, screenPos.y);
-			menu.setInvoker(menu);
-			menu.setVisible(true);
+			app.showContextualMenuFor(Collections.singletonList(target),
+					null, screenPos.x, screenPos.y);
 		}
 	}
 

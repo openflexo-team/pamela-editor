@@ -2,6 +2,7 @@ package org.openflexo.pamela.editor.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -21,6 +22,7 @@ import java.util.Deque;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.swing.JButton;
@@ -28,8 +30,10 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -61,6 +65,8 @@ import org.openflexo.pamela.editor.ui.action.DeclareAsPamelaEntityAction;
 import org.openflexo.pamela.editor.ui.action.NewClassDiagramAction;
 import org.openflexo.pamela.editor.ui.action.RenameClassDiagramAction;
 import org.openflexo.pamela.editor.ui.action.DeleteClassDiagramAction;
+import org.openflexo.pamela.editor.ui.action.RemoveFromDiagramAction;
+import org.openflexo.pamela.editor.ui.action.ShowSourceCodeAction;
 import org.openflexo.pamela.editor.ui.action.ContextualAction;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
 import org.openflexo.pamela.editor.ui.widget.DetailedBrowser;
@@ -293,6 +299,56 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         return result;
     }
 
+    /**
+     * Builds and shows a {@link JPopupMenu} for an ordered list of target facets,
+     * using the registered contextual actions. Shared by the browsers (single facet)
+     * and the diagram (e.g. {@code [entity, entityView]} so an entity box offers the
+     * browser's entity actions <em>and</em> the diagram-specific "Remove from diagram"
+     * — see {@code ui-design.md §18.4}).
+     *
+     * <p>For each facet, in order, the applicable actions are appended; an action that
+     * matches several facets is added once (bound to the first facet that matched). The
+     * menu is not shown when no action applies. When {@code invoker} is {@code null}
+     * (no source component), the menu is shown at screen coordinates {@code (x, y)}.</p>
+     */
+    public void showContextualMenuFor(List<Object> targetFacets, Component invoker, int x, int y) {
+        if (targetFacets == null || targetFacets.isEmpty()) {
+            return;
+        }
+        JPopupMenu menu = new JPopupMenu();
+        Set<ContextualAction> alreadyAdded = Collections.newSetFromMap(new IdentityHashMap<>());
+        boolean any = false;
+        for (Object facet : targetFacets) {
+            if (facet == null) {
+                continue;
+            }
+            for (ContextualAction action : getActionsFor(facet)) {
+                if (!alreadyAdded.add(action)) {
+                    continue;
+                }
+                JMenuItem item = new JMenuItem(action.getLabel());
+                if (action.getIcon() != null) {
+                    item.setIcon(action.getIcon());
+                }
+                final Object actionTarget = facet;
+                item.addActionListener(e -> action.perform(actionTarget, this));
+                menu.add(item);
+                any = true;
+            }
+        }
+        if (!any) {
+            return;
+        }
+        if (invoker != null) {
+            menu.show(invoker, x, y);
+        } else {
+            // No source component (rare browser fallback): show detached at screen pos.
+            menu.setInvoker(menu);
+            menu.setLocation(x, y);
+            menu.setVisible(true);
+        }
+    }
+
     /** The currently selected element (any Source* or PamelaClassDiagram). */
     private Object currentSelectedElement;
 
@@ -502,6 +558,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         registerAction(new NewClassDiagramAction());
         registerAction(new RenameClassDiagramAction());
         registerAction(new DeleteClassDiagramAction());
+        registerAction(new ShowSourceCodeAction());
+        registerAction(new RemoveFromDiagramAction());
 
         frame.validate();
         frame.pack();
@@ -1010,6 +1068,22 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
      * this method recursively.  The guard silently discards any re-entrant call.</p>
      */
     public void setCurrentSelectedElement(Object element) {
+        setCurrentSelectedElement(element, true);
+    }
+
+    /**
+     * Sets the current selected element, optionally navigating the central view.
+     *
+     * <p>With {@code navigateCentralView == true} (the default, used by the browsers)
+     * the central view is switched to the element's view. With {@code false} (used by
+     * the diagram — <em>soft</em> selection, see {@code ui-design.md §18.2}) only the
+     * inspector and the detailed browser are refreshed: the central view is left
+     * untouched, so selecting an element <em>inside</em> the active diagram does not
+     * make the diagram disappear from under the click. {@link #currentHistoryElement}
+     * is not modified in that case, so {@link #getActiveDiagramEditor()} keeps
+     * returning the diagram editor.</p>
+     */
+    public void setCurrentSelectedElement(Object element, boolean navigateCentralView) {
         if (settingSelectedElement) {
             return; // discard re-entrant calls from Gina's internal rebind machinery
         }
@@ -1032,20 +1106,22 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                 logger.warning("Inspector refresh failed: " + e.getMessage());
                 e.printStackTrace();
             }
-            try {
-                // 3. Open or navigate the central view.
-                //    If the user is pressing in the browser (a potential drag onto a
-                //    diagram), defer the switch: keep the current diagram visible so it
-                //    remains a valid drop target. The switch is committed on mouse
-                //    release only if no drag happened (see onBrowserMouseReleased).
-                if (browserPressActive) {
-                    deferredCentralViewElement = element;
-                } else {
-                    openOrSwitchCentralView(element);
+            if (navigateCentralView) {
+                try {
+                    // 3. Open or navigate the central view.
+                    //    If the user is pressing in the browser (a potential drag onto a
+                    //    diagram), defer the switch: keep the current diagram visible so it
+                    //    remains a valid drop target. The switch is committed on mouse
+                    //    release only if no drag happened (see onBrowserMouseReleased).
+                    if (browserPressActive) {
+                        deferredCentralViewElement = element;
+                    } else {
+                        openOrSwitchCentralView(element);
+                    }
+                } catch (Exception e) {
+                    logger.warning("Central view switch failed: " + e.getMessage());
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                logger.warning("Central view switch failed: " + e.getMessage());
-                e.printStackTrace();
             }
         } finally {
             settingSelectedElement = false;
@@ -1302,7 +1378,14 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             // removed, shape moved/resized) so the change is offered for saving.
             editor.installDirtyTracking(() -> markProjectDirty(project));
             diagramEditors.put(diagram, editor);
-            return editor.getView();
+            JComponent view = editor.getView();
+            // Diagram selection drives the inspector + detailed browser, without
+            // switching the central view away from the diagram (ui-design.md §18.2).
+            editor.setSelectionListener(el -> setCurrentSelectedElement(el, false));
+            // Right-click on a diagram element opens the same shared contextual menu
+            // as the browsers (ui-design.md §18.4).
+            editor.setContextualMenuHandler(this::showContextualMenuFor);
+            return view;
         }
         return null;
     }

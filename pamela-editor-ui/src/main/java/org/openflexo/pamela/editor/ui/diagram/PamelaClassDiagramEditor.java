@@ -184,6 +184,20 @@ public class PamelaClassDiagramEditor {
         return getDianaEditor().addEntity(entity, x, y);
     }
 
+    /**
+     * Wires the diagram selection to a callback (the application's soft-selection
+     * path). Invoked with the model element of the first selected node, or
+     * {@code null} when the selection is cleared.
+     */
+    public void setSelectionListener(java.util.function.Consumer<Object> listener) {
+        getDianaEditor().setSelectionListener(listener);
+    }
+
+    /** Wires the right-click contextual menu to the application's shared menu builder. */
+    public void setContextualMenuHandler(DianaDrawingEditor.ContextualMenuHandler handler) {
+        getDianaEditor().setContextualMenuHandler(handler);
+    }
+
     /** The tab title shown in the central pane. */
     public String getTitle() {
         String name = diagram.getName();
