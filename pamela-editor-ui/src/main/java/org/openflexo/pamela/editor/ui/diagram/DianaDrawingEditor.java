@@ -125,6 +125,23 @@ public class DianaDrawingEditor extends JDianaInteractiveEditor<PamelaClassDiagr
     }
 
     /**
+     * Programmatically selects the diagram shape that corresponds to {@code element}.
+     * Resolves the matching {@link org.openflexo.diana.Drawing.DrawingTreeNode} via
+     * {@link PamelaClassDiagramDrawing#shapeNodeForSourceElement} and calls
+     * {@link #setSelectedObject}; clears the selection if no node is found.
+     * Safe to call when no diagram tree exists yet.
+     */
+    public void selectModelElement(Object element) {
+        org.openflexo.diana.Drawing.DrawingTreeNode<?, ?> node =
+                getDrawing().shapeNodeForSourceElement(element);
+        if (node != null) {
+            setSelectedObject(node);
+        } else {
+            clearSelection();
+        }
+    }
+
+    /**
      * Hooks the browser-to-diagram drag-and-drop into Diana's drop machinery.
      * Adds a {@link BrowserCellDropDelegate} (handling Gina's
      * {@code BROWSER_CELL_FLAVOR}) alongside Diana's default palette delegate.

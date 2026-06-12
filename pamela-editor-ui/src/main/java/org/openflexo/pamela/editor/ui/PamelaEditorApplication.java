@@ -1278,6 +1278,12 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         // PamelaClassDiagram or null → targetSelection stays null (deselect)
 
         detailedBrowser.getController().setSelectedElement(targetSelection);
+
+        // Mirror the selection onto the Diana diagram canvas.
+        PamelaClassDiagramEditor diagramEditor = getActiveDiagramEditor();
+        if (diagramEditor != null) {
+            diagramEditor.getDianaEditor().selectModelElement(element);
+        }
     }
 
     /** Returns the {@link EntityView} in {@code diagram} whose resolved entity matches, or null. */

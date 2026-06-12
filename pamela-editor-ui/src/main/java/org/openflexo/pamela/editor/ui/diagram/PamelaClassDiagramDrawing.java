@@ -1046,6 +1046,68 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     }
 
     /**
+     * Returns the {@link DrawingTreeNode} (shape node) that corresponds to the given
+     * application element, or {@code null} if no matching node exists in the current tree.
+     *
+     * <p>Supported element types:</p>
+     * <ul>
+     *   <li>{@link EntityView} → container shape node;</li>
+     *   <li>{@link SourceModelEntity} → container shape node of the matching EntityView;</li>
+     *   <li>{@link SourceModelProperty} / {@link SourceModelInitializer} → item-row shape node.</li>
+     * </ul>
+     */
+    public DrawingTreeNode<?, ?> shapeNodeForSourceElement(Object element) {
+        if (element instanceof EntityView) {
+            return getShapeNode((EntityView) element, entityViewBinding);
+        }
+        if (element instanceof SourceModelEntity) {
+            for (EntityView ev : getModel().getEntityViews()) {
+                if (ev.getEntity() == element) {
+                    return getShapeNode(ev, entityViewBinding);
+                }
+            }
+            return null;
+        }
+        if (element instanceof SourceModelProperty) {
+            SourceModelEntity entity = ((SourceModelProperty) element).getModelEntity();
+            EntityView ev = entityViewFor(entity);
+            if (ev == null) return null;
+            List<SourceModelProperty> props = new ArrayList<>(entity.getDeclaredProperties().values());
+            int index = props.indexOf(element);
+            if (index < 0) return null;
+            return findItemRowNode(ev, Compartment.PROPERTIES, index);
+        }
+        if (element instanceof SourceModelInitializer) {
+            SourceModelEntity entity = ((SourceModelInitializer) element).getEntity();
+            EntityView ev = entityViewFor(entity);
+            if (ev == null) return null;
+            int index = entity.getInitializers().indexOf(element);
+            if (index < 0) return null;
+            return findItemRowNode(ev, Compartment.INITIALIZERS, index);
+        }
+        return null;
+    }
+
+    /** Returns the EntityView whose resolved entity is {@code entity}, or {@code null}. */
+    private EntityView entityViewFor(SourceModelEntity entity) {
+        if (entity == null) return null;
+        for (EntityView ev : getModel().getEntityViews()) {
+            if (ev.getEntity() == entity) return ev;
+        }
+        return null;
+    }
+
+    /** Finds the interned {@link CompartmentItem} row node for (ev, kind, index). */
+    private DrawingTreeNode<?, ?> findItemRowNode(EntityView ev, Compartment kind, int index) {
+        for (CompartmentItem item : itemPool.keySet()) {
+            if (item.ev == ev && item.kind == kind && item.index == index) {
+                return getShapeNode(item, itemRowBinding);
+            }
+        }
+        return null;
+    }
+
+    /**
      * Resolves a compartment row to its {@code Source*} element ({@link SourceModelProperty},
      * {@link SourceModelInitializer} or {@link SourceCustomMethod}) against the
      * <em>current</em> entity, exploiting that {@link #compartmentLines} builds each
