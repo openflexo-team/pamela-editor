@@ -25,7 +25,9 @@ import org.openflexo.pamela.editor.ui.PamelaProject;
  *   <li><strong>Spoon Outline</strong> — when the active central view is
  *       {@link SourceModelEntity} or {@link SourceJavaFile}</li>
  *   <li><strong>Diagram inspector</strong> — when the active central view is
- *       a {@link PamelaClassDiagram}</li>
+ *       a {@link PamelaClassDiagram}; the graphical properties of the currently
+ *       selected diagram element are shown via a Gina FIB inspector
+ *       ({@link GraphicalInspectorController}).</li>
  * </ul>
  *
  * <p>In diagram mode the panel updates again (without switching cards) when
@@ -34,16 +36,16 @@ import org.openflexo.pamela.editor.ui.PamelaProject;
 @SuppressWarnings("serial")
 public class ContextPanel extends JPanel {
 
-    private static final String CARD_EMPTY     = "empty";
+    private static final String CARD_EMPTY      = "empty";
     private static final String CARD_STATISTICS = "statistics";
     private static final String CARD_OUTLINE    = "outline";
     private static final String CARD_DIAGRAM    = "diagram";
 
     private final CardLayout cards = new CardLayout();
 
-    private final StatisticsContextView       statisticsView;
-    private final SpoonOutlineView            outlineView;
-    private final DiagramElementInspectorView diagramView;
+    private final StatisticsContextView        statisticsView;
+    private final SpoonOutlineView             outlineView;
+    private final GraphicalInspectorController graphicalInspector;
 
     private final PamelaEditorApplication application;
 
@@ -62,8 +64,8 @@ public class ContextPanel extends JPanel {
         outlineView = new SpoonOutlineView(app);
         add(outlineView, CARD_OUTLINE);
 
-        diagramView = new DiagramElementInspectorView();
-        add(diagramView, CARD_DIAGRAM);
+        graphicalInspector = new GraphicalInspectorController();
+        add(graphicalInspector.getRootPane(), CARD_DIAGRAM);
 
         cards.show(this, CARD_EMPTY);
     }
@@ -97,17 +99,18 @@ public class ContextPanel extends JPanel {
 
         } else if (element instanceof SourceJavaFile) {
             SourceMetaModel mm = application.getActiveMetaModel();
-            outlineView.showJavaFile((SourceJavaFile) element, mm != null ? mm : findMetaModelFor((SourceJavaFile) element));
+            outlineView.showJavaFile((SourceJavaFile) element,
+                    mm != null ? mm : findMetaModelFor((SourceJavaFile) element));
             cards.show(this, CARD_OUTLINE);
 
         } else if (element instanceof PamelaClassDiagram) {
-            diagramView.showDiagram((PamelaClassDiagram) element);
+            graphicalInspector.inspectObject(element);
             cards.show(this, CARD_DIAGRAM);
 
         } else {
             outlineView.clear();
             statisticsView.clear();
-            diagramView.clear();
+            graphicalInspector.inspectObject(null);
             cards.show(this, CARD_EMPTY);
         }
     }
@@ -120,13 +123,8 @@ public class ContextPanel extends JPanel {
      * Selects the methods of {@code prop} in the SpoonOutlineView, if the outline
      * card is currently active (i.e. a {@link SourceModelEntity} source-code view is
      * shown in the centre).
-     *
-     * <p>Called from
-     * {@link org.openflexo.pamela.editor.ui.PamelaEditorApplication#openOrSwitchCentralView}
-     * after the property highlight has been applied to the source-code view.</p>
      */
     public void selectPropertyMethods(SourceModelProperty prop) {
-        // The outline is active when the central view shows a SourceModelEntity
         if (!(activeElement instanceof SourceModelEntity)) return;
         outlineView.selectMethodsForProperty(prop);
     }
@@ -136,53 +134,37 @@ public class ContextPanel extends JPanel {
     // -------------------------------------------------------------------------
 
     /**
-     * Called when the user clicks a shape on the active class diagram
-     * ({@link PamelaEditorApplication#setCurrentSelectedElement(Object, boolean)} with
-     * {@code navigateCentralView = false}).
+     * Called when the user clicks a shape on the active class diagram.
+     * Only has effect while the diagram card is active.
      *
-     * <p>Only has effect while the diagram card is active.  The diagram selection
-     * mapper ({@code PamelaClassDiagramDrawing.modelElementFor}) delivers:
+     * <p>The delivered element can be:</p>
      * <ul>
      *   <li>{@link SourceModelEntity} — resolved entity box</li>
      *   <li>{@link EntityView}         — unresolved entity box</li>
      *   <li>{@link SourceModelProperty} / initializer / method — compartment row</li>
      *   <li>{@link PamelaClassDiagram} — background / empty selection</li>
      * </ul>
-     * For a {@code SourceModelEntity} or its sub-elements the corresponding
-     * {@code EntityView} is looked up in the active diagram so the geometry editor
-     * can be populated.</p>
+     * <p>For a resolved entity the corresponding {@link EntityView} is looked up
+     * so the graphical inspector can display its geometry.</p>
      */
     public void setDiagramSelection(Object element) {
-        // Only act when the diagram card is currently visible
         if (!(activeElement instanceof PamelaClassDiagram)) return;
         PamelaClassDiagram diagram = (PamelaClassDiagram) activeElement;
 
         if (element instanceof EntityView) {
-            // Unresolved entity box — pass directly
-            diagramView.showEntityView((EntityView) element);
+            graphicalInspector.inspectObject(element);
 
         } else if (element instanceof SourceModelEntity) {
-            // Resolved entity box: find the EntityView whose entity is this one
             EntityView ev = findEntityViewFor((SourceModelEntity) element, diagram);
-            if (ev != null) {
-                diagramView.showEntityView(ev);
-            } else {
-                diagramView.showDiagram(diagram);
-            }
+            graphicalInspector.inspectObject(ev != null ? ev : diagram);
 
         } else if (element instanceof SourceModelProperty) {
-            // Compartment row for a property: show the parent entity's EntityView
             SourceModelEntity entity = ((SourceModelProperty) element).getModelEntity();
             EntityView ev = (entity != null) ? findEntityViewFor(entity, diagram) : null;
-            if (ev != null) {
-                diagramView.showEntityView(ev);
-            } else {
-                diagramView.showDiagram(diagram);
-            }
+            graphicalInspector.inspectObject(ev != null ? ev : diagram);
 
         } else {
-            // Background click, empty selection, or any other element → diagram info
-            diagramView.showDiagram(diagram);
+            graphicalInspector.inspectObject(diagram);
         }
     }
 

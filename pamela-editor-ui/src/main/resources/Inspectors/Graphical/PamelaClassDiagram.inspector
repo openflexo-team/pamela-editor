@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.diagram.PamelaClassDiagram" name="Inspector">
+    <Label name="NameLabel" label="name" index="0"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="NameTF" index="1" data="data.name" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="EntityViewsLabel" label="entity_views" index="2"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="EntityViewsTF" index="3" data="data.entityViews.size" readOnly="true"
+        constraints="twocols(location=right)" columns="5" localize="true" />
+    <LocalizedDictionary>
+        <Localized key="name" lang="English" value="Name" />
+        <Localized key="name" lang="French" value="Nom" />
+        <Localized key="entity_views" lang="English" value="Entity views" />
+        <Localized key="entity_views" lang="French" value="Vues d&apos;entités" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Diagram" />
+</Inspector>

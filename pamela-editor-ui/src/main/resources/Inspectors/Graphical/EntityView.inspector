@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.diagram.EntityView" name="Inspector">
+    <Label name="QualifiedNameLabel" label="qualified_name" index="0"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="QualifiedNameTF" index="1" data="data.qualifiedName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="XLabel" label="x" index="2"
+        constraints="twocols(location=left)" localize="true" />
+    <Number name="XField" index="3" minValue="0.0" maxValue="10000.0" increment="1.0"
+        numberType="DoubleType" columns="7" data="data.x"
+        constraints="twocols(location=right)" localize="true" />
+    <Label name="YLabel" label="y" index="4"
+        constraints="twocols(location=left)" localize="true" />
+    <Number name="YField" index="5" minValue="0.0" maxValue="10000.0" increment="1.0"
+        numberType="DoubleType" columns="7" data="data.y"
+        constraints="twocols(location=right)" localize="true" />
+    <Label name="WidthLabel" label="width" index="6"
+        constraints="twocols(location=left)" localize="true" />
+    <Number name="WidthField" index="7" minValue="10.0" maxValue="10000.0" increment="1.0"
+        numberType="DoubleType" columns="7" data="data.width"
+        constraints="twocols(location=right)" localize="true" />
+    <Label name="HeightLabel" label="height" index="8"
+        constraints="twocols(location=left)" localize="true" />
+    <Number name="HeightField" index="9" minValue="10.0" maxValue="10000.0" increment="1.0"
+        numberType="DoubleType" columns="7" data="data.height"
+        constraints="twocols(location=right)" localize="true" />
+    <LocalizedDictionary>
+        <Localized key="qualified_name" lang="English" value="Qualified name" />
+        <Localized key="qualified_name" lang="French" value="Nom qualifié" />
+        <Localized key="x" lang="English" value="X" />
+        <Localized key="x" lang="French" value="X" />
+        <Localized key="y" lang="English" value="Y" />
+        <Localized key="y" lang="French" value="Y" />
+        <Localized key="width" lang="English" value="Width" />
+        <Localized key="width" lang="French" value="Largeur" />
+        <Localized key="height" lang="English" value="Height" />
+        <Localized key="height" lang="French" value="Hauteur" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Entity View" />
+</Inspector>

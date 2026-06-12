@@ -26,10 +26,15 @@ import spoon.reflect.declaration.CtType;
 import spoon.reflect.declaration.CtTypeMember;
 
 /**
- * FIB controller for the {@link SpoonOutlineView}.
+ * FIB controller for the Gina-based {@link SpoonOutlineView}.
  *
  * <p>Provides label formatting, icon resolution, and the click-to-navigate
  * callback for the Spoon-based Java Outline panel (ui-design.md §19.3).</p>
+ *
+ * <p>All logic is also exposed as <strong>static</strong> methods so that
+ * {@link SpoonOutlineViewSwing} (the pure-Swing backup implementation) can
+ * reuse the same label and icon computation without going through a FIBController
+ * instance.</p>
  */
 public class SpoonOutlineController extends PamelaEditorFIBController<SpoonOutlineModel> {
 
@@ -64,12 +69,57 @@ public class SpoonOutlineController extends PamelaEditorFIBController<SpoonOutli
     }
 
     // -------------------------------------------------------------------------
-    // Label helpers (called from FIB label bindings)
+    // Label helpers — instance API (called from FIB bindings via Connie)
     // -------------------------------------------------------------------------
 
     /** Returns a short display label for any Spoon element. */
-    @SuppressWarnings("unchecked")
     public String labelForObject(Object obj) {
+        return labelFor(obj);
+    }
+
+    // -------------------------------------------------------------------------
+    // Children helpers — instance API (called from FIB <Children> binding)
+    // -------------------------------------------------------------------------
+
+    /** Returns type members in source order. Works for any CtType. */
+    public List<CtTypeMember> membersOf(CtType<?> type) {
+        return memberList(type);
+    }
+
+    // -------------------------------------------------------------------------
+    // Icon resolution — instance API (called from FIB icon binding)
+    // -------------------------------------------------------------------------
+
+    @Override
+    protected ImageIcon retrieveIconForObject(Object object) {
+        ImageIcon icon = iconFor(object);
+        return icon != null ? icon : super.retrieveIconForObject(object);
+    }
+
+    // -------------------------------------------------------------------------
+    // Click-to-navigate (called from FIB clickAction)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Called when the user clicks an element in the outline browser.
+     * Scrolls the active {@link org.openflexo.pamela.editor.ui.widget.SourceCodeView}
+     * to the element's line.
+     */
+    public void onElementSelected(Object element) {
+        if (application == null || !(element instanceof CtElement)) return;
+        SourcePosition pos = ((CtElement) element).getPosition();
+        if (pos != null && pos.isValidPosition()) {
+            application.scrollSourceViewToLine(pos.getLine());
+        }
+    }
+
+    // =========================================================================
+    // Static API — shared with SpoonOutlineViewSwing (no Connie, no proxy)
+    // =========================================================================
+
+    /** Returns a short display label for any Spoon element. */
+    @SuppressWarnings("unchecked")
+    public static String labelFor(Object obj) {
         if (obj instanceof CtMethod) {
             CtMethod<?> m = (CtMethod<?>) obj;
             return m.getSimpleName() + "(" + shortParams(m.getParameters()) + ")"
@@ -92,10 +142,8 @@ public class SpoonOutlineController extends PamelaEditorFIBController<SpoonOutli
         return obj != null ? obj.toString() : "";
     }
 
-    private String shortParams(List<CtParameter<?>> params) {
-        if (params == null || params.isEmpty()) {
-            return "";
-        }
+    private static String shortParams(List<CtParameter<?>> params) {
+        if (params == null || params.isEmpty()) return "";
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < params.size(); i++) {
             if (i > 0) sb.append(", ");
@@ -104,48 +152,24 @@ public class SpoonOutlineController extends PamelaEditorFIBController<SpoonOutli
         return sb.toString();
     }
 
-    // -------------------------------------------------------------------------
-    // Children helpers — expose Set-based Spoon collections as stable Lists
-    // -------------------------------------------------------------------------
-
     /** Returns type members in source order. Works for any CtType. */
-    public List<CtTypeMember> membersOf(CtType<?> type) {
+    public static List<CtTypeMember> memberList(CtType<?> type) {
         if (type == null) return Collections.emptyList();
         return new ArrayList<>(type.getTypeMembers());
     }
 
-    // -------------------------------------------------------------------------
-    // Icon resolution (called from FIB icon bindings)
-    // -------------------------------------------------------------------------
-
-    @Override
+    /** Returns the appropriate Eclipse/JDT icon for any Spoon element. */
     @SuppressWarnings("unchecked")
-    protected ImageIcon retrieveIconForObject(Object object) {
-        if (object instanceof CtInterface) {
-            return iconForInterface((CtInterface<?>) object);
-        }
-        if (object instanceof CtEnum) {
-            return iconForEnum((CtEnum<?>) object);
-        }
-        if (object instanceof CtAnnotationType) {
-            return PamelaEditorIconLibrary.JAVA_ANNOTATION_TYPE_ICON;
-        }
-        if (object instanceof CtClass) {
-            return iconForClass((CtClass<?>) object);
-        }
-        if (object instanceof CtMethod) {
-            return iconForMethod((CtMethod<?>) object);
-        }
-        if (object instanceof CtConstructor) {
-            return iconForConstructor((CtConstructor<?>) object);
-        }
-        if (object instanceof CtField) {
-            return iconForField((CtField<?>) object);
-        }
-        if (object instanceof CtEnumValue) {
-            return PamelaEditorIconLibrary.JAVA_FIELD_PUBLIC_ICON;
-        }
-        return super.retrieveIconForObject(object);
+    public static ImageIcon iconFor(Object object) {
+        if (object instanceof CtInterface)    return iconForInterface((CtInterface<?>) object);
+        if (object instanceof CtEnum)         return iconForEnum((CtEnum<?>) object);
+        if (object instanceof CtAnnotationType) return PamelaEditorIconLibrary.JAVA_ANNOTATION_TYPE_ICON;
+        if (object instanceof CtClass)        return iconForClass((CtClass<?>) object);
+        if (object instanceof CtMethod)       return iconForMethod((CtMethod<?>) object);
+        if (object instanceof CtConstructor)  return iconForConstructor((CtConstructor<?>) object);
+        if (object instanceof CtField)        return iconForField((CtField<?>) object);
+        if (object instanceof CtEnumValue)    return PamelaEditorIconLibrary.JAVA_FIELD_PUBLIC_ICON;
+        return null;
     }
 
     private static ImageIcon iconForInterface(CtInterface<?> iface) {
@@ -200,23 +224,5 @@ public class SpoonOutlineController extends PamelaEditorFIBController<SpoonOutli
         if (f.isProtected()) return PamelaEditorIconLibrary.JAVA_FIELD_PROTECTED_ICON;
         if (f.isPublic())    return PamelaEditorIconLibrary.JAVA_FIELD_PUBLIC_ICON;
         return PamelaEditorIconLibrary.JAVA_FIELD_DEFAULT_ICON;
-    }
-
-    // -------------------------------------------------------------------------
-    // Click-to-navigate (called from FIB clickAction)
-    // -------------------------------------------------------------------------
-
-    /**
-     * Called when the user clicks an element in the outline browser.
-     * Scrolls the active {@link SourceCodeView} to the element's line.
-     */
-    public void onElementSelected(Object element) {
-        if (application == null || !(element instanceof CtElement)) {
-            return;
-        }
-        SourcePosition pos = ((CtElement) element).getPosition();
-        if (pos != null && pos.isValidPosition()) {
-            application.scrollSourceViewToLine(pos.getLine());
-        }
     }
 }

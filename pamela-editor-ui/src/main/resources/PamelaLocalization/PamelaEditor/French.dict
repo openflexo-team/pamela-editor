@@ -65,6 +65,7 @@ pamela_files=Fichiers projet PAMELA
 paste=paste
 project_location=Emplacement
 project_name=Nom du projet
+properties=properties
 quit=quit
 redo=redo
 rounded=rounded

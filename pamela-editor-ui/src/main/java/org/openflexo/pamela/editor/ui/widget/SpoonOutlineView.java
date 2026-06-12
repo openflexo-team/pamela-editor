@@ -42,6 +42,13 @@ import spoon.reflect.declaration.CtType;
  * <p>If the file has already been parsed by the main Spoon analysis (i.e. it is
  * a known {@link SourceCompilationUnit}), the AST is reused.  Otherwise an
  * on-demand mini-parse is launched in a {@link SwingWorker} (decision D3).</p>
+ *
+ * <p><strong>Note on performance:</strong> Gina's {@code FIBBrowserModel} rebuilds
+ * the whole tree eagerly on every data change, evaluating label and icon bindings
+ * via Connie for every node.  For large types (e.g. 168 methods) this can take
+ * ~53 seconds.  A pure-Swing alternative with lazy child loading is available in
+ * {@link SpoonOutlineViewSwing} and can be substituted once the Gina performance
+ * issue is resolved.</p>
  */
 @SuppressWarnings("serial")
 public class SpoonOutlineView extends FIBJPanel<SpoonOutlineModel> {
@@ -155,21 +162,24 @@ public class SpoonOutlineView extends FIBJPanel<SpoonOutlineModel> {
         }.execute();
     }
 
+    /** Clears the outline (e.g. when no source-code element is selected). */
+    public void clear() {
+        model.setLoading(false);
+        model.setRootTypes(Collections.emptyList());
+    }
+
     /**
      * Selects, in the outline tree, all methods that belong to the given
      * {@link SourceModelProperty} (getter, setter, adder, remover, reindexer,
      * updater — whichever are present).
      *
-     * <p>This is called when a property is selected in the DetailedBrowser so that
-     * the corresponding source methods are also highlighted in the outline.  It uses
-     * {@link JTree#setSelectionPaths} directly, which does <em>not</em> fire the
-     * FIB {@code clickAction} — only user mouse clicks do.  There is therefore no
+     * <p>Uses {@link JTree#setSelectionPaths} directly — does not fire the FIB
+     * {@code clickAction} (only triggered by mouse clicks) — so there is no
      * notification loop risk.</p>
      */
     public void selectMethodsForProperty(SourceModelProperty prop) {
         if (prop == null) return;
 
-        // Build the set of method simple-names that belong to this property
         Set<String> methodNames = new HashSet<>();
         if (prop.getGetterMethodName()    != null) methodNames.add(prop.getGetterMethodName());
         if (prop.getSetterMethodName()    != null) methodNames.add(prop.getSetterMethodName());
@@ -180,44 +190,33 @@ public class SpoonOutlineView extends FIBJPanel<SpoonOutlineModel> {
 
         if (methodNames.isEmpty()) return;
 
-        // Use invokeLater so the tree has time to rebuild after the entity was shown
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                JTree tree = findTree(SpoonOutlineView.this);
-                if (tree == null) return;
+        SwingUtilities.invokeLater(() -> {
+            JTree tree = findTree(SpoonOutlineView.this);
+            if (tree == null) return;
 
-                List<TreePath> matchingPaths = new ArrayList<>();
-                for (int row = 0; row < tree.getRowCount(); row++) {
-                    TreePath path = tree.getPathForRow(row);
-                    if (path == null) continue;
-                    Object last = path.getLastPathComponent();
-                    if (last instanceof BrowserCell) {
-                        Object obj = ((BrowserCell) last).getRepresentedObject();
-                        if (obj instanceof CtMethod) {
-                            String name = ((CtMethod<?>) obj).getSimpleName();
-                            if (methodNames.contains(name)) {
-                                matchingPaths.add(path);
-                            }
+            List<TreePath> matchingPaths = new ArrayList<>();
+            for (int row = 0; row < tree.getRowCount(); row++) {
+                TreePath path = tree.getPathForRow(row);
+                if (path == null) continue;
+                Object last = path.getLastPathComponent();
+                if (last instanceof BrowserCell) {
+                    Object obj = ((BrowserCell) last).getRepresentedObject();
+                    if (obj instanceof CtMethod) {
+                        String name = ((CtMethod<?>) obj).getSimpleName();
+                        if (methodNames.contains(name)) {
+                            matchingPaths.add(path);
                         }
                     }
                 }
+            }
 
-                if (matchingPaths.isEmpty()) {
-                    tree.clearSelection();
-                    return;
-                }
-
+            if (matchingPaths.isEmpty()) {
+                tree.clearSelection();
+            } else {
                 tree.setSelectionPaths(matchingPaths.toArray(new TreePath[0]));
                 tree.scrollPathToVisible(matchingPaths.get(0));
             }
         });
-    }
-
-    /** Clears the outline (e.g. when no source-code element is selected). */
-    public void clear() {
-        model.setLoading(false);
-        model.setRootTypes(Collections.emptyList());
     }
 
     // -------------------------------------------------------------------------
@@ -229,21 +228,15 @@ public class SpoonOutlineView extends FIBJPanel<SpoonOutlineModel> {
      * so it runs after Gina has rebuilt the tree model from the updated rootTypes.
      */
     private void scheduleExpandFirstLevel() {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                JTree tree = findTree(SpoonOutlineView.this);
-                if (tree == null) return;
-                // Expand every row that is currently visible at depth 1 (the type nodes)
-                // Iterating forward: expanding a row increases subsequent row indices,
-                // so we walk row 0 upward and expand as long as rows remain at depth <= 1.
-                int row = 0;
-                while (row < tree.getRowCount()) {
-                    if (tree.getPathForRow(row).getPathCount() <= 2) {
-                        tree.expandRow(row);
-                    }
-                    row++;
+        SwingUtilities.invokeLater(() -> {
+            JTree tree = findTree(SpoonOutlineView.this);
+            if (tree == null) return;
+            int row = 0;
+            while (row < tree.getRowCount()) {
+                if (tree.getPathForRow(row).getPathCount() <= 2) {
+                    tree.expandRow(row);
                 }
+                row++;
             }
         });
     }
@@ -251,9 +244,7 @@ public class SpoonOutlineView extends FIBJPanel<SpoonOutlineModel> {
     /** Depth-first search for the first {@link JTree} inside this panel. */
     private static JTree findTree(Container container) {
         for (Component c : container.getComponents()) {
-            if (c instanceof JTree) {
-                return (JTree) c;
-            }
+            if (c instanceof JTree) return (JTree) c;
             if (c instanceof Container) {
                 JTree found = findTree((Container) c);
                 if (found != null) return found;
