@@ -80,8 +80,8 @@
             dataClassName="org.openflexo.pamela.editor.model.SourceModelEntity"
             name="entity"
             isEditable="false">
-            <Children id="53" name="properties" data="entity.declaredProperties.values()" />
-            <Children id="54" name="initializers" data="entity.initializers" />
+           	<Children id="53" name="initializers" data="entity.initializers" />
+            <Children id="54" name="properties" data="entity.declaredProperties.values()" />
         </BrowserElement>
 
         <BrowserElement id="40"
