@@ -41,8 +41,6 @@ import org.openflexo.diana.swing.control.SwingToolFactory;
 import org.openflexo.diana.swing.control.tools.JDianaDialogInspectors;
 import org.openflexo.diana.swing.control.tools.JDianaLayoutWidget;
 import org.openflexo.diana.swing.control.tools.JDianaScaleSelector;
-import org.openflexo.diana.swing.control.tools.JDianaStyles;
-import org.openflexo.diana.swing.control.tools.JDianaToolSelector;
 import org.openflexo.gina.ApplicationFIBLibrary.ApplicationFIBLibraryImpl;
 import org.openflexo.gina.swing.utils.localization.LocalizedEditor;
 import org.openflexo.gina.swing.utils.logging.FlexoLoggingViewer;
@@ -194,10 +192,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     // Diana toolbar (top of CENTER column)
     // -------------------------------------------------------------------------
 
-    private final JDianaToolSelector toolSelector;
     private final JDianaScaleSelector scaleSelector;
     private final JDianaLayoutWidget layoutWidget;
-    private final JDianaStyles stylesWidget;
     final JDianaDialogInspectors inspectors;
     private final JPanel toolbarPanel;
 
@@ -428,15 +424,13 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         toolFactory = new SwingToolFactory(frame);
 
         // --- Diana toolbar widgets ---
-        toolSelector  = toolFactory.makeDianaToolSelector(null);
-        stylesWidget  = toolFactory.makeDianaStyles();
+        // Only the layout widget and the scale selector are kept in the diagram header
+        // to keep the view lightweight. The tool selector and the styles editor are not shown.
         scaleSelector = toolFactory.makeDianaScaleSelector(null);
         layoutWidget  = toolFactory.makeDianaLayoutWidget();
         inspectors    = toolFactory.makeDianaDialogInspectors();
 
         toolbarPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        toolbarPanel.add(toolSelector.getComponent());
-        toolbarPanel.add(stylesWidget.getComponent());
         toolbarPanel.add(layoutWidget.getComponent());
         toolbarPanel.add(scaleSelector.getComponent());
         toolbarPanel.setVisible(false); // hidden until a diagram view is active
@@ -1590,8 +1584,6 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     // =========================================================================
 
     private void attachDianaTools(PamelaClassDiagramEditor editor) {
-        toolSelector.attachToEditor(editor.getDianaEditor());
-        stylesWidget.attachToEditor(editor.getDianaEditor());
         scaleSelector.attachToEditor(editor.getDianaEditor());
         layoutWidget.attachToEditor(editor.getDianaEditor());
         inspectors.attachToEditor(editor.getDianaEditor());
@@ -1602,14 +1594,11 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     private void detachDianaTools() {
         // Diana bug: several tool widgets throw NPE in attachToEditor(null) when their
         // internal sub-selectors still reference the previous editor instance.
-        // Known affected widgets: JDianaStyles (backgroundSelector / shapeSelector),
-        //                         JDianaScaleSelector (handleScaleChanged).
+        // Known affected widget: JDianaScaleSelector (handleScaleChanged).
         // Wrap each call individually so that one failing widget does not prevent
         // the others from being detached or the toolbar from being hidden.
         // The toolbar is hidden regardless, so leaving a widget "attached" to the
         // last editor is harmless (it is not visible and cannot be interacted with).
-        try { toolSelector.attachToEditor(null); }  catch (Exception ignored) {}
-        // stylesWidget: known NPE — leave attached to last editor (hidden)
         try { scaleSelector.attachToEditor(null); } catch (Exception ignored) {}
         try { layoutWidget.attachToEditor(null); }  catch (Exception ignored) {}
         toolbarPanel.setVisible(false);
