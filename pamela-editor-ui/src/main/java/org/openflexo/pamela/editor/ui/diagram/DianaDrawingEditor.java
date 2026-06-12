@@ -2,8 +2,8 @@ package org.openflexo.pamela.editor.ui.diagram;
 
 import java.awt.Component;
 import java.awt.Point;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import org.openflexo.diana.Drawing.DrawingTreeNode;
@@ -34,15 +34,26 @@ public class DianaDrawingEditor extends JDianaInteractiveEditor<PamelaClassDiagr
             Logger.getLogger(DianaDrawingEditor.class.getPackage().getName());
 
     /**
-     * Callback invoked on every selection change with the model element of the first
-     * selected node ({@code null} when the selection is empty). Wired by the
-     * application to its <em>soft</em> selection path (inspector + detailed browser,
-     * no central-view switch — see {@code ui-design.md §18.2}).
+     * Callback invoked on every selection change with the model elements of the
+     * selected nodes. Wired by the application to its <em>soft</em> selection path
+     * (inspector + detailed browser, no central-view switch — see {@code ui-design.md
+     * §18.2}). The {@code lead} is the most recently selected element (the one the
+     * single-object inspector follows), {@code null} when the selection is empty;
+     * {@code selection} is the full, de-duplicated list of selected model elements.
      */
-    private Consumer<Object> selectionListener;
+    private SelectionListener selectionListener;
 
     /** Callback that shows the shared contextual menu for a list of target facets. */
     private ContextualMenuHandler contextualMenuHandler;
+
+    /**
+     * Receives the diagram's current selection as a {@code (lead, selection)} pair
+     * (see {@code ui-design.md §18.2}, multi-selection extension).
+     */
+    @FunctionalInterface
+    public interface SelectionListener {
+        void selectionChanged(Object lead, List<Object> selection);
+    }
 
     /**
      * Shows the shared application contextual menu at {@code (x, y)} in {@code invoker},
@@ -60,7 +71,7 @@ public class DianaDrawingEditor extends JDianaInteractiveEditor<PamelaClassDiagr
     }
 
     /** Sets the selection callback (see {@link #selectionListener}). */
-    public void setSelectionListener(Consumer<Object> selectionListener) {
+    public void setSelectionListener(SelectionListener selectionListener) {
         this.selectionListener = selectionListener;
     }
 
@@ -70,9 +81,10 @@ public class DianaDrawingEditor extends JDianaInteractiveEditor<PamelaClassDiagr
     }
 
     /**
-     * Diana selection hook. Maps the first selected node to its model element and
-     * forwards it to {@link #selectionListener}. {@code super} is called first so the
-     * Diana floating style inspectors still refresh.
+     * Diana selection hook. Maps every selected node to its model element and
+     * forwards the resulting {@code (lead, selection)} pair to {@link #selectionListener}.
+     * The lead is the most recently selected element (last in Diana's selection order).
+     * {@code super} is called first so the Diana floating style inspectors still refresh.
      */
     @Override
     protected void fireSelectionUpdated() {
@@ -80,12 +92,18 @@ public class DianaDrawingEditor extends JDianaInteractiveEditor<PamelaClassDiagr
         if (selectionListener == null) {
             return;
         }
-        Object element = null;
+        List<Object> elements = new ArrayList<>();
         List<DrawingTreeNode<?, ?>> sel = getSelectedObjects();
-        if (sel != null && !sel.isEmpty()) {
-            element = getDrawing().modelElementFor(sel.get(0));
+        if (sel != null) {
+            for (DrawingTreeNode<?, ?> node : sel) {
+                Object element = getDrawing().modelElementFor(node);
+                if (element != null && !elements.contains(element)) {
+                    elements.add(element);
+                }
+            }
         }
-        selectionListener.accept(element);
+        Object lead = elements.isEmpty() ? null : elements.get(elements.size() - 1);
+        selectionListener.selectionChanged(lead, elements);
     }
 
     /**
@@ -138,6 +156,30 @@ public class DianaDrawingEditor extends JDianaInteractiveEditor<PamelaClassDiagr
             setSelectedObject(node);
         } else {
             clearSelection();
+        }
+    }
+
+    /**
+     * Programmatically selects the diagram shapes corresponding to {@code elements}
+     * (multi-selection counterpart of {@link #selectModelElement}). Each element is
+     * resolved to its {@link DrawingTreeNode} via
+     * {@link PamelaClassDiagramDrawing#shapeNodeForSourceElement}; unresolved elements
+     * are skipped. Clears the selection when no node resolves.
+     */
+    public void selectModelElements(List<Object> elements) {
+        List<DrawingTreeNode<?, ?>> nodes = new ArrayList<>();
+        if (elements != null) {
+            for (Object element : elements) {
+                DrawingTreeNode<?, ?> node = getDrawing().shapeNodeForSourceElement(element);
+                if (node != null && !nodes.contains(node)) {
+                    nodes.add(node);
+                }
+            }
+        }
+        if (nodes.isEmpty()) {
+            clearSelection();
+        } else {
+            setSelectedObjects(nodes);
         }
     }
 

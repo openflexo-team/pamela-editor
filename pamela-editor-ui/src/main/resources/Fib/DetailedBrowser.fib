@@ -19,10 +19,11 @@
     -->
     <Browser id="1" deepExploration="true" showFooter="false" rowHeight="18"
         showRootsHandle="true" root="data"
-        selectionMode="SingleTreeSelection"
+        selectionMode="DiscontiguousTreeSelection"
         doubleClickAction="controller.doubleClick(detailedBrowser.selected)"
         rightClickAction="controller.rightClick(detailedBrowser.selected,event)"
         useScrollBar="true" selected="controller.selectedElement"
+        selection="controller.selection"
         name="detailedBrowser" rootVisible="true" readOnly="false"
         iteratorClassName="java.lang.Object"
         constraints="border(location=center;x=0;y=0)">

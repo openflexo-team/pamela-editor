@@ -29,10 +29,14 @@ import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
  */
 public class DetailedBrowserFIBController extends PamelaEditorFIBController<Object> {
 
-    /** Property name fired when the selected element changes. */
+    /** Property name fired when the lead selected element changes. */
     public static final String SELECTED_ELEMENT = "selectedElement";
 
+    /** Property name fired when the (multi-)selection list changes. */
+    public static final String SELECTION = "selection";
+
     private Object selectedElement;
+    private java.util.List<Object> selection = new java.util.ArrayList<>();
     private PamelaEditorApplication application;
 
     public DetailedBrowserFIBController(FIBComponent rootComponent) {
@@ -45,34 +49,68 @@ public class DetailedBrowserFIBController extends PamelaEditorFIBController<Obje
 
     public void setApplication(PamelaEditorApplication application) {
         this.application = application;
+        // Route user (multi-)selection from the browser tree to the application.
+        //
+        // The full selection list is delivered through Gina's FIBSelectionListener
+        // mechanism: the per-node `selected` two-way binding only carries the lead
+        // (it is NOT written back for the multi-selection list — see
+        // FIBBrowserWidgetImpl.valueChanged). The lead is read from getSelectedElement(),
+        // which Gina has already updated (via the `selected` binding) before firing the
+        // selection change.
+        addSelectionListener(sel -> {
+            if (this.application == null) {
+                return;
+            }
+            Object lead = getSelectedElement();
+            // Ignore the internal empty selection Gina fires while rebinding the tree to
+            // a new data object (not a user action — would clear the inspector/diagram).
+            if (lead == null && (sel == null || sel.isEmpty())) {
+                return;
+            }
+            java.util.List<Object> list =
+                    (sel == null) ? new java.util.ArrayList<>() : new java.util.ArrayList<>(sel);
+            this.application.onDetailedBrowserSelectionChanged(lead, list);
+        });
     }
 
     // -------------------------------------------------------------------------
-    // Observable selection property
+    // Observable selection properties
     // -------------------------------------------------------------------------
 
     public Object getSelectedElement() {
         return selectedElement;
     }
 
+    /**
+     * Updates the lead selected element. This is the {@code selected} two-way binding
+     * used to highlight the lead node and to feed the double/right-click actions.
+     *
+     * <p>It does <em>not</em> notify the application: user selection is propagated through
+     * the {@link org.openflexo.gina.model.listener.FIBSelectionListener} registered in
+     * {@link #setApplication} (which carries the full multi-selection list, not only the
+     * lead). Keeping the notification here too would double every event.</p>
+     */
     public void setSelectedElement(Object selectedElement) {
         Object old = this.selectedElement;
         this.selectedElement = selectedElement;
         getPropertyChangeSupport().firePropertyChange(SELECTED_ELEMENT, old, selectedElement);
-        // Propagate to application only for genuine user selections (non-null).
-        //
-        // Gina calls setSelectedElement(null) internally when the browser is rebound to a
-        // new data object and the previously-selected node no longer exists in the new tree.
-        // Propagating that null would cause setCurrentSelectedElement(null) →
-        // detailedBrowser.setEditedObject(null) → empty browser.
-        // This null is an internal Gina artefact, not a user action, so we filter it here.
-        if (application != null && selectedElement != null) {
-            // Route through the dedicated entry point so that clicks inside the
-            // DetailedBrowser while a diagram is active are treated as soft-selections
-            // (inspector + context panel update, but the browser root stays fixed on
-            // the diagram). Only MetaModelBrowser selections trigger a full rebind.
-            application.onDetailedBrowserSelectionChanged(selectedElement);
-        }
+    }
+
+    public java.util.List<Object> getSelection() {
+        return selection;
+    }
+
+    /**
+     * Two-way {@code selection} binding. Setting it programmatically (from the
+     * application, during a diagram → browser sync) highlights the corresponding tree
+     * nodes; the user's own multi-selection is reported via the
+     * {@link org.openflexo.gina.model.listener.FIBSelectionListener} (see
+     * {@link #setApplication}).
+     */
+    public void setSelection(java.util.List<Object> selection) {
+        java.util.List<Object> old = this.selection;
+        this.selection = selection;
+        getPropertyChangeSupport().firePropertyChange(SELECTION, old, selection);
     }
 
     // -------------------------------------------------------------------------

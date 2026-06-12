@@ -1191,18 +1191,65 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
      * Entry point for selections originating from the {@link DetailedBrowser} itself.
      *
      * <p>When a class diagram is the active central view the user is browsing the
-     * diagram's entity tree.  A click inside that tree must behave like a
-     * <em>soft-selection</em> (inspector and context panel update, but the diagram
-     * remains the central view and the browser root stays bound to the diagram).
-     * Only selections that come from the {@link MetaModelBrowser} should rebind the
-     * browser root (the normal path via {@link #setCurrentSelectedElement(Object)}).</p>
+     * diagram's entity tree.  A selection inside that tree behaves like a
+     * <em>soft-selection</em> (inspector and context panel update, the diagram
+     * remains the central view and the browser root stays bound to the diagram) and
+     * is <em>mirrored onto the diagram canvas</em> — the full {@code selection} list
+     * highlights all matching shapes, the {@code lead} drives the single-object
+     * inspector and context panel. Otherwise (no diagram active) the {@code lead}
+     * drives the normal single-selection navigation
+     * ({@link #setCurrentSelectedElement(Object)}).</p>
      */
-    public void onDetailedBrowserSelectionChanged(Object element) {
-        if (getActiveDiagramEditor() != null) {
-            // Diagram is active: treat as a soft-selection so the root stays fixed.
-            setCurrentSelectedElement(element, false);
+    public void onDetailedBrowserSelectionChanged(Object lead, List<Object> selection) {
+        if (settingSelectedElement) {
+            return; // discard re-entrant calls during programmatic browser/diagram sync
+        }
+        PamelaClassDiagramEditor diagramEditor = getActiveDiagramEditor();
+        if (diagramEditor != null) {
+            settingSelectedElement = true;
+            try {
+                this.currentSelectedElement = lead;
+                // Mirror the browser multi-selection onto the diagram canvas.
+                diagramEditor.getDianaEditor().selectModelElements(selection);
+                inspectorController.inspectObject(lead);
+                contextPanel.setDiagramSelection(lead);
+            } catch (Exception e) {
+                logger.warning("Detailed browser selection sync failed: " + e.getMessage());
+                e.printStackTrace();
+            } finally {
+                settingSelectedElement = false;
+            }
         } else {
-            setCurrentSelectedElement(element, true);
+            // No diagram active: lead drives the normal single-selection navigation.
+            setCurrentSelectedElement(lead, true);
+        }
+    }
+
+    /**
+     * Entry point for selections originating from the diagram canvas (multi-selection).
+     *
+     * <p><em>Soft-selection</em> (see {@code ui-design.md §18.2}): updates the inspector
+     * and context panel for the {@code lead} element and highlights every selected
+     * element in the {@link DetailedBrowser}, without switching the central view away
+     * from the diagram. The diagram is the source of this selection, so it is
+     * <em>not</em> mirrored back to the canvas.</p>
+     */
+    public void onDiagramSelectionChanged(Object lead, List<Object> selection) {
+        if (settingSelectedElement) {
+            return; // discard re-entrant calls (e.g. round-trip from a programmatic browser sync)
+        }
+        settingSelectedElement = true;
+        try {
+            this.currentSelectedElement = lead;
+            // Highlight all selected elements' nodes in the detailed browser.
+            setDetailedBrowserMultiSelection(selection);
+            inspectorController.inspectObject(lead);
+            contextPanel.setDiagramSelection(lead);
+        } catch (Exception e) {
+            logger.warning("Diagram selection sync failed: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            settingSelectedElement = false;
         }
     }
 
@@ -1278,6 +1325,60 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if (diagramEditor != null) {
             diagramEditor.getDianaEditor().selectModelElement(element);
         }
+    }
+
+    /**
+     * Highlights the {@link DetailedBrowser} nodes for every element of {@code selection}
+     * without changing the browser root (multi-selection counterpart of
+     * {@link #syncDetailedBrowserToDiagramSelection}). Called during diagram
+     * soft-selection: the root stays the active {@link PamelaClassDiagram}; each element
+     * is mapped to its browser node via {@link #detailedBrowserTargetFor}. Does not
+     * mirror back to the diagram canvas (the diagram is the source of the selection).
+     */
+    private void setDetailedBrowserMultiSelection(List<Object> selection) {
+        if (!(currentHistoryElement instanceof PamelaClassDiagram)) return;
+        PamelaClassDiagram diagram = (PamelaClassDiagram) currentHistoryElement;
+
+        List<Object> targets = new ArrayList<>();
+        if (selection != null) {
+            for (Object element : selection) {
+                Object target = detailedBrowserTargetFor(element, diagram);
+                if (target != null && !targets.contains(target)) {
+                    targets.add(target);
+                }
+            }
+        }
+        detailedBrowser.getController().setSelection(targets);
+    }
+
+    /**
+     * Maps a diagram-selected model element to the node that represents it in the
+     * {@link DetailedBrowser} (whose root is {@code diagram}):
+     * {@link EntityView} → itself; {@link SourceModelEntity} → its {@link EntityView};
+     * {@link SourceModelProperty} / {@link SourceModelInitializer} → themselves (they are
+     * children of the {@link EntityView} node); {@link SourceCustomMethod} → the parent
+     * entity's {@link EntityView}. Returns {@code null} when there is no matching node.
+     */
+    private Object detailedBrowserTargetFor(Object element, PamelaClassDiagram diagram) {
+        if (element instanceof EntityView) {
+            return element;
+        }
+        if (element instanceof SourceModelEntity) {
+            return findEntityViewInDiagram((SourceModelEntity) element, diagram);
+        }
+        if (element instanceof SourceModelProperty) {
+            return element;
+        }
+        if (element instanceof SourceModelInitializer) {
+            return element;
+        }
+        if (element instanceof SourceCustomMethod) {
+            SourceImplementationClass impl = ((SourceCustomMethod) element).getImplementationClass();
+            if (impl != null) {
+                return findEntityViewInDiagram(impl.getEntity(), diagram);
+            }
+        }
+        return null;
     }
 
     /** Returns the {@link EntityView} in {@code diagram} whose resolved entity matches, or null. */
@@ -1522,7 +1623,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             JComponent view = editor.getView();
             // Diagram selection drives the inspector + detailed browser, without
             // switching the central view away from the diagram (ui-design.md §18.2).
-            editor.setSelectionListener(el -> setCurrentSelectedElement(el, false));
+            // Multi-selection: the full list highlights all matching browser nodes,
+            // the lead drives the single-object inspector / context panel.
+            editor.setSelectionListener(this::onDiagramSelectionChanged);
             // Right-click on a diagram element opens the same shared contextual menu
             // as the browsers (ui-design.md §18.4).
             editor.setContextualMenuHandler(this::showContextualMenuFor);

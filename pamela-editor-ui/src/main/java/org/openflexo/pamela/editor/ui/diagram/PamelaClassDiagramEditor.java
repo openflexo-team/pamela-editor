@@ -186,10 +186,10 @@ public class PamelaClassDiagramEditor {
 
     /**
      * Wires the diagram selection to a callback (the application's soft-selection
-     * path). Invoked with the model element of the first selected node, or
-     * {@code null} when the selection is cleared.
+     * path). Invoked with the {@code (lead, selection)} pair of the selected nodes'
+     * model elements; {@code lead} is {@code null} when the selection is cleared.
      */
-    public void setSelectionListener(java.util.function.Consumer<Object> listener) {
+    public void setSelectionListener(DianaDrawingEditor.SelectionListener listener) {
         getDianaEditor().setSelectionListener(listener);
     }
 
