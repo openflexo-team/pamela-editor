@@ -67,7 +67,11 @@ public class DetailedBrowserFIBController extends PamelaEditorFIBController<Obje
         // detailedBrowser.setEditedObject(null) → empty browser.
         // This null is an internal Gina artefact, not a user action, so we filter it here.
         if (application != null && selectedElement != null) {
-            application.setCurrentSelectedElement(selectedElement);
+            // Route through the dedicated entry point so that clicks inside the
+            // DetailedBrowser while a diagram is active are treated as soft-selections
+            // (inspector + context panel update, but the browser root stays fixed on
+            // the diagram). Only MetaModelBrowser selections trigger a full rebind.
+            application.onDetailedBrowserSelectionChanged(selectedElement);
         }
     }
 

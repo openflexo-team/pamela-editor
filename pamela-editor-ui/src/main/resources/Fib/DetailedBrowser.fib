@@ -17,7 +17,7 @@
         - PamelaProject → shows packages + diagrams
         - null / other        → shows nothing (no matching BrowserElement)
     -->
-    <Browser id="1" deepExploration="false" showFooter="false" rowHeight="18"
+    <Browser id="1" deepExploration="true" showFooter="false" rowHeight="18"
         showRootsHandle="true" root="data"
         selectionMode="SingleTreeSelection"
         doubleClickAction="controller.doubleClick(detailedBrowser.selected)"
@@ -118,11 +118,13 @@
         <BrowserElement id="80"
             icon="controller.iconForObject(ev)"
             filtered="false"
-            label="ev.qualifiedName"
+            label="ev.entitySimpleName"
             defaultVisible="true"
             dataClassName="org.openflexo.pamela.editor.diagram.EntityView"
             name="ev"
             isEditable="false">
+            <Children id="83" name="initializers" data="ev.displayedInitializers" />
+            <Children id="84" name="properties" data="ev.displayedProperties" />
         </BrowserElement>
 
     </Browser>

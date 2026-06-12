@@ -1,11 +1,15 @@
 package org.openflexo.pamela.editor.diagram;
 
+import java.util.List;
+
 import org.openflexo.pamela.AccessibleProxyObject;
 import org.openflexo.pamela.annotations.Getter;
 import org.openflexo.pamela.annotations.ImplementationClass;
 import org.openflexo.pamela.annotations.ModelEntity;
 import org.openflexo.pamela.annotations.Setter;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
+import org.openflexo.pamela.editor.model.SourceModelInitializer;
+import org.openflexo.pamela.editor.model.SourceModelProperty;
 
 /**
  * Represents one entity placed on a {@link PamelaClassDiagram}.
@@ -75,4 +79,26 @@ public interface EntityView extends AccessibleProxyObject {
      * Not managed by PAMELA — implemented in {@link EntityViewImpl}.
      */
     String getDisplayLabel();
+
+    /**
+     * Single-line display name suitable for browser tree labels.
+     * Returns the entity simple name when resolved; the simple part of
+     * {@link #getQualifiedName()} otherwise (with a {@code (?)}) suffix).
+     * Not managed by PAMELA — implemented in {@link EntityViewImpl}.
+     */
+    String getEntitySimpleName();
+
+    /**
+     * Declared properties of the resolved entity, or an empty list when unresolved.
+     * Safe to use in FIB {@code &lt;Children&gt;} bindings.
+     * Not managed by PAMELA — implemented in {@link EntityViewImpl}.
+     */
+    List<SourceModelProperty> getDisplayedProperties();
+
+    /**
+     * Initializers of the resolved entity, or an empty list when unresolved.
+     * Safe to use in FIB {@code &lt;Children&gt;} bindings.
+     * Not managed by PAMELA — implemented in {@link EntityViewImpl}.
+     */
+    List<SourceModelInitializer> getDisplayedInitializers();
 }

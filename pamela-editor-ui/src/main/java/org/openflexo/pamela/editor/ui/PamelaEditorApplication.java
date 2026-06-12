@@ -1194,6 +1194,25 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     }
 
     /**
+     * Entry point for selections originating from the {@link DetailedBrowser} itself.
+     *
+     * <p>When a class diagram is the active central view the user is browsing the
+     * diagram's entity tree.  A click inside that tree must behave like a
+     * <em>soft-selection</em> (inspector and context panel update, but the diagram
+     * remains the central view and the browser root stays bound to the diagram).
+     * Only selections that come from the {@link MetaModelBrowser} should rebind the
+     * browser root (the normal path via {@link #setCurrentSelectedElement(Object)}).</p>
+     */
+    public void onDetailedBrowserSelectionChanged(Object element) {
+        if (getActiveDiagramEditor() != null) {
+            // Diagram is active: treat as a soft-selection so the root stays fixed.
+            setCurrentSelectedElement(element, false);
+        } else {
+            setCurrentSelectedElement(element, true);
+        }
+    }
+
+    /**
      * Returns the element that the {@link DetailedBrowser} should describe.
      *
      * <p>For child elements ({@link SourceModelProperty},
@@ -1244,12 +1263,13 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         } else if (element instanceof SourceModelEntity) {
             targetSelection = findEntityViewInDiagram((SourceModelEntity) element, diagram);
         } else if (element instanceof SourceModelProperty) {
-            targetSelection = findEntityViewInDiagram(
-                    ((SourceModelProperty) element).getModelEntity(), diagram);
+            // Properties are now children of EntityView nodes — select directly.
+            targetSelection = element;
         } else if (element instanceof SourceModelInitializer) {
-            targetSelection = findEntityViewInDiagram(
-                    ((SourceModelInitializer) element).getEntity(), diagram);
+            // Initializers are now children of EntityView nodes — select directly.
+            targetSelection = element;
         } else if (element instanceof SourceCustomMethod) {
+            // Custom methods have no equivalent node; fall back to the parent EntityView.
             SourceImplementationClass impl = ((SourceCustomMethod) element).getImplementationClass();
             if (impl != null) {
                 targetSelection = findEntityViewInDiagram(impl.getEntity(), diagram);
