@@ -1,5 +1,6 @@
 {
   "name" : "test-model2-full",
   "sourceDirectories" : [ "model2" ],
-  "rootTypes" : [ "test.model2.FlexoProcess", "test.model2.ActivityNode", "test.model2.StartNode", "test.model2.EndNode", "test.model2.MyNode", "test.model2.TokenEdge" ]
+  "rootTypes" : [ "test.model2.FlexoProcess", "test.model2.ActivityNode", "test.model2.StartNode", "test.model2.EndNode", "test.model2.MyNode", "test.model2.TokenEdge" ],
+  "diagrams" : [ "diagram1.diagram" ]
 }
