@@ -108,7 +108,7 @@
         <BrowserElement id="70"
             icon="controller.iconForObject(initializer)"
             filtered="false"
-            label="initializer.methodName"
+            label="initializer.displayLabel"
             defaultVisible="true"
             dataClassName="org.openflexo.pamela.editor.model.SourceModelInitializer"
             name="initializer"

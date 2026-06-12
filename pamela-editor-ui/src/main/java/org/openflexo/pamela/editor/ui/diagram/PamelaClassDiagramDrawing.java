@@ -633,8 +633,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         switch (c) {
             case INITIALIZERS:
                 for (SourceModelInitializer init : e.getInitializers()) {
-                    lines.add(init.getMethodName()
-                            + "(" + String.join(", ", init.getParameters()) + ")");
+                    lines.add(init.getDisplayLabel());
                 }
                 break;
             case PROPERTIES:

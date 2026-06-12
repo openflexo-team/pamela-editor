@@ -75,6 +75,11 @@ public class SourceModelInitializer implements SourceElement {
         return parameters;
     }
 
+    /** Formatted label, e.g. {@code "init(flexoId,name)"}. */
+    public String getDisplayLabel() {
+        return methodName + "(" + String.join(",", parameters) + ")";
+    }
+
     @Override
     public String toString() {
         return "SourceModelInitializer(" + methodName + parameters + ")";
