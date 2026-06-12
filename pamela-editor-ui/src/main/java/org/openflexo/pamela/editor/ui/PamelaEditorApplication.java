@@ -52,10 +52,14 @@ import org.openflexo.localization.LocalizedDelegateImpl;
 import org.openflexo.logging.FlexoLogger;
 import org.openflexo.logging.FlexoLoggingManager;
 import org.openflexo.pamela.editor.SourceMetaModelSerializer;
+import org.openflexo.pamela.editor.diagram.EntityView;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagramSerializer;
+import org.openflexo.pamela.editor.model.SourceCustomMethod;
+import org.openflexo.pamela.editor.model.SourceImplementationClass;
 import org.openflexo.pamela.editor.model.SourceJavaFile;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
+import org.openflexo.pamela.editor.model.SourceModelInitializer;
 import org.openflexo.pamela.editor.model.SourceModelProperty;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourcePackage;
@@ -1142,12 +1146,18 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         try {
             this.currentSelectedElement = element;
             try {
-                // 1. Rebind the detailed browser to the "described" element.
-                //    For child elements (property, initializer, impl class) this is the
-                //    parent entity, so the browser stays populated.
-                detailedBrowser.setEditedObject(getDetailedBrowserElement(element));
+                if (navigateCentralView) {
+                    // 1a. Normal path: rebind the detailed browser to the "described" element.
+                    //     For child elements (property, initializer, impl class) this is the
+                    //     parent entity, so the browser stays populated.
+                    detailedBrowser.setEditedObject(getDetailedBrowserElement(element));
+                } else {
+                    // 1b. Soft-selection (diagram canvas click): keep the diagram as the
+                    //     browser root but update which EntityView node is highlighted.
+                    syncDetailedBrowserToDiagramSelection(element);
+                }
             } catch (Exception e) {
-                logger.warning("DetailedBrowser rebind failed: " + e.getMessage());
+                logger.warning("DetailedBrowser update failed: " + e.getMessage());
                 e.printStackTrace();
             }
             try {
@@ -1199,13 +1209,64 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if (element instanceof SourceModelProperty) {
             return ((SourceModelProperty) element).getModelEntity();
         }
-        if (element instanceof org.openflexo.pamela.editor.model.SourceModelInitializer) {
-            return ((org.openflexo.pamela.editor.model.SourceModelInitializer) element).getEntity();
+        if (element instanceof SourceModelInitializer) {
+            return ((SourceModelInitializer) element).getEntity();
         }
-        if (element instanceof org.openflexo.pamela.editor.model.SourceImplementationClass) {
-            return ((org.openflexo.pamela.editor.model.SourceImplementationClass) element).getEntity();
+        if (element instanceof SourceImplementationClass) {
+            return ((SourceImplementationClass) element).getEntity();
         }
         return element;
+    }
+
+    /**
+     * Updates the selection inside the {@link DetailedBrowser} without changing its
+     * root object. Called during diagram soft-selection ({@code navigateCentralView=false}):
+     * the browser root stays the active {@link PamelaClassDiagram}, but the
+     * {@link EntityView} corresponding to the clicked diagram element is highlighted.
+     *
+     * <p>Mapping rules:
+     * <ul>
+     *   <li>{@link EntityView} → select directly</li>
+     *   <li>{@link SourceModelEntity} → find the matching {@link EntityView} in the diagram</li>
+     *   <li>{@link SourceModelProperty} / {@link SourceModelInitializer} /
+     *       {@link SourceCustomMethod} → find the {@link EntityView} of the parent entity</li>
+     *   <li>Background click ({@link PamelaClassDiagram} or null) → deselect</li>
+     * </ul>
+     * </p>
+     */
+    private void syncDetailedBrowserToDiagramSelection(Object element) {
+        if (!(currentHistoryElement instanceof PamelaClassDiagram)) return;
+        PamelaClassDiagram diagram = (PamelaClassDiagram) currentHistoryElement;
+
+        Object targetSelection = null;
+        if (element instanceof EntityView) {
+            targetSelection = element;
+        } else if (element instanceof SourceModelEntity) {
+            targetSelection = findEntityViewInDiagram((SourceModelEntity) element, diagram);
+        } else if (element instanceof SourceModelProperty) {
+            targetSelection = findEntityViewInDiagram(
+                    ((SourceModelProperty) element).getModelEntity(), diagram);
+        } else if (element instanceof SourceModelInitializer) {
+            targetSelection = findEntityViewInDiagram(
+                    ((SourceModelInitializer) element).getEntity(), diagram);
+        } else if (element instanceof SourceCustomMethod) {
+            SourceImplementationClass impl = ((SourceCustomMethod) element).getImplementationClass();
+            if (impl != null) {
+                targetSelection = findEntityViewInDiagram(impl.getEntity(), diagram);
+            }
+        }
+        // PamelaClassDiagram or null → targetSelection stays null (deselect)
+
+        detailedBrowser.getController().setSelectedElement(targetSelection);
+    }
+
+    /** Returns the {@link EntityView} in {@code diagram} whose resolved entity matches, or null. */
+    private EntityView findEntityViewInDiagram(SourceModelEntity entity, PamelaClassDiagram diagram) {
+        if (entity == null || diagram.getEntityViews() == null) return null;
+        for (EntityView ev : diagram.getEntityViews()) {
+            if (ev.getEntity() == entity) return ev;
+        }
+        return null;
     }
 
     /** Called from MetaModelBrowserFIBController on single-click. */
