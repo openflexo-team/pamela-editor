@@ -17,6 +17,7 @@ import org.openflexo.diana.BackgroundImageBackgroundStyle;
 import org.openflexo.diana.BackgroundImageBackgroundStyle.ImageBackgroundType;
 import org.openflexo.diana.ConnectorGraphicalRepresentation;
 import org.openflexo.diana.ContainerGraphicalRepresentation;
+import org.openflexo.diana.DianaLayoutManager;
 import org.openflexo.diana.Drawing.DrawingTreeNode;
 import org.openflexo.diana.Drawing.ShapeNode;
 import org.openflexo.diana.DianaModelFactory;
@@ -37,6 +38,10 @@ import org.openflexo.diana.connectors.ConnectorSpecification.ConnectorType;
 import org.openflexo.diana.connectors.ConnectorSymbol.EndSymbolType;
 import org.openflexo.diana.connectors.ConnectorSymbol.StartSymbolType;
 import org.openflexo.diana.impl.DrawingImpl;
+import org.openflexo.diana.layout.BoxLayoutManagerSpecification;
+import org.openflexo.diana.layout.BoxLayoutManagerSpecification.CrossAxisPolicy;
+import org.openflexo.diana.layout.BoxLayoutManagerSpecification.MainAxisPolicy;
+import org.openflexo.diana.layout.BoxLayoutManagerSpecification.Orientation;
 import org.openflexo.diana.shapes.ShapeSpecification.ShapeType;
 import org.openflexo.pamela.annotations.Getter.Cardinality;
 import org.openflexo.pamela.editor.diagram.ComputedConnector;
@@ -111,6 +116,15 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     private static final java.awt.Graphics MEASURE_GRAPHICS =
             new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).getGraphics();
 
+    /** Identifier of the per-compartment {@link BoxLayoutManagerSpecification} that stacks
+     *  the item rows (Slice 1 of the BoxLayoutManager integration). */
+    private static final String COMPARTMENT_BOX_LM = "compartmentBox";
+
+    /** Identifier of the container {@link BoxLayoutManagerSpecification} that stacks the
+     *  three compartments below the header band (Slice 2). The header is reserved via
+     *  {@code insetTop} and excluded from the layout because it is self-constrained. */
+    private static final String ENTITY_BOX_LM = "entityBox";
+
     /** The three UML compartments stacked below the header, in display order. */
     private enum Compartment { INITIALIZERS, PROPERTIES, METHODS }
 
@@ -178,7 +192,8 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         //    properties, methods) are further child shapes stacked below it (2d).
         //    Width AND height are user-resizable (and persisted); the compartments
         //    distribute the available vertical space below the header proportionally
-        //    to their content (see applyCompartmentConstraints).
+        //    to their content via the container's entityBox BoxLayoutManager
+        //    (see makeEntityBoxSpec / applyCompartmentGeometry).
         entityViewBinding = bindShape(EntityView.class, "entityView",
             new ShapeGRProvider<EntityView>() {
                 @Override
@@ -197,6 +212,11 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                     gr.setIsSelectable(true);
                     gr.setIsFocusable(true);
                     gr.setIsReadOnly(false);
+                    // Slice 2: the three compartments are stacked below the header by this
+                    // BoxLayoutManager. The header band is reserved with insetTop and excluded
+                    // from the layout (it is self-constrained); compartments share the rest
+                    // proportionally to their content via their layoutWeight.
+                    gr.addToLayoutManagerSpecifications(makeEntityBoxSpec(factory));
                     // Right-click on the box → entity contextual menu (+ diagram-specific).
                     addContextualMenuControl(gr);
                     return gr;
@@ -713,51 +733,10 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         return Math.ceil(w);
     }
 
-    /** Sum of the natural heights of the compartments before {@code c}. */
-    private double naturalBefore(EntityView ev, Compartment c) {
-        double s = 0;
-        for (Compartment k : Compartment.values()) {
-            if (k == c) {
-                break;
-            }
-            s += compartmentHeight(compartmentLines(ev, k).size());
-        }
-        return s;
-    }
-
-    /**
-     * Sets the geometry constraints of a compartment so that it follows the container
-     * live on resize. Width tracks the container ({@code parent.width}); the vertical
-     * space below the header ({@code parent.height - HEADER_HEIGHT}) is distributed
-     * among the three compartments <b>proportionally to their natural (content-driven)
-     * heights</b>:
-     * <pre>
-     *   height = (parent.height - HEADER) * natural_c    / Σnatural
-     *   y      =  HEADER + (parent.height - HEADER) * Σnatural(before c) / Σnatural
-     * </pre>
-     * So at the natural total height each compartment shows exactly its content (5 px
-     * when empty); when the box is made taller the extra room is shared out
-     * proportionally; when shorter, compartments shrink and content is simply clipped
-     * (the proportional form never yields a negative height since {@code parent.height
-     * ≥ 0}).
-     */
-    private void applyCompartmentConstraints(ShapeGraphicalRepresentation gr,
-                                             EntityView ev, Compartment c) {
-        double natural = compartmentHeight(compartmentLines(ev, c).size());
-        double before = naturalBefore(ev, c);
-        double sum = naturalCompartmentsSum(ev);
-        String avail = "(parent.height - " + HEADER_HEIGHT + ")";
-        gr.setXConstraints(new DataBinding<Double>("0"));
-        gr.setWidthConstraints(new DataBinding<Double>("parent.width"));
-        gr.setYConstraints(new DataBinding<Double>(
-                HEADER_HEIGHT + " + " + avail + " * " + before + " / " + sum));
-        gr.setHeightConstraints(new DataBinding<Double>(
-                avail + " * " + natural + " / " + sum));
-    }
-
     /** Builds a compartment GR: a white bordered box spanning the container width. It
      *  carries no text itself — its items are drawn as child rows (see makeItemRowGR).
-     *  Vertical geometry is constraint-driven (see {@link #applyCompartmentConstraints}). */
+     *  Geometry is driven by the container's entityBox layout (Slice 2): full width, and a
+     *  height proportional to its {@code layoutWeight} (= natural content height). */
     private ShapeGraphicalRepresentation makeCompartmentGR(
             EntityView ev, Compartment c, DianaModelFactory f) {
         List<String> lines = compartmentLines(ev, c);
@@ -767,7 +746,14 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         gr.setY(HEADER_HEIGHT);
         gr.setWidth(ev.getWidth());
         gr.setHeight(compartmentHeight(lines.size()));
-        applyCompartmentConstraints(gr, ev, c);
+        // Slice 2: this compartment is a weighted child of the container's entityBox layout;
+        // its share of the vertical space below the header is proportional to its content
+        // (weight = natural content height, 5 px floor when empty).
+        gr.setLayoutManagerIdentifier(ENTITY_BOX_LM);
+        gr.setLayoutWeight(compartmentHeight(lines.size()));
+        // Slice 1: a per-compartment vertical box layout stacks the item rows (full-width,
+        // fixed ROW_HEIGHT) — replacing the per-row y=index*ROW_HEIGHT constraint bindings.
+        gr.addToLayoutManagerSpecifications(makeRowBoxSpec(f));
         gr.setBackground(f.makeColoredBackground(Color.WHITE));
         gr.setForeground(f.makeForegroundStyle(Color.DARK_GRAY, 1.0f));
         gr.setShadowStyle(f.makeNoneShadowStyle());
@@ -776,6 +762,34 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         gr.setIsFocusable(false);
         gr.setIsReadOnly(true);
         return gr;
+    }
+
+    /** Builds the container vertical box layout spec (Slice 2): stacks the three
+     *  compartments full-width below the header band (reserved via {@code insetTop}),
+     *  sharing the remaining height proportionally to each compartment's weight. */
+    private BoxLayoutManagerSpecification makeEntityBoxSpec(DianaModelFactory f) {
+        BoxLayoutManagerSpecification box =
+            f.makeLayoutManagerSpecification(ENTITY_BOX_LM, BoxLayoutManagerSpecification.class);
+        box.setOrientation(Orientation.VERTICAL);
+        box.setCrossAxisPolicy(CrossAxisPolicy.STRETCH);
+        box.setMainAxisPolicy(MainAxisPolicy.DISTRIBUTE_WEIGHTS);
+        box.setInsetTop(HEADER_HEIGHT);
+        box.setGap(0);
+        box.setAnimateLayout(false);
+        return box;
+    }
+
+    /** Builds the per-compartment vertical box layout spec (stacks item rows full-width,
+     *  fixed ROW_HEIGHT, no gap). One instance per compartment GR (each compartment is its
+     *  own container). */
+    private BoxLayoutManagerSpecification makeRowBoxSpec(DianaModelFactory f) {
+        BoxLayoutManagerSpecification box =
+            f.makeLayoutManagerSpecification(COMPARTMENT_BOX_LM, BoxLayoutManagerSpecification.class);
+        box.setOrientation(Orientation.VERTICAL);
+        box.setCrossAxisPolicy(CrossAxisPolicy.STRETCH);
+        box.setGap(0);
+        box.setAnimateLayout(false);
+        return box;
     }
 
     /** Icon shown at the left of each item row, by compartment kind. */
@@ -818,10 +832,10 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         gr.setY(y);
         gr.setWidth(100);
         gr.setHeight(ROW_HEIGHT);
-        gr.setXConstraints(new DataBinding<Double>("0"));
-        gr.setWidthConstraints(new DataBinding<Double>("parent.width"));
-        gr.setYConstraints(new DataBinding<Double>(String.valueOf(y)));
-        gr.setHeightConstraints(new DataBinding<Double>(String.valueOf(ROW_HEIGHT)));
+        // Slice 1: the row is laid out by its compartment's BoxLayoutManager (stacked
+        // full-width, fixed ROW_HEIGHT via weight 0) instead of per-row constraint bindings.
+        gr.setLayoutManagerIdentifier(COMPARTMENT_BOX_LM);
+        gr.setLayoutWeight(0);
         // Transparent normally; the icon is drawn on top by a separate child shape.
         gr.setBackground(f.makeEmptyBackground());
         gr.setForeground(f.makeNoneForegroundStyle());
@@ -909,22 +923,31 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     }
 
     /**
-     * Recomputes and re-applies the proportional geometry constraints of the three
-     * compartments for one entity view. Called after a metamodel rebuild, where the
-     * entity content — and thus the natural heights driving the proportions — may have
-     * changed but the existing compartment nodes are not re-provided. The item rows
-     * themselves are reconciled by the walkers (by {@link CompartmentItem} value), so
-     * only the compartment proportions need an explicit refresh here. Re-setting a
-     * constraint binding re-registers its value-change listener, which re-evaluates
-     * immediately, so the new layout takes effect at once.
+     * Recomputes the compartment weights and relayouts the container's entityBox for one
+     * entity view. Called after a metamodel rebuild, where the entity content — and thus the
+     * natural heights driving the proportions — may have changed but the existing compartment
+     * nodes are not re-provided. The item rows themselves are reconciled by the walkers (by
+     * {@link CompartmentItem} value), so only the compartment weights need a refresh here.
+     * Since {@code setLayoutWeight} does not by itself trigger a relayout, the entityBox
+     * layout manager is invalidated and re-run explicitly.
      */
     private void applyCompartmentGeometry(EntityView ev) {
         for (Compartment c : Compartment.values()) {
             ShapeNode<EntityView> node = getShapeNode(ev, compartmentBinding(c));
             if (node != null
                     && node.getGraphicalRepresentation() instanceof ShapeGraphicalRepresentation) {
-                applyCompartmentConstraints(
-                        (ShapeGraphicalRepresentation) node.getGraphicalRepresentation(), ev, c);
+                ((ShapeGraphicalRepresentation) node.getGraphicalRepresentation())
+                        .setLayoutWeight(compartmentHeight(compartmentLines(ev, c).size()));
+            }
+        }
+        // setLayoutWeight does not by itself trigger a relayout (a manager listens only to its
+        // own spec), so recompute the container's entityBox layout explicitly.
+        ShapeNode<EntityView> container = getShapeNode(ev, entityViewBinding);
+        if (container != null) {
+            DianaLayoutManager<?, ?> lm = container.getLayoutManager(ENTITY_BOX_LM);
+            if (lm != null) {
+                lm.invalidate();
+                lm.doLayout(true);
             }
         }
     }
