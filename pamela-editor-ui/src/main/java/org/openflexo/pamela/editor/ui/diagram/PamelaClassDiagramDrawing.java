@@ -38,6 +38,8 @@ import org.openflexo.diana.connectors.ConnectorSpecification.ConnectorType;
 import org.openflexo.diana.connectors.ConnectorSymbol.EndSymbolType;
 import org.openflexo.diana.connectors.ConnectorSymbol.StartSymbolType;
 import org.openflexo.diana.impl.DrawingImpl;
+import org.openflexo.diana.layout.BoxLayoutConstraints;
+import org.openflexo.diana.layout.LayoutConstraints;
 import org.openflexo.diana.layout.BoxLayoutManagerSpecification;
 import org.openflexo.diana.layout.BoxLayoutManagerSpecification.CrossAxisPolicy;
 import org.openflexo.diana.layout.BoxLayoutManagerSpecification.MainAxisPolicy;
@@ -750,7 +752,9 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         // its share of the vertical space below the header is proportional to its content
         // (weight = natural content height, 5 px floor when empty).
         gr.setLayoutManagerIdentifier(ENTITY_BOX_LM);
-        gr.setLayoutWeight(compartmentHeight(lines.size()));
+        BoxLayoutConstraints compartmentLc = f.newInstance(BoxLayoutConstraints.class);
+        compartmentLc.setWeight(compartmentHeight(lines.size()));
+        gr.setLayoutConstraints(compartmentLc);
         // Slice 1: a per-compartment vertical box layout stacks the item rows (full-width,
         // fixed ROW_HEIGHT) — replacing the per-row y=index*ROW_HEIGHT constraint bindings.
         gr.addToLayoutManagerSpecifications(makeRowBoxSpec(f));
@@ -835,7 +839,9 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         // Slice 1: the row is laid out by its compartment's BoxLayoutManager (stacked
         // full-width, fixed ROW_HEIGHT via weight 0) instead of per-row constraint bindings.
         gr.setLayoutManagerIdentifier(COMPARTMENT_BOX_LM);
-        gr.setLayoutWeight(0);
+        BoxLayoutConstraints rowLc = f.newInstance(BoxLayoutConstraints.class);
+        rowLc.setWeight(0);
+        gr.setLayoutConstraints(rowLc);
         // Transparent normally; the icon is drawn on top by a separate child shape.
         gr.setBackground(f.makeEmptyBackground());
         gr.setForeground(f.makeNoneForegroundStyle());
@@ -936,8 +942,14 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             ShapeNode<EntityView> node = getShapeNode(ev, compartmentBinding(c));
             if (node != null
                     && node.getGraphicalRepresentation() instanceof ShapeGraphicalRepresentation) {
-                ((ShapeGraphicalRepresentation) node.getGraphicalRepresentation())
-                        .setLayoutWeight(compartmentHeight(compartmentLines(ev, c).size()));
+                ShapeGraphicalRepresentation cgr =
+                    (ShapeGraphicalRepresentation) node.getGraphicalRepresentation();
+                LayoutConstraints lc = cgr.getLayoutConstraints();
+                if (!(lc instanceof BoxLayoutConstraints)) {
+                    lc = getFactory().newInstance(BoxLayoutConstraints.class);
+                    cgr.setLayoutConstraints(lc);
+                }
+                ((BoxLayoutConstraints) lc).setWeight(compartmentHeight(compartmentLines(ev, c).size()));
             }
         }
         // setLayoutWeight does not by itself trigger a relayout (a manager listens only to its
