@@ -45,6 +45,7 @@ layout=layout
 layout_constraints=layout_constraints
 layout_manager=layout_manager
 layout_manager_inspector=layout_manager_inspector
+layout_weight=layout_weight
 line_type=line_type
 localized_editor=localized_editor
 location_size_inspector=location_size_inspector
