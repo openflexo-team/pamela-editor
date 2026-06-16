@@ -166,6 +166,8 @@ public class PaintMoveBenchmark {
         // Drive the move through the REAL interactive path (MoveInfo), exactly as the GUI does:
         // it selects the moved object (IS_SELECTED / focus cascade) and calls setLocation per step.
         // This reproduces what raw notifyObjectWillMove()+setLocation() did NOT.
+        // -Dbench.resizeOnly=true skips the move phase (to profile resize without waiting for it).
+        if (!Boolean.getBoolean("bench.resizeOnly")) {
         org.openflexo.diana.control.actions.MoveInfo mi =
                 new org.openflexo.diana.control.actions.MoveInfo(node, editor);
         java.awt.Point startPx = mi.getInitialLocationInDrawingView();
@@ -212,6 +214,7 @@ public class PaintMoveBenchmark {
         System.out.printf("  liveShapeRenders  : %.2f  (live re-render of box shapes — want ~0)%n", (double) sumLive / n);
         System.out.println();
         System.out.println("MOVE VERDICT: " + verdict(sumBlit, sumLive, sumBuf, sumRegion, n));
+        } // end move phase (skipped when -Dbench.resizeOnly=true)
 
         // ---- RESIZE phase ------------------------------------------------------
         // A resize cannot reuse the move drag-cache (the box appearance changes), and it
