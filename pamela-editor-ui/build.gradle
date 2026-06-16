@@ -20,4 +20,31 @@ task run(type: JavaExec) {
   if (System.getProperty('os.name').toLowerCase().contains('mac')) {
     jvmArgs '-Dapple.laf.useScreenMenuBar=true'
   }
+  // Forward paint-performance diagnostic flags from the gradle invocation to the forked JVM,
+  // e.g. ./gradlew :pamela-editor-ui:run -Ddiana.paintdebug=true [-Ddiana.disableRegionCache=true]
+  ['diana.paintdebug', 'diana.disableRegionCache', 'diana.disableBoundsCache'].each { String key ->
+    if (System.getProperty(key) != null) {
+      systemProperty key, System.getProperty(key)
+    }
+  }
+}
+
+// Reproducible paint-performance benchmark of an entity-box move (Diana paint investigation, §32).
+//   ./gradlew :pamela-editor-ui:paintBench -Ddiana.paintdebug=true \
+//       [--args="<pamelaFile> <neighbours> <frames> [<entityName>]"]
+// NOTE: this runs against the *resolved* diana artifact. To measure local diana changes, first
+// `publishToMavenLocal` from /diana (and add mavenLocal()), or use an includeBuild composite.
+task paintBench(type: JavaExec) {
+  group = 'verification'
+  description = 'Benchmark an entity-box move on a PamelaClassDiagram (paint-perf diagnostic, §32)'
+  classpath = sourceSets.main.runtimeClasspath
+  mainClass = 'org.openflexo.pamela.editor.ui.perf.PaintMoveBenchmark'
+  if (System.getProperty('os.name').toLowerCase().contains('mac')) {
+    jvmArgs '-Dapple.laf.useScreenMenuBar=true'
+  }
+  ['diana.paintdebug', 'diana.disableRegionCache', 'diana.disableBoundsCache'].each { String key ->
+    if (System.getProperty(key) != null) {
+      systemProperty key, System.getProperty(key)
+    }
+  }
 }
