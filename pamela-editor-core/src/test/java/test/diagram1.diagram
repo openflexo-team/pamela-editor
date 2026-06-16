@@ -3,39 +3,57 @@
   "name" : "Diagram1",
   "entityViews" : [ {
     "qualifiedName" : "test.model2.AbstractNode",
-    "x" : 134.0,
-    "y" : 83.0,
+    "x" : 127.0,
+    "y" : 91.0,
     "width" : 211.0,
-    "height" : 159.0
+    "height" : 159.0,
+    "displayInitializers" : false,
+    "displayProperties" : true,
+    "displayMethods" : false
   }, {
     "qualifiedName" : "test.model2.Edge",
-    "x" : 395.0,
-    "y" : 149.0,
+    "x" : 405.0,
+    "y" : 112.0,
     "width" : 174.0,
-    "height" : 122.0
+    "height" : 122.0,
+    "displayInitializers" : false,
+    "displayProperties" : true,
+    "displayMethods" : true
   }, {
     "qualifiedName" : "test.model2.EventNode",
     "x" : 165.0,
     "y" : 302.0,
     "width" : 108.0,
-    "height" : 41.0
+    "height" : 41.0,
+    "displayInitializers" : false,
+    "displayProperties" : true,
+    "displayMethods" : false
   }, {
     "qualifiedName" : "test.model2.StartNode",
-    "x" : 192.0,
-    "y" : 430.0,
+    "x" : 166.0,
+    "y" : 395.0,
     "width" : 97.0,
-    "height" : 41.0
+    "height" : 41.0,
+    "displayInitializers" : false,
+    "displayProperties" : true,
+    "displayMethods" : false
   }, {
     "qualifiedName" : "test.model2.EndNode",
     "x" : 355.0,
     "y" : 431.0,
     "width" : 93.0,
-    "height" : 41.0
+    "height" : 41.0,
+    "displayInitializers" : false,
+    "displayProperties" : true,
+    "displayMethods" : false
   }, {
     "qualifiedName" : "test.model2.TokenEdge",
     "x" : 441.0,
     "y" : 330.0,
     "width" : 137.0,
-    "height" : 63.0
+    "height" : 63.0,
+    "displayInitializers" : false,
+    "displayProperties" : true,
+    "displayMethods" : false
   } ]
 }

@@ -412,9 +412,15 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             @Override
             public void visit(EntityView ev) {
                 drawShape(entityHeaderBinding, ev);
-                drawShape(entityInitializersBinding, ev);
-                drawShape(entityPropertiesBinding, ev);
-                drawShape(entityMethodsBinding, ev);
+                if (isCompartmentDisplayed(ev, Compartment.INITIALIZERS)) {
+                    drawShape(entityInitializersBinding, ev);
+                }
+                if (isCompartmentDisplayed(ev, Compartment.PROPERTIES)) {
+                    drawShape(entityPropertiesBinding, ev);
+                }
+                if (isCompartmentDisplayed(ev, Compartment.METHODS)) {
+                    drawShape(entityMethodsBinding, ev);
+                }
             }
         });
 
@@ -645,6 +651,20 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     // Compartments (initializers / properties / methods)
     // =========================================================================
 
+    /**
+     * Whether a compartment is shown for an entity view, per its display flags
+     * ({@code displayInitializers} / {@code displayProperties} / {@code displayMethods}).
+     * A hidden compartment is neither drawn nor counted in the box's natural size.
+     */
+    private boolean isCompartmentDisplayed(EntityView ev, Compartment c) {
+        switch (c) {
+            case INITIALIZERS: return ev.getDisplayInitializers();
+            case PROPERTIES:   return ev.getDisplayProperties();
+            case METHODS:      return ev.getDisplayMethods();
+            default:           return true;
+        }
+    }
+
     /** The text lines shown in a compartment; empty when unresolved or nothing to show. */
     private List<String> compartmentLines(EntityView ev, Compartment c) {
         SourceModelEntity e = ev.getEntity();
@@ -681,11 +701,13 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         return itemCount == 0 ? EMPTY_COMPARTMENT_HEIGHT : itemCount * ROW_HEIGHT;
     }
 
-    /** Sum of the three compartments' natural (content-driven) heights. Always ≥ 15. */
+    /** Sum of the <em>displayed</em> compartments' natural (content-driven) heights. */
     private double naturalCompartmentsSum(EntityView ev) {
         double s = 0;
         for (Compartment k : Compartment.values()) {
-            s += compartmentHeight(compartmentLines(ev, k).size());
+            if (isCompartmentDisplayed(ev, k)) {
+                s += compartmentHeight(compartmentLines(ev, k).size());
+            }
         }
         return s;
     }
@@ -725,8 +747,12 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             w = Math.max(w, stringWidth(HEADER_FONT, line) + headerMargin);
         }
         // Compartments: each item line is preceded by its icon, so reserve the icon
-        // offset (ROW_TEXT_INSET_X) plus the text width and a right padding.
+        // offset (ROW_TEXT_INSET_X) plus the text width and a right padding. Skip
+        // compartments hidden by the entity view's display flags.
         for (Compartment c : Compartment.values()) {
+            if (!isCompartmentDisplayed(ev, c)) {
+                continue;
+            }
             for (String line : compartmentLines(ev, c)) {
                 w = Math.max(w, stringWidth(COMPARTMENT_FONT, line)
                         + ROW_TEXT_INSET_X + COMPARTMENT_RIGHT_PAD);
@@ -1006,6 +1032,18 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             applyCompartmentGeometry(ev);
         }
         updateGraphicalObjectsHierarchy();
+    }
+
+    /**
+     * Re-walks the drawing and refreshes the compartment layout for one entity view
+     * after its {@code displayInitializers}/{@code displayProperties}/{@code displayMethods}
+     * flags changed (e.g. toggled in the inspector). The re-walk adds or removes the
+     * affected compartment (and its rows); {@link #applyCompartmentGeometry} then
+     * redistributes the remaining compartments' weights below the header.
+     */
+    public void refreshCompartmentVisibility(EntityView ev) {
+        updateGraphicalObjectsHierarchy();
+        applyCompartmentGeometry(ev);
     }
 
     /** Returns the {@link SourceMetaModel} used to compute connectors. */

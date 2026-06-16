@@ -150,6 +150,14 @@ public class PamelaClassDiagramSerializer {
 
                 EntityView ev = factory.newEntityView(qn, x, y, w, h);
 
+                // Compartment visibility flags — absent in legacy files → default true.
+                ev.setDisplayInitializers(
+                        !viewNode.has("displayInitializers") || viewNode.get("displayInitializers").asBoolean());
+                ev.setDisplayProperties(
+                        !viewNode.has("displayProperties") || viewNode.get("displayProperties").asBoolean());
+                ev.setDisplayMethods(
+                        !viewNode.has("displayMethods") || viewNode.get("displayMethods").asBoolean());
+
                 // Resolve transient entity reference
                 if (qn != null && session.getMetaModel() != null) {
                     ev.setEntity(session.getMetaModel().getEntity(qn));
@@ -196,6 +204,9 @@ public class PamelaClassDiagramSerializer {
                 viewNode.put("y", ev.getY());
                 viewNode.put("width", ev.getWidth());
                 viewNode.put("height", ev.getHeight());
+                viewNode.put("displayInitializers", ev.getDisplayInitializers());
+                viewNode.put("displayProperties", ev.getDisplayProperties());
+                viewNode.put("displayMethods", ev.getDisplayMethods());
                 viewsArray.add(viewNode);
             }
         }

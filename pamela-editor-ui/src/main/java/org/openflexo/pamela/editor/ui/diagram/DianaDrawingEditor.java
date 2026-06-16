@@ -221,7 +221,14 @@ public class DianaDrawingEditor extends JDianaInteractiveEditor<PamelaClassDiagr
 
         EntityView ev = getFactory().newEntityView(qualifiedName, x, y, 200.0, 120.0);
         ev.setEntity(entity);
-        // Default to the optimal (content-fitting) size for the dropped entity.
+        // Default compartment visibility: properties always shown; initializers and
+        // methods shown only when the entity actually has some (may be edited later).
+        ev.setDisplayProperties(true);
+        ev.setDisplayInitializers(!entity.getInitializers().isEmpty());
+        ev.setDisplayMethods(entity.getImplementationClass() != null
+                && !entity.getImplementationClass().getCustomMethods().isEmpty());
+        // Default to the optimal (content-fitting) size for the dropped entity. Must be
+        // computed after the visibility flags so hidden compartments don't inflate the box.
         ev.setWidth(getDrawing().optimalWidth(ev));
         ev.setHeight(getDrawing().optimalHeight(ev));
         diagram.addToEntityViews(ev);

@@ -161,6 +161,18 @@ public class PamelaClassDiagramEditor {
         ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.Y, geom);
         ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.WIDTH, geom);
         ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.HEIGHT, geom);
+
+        // Toggling a compartment-visibility flag marks the project dirty and re-walks
+        // the drawing so the compartment appears/disappears immediately.
+        PropertyChangeListener display = evt -> {
+            onDirty.run();
+            if (drawing != null) {
+                drawing.refreshCompartmentVisibility(ev);
+            }
+        };
+        ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.DISPLAY_INITIALIZERS, display);
+        ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.DISPLAY_PROPERTIES, display);
+        ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.DISPLAY_METHODS, display);
     }
 
     /**

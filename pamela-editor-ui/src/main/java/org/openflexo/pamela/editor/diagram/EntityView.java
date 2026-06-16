@@ -32,6 +32,9 @@ public interface EntityView extends AccessibleProxyObject {
     String Y = "y";
     String WIDTH = "width";
     String HEIGHT = "height";
+    String DISPLAY_INITIALIZERS = "displayInitializers";
+    String DISPLAY_PROPERTIES = "displayProperties";
+    String DISPLAY_METHODS = "displayMethods";
 
     @Getter(QUALIFIED_NAME)
     String getQualifiedName();
@@ -62,6 +65,40 @@ public interface EntityView extends AccessibleProxyObject {
 
     @Setter(HEIGHT)
     void setHeight(double height);
+
+    /**
+     * Whether the initializers compartment is displayed in the UML box.
+     * Defaults to {@code true} (e.g. for legacy diagrams that predate this flag);
+     * on drop the value is set to {@code true} only when the entity actually has
+     * initializers (see {@code DianaDrawingEditor.addEntity}).
+     */
+    @Getter(value = DISPLAY_INITIALIZERS, defaultValue = "true")
+    boolean getDisplayInitializers();
+
+    @Setter(DISPLAY_INITIALIZERS)
+    void setDisplayInitializers(boolean displayInitializers);
+
+    /**
+     * Whether the model-properties compartment is displayed in the UML box.
+     * Defaults to {@code true}, and stays {@code true} on drop (but may be edited
+     * to {@code false} in the inspector).
+     */
+    @Getter(value = DISPLAY_PROPERTIES, defaultValue = "true")
+    boolean getDisplayProperties();
+
+    @Setter(DISPLAY_PROPERTIES)
+    void setDisplayProperties(boolean displayProperties);
+
+    /**
+     * Whether the methods compartment is displayed in the UML box.
+     * Defaults to {@code true}; on drop the value is set to {@code true} only when
+     * the entity's implementation class actually has custom methods.
+     */
+    @Getter(value = DISPLAY_METHODS, defaultValue = "true")
+    boolean getDisplayMethods();
+
+    @Setter(DISPLAY_METHODS)
+    void setDisplayMethods(boolean displayMethods);
 
     /**
      * Transient reference to the resolved {@link SourceModelEntity}.

@@ -25,6 +25,18 @@
     <Number name="HeightField" index="9" minValue="10.0" maxValue="10000.0" increment="1.0"
         numberType="DoubleType" columns="7" data="data.height"
         constraints="twocols(location=right)" localize="true" />
+    <Label name="DisplayInitializersLabel" label="display_initializers" index="10"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="DisplayInitializersCB" index="11" selected="true" data="data.displayInitializers"
+        constraints="twocols(location=right)" localize="true" />
+    <Label name="DisplayPropertiesLabel" label="display_properties" index="12"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="DisplayPropertiesCB" index="13" selected="true" data="data.displayProperties"
+        constraints="twocols(location=right)" localize="true" />
+    <Label name="DisplayMethodsLabel" label="display_methods" index="14"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="DisplayMethodsCB" index="15" selected="true" data="data.displayMethods"
+        constraints="twocols(location=right)" localize="true" />
     <LocalizedDictionary>
         <Localized key="qualified_name" lang="English" value="Qualified name" />
         <Localized key="qualified_name" lang="French" value="Nom qualifié" />
@@ -36,6 +48,12 @@
         <Localized key="width" lang="French" value="Largeur" />
         <Localized key="height" lang="English" value="Height" />
         <Localized key="height" lang="French" value="Hauteur" />
+        <Localized key="display_initializers" lang="English" value="Display initializers" />
+        <Localized key="display_initializers" lang="French" value="Afficher les initialiseurs" />
+        <Localized key="display_properties" lang="English" value="Display properties" />
+        <Localized key="display_properties" lang="French" value="Afficher les propriétés" />
+        <Localized key="display_methods" lang="English" value="Display methods" />
+        <Localized key="display_methods" lang="French" value="Afficher les méthodes" />
     </LocalizedDictionary>
     <Parameter name="title" value="Entity View" />
 </Inspector>
