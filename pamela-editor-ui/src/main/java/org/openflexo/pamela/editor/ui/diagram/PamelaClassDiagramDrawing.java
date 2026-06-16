@@ -94,6 +94,8 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     private static final double ROW_HEIGHT = 16.0;
     /** Height of an empty compartment (nothing to show). */
     private static final double EMPTY_COMPARTMENT_HEIGHT = 5.0;
+    /** Top padding inside a non-empty compartment, before its first item row. */
+    private static final double COMPARTMENT_TOP_INSET = 4.0;
     /** Top inset of an item-row label. */
     private static final double TEXT_INSET_Y = 2.0;
     /** Left inset of an item-row icon inside its row. */
@@ -104,6 +106,16 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     private static final double COMPARTMENT_RIGHT_PAD = 8.0;
     /** Minimum box width (floor of the content-based width heuristic). */
     private static final double MIN_BOX_WIDTH = 80.0;
+    /**
+     * Left/right margin (logical units) reserved by each compartment's row layout around
+     * its item rows. This band belongs to the (non-focusable) compartment, so the cursor
+     * there focuses the <em>container</em> rather than a focusable row — which is what
+     * makes the left/right borders and the bottom corners grabbable for resizing. The
+     * compartments themselves stay flush with the container (their borders coincide), so
+     * no "inner box" is drawn. Without it the rows fill the box to its left/right edges
+     * and intercept the press meant for the container's resize control point.
+     */
+    private static final double RESIZE_MARGIN = 6.0;
 
     /** Fonts used for the title and compartment text (shared with the width heuristic). */
     private static final Font HEADER_FONT = new Font("SansSerif", Font.BOLD, 11);
@@ -696,9 +708,10 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         return lines;
     }
 
-    /** Height of a compartment given its item count: ROW_HEIGHT per item, 5 px if empty. */
+    /** Height of a compartment given its item count: a top inset plus ROW_HEIGHT per item,
+     *  or {@link #EMPTY_COMPARTMENT_HEIGHT} when empty. */
     private static double compartmentHeight(int itemCount) {
-        return itemCount == 0 ? EMPTY_COMPARTMENT_HEIGHT : itemCount * ROW_HEIGHT;
+        return itemCount == 0 ? EMPTY_COMPARTMENT_HEIGHT : COMPARTMENT_TOP_INSET + itemCount * ROW_HEIGHT;
     }
 
     /** Sum of the <em>displayed</em> compartments' natural (content-driven) heights. */
@@ -754,8 +767,9 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                 continue;
             }
             for (String line : compartmentLines(ev, c)) {
+                // Rows sit inside the left/right inset band, so reserve 2*RESIZE_MARGIN too.
                 w = Math.max(w, stringWidth(COMPARTMENT_FONT, line)
-                        + ROW_TEXT_INSET_X + COMPARTMENT_RIGHT_PAD);
+                        + ROW_TEXT_INSET_X + COMPARTMENT_RIGHT_PAD + 2 * RESIZE_MARGIN);
             }
         }
         return Math.ceil(w);
@@ -817,6 +831,14 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             f.makeLayoutManagerSpecification(COMPARTMENT_BOX_LM, BoxLayoutManagerSpecification.class);
         box.setOrientation(Orientation.VERTICAL);
         box.setCrossAxisPolicy(CrossAxisPolicy.STRETCH);
+        // Inset the rows left/right inside the (full-bleed) compartment: this margin band
+        // belongs to the non-focusable compartment, so the cursor there focuses the
+        // container — making the left/right borders and the bottom corners grabbable for
+        // resize, without moving the compartment borders (no "inner box" artifact).
+        box.setInsetLeft(RESIZE_MARGIN);
+        box.setInsetRight(RESIZE_MARGIN);
+        // A little breathing room above the first row inside the compartment.
+        box.setInsetTop(COMPARTMENT_TOP_INSET);
         box.setGap(0);
         box.setAnimateLayout(false);
         return box;
