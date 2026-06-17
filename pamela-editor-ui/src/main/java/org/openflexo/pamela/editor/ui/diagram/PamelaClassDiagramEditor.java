@@ -7,6 +7,7 @@ import java.util.Set;
 
 import javax.swing.JComponent;
 
+import org.openflexo.pamela.editor.diagram.ConnectorView;
 import org.openflexo.pamela.editor.diagram.EntityView;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
@@ -42,6 +43,8 @@ public class PamelaClassDiagramEditor {
     private boolean dirtyTrackingInstalled;
     private Runnable onDirty;
     private final Set<EntityView> trackedViews =
+            Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<ConnectorView> trackedConnectors =
             Collections.newSetFromMap(new IdentityHashMap<>());
 
     public PamelaClassDiagramEditor(PamelaProject session, PamelaClassDiagram diagram) {
@@ -123,6 +126,16 @@ public class PamelaClassDiagramEditor {
     }
 
     /**
+     * Removes persisted connector data and hidden-property entries that no longer apply
+     * (entity removed from the diagram, or property removed/renamed in source).
+     */
+    public void pruneStaleConnectorData() {
+        if (drawing != null) {
+            drawing.pruneStaleConnectorData();
+        }
+    }
+
+    /**
      * Installs listeners that invoke {@code onDirty} whenever the diagram is mutated:
      * an entity view is added/removed (the {@code entityViews} collection changes) or a
      * shape is moved/resized (an {@link EntityView}'s {@code x/y/width/height} changes).
@@ -149,6 +162,30 @@ public class PamelaClassDiagramEditor {
         for (EntityView ev : diagram.getEntityViews()) {
             trackViewGeometry(ev);
         }
+
+        // Connector-view collection (label overrides, created lazily on first
+        // label move) → dirty; also track the label position of added entries.
+        diagram.getPropertyChangeSupport().addPropertyChangeListener(
+                PamelaClassDiagram.CONNECTOR_VIEWS, evt -> {
+                    onDirty.run();
+                    if (evt.getNewValue() instanceof ConnectorView) {
+                        trackConnectorLabel((ConnectorView) evt.getNewValue());
+                    }
+                });
+
+        for (ConnectorView cv : diagram.getConnectorViews()) {
+            trackConnectorLabel(cv);
+        }
+    }
+
+    /** Registers a label-position listener on a connector view (once) so moves mark dirty. */
+    private void trackConnectorLabel(ConnectorView cv) {
+        if (cv == null || onDirty == null || !trackedConnectors.add(cv)) {
+            return;
+        }
+        PropertyChangeListener label = evt -> onDirty.run();
+        cv.getPropertyChangeSupport().addPropertyChangeListener(ConnectorView.LABEL_X, label);
+        cv.getPropertyChangeSupport().addPropertyChangeListener(ConnectorView.LABEL_Y, label);
     }
 
     /** Registers a geometry listener on an entity view (once) so moves/resizes mark dirty. */
@@ -173,6 +210,16 @@ public class PamelaClassDiagramEditor {
         ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.DISPLAY_INITIALIZERS, display);
         ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.DISPLAY_PROPERTIES, display);
         ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.DISPLAY_METHODS, display);
+
+        // Hiding/un-hiding a property's connector marks dirty and re-walks the drawing so
+        // the connector disappears/reappears immediately.
+        PropertyChangeListener hidden = evt -> {
+            onDirty.run();
+            if (drawing != null) {
+                drawing.updateGraphicalObjectsHierarchy();
+            }
+        };
+        ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.HIDDEN_PROPERTIES, hidden);
     }
 
     /**

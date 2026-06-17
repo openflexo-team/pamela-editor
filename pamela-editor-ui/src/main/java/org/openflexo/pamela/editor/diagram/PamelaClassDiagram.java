@@ -24,6 +24,7 @@ public interface PamelaClassDiagram extends AccessibleProxyObject {
     String ID = "id";
     String NAME = "name";
     String ENTITY_VIEWS = "entityViews";
+    String CONNECTOR_VIEWS = "connectorViews";
 
     /**
      * Stable identifier, assigned at creation and never changed. Used as the
@@ -51,4 +52,26 @@ public interface PamelaClassDiagram extends AccessibleProxyObject {
 
     @Remover(ENTITY_VIEWS)
     void removeFromEntityViews(EntityView entityView);
+
+    /**
+     * Persisted graphical overrides for connectors (currently association-label
+     * positions). Created lazily — only a {@link PropertyView} whose label was moved is
+     * stored here; inheritance links and default-positioned labels are recomputed at
+     * runtime and never persisted. See {@link ConnectorView}.
+     */
+    @Getter(value = CONNECTOR_VIEWS, cardinality = Cardinality.LIST)
+    @Embedded
+    List<ConnectorView> getConnectorViews();
+
+    @Adder(CONNECTOR_VIEWS)
+    void addToConnectorViews(ConnectorView connectorView);
+
+    @Remover(CONNECTOR_VIEWS)
+    void removeFromConnectorViews(ConnectorView connectorView);
+
+    /**
+     * Returns the persisted {@link PropertyView} for the given connector identity (source
+     * entity qualified name + property identifier), or {@code null} if none is stored.
+     */
+    PropertyView findPropertyView(String sourceQualifiedName, String propertyIdentifier);
 }

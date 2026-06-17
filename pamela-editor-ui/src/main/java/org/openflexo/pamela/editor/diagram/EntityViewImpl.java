@@ -58,4 +58,24 @@ public abstract class EntityViewImpl implements EntityView {
         if (entity == null) return Collections.emptyList();
         return entity.getInitializers();
     }
+
+    @Override
+    public boolean isPropertyHidden(String propertyIdentifier) {
+        List<String> hidden = getHiddenProperties();
+        return hidden != null && hidden.contains(propertyIdentifier);
+    }
+
+    @Override
+    public void setPropertyHidden(String propertyIdentifier, boolean hidden) {
+        if (propertyIdentifier == null) {
+            return;
+        }
+        boolean currentlyHidden = isPropertyHidden(propertyIdentifier);
+        if (hidden && !currentlyHidden) {
+            addToHiddenProperties(propertyIdentifier);
+        }
+        else if (!hidden && currentlyHidden) {
+            removeFromHiddenProperties(propertyIdentifier);
+        }
+    }
 }

@@ -11,7 +11,8 @@ import org.openflexo.pamela.factory.EditingContext;
 public class PamelaClassDiagramFactory extends DianaModelFactoryImpl {
 
     public PamelaClassDiagramFactory(EditingContext editingContext) throws ModelDefinitionException {
-        super(PamelaClassDiagram.class, EntityView.class);
+        super(PamelaClassDiagram.class, EntityView.class,
+                ConnectorView.class, PropertyView.class, InheritanceView.class);
         setEditingContext(editingContext);
     }
 
@@ -47,5 +48,40 @@ public class PamelaClassDiagramFactory extends DianaModelFactoryImpl {
         ev.setWidth(width);
         ev.setHeight(height);
         return ev;
+    }
+
+    /**
+     * Creates a new {@link PropertyView} for the given connector identity (not yet added
+     * to any diagram). Label offsets default to {@code 0}.
+     *
+     * @param sourceQualifiedName qualified name of the source (declaring) entity
+     * @param targetQualifiedName qualified name of the target (property type) entity
+     * @param propertyIdentifier  identifier of the originating property
+     * @return a new {@link PropertyView} instance
+     */
+    public PropertyView newPropertyView(String sourceQualifiedName,
+                                        String targetQualifiedName,
+                                        String propertyIdentifier) {
+        PropertyView pv = newInstance(PropertyView.class);
+        pv.setSourceQualifiedName(sourceQualifiedName);
+        pv.setTargetQualifiedName(targetQualifiedName);
+        pv.setPropertyIdentifier(propertyIdentifier);
+        return pv;
+    }
+
+    /**
+     * Creates a new {@link InheritanceView} for the given inheritance link (not yet added
+     * to any diagram). Inheritance views are never persisted.
+     *
+     * @param sourceQualifiedName qualified name of the sub-entity (extends the super)
+     * @param targetQualifiedName qualified name of the super-entity
+     * @return a new {@link InheritanceView} instance
+     */
+    public InheritanceView newInheritanceView(String sourceQualifiedName,
+                                              String targetQualifiedName) {
+        InheritanceView iv = newInstance(InheritanceView.class);
+        iv.setSourceQualifiedName(sourceQualifiedName);
+        iv.setTargetQualifiedName(targetQualifiedName);
+        return iv;
     }
 }

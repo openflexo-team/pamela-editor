@@ -46,10 +46,12 @@ import org.openflexo.diana.layout.BoxLayoutManagerSpecification.MainAxisPolicy;
 import org.openflexo.diana.layout.BoxLayoutManagerSpecification.Orientation;
 import org.openflexo.diana.shapes.ShapeSpecification.ShapeType;
 import org.openflexo.pamela.annotations.Getter.Cardinality;
-import org.openflexo.pamela.editor.diagram.ComputedConnector;
-import org.openflexo.pamela.editor.diagram.ComputedConnector.RelationshipType;
+import org.openflexo.pamela.editor.diagram.ConnectorView;
 import org.openflexo.pamela.editor.diagram.EntityView;
+import org.openflexo.pamela.editor.diagram.InheritanceView;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
+import org.openflexo.pamela.editor.diagram.PamelaClassDiagramFactory;
+import org.openflexo.pamela.editor.diagram.PropertyView;
 import org.openflexo.pamela.editor.model.SourceCustomMethod;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourceModelInitializer;
@@ -70,17 +72,18 @@ import org.openflexo.pamela.factory.PamelaModelFactory;
  * updated on resize, so {@code parent.width} would stay stale and the header would
  * not follow the container. Entity geometry ({@code x/y} and {@code width/height})
  * is synced back to the {@link EntityView} model via settable dynamic property
- * values, so user drag and resize are persisted to the {@code .diagram} sidecar;
- * {@link ComputedConnector} remains entirely transient.</p>
+ * values, so user drag and resize are persisted to the {@code .diagram} sidecar.</p>
  *
- * <p>Connectors are <em>computed</em> — they are never stored in the model.
- * Three types are shown when both endpoints are present in the diagram:
+ * <p>Connector <em>existence</em> is computed — a connector is shown when both endpoints
+ * are present (and, for a property, not hidden on the source {@link EntityView}). Each is
+ * materialised as a {@link ConnectorView}:
  * <ul>
- *   <li><b>INHERITANCE</b> — A extends B</li>
- *   <li><b>ASSOCIATION</b> — A has a property of type B, no {@code @Embedded}</li>
- *   <li><b>COMPOSITION</b> — A has a property of type B, with {@code @Embedded}</li>
+ *   <li><b>{@link InheritanceView}</b> — A extends B (always transient)</li>
+ *   <li><b>{@link PropertyView}</b> (association) — A has a property of type B, no {@code @Embedded}</li>
+ *   <li><b>{@link PropertyView}</b> (composition) — A has a property of type B, with {@code @Embedded}</li>
  * </ul>
- * </p>
+ * A {@link PropertyView} is persisted (in the diagram's {@code connectorViews}) only when
+ * its label was moved; otherwise it is a transient interned drawable.</p>
  */
 public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
 
@@ -144,6 +147,8 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
 
     private final SourceMetaModel metaModel;
     private final DianaModelFactory factory;
+    /** Same instance as {@link #factory}, typed for creating {@link ConnectorView}s. */
+    private final PamelaClassDiagramFactory pamelaFactory;
     /** Editing context of the diagram factory — needed to register the right-click
      *  {@link PamelaShowContextualMenuControl} on the interactive GRs. */
     private final EditingContext editingContext;
@@ -156,7 +161,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     private ShapeGRBinding<EntityView> entityMethodsBinding;
     private ShapeGRBinding<CompartmentItem> itemRowBinding;
     private ShapeGRBinding<CompartmentItem> itemIconBinding;
-    private ConnectorGRBinding<ComputedConnector> connectorBinding;
+    private ConnectorGRBinding<ConnectorView> connectorBinding;
 
     /**
      * Pool of canonical {@link CompartmentItem} instances, keyed by value. Diana's
@@ -168,8 +173,14 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
      */
     private final Map<CompartmentItem, CompartmentItem> itemPool = new HashMap<>();
 
-    /** Same interning rationale as {@link #itemPool}, for the computed connectors. */
-    private final Map<ComputedConnector, ComputedConnector> connectorPool = new HashMap<>();
+    /**
+     * Pool of transient (non-persisted) connector views, keyed by connector identity
+     * (see {@link #connectorKey}). Same interning rationale as {@link #itemPool}: a
+     * connector with no persisted {@link PropertyView} still needs a stable drawable
+     * instance across walks. A persisted {@link PropertyView} (label moved) lives in the
+     * diagram model instead and is used directly. Inheritance views are always transient.
+     */
+    private final Map<String, ConnectorView> transientConnectorPool = new HashMap<>();
 
     public PamelaClassDiagramDrawing(PamelaClassDiagram diagram,
                                      SourceMetaModel metaModel,
@@ -177,6 +188,8 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         super(diagram, factory, PersistenceMode.UniqueGraphicalRepresentations);
         this.metaModel = metaModel;
         this.factory = factory;
+        this.pamelaFactory = (factory instanceof PamelaClassDiagramFactory)
+                ? (PamelaClassDiagramFactory) factory : null;
         this.editingContext = (factory instanceof PamelaModelFactory)
                 ? ((PamelaModelFactory) factory).getEditingContext() : null;
     }
@@ -366,43 +379,48 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                 }
             });
 
-        // 3. Connector binding for ComputedConnector
-        connectorBinding = bindConnector(ComputedConnector.class, "connector",
+        // 3. Connector binding for ConnectorView (PropertyView / InheritanceView)
+        connectorBinding = bindConnector(ConnectorView.class, "connector",
             entityViewBinding, entityViewBinding,
-            new ConnectorGRProvider<ComputedConnector>() {
+            new ConnectorGRProvider<ConnectorView>() {
                 @Override
                 public ConnectorGraphicalRepresentation provideGR(
-                        ComputedConnector cc, DianaModelFactory factory) {
+                        ConnectorView cv, DianaModelFactory factory) {
                     ConnectorGraphicalRepresentation gr =
                         factory.makeConnectorGraphicalRepresentation(ConnectorType.LINE);
                     // Connectors are drawn source → target:
-                    //  - INHERITANCE: sub-type → super-type
-                    //  - ASSOCIATION / COMPOSITION: owner → property type
+                    //  - InheritanceView: sub-type → super-type
+                    //  - PropertyView:    owner → property type (association/composition)
                     ConnectorSpecification spec = gr.getConnectorSpecification();
-                    switch (cc.getType()) {
-                        case INHERITANCE:
-                            // UML generalization: hollow triangle at the super-type end.
-                            gr.setForeground(factory.makeForegroundStyle(Color.DARK_GRAY, 1.5f));
-                            spec.setEndSymbol(EndSymbolType.PLAIN_ARROW);
-                            spec.setEndSymbolSize(12.0);
-                            break;
-                        case COMPOSITION:
-                            // UML composition: filled diamond at the owner end,
-                            // open arrow at the part end.
-                            gr.setForeground(factory.makeForegroundStyle(new Color(60, 60, 180), 1.5f));
-                            spec.setStartSymbol(StartSymbolType.FILLED_DIAMOND);
-                            spec.setStartSymbolSize(10.0);
-                            spec.setEndSymbol(EndSymbolType.ARROW);
-                            spec.setEndSymbolSize(8.0);
-                            break;
-                        case ASSOCIATION:
-                        default:
-                            // UML association: open arrow at the type end.
-                            gr.setForeground(factory.makeForegroundStyle(Color.GRAY, 1.0f));
-                            spec.setEndSymbol(EndSymbolType.ARROW);
-                            spec.setEndSymbolSize(8.0);
-                            break;
+                    if (cv instanceof InheritanceView) {
+                        // UML generalization: hollow triangle at the super-type end.
+                        gr.setForeground(factory.makeForegroundStyle(Color.DARK_GRAY, 1.5f));
+                        spec.setEndSymbol(EndSymbolType.PLAIN_ARROW);
+                        spec.setEndSymbolSize(12.0);
                     }
+                    else if (cv instanceof PropertyView && isComposition((PropertyView) cv)) {
+                        // UML composition: filled diamond at the owner end, open arrow at
+                        // the part end.
+                        gr.setForeground(factory.makeForegroundStyle(new Color(60, 60, 180), 1.5f));
+                        spec.setStartSymbol(StartSymbolType.FILLED_DIAMOND);
+                        spec.setStartSymbolSize(10.0);
+                        spec.setEndSymbol(EndSymbolType.ARROW);
+                        spec.setEndSymbolSize(8.0);
+                    }
+                    else {
+                        // UML association: open arrow at the type end.
+                        gr.setForeground(factory.makeForegroundStyle(Color.GRAY, 1.0f));
+                        spec.setEndSymbol(EndSymbolType.ARROW);
+                        spec.setEndSymbolSize(8.0);
+                    }
+                    // Apply the persisted label position now, so a reloaded diagram shows
+                    // the label where it was saved (the settable binding below only handles
+                    // write-back and live model→view updates, not the initial value).
+                    gr.setAbsoluteTextX(cv.getLabelX());
+                    gr.setAbsoluteTextY(cv.getLabelY());
+                    // Connectors are selectable (→ inspector) and offer a right-click menu.
+                    gr.setIsSelectable(true);
+                    addContextualMenuControl(gr);
                     return gr;
                 }
             });
@@ -482,10 +500,10 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         drawingBinding.addToWalkers(new GRStructureVisitor<PamelaClassDiagram>() {
             @Override
             public void visit(PamelaClassDiagram diagram) {
-                for (ComputedConnector cc : computeConnectors(diagram)) {
-                    drawConnector(connectorBinding, cc,
-                                  entityViewBinding, cc.getSourceView(),
-                                  entityViewBinding, cc.getTargetView());
+                for (ConnectorDraw cd : computeConnectors(diagram)) {
+                    drawConnector(connectorBinding, cd.view,
+                                  entityViewBinding, cd.source,
+                                  entityViewBinding, cd.target);
                 }
             }
         });
@@ -498,13 +516,25 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             new DataBinding<String>("drawable.displayLabel"),
             false);
 
-        // 6b. Label the property-based connectors with the property name (UML
-        //     association role). For an inheritance connector `property` is null,
-        //     so this navigation evaluates to null → no label.
+        // 6b. Label the connectors: PropertyView → property name (UML association role),
+        //     InheritanceView → none. Computed by ConnectorView.getLabel().
         connectorBinding.setDynamicPropertyValue(
             GraphicalRepresentation.TEXT,
-            new DataBinding<String>("drawable.property.propertyIdentifier"),
+            new DataBinding<String>("drawable.label"),
             false);
+
+        // 6c. Persist the association-label position: settable bindings on the
+        //     connector's absoluteTextX/Y (offset relative to the connector centre).
+        //     Dragging the label writes back to drawable.labelX/labelY on the connector
+        //     view; a transient view is promoted into the diagram's connectorViews on
+        //     first move (see #makeTransientConnector), and the editor's dirty-tracking
+        //     persists it.
+        connectorBinding.setDynamicPropertyValue(
+            GraphicalRepresentation.ABSOLUTE_TEXT_X,
+            new DataBinding<Double>("drawable.labelX"), true);
+        connectorBinding.setDynamicPropertyValue(
+            GraphicalRepresentation.ABSOLUTE_TEXT_Y,
+            new DataBinding<Double>("drawable.labelY"), true);
 
         // 7. Sync geometry back to the EntityView model (settable bindings), so that
         //    user drag (x/y) and width resize are persisted to the .diagram sidecar.
@@ -529,15 +559,29 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     // Connector computation
     // =========================================================================
 
-    /**
-     * Computes all connectors that should be displayed in the given diagram.
-     * A connector is included only when both endpoint entities are present as
-     * {@link EntityView}s in the diagram.
-     */
-    private List<ComputedConnector> computeConnectors(PamelaClassDiagram diagram) {
-        List<ComputedConnector> result = new ArrayList<>();
+    /** A connector view together with the two entity-view endpoints to draw it between. */
+    private static final class ConnectorDraw {
+        final ConnectorView view;
+        final EntityView source;
+        final EntityView target;
+        ConnectorDraw(ConnectorView view, EntityView source, EntityView target) {
+            this.view = view;
+            this.source = source;
+            this.target = target;
+        }
+    }
 
-        // Build a map from qualified name → EntityView for fast lookup
+    /**
+     * Computes the connectors to display in the diagram. Existence is computed, not
+     * persisted: a connector is included only when both endpoint entities are present
+     * (and resolved) — and, for a property, only when it is not hidden on the source
+     * {@link EntityView}. Each connector is materialised as a {@link PropertyView} /
+     * {@link InheritanceView}: a persisted {@link PropertyView} (label moved) when one
+     * exists, otherwise a transient interned view. Inheritance views are always transient.
+     */
+    private List<ConnectorDraw> computeConnectors(PamelaClassDiagram diagram) {
+        List<ConnectorDraw> result = new ArrayList<>();
+
         Map<String, EntityView> viewByName = new HashMap<>();
         for (EntityView ev : diagram.getEntityViews()) {
             viewByName.put(ev.getQualifiedName(), ev);
@@ -549,17 +593,21 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                 continue;
             }
 
-            // Inheritance connectors
+            // Inheritance connectors (always transient — never persisted, never hidden)
             for (SourceModelEntity superEntity : sourceEntity.getDirectSuperEntities()) {
                 EntityView targetView = viewByName.get(superEntity.getQualifiedName());
                 if (targetView != null) {
-                    result.add(internConnector(new ComputedConnector(
-                            RelationshipType.INHERITANCE, sourceView, targetView, null)));
+                    InheritanceView iv = transientInheritanceView(sourceView, targetView,
+                            sourceEntity, superEntity);
+                    result.add(new ConnectorDraw(iv, sourceView, targetView));
                 }
             }
 
-            // Association / Composition connectors from declared properties
+            // Association / Composition connectors from declared (non-hidden) properties
             for (SourceModelProperty prop : sourceEntity.getDeclaredProperties().values()) {
+                if (sourceView.isPropertyHidden(prop.getPropertyIdentifier())) {
+                    continue;
+                }
                 SourceModelEntity propTypeEntity = prop.getType().getModelEntity();
                 if (propTypeEntity == null) {
                     continue;
@@ -568,24 +616,148 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                 if (targetView == null) {
                     continue;
                 }
-                RelationshipType type = prop.isEmbedded()
-                        ? RelationshipType.COMPOSITION
-                        : RelationshipType.ASSOCIATION;
-                result.add(internConnector(new ComputedConnector(type, sourceView, targetView, prop)));
+                PropertyView pv = propertyView(diagram, sourceView, targetView, prop);
+                result.add(new ConnectorDraw(pv, sourceView, targetView));
             }
         }
 
         return result;
     }
 
-    /** Returns the canonical (interned) instance for a connector value. */
-    private ComputedConnector internConnector(ComputedConnector cc) {
-        ComputedConnector canonical = connectorPool.get(cc);
-        if (canonical == null) {
-            connectorPool.put(cc, cc);
-            canonical = cc;
+    /** Identity key for the transient connector pool. */
+    private static String connectorKey(String kind, String sourceQN, String targetQN, String discriminator) {
+        return kind + "|" + sourceQN + "|" + targetQN + "|" + discriminator;
+    }
+
+    /**
+     * Returns the property connector view: the persisted {@link PropertyView} if one
+     * exists (label moved), otherwise a transient interned one (promoted to persisted on
+     * first label move). The transient/persisted resolved property reference is refreshed
+     * each walk so it stays valid across metamodel rebuilds.
+     */
+    private PropertyView propertyView(PamelaClassDiagram diagram, EntityView sourceView,
+                                      EntityView targetView, SourceModelProperty prop) {
+        PropertyView pv = diagram.findPropertyView(
+                sourceView.getQualifiedName(), prop.getPropertyIdentifier());
+        if (pv == null) {
+            String key = connectorKey("P", sourceView.getQualifiedName(),
+                    targetView.getQualifiedName(), prop.getPropertyIdentifier());
+            ConnectorView pooled = transientConnectorPool.get(key);
+            if (pooled instanceof PropertyView) {
+                pv = (PropertyView) pooled;
+            } else {
+                pv = makeTransientPropertyView(diagram, sourceView, targetView, prop);
+                transientConnectorPool.put(key, pv);
+            }
         }
-        return canonical;
+        // keep the transient resolved reference + target up to date
+        pv.setProperty(prop);
+        pv.setTargetQualifiedName(targetView.getQualifiedName());
+        return pv;
+    }
+
+    /** Creates a transient {@link PropertyView} that promotes itself on first label move. */
+    private PropertyView makeTransientPropertyView(PamelaClassDiagram diagram, EntityView sourceView,
+                                                   EntityView targetView, SourceModelProperty prop) {
+        PropertyView pv = pamelaFactory.newPropertyView(
+                sourceView.getQualifiedName(), targetView.getQualifiedName(),
+                prop.getPropertyIdentifier());
+        installLabelPromotion(diagram, pv);
+        return pv;
+    }
+
+    /** Returns the (always transient) inheritance connector view, interned by identity. */
+    private InheritanceView transientInheritanceView(EntityView sourceView, EntityView targetView,
+                                                     SourceModelEntity subEntity,
+                                                     SourceModelEntity superEntity) {
+        String key = connectorKey("I", sourceView.getQualifiedName(),
+                targetView.getQualifiedName(), "");
+        ConnectorView pooled = transientConnectorPool.get(key);
+        InheritanceView iv;
+        if (pooled instanceof InheritanceView) {
+            iv = (InheritanceView) pooled;
+        } else {
+            iv = pamelaFactory.newInheritanceView(
+                    sourceView.getQualifiedName(), targetView.getQualifiedName());
+            transientConnectorPool.put(key, iv);
+        }
+        iv.setSubEntity(subEntity);
+        iv.setSuperEntity(superEntity);
+        return iv;
+    }
+
+    /**
+     * Adds a listener that promotes a transient {@link PropertyView} into the diagram's
+     * {@code connectorViews} collection the first time its label is moved away from the
+     * default position (so the position is persisted). Idempotent on subsequent moves.
+     */
+    private void installLabelPromotion(PamelaClassDiagram diagram, PropertyView pv) {
+        java.beans.PropertyChangeListener promote = evt -> {
+            if (pv.isPersistable() && !diagram.getConnectorViews().contains(pv)) {
+                diagram.addToConnectorViews(pv);
+            }
+        };
+        pv.getPropertyChangeSupport().addPropertyChangeListener(ConnectorView.LABEL_X, promote);
+        pv.getPropertyChangeSupport().addPropertyChangeListener(ConnectorView.LABEL_Y, promote);
+    }
+
+    /** True when a property connector should be drawn as a composition ({@code @Embedded}). */
+    private static boolean isComposition(PropertyView pv) {
+        return pv.getProperty() != null && pv.getProperty().isEmbedded();
+    }
+
+    /**
+     * Removes persisted {@link PropertyView}s that are no longer drawable: their source or
+     * target entity is absent/unresolved, the property no longer exists, or it is now
+     * hidden. Also drops stale {@code hiddenProperties} entries for properties that no
+     * longer exist. Call after a metamodel rebuild or after removing an entity from the
+     * diagram. Returns {@code true} if anything was pruned.
+     */
+    public boolean pruneStaleConnectorData() {
+        PamelaClassDiagram diagram = getModel();
+        boolean changed = false;
+
+        Map<String, EntityView> viewByName = new HashMap<>();
+        for (EntityView ev : diagram.getEntityViews()) {
+            viewByName.put(ev.getQualifiedName(), ev);
+        }
+
+        // Stale persisted PropertyViews
+        for (ConnectorView cv : new ArrayList<>(diagram.getConnectorViews())) {
+            if (!(cv instanceof PropertyView)) {
+                diagram.removeFromConnectorViews(cv);
+                changed = true;
+                continue;
+            }
+            PropertyView pv = (PropertyView) cv;
+            EntityView sourceView = viewByName.get(pv.getSourceQualifiedName());
+            EntityView targetView = viewByName.get(pv.getTargetQualifiedName());
+            SourceModelEntity sourceEntity = (sourceView != null) ? resolveEntity(sourceView) : null;
+            boolean drawable = sourceEntity != null && targetView != null
+                    && resolveEntity(targetView) != null
+                    && sourceEntity.getDeclaredProperties().containsKey(pv.getPropertyIdentifier())
+                    && !sourceView.isPropertyHidden(pv.getPropertyIdentifier());
+            if (!drawable) {
+                diagram.removeFromConnectorViews(pv);
+                changed = true;
+            }
+        }
+
+        // Stale hidden-property entries (property no longer declared on the entity)
+        for (EntityView ev : diagram.getEntityViews()) {
+            SourceModelEntity e = resolveEntity(ev);
+            if (e == null) {
+                continue;
+            }
+            for (String id : new ArrayList<>(ev.getHiddenProperties())) {
+                if (!e.getDeclaredProperties().containsKey(id)) {
+                    ev.removeFromHiddenProperties(id);
+                    changed = true;
+                }
+            }
+        }
+
+        return changed;
     }
 
     /**
@@ -1061,6 +1233,9 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             // Recompute compartment content + the content-driven box height.
             applyCompartmentGeometry(ev);
         }
+        // Drop persisted connector data / hidden entries that no longer apply after the
+        // rebuild (entity or property removed/renamed in source).
+        pruneStaleConnectorData();
         updateGraphicalObjectsHierarchy();
     }
 
@@ -1110,6 +1285,15 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             Object src = sourceElementFor((CompartmentItem) d);
             return (src != null) ? src : ((CompartmentItem) d).ev.getEntity();
         }
+        if (d instanceof PropertyView) {
+            SourceModelProperty p = ((PropertyView) d).getProperty();
+            return (p != null) ? p : d;
+        }
+        if (d instanceof InheritanceView) {
+            // The inheritance link is best inspected as its super-entity.
+            SourceModelEntity sup = ((InheritanceView) d).getSuperEntity();
+            return (sup != null) ? sup : d;
+        }
         if (d instanceof PamelaClassDiagram) {
             return d;
         }
@@ -1140,6 +1324,21 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             Object src = sourceElementFor((CompartmentItem) d);
             if (src != null) {
                 facets.add(src);
+            }
+        }
+        else if (d instanceof PropertyView) {
+            // The property (browser actions) then the PropertyView (diagram-specific
+            // "Remove from diagram" → hide the connector).
+            PropertyView pv = (PropertyView) d;
+            if (pv.getProperty() != null) {
+                facets.add(pv.getProperty());
+            }
+            facets.add(pv);
+        }
+        else if (d instanceof InheritanceView) {
+            SourceModelEntity sup = ((InheritanceView) d).getSuperEntity();
+            if (sup != null) {
+                facets.add(sup);
             }
         }
         else if (d instanceof PamelaClassDiagram) {

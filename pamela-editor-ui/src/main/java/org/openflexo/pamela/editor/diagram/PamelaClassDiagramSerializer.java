@@ -29,9 +29,21 @@ import org.openflexo.pamela.editor.ui.PamelaProject;
  *       "width": 200.0,
  *       "height": 120.0
  *     }
+ *   ],
+ *   "connectorViews": [
+ *     {
+ *       "source": "org.example.Order",
+ *       "target": "org.example.Person",
+ *       "property": "customer",
+ *       "labelX": 12.0,
+ *       "labelY": -4.0
+ *     }
  *   ]
  * }
  * </pre>
+ *
+ * <p>{@code connectorViews} stores association-label position overrides; entries
+ * exist only for connectors whose label was moved.</p>
  *
  * <p>Only the stable {@code id}, the display {@code name} and positional data are
  * stored. The transient {@code entity} reference on {@link EntityView} is resolved
@@ -158,12 +170,34 @@ public class PamelaClassDiagramSerializer {
                 ev.setDisplayMethods(
                         !viewNode.has("displayMethods") || viewNode.get("displayMethods").asBoolean());
 
+                // hiddenProperties — absent in legacy files → none hidden.
+                JsonNode hiddenNode = viewNode.get("hiddenProperties");
+                if (hiddenNode != null && hiddenNode.isArray()) {
+                    for (JsonNode hid : hiddenNode) {
+                        ev.addToHiddenProperties(hid.asText());
+                    }
+                }
+
                 // Resolve transient entity reference
                 if (qn != null && session.getMetaModel() != null) {
                     ev.setEntity(session.getMetaModel().getEntity(qn));
                 }
 
                 diagram.addToEntityViews(ev);
+            }
+        }
+
+        // connectorViews — PropertyView label-position overrides (absent in legacy files).
+        JsonNode connectorsNode = root.get("connectorViews");
+        if (connectorsNode != null && connectorsNode.isArray()) {
+            for (JsonNode cvNode : connectorsNode) {
+                String source = cvNode.has("source") ? cvNode.get("source").asText() : null;
+                String target = cvNode.has("target") ? cvNode.get("target").asText() : null;
+                String property = cvNode.has("property") ? cvNode.get("property").asText() : null;
+                PropertyView pv = factory.newPropertyView(source, target, property);
+                pv.setLabelX(cvNode.has("labelX") ? cvNode.get("labelX").asDouble() : 0.0);
+                pv.setLabelY(cvNode.has("labelY") ? cvNode.get("labelY").asDouble() : 0.0);
+                diagram.addToConnectorViews(pv);
             }
         }
 
@@ -207,10 +241,41 @@ public class PamelaClassDiagramSerializer {
                 viewNode.put("displayInitializers", ev.getDisplayInitializers());
                 viewNode.put("displayProperties", ev.getDisplayProperties());
                 viewNode.put("displayMethods", ev.getDisplayMethods());
+                // hiddenProperties — only written when non-empty (default = none hidden).
+                if (ev.getHiddenProperties() != null && !ev.getHiddenProperties().isEmpty()) {
+                    ArrayNode hidden = MAPPER.createArrayNode();
+                    for (String id : ev.getHiddenProperties()) {
+                        hidden.add(id);
+                    }
+                    viewNode.set("hiddenProperties", hidden);
+                }
                 viewsArray.add(viewNode);
             }
         }
         root.set("entityViews", viewsArray);
+
+        // connectorViews — only PropertyViews whose label was moved (non-default) are
+        // persisted; inheritance links and default-positioned labels are recomputed.
+        ArrayNode connectorsArray = MAPPER.createArrayNode();
+        if (diagram.getConnectorViews() != null) {
+            for (ConnectorView cv : diagram.getConnectorViews()) {
+                if (!(cv instanceof PropertyView) || !cv.isPersistable()) {
+                    continue;
+                }
+                PropertyView pv = (PropertyView) cv;
+                ObjectNode cvNode = MAPPER.createObjectNode();
+                cvNode.put("source",
+                        pv.getSourceQualifiedName() != null ? pv.getSourceQualifiedName() : "");
+                cvNode.put("target",
+                        pv.getTargetQualifiedName() != null ? pv.getTargetQualifiedName() : "");
+                cvNode.put("property",
+                        pv.getPropertyIdentifier() != null ? pv.getPropertyIdentifier() : "");
+                cvNode.put("labelX", pv.getLabelX());
+                cvNode.put("labelY", pv.getLabelY());
+                connectorsArray.add(cvNode);
+            }
+        }
+        root.set("connectorViews", connectorsArray);
 
         MAPPER.writeValue(diagramFile, root);
     }

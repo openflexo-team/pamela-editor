@@ -3,8 +3,8 @@
   "name" : "Diagram1",
   "entityViews" : [ {
     "qualifiedName" : "test.model2.AbstractNode",
-    "x" : 127.0,
-    "y" : 91.0,
+    "x" : 55.0,
+    "y" : 79.0,
     "width" : 211.0,
     "height" : 159.0,
     "displayInitializers" : false,
@@ -12,8 +12,8 @@
     "displayMethods" : false
   }, {
     "qualifiedName" : "test.model2.Edge",
-    "x" : 405.0,
-    "y" : 112.0,
+    "x" : 455.0,
+    "y" : 53.0,
     "width" : 174.0,
     "height" : 122.0,
     "displayInitializers" : false,
@@ -21,8 +21,8 @@
     "displayMethods" : true
   }, {
     "qualifiedName" : "test.model2.EventNode",
-    "x" : 165.0,
-    "y" : 302.0,
+    "x" : 255.0,
+    "y" : 290.0,
     "width" : 108.0,
     "height" : 41.0,
     "displayInitializers" : false,
@@ -30,8 +30,8 @@
     "displayMethods" : false
   }, {
     "qualifiedName" : "test.model2.StartNode",
-    "x" : 166.0,
-    "y" : 395.0,
+    "x" : 209.0,
+    "y" : 398.0,
     "width" : 97.0,
     "height" : 41.0,
     "displayInitializers" : false,
@@ -55,5 +55,51 @@
     "displayInitializers" : false,
     "displayProperties" : true,
     "displayMethods" : false
+  }, {
+    "qualifiedName" : "test.model2.WKFAnnotation",
+    "x" : 233.0,
+    "y" : 537.0,
+    "width" : 129.0,
+    "height" : 82.0,
+    "displayInitializers" : true,
+    "displayProperties" : true,
+    "displayMethods" : false
+  } ],
+  "connectorViews" : [ {
+    "source" : "test.model2.AbstractNode",
+    "target" : "test.model2.WKFAnnotation",
+    "property" : "otherAnnotations",
+    "labelX" : -48.0,
+    "labelY" : -71.0
+  }, {
+    "source" : "test.model2.Edge",
+    "target" : "test.model2.AbstractNode",
+    "property" : "startNode",
+    "labelX" : 4.0,
+    "labelY" : -29.0
+  }, {
+    "source" : "test.model2.Edge",
+    "target" : "test.model2.AbstractNode",
+    "property" : "endNode",
+    "labelX" : 2.0,
+    "labelY" : 36.0
+  }, {
+    "source" : "test.model2.AbstractNode",
+    "target" : "test.model2.Edge",
+    "property" : "outgoingEdges",
+    "labelX" : 1.0,
+    "labelY" : 18.0
+  }, {
+    "source" : "test.model2.AbstractNode",
+    "target" : "test.model2.Edge",
+    "property" : "incomingEdges",
+    "labelX" : 3.0,
+    "labelY" : -13.0
+  }, {
+    "source" : "test.model2.AbstractNode",
+    "target" : "test.model2.WKFAnnotation",
+    "property" : "masterAnnotation",
+    "labelX" : -98.0,
+    "labelY" : 185.0
   } ]
 }

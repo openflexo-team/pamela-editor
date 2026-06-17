@@ -3,9 +3,12 @@ package org.openflexo.pamela.editor.diagram;
 import java.util.List;
 
 import org.openflexo.pamela.AccessibleProxyObject;
+import org.openflexo.pamela.annotations.Adder;
 import org.openflexo.pamela.annotations.Getter;
+import org.openflexo.pamela.annotations.Getter.Cardinality;
 import org.openflexo.pamela.annotations.ImplementationClass;
 import org.openflexo.pamela.annotations.ModelEntity;
+import org.openflexo.pamela.annotations.Remover;
 import org.openflexo.pamela.annotations.Setter;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourceModelInitializer;
@@ -35,6 +38,7 @@ public interface EntityView extends AccessibleProxyObject {
     String DISPLAY_INITIALIZERS = "displayInitializers";
     String DISPLAY_PROPERTIES = "displayProperties";
     String DISPLAY_METHODS = "displayMethods";
+    String HIDDEN_PROPERTIES = "hiddenProperties";
 
     @Getter(QUALIFIED_NAME)
     String getQualifiedName();
@@ -99,6 +103,27 @@ public interface EntityView extends AccessibleProxyObject {
 
     @Setter(DISPLAY_METHODS)
     void setDisplayMethods(boolean displayMethods);
+
+    /**
+     * Identifiers of the properties whose connector the user explicitly hid on the
+     * diagram. A property connector is shown by default when both endpoints are present
+     * (see {@link ConnectorView}); listing a property identifier here suppresses it.
+     * Empty by default — only non-default (hidden) entries are persisted.
+     */
+    @Getter(value = HIDDEN_PROPERTIES, cardinality = Cardinality.LIST)
+    List<String> getHiddenProperties();
+
+    @Adder(HIDDEN_PROPERTIES)
+    void addToHiddenProperties(String propertyIdentifier);
+
+    @Remover(HIDDEN_PROPERTIES)
+    void removeFromHiddenProperties(String propertyIdentifier);
+
+    /** Whether the given property's connector is hidden on this diagram. Non-PAMELA. */
+    boolean isPropertyHidden(String propertyIdentifier);
+
+    /** Hides or un-hides the given property's connector (idempotent). Non-PAMELA. */
+    void setPropertyHidden(String propertyIdentifier, boolean hidden);
 
     /**
      * Transient reference to the resolved {@link SourceModelEntity}.
