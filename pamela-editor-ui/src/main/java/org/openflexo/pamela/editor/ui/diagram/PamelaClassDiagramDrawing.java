@@ -498,6 +498,14 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             new DataBinding<String>("drawable.displayLabel"),
             false);
 
+        // 6b. Label the property-based connectors with the property name (UML
+        //     association role). For an inheritance connector `property` is null,
+        //     so this navigation evaluates to null → no label.
+        connectorBinding.setDynamicPropertyValue(
+            GraphicalRepresentation.TEXT,
+            new DataBinding<String>("drawable.property.propertyIdentifier"),
+            false);
+
         // 7. Sync geometry back to the EntityView model (settable bindings), so that
         //    user drag (x/y) and width resize are persisted to the .diagram sidecar.
         //    In Unique mode setPropertyValue first updates the container GR (keeping
