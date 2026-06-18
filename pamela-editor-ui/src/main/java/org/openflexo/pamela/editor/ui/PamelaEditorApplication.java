@@ -68,6 +68,10 @@ import org.openflexo.pamela.editor.ui.action.NewClassDiagramAction;
 import org.openflexo.pamela.editor.ui.action.RenameClassDiagramAction;
 import org.openflexo.pamela.editor.ui.action.DeleteClassDiagramAction;
 import org.openflexo.pamela.editor.ui.action.RemoveFromDiagramAction;
+import org.openflexo.pamela.editor.ui.action.HideMemberAction;
+import org.openflexo.pamela.editor.ui.action.ShowMemberAction;
+import org.openflexo.pamela.editor.ui.action.ShowAllMembersAction;
+import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramDrawing;
 import org.openflexo.pamela.editor.ui.action.ShowSourceCodeAction;
 import org.openflexo.pamela.editor.ui.action.ContextualAction;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
@@ -557,6 +561,11 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         registerAction(new DeleteClassDiagramAction());
         registerAction(new ShowSourceCodeAction());
         registerAction(new RemoveFromDiagramAction());
+        registerAction(new HideMemberAction(this));
+        registerAction(new ShowMemberAction(this));
+        registerAction(new ShowAllMembersAction(this, PamelaClassDiagramDrawing.Compartment.PROPERTIES));
+        registerAction(new ShowAllMembersAction(this, PamelaClassDiagramDrawing.Compartment.INITIALIZERS));
+        registerAction(new ShowAllMembersAction(this, PamelaClassDiagramDrawing.Compartment.METHODS));
 
         frame.validate();
         frame.pack();

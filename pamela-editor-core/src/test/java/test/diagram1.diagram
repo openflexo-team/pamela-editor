@@ -3,17 +3,18 @@
   "name" : "Diagram1",
   "entityViews" : [ {
     "qualifiedName" : "test.model2.AbstractNode",
-    "x" : 55.0,
-    "y" : 79.0,
+    "x" : 50.0,
+    "y" : 59.0,
     "width" : 211.0,
     "height" : 159.0,
     "displayInitializers" : false,
     "displayProperties" : true,
-    "displayMethods" : false
+    "displayMethods" : false,
+    "hiddenProperties" : [ "process", "outgoingEdges", "otherAnnotations" ]
   }, {
     "qualifiedName" : "test.model2.Edge",
-    "x" : 455.0,
-    "y" : 53.0,
+    "x" : 451.0,
+    "y" : 73.0,
     "width" : 174.0,
     "height" : 122.0,
     "displayInitializers" : false,
@@ -30,8 +31,8 @@
     "displayMethods" : false
   }, {
     "qualifiedName" : "test.model2.StartNode",
-    "x" : 209.0,
-    "y" : 398.0,
+    "x" : 250.0,
+    "y" : 380.0,
     "width" : 97.0,
     "height" : 41.0,
     "displayInitializers" : false,
@@ -57,8 +58,8 @@
     "displayMethods" : false
   }, {
     "qualifiedName" : "test.model2.WKFAnnotation",
-    "x" : 233.0,
-    "y" : 537.0,
+    "x" : 167.0,
+    "y" : 571.0,
     "width" : 129.0,
     "height" : 82.0,
     "displayInitializers" : true,
@@ -99,7 +100,7 @@
     "source" : "test.model2.AbstractNode",
     "target" : "test.model2.WKFAnnotation",
     "property" : "masterAnnotation",
-    "labelX" : -98.0,
-    "labelY" : 185.0
+    "labelX" : -71.0,
+    "labelY" : 138.0
   } ]
 }

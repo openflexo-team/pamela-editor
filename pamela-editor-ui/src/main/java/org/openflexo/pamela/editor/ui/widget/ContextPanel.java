@@ -6,9 +6,13 @@ import javax.swing.JPanel;
 
 import org.openflexo.pamela.editor.diagram.EntityView;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
+import org.openflexo.pamela.editor.diagram.PropertyView;
+import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
+import org.openflexo.pamela.editor.model.SourceCustomMethod;
 import org.openflexo.pamela.editor.model.SourceJavaFile;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
+import org.openflexo.pamela.editor.model.SourceModelInitializer;
 import org.openflexo.pamela.editor.model.SourceModelProperty;
 import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
@@ -159,9 +163,17 @@ public class ContextPanel extends JPanel {
             graphicalInspector.inspectObject(ev != null ? ev : diagram);
 
         } else if (element instanceof SourceModelProperty) {
-            SourceModelEntity entity = ((SourceModelProperty) element).getModelEntity();
-            EntityView ev = (entity != null) ? findEntityViewFor(entity, diagram) : null;
-            graphicalInspector.inspectObject(ev != null ? ev : diagram);
+            PamelaClassDiagramEditor editor = application.getActiveDiagramEditor();
+            PropertyView pv = (editor != null)
+                    ? editor.getDrawing().getPropertyViewForInspection((SourceModelProperty) element)
+                    : null;
+            graphicalInspector.inspectObject(pv != null ? pv : diagram);
+
+        } else if (element instanceof SourceModelInitializer
+                || element instanceof SourceCustomMethod) {
+            // Compartment rows with no own graphical geometry: a read-only identity inspector
+            // (Graphical/SourceModelInitializer.inspector, Graphical/SourceCustomMethod.inspector).
+            graphicalInspector.inspectObject(element);
 
         } else {
             graphicalInspector.inspectObject(diagram);

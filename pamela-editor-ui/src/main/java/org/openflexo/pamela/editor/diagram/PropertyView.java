@@ -37,4 +37,22 @@ public interface PropertyView extends ConnectorView {
     SourceModelProperty getProperty();
 
     void setProperty(SourceModelProperty property);
+
+    /**
+     * Whether the connector is currently drawn on the diagram (both endpoint entities
+     * present and the property not hidden). Transient inspection flag set when the view
+     * is resolved for the graphical inspector (ui-design.md §19.4): {@code true} for a live
+     * interned view (label offset editable), {@code false} for a detached, non-drawn view
+     * (read-only — no connector to position). Not managed by PAMELA.
+     */
+    boolean isConnectorPresent();
+
+    void setConnectorPresent(boolean connectorPresent);
+
+    /**
+     * UML relationship kind shown read-only in the graphical inspector:
+     * {@code "Composition"} when the originating property is {@code @Embedded},
+     * {@code "Association"} otherwise. Not managed by PAMELA.
+     */
+    String getKindLabel();
 }

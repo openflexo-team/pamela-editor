@@ -83,6 +83,7 @@
             isEditable="false">
            	<Children id="53" name="initializers" data="entity.initializers" />
             <Children id="54" name="properties" data="entity.declaredProperties.values()" />
+            <Children id="56" name="methods" data="entity.implementationClass.customMethods" />
         </BrowserElement>
 
         <BrowserElement id="40"
@@ -113,6 +114,16 @@
             defaultVisible="true"
             dataClassName="org.openflexo.pamela.editor.model.SourceModelInitializer"
             name="initializer"
+            isEditable="false">
+        </BrowserElement>
+
+        <BrowserElement id="75"
+            icon="controller.iconForObject(method)"
+            filtered="false"
+            label="method.methodName"
+            defaultVisible="true"
+            dataClassName="org.openflexo.pamela.editor.model.SourceCustomMethod"
+            name="method"
             isEditable="false">
         </BrowserElement>
 

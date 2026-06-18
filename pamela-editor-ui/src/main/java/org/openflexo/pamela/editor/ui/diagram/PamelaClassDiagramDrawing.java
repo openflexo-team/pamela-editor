@@ -143,7 +143,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     private static final String ENTITY_BOX_LM = "entityBox";
 
     /** The three UML compartments stacked below the header, in display order. */
-    private enum Compartment { INITIALIZERS, PROPERTIES, METHODS }
+    public enum Compartment { INITIALIZERS, PROPERTIES, METHODS }
 
     private final SourceMetaModel metaModel;
     private final DianaModelFactory factory;
@@ -181,6 +181,15 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
      * diagram model instead and is used directly. Inheritance views are always transient.
      */
     private final Map<String, ConnectorView> transientConnectorPool = new HashMap<>();
+
+    /**
+     * Pool of detached (non-drawn) {@link PropertyView}s built solely for the graphical
+     * inspector when a property's connector is not currently on the diagram (target absent
+     * or property hidden). Kept separate from {@link #transientConnectorPool} — these views
+     * are never drawn and never promoted; caching only avoids re-creating one on every
+     * soft-selection of the same property.
+     */
+    private final Map<String, ConnectorView> detachedInspectionPool = new HashMap<>();
 
     public PamelaClassDiagramDrawing(PamelaClassDiagram diagram,
                                      SourceMetaModel metaModel,
@@ -656,6 +665,69 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         return pv;
     }
 
+    /**
+     * Resolves the {@link PropertyView} to show in the bottom-right graphical inspector
+     * (ui-design.md §19.4) for the given {@code property}.
+     *
+     * <p>When the property's connector is currently drawn — both endpoint entities are on
+     * the diagram and the property is not hidden on its source {@link EntityView} — the
+     * live interned view is returned with {@code connectorPresent = true}, so its
+     * {@code labelX}/{@code labelY} offset is editable (and write-back promotes/persists it
+     * exactly like dragging the label). Otherwise a <em>detached</em>, non-drawn view is
+     * returned with {@code connectorPresent = false}: it carries the read-only identity
+     * (source/target/label/kind) but is not part of the diagram and its offset is inert.</p>
+     *
+     * @return the view to inspect, or {@code null} if the property's owning entity does not
+     *         resolve.
+     */
+    public PropertyView getPropertyViewForInspection(SourceModelProperty property) {
+        if (property == null) {
+            return null;
+        }
+        PamelaClassDiagram diagram = getModel();
+        SourceModelEntity sourceEntity = property.getModelEntity();
+        if (sourceEntity == null) {
+            return null;
+        }
+
+        Map<String, EntityView> viewByName = new HashMap<>();
+        for (EntityView ev : diagram.getEntityViews()) {
+            viewByName.put(ev.getQualifiedName(), ev);
+        }
+        EntityView sourceView = viewByName.get(sourceEntity.getQualifiedName());
+        SourceModelEntity typeEntity = property.getType().getModelEntity();
+        EntityView targetView = (typeEntity != null)
+                ? viewByName.get(typeEntity.getQualifiedName()) : null;
+
+        boolean drawn = sourceView != null && targetView != null
+                && !sourceView.isPropertyHidden(property.getPropertyIdentifier());
+
+        if (drawn) {
+            PropertyView pv = propertyView(diagram, sourceView, targetView, property);
+            pv.setConnectorPresent(true);
+            return pv;
+        }
+
+        // No connector currently drawn (target absent or property hidden): a detached,
+        // read-only view. Cached per identity so repeated soft-selections don't churn.
+        String key = connectorKey("D", sourceEntity.getQualifiedName(),
+                typeEntity != null ? typeEntity.getQualifiedName() : "",
+                property.getPropertyIdentifier());
+        PropertyView pv;
+        ConnectorView cached = detachedInspectionPool.get(key);
+        if (cached instanceof PropertyView) {
+            pv = (PropertyView) cached;
+        } else {
+            pv = pamelaFactory.newPropertyView(sourceEntity.getQualifiedName(),
+                    typeEntity != null ? typeEntity.getQualifiedName() : "",
+                    property.getPropertyIdentifier());
+            detachedInspectionPool.put(key, pv);
+        }
+        pv.setProperty(property);
+        pv.setConnectorPresent(false);
+        return pv;
+    }
+
     /** Creates a transient {@link PropertyView} that promotes itself on first label move. */
     private PropertyView makeTransientPropertyView(PamelaClassDiagram diagram, EntityView sourceView,
                                                    EntityView targetView, SourceModelProperty prop) {
@@ -857,33 +929,76 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         }
     }
 
-    /** The text lines shown in a compartment; empty when unresolved or nothing to show. */
-    private List<String> compartmentLines(EntityView ev, Compartment c) {
-        SourceModelEntity e = ev.getEntity();
-        if (e == null) {
-            return Collections.emptyList();
+    /** A visible compartment row: its index in the FULL model collection (so it resolves
+     *  back via {@link #sourceElementFor}) and its display text. Hidden members are omitted
+     *  but the surviving rows keep their original full-collection index. */
+    private static final class MemberRow {
+        final int index;
+        final String text;
+        MemberRow(int index, String text) {
+            this.index = index;
+            this.text = text;
         }
-        List<String> lines = new ArrayList<>();
+    }
+
+    /**
+     * The <em>visible</em> rows of a compartment, in order: members listed in
+     * {@link EntityView#getHiddenProperties()} / {@code getHiddenInitializers()} /
+     * {@code getHiddenMethods()} are skipped. Each surviving row keeps its index in the
+     * full model collection so {@link #sourceElementFor} resolves it correctly.
+     */
+    private List<MemberRow> compartmentRows(EntityView ev, Compartment c) {
+        SourceModelEntity e = ev.getEntity();
+        List<MemberRow> rows = new ArrayList<>();
+        if (e == null) {
+            return rows;
+        }
         switch (c) {
-            case INITIALIZERS:
-                for (SourceModelInitializer init : e.getInitializers()) {
-                    lines.add(init.getDisplayLabel());
+            case INITIALIZERS: {
+                List<SourceModelInitializer> l = e.getInitializers();
+                for (int i = 0; i < l.size(); i++) {
+                    if (ev.isInitializerHidden(initializerIdentifier(l.get(i)))) {
+                        continue;
+                    }
+                    rows.add(new MemberRow(i, l.get(i).getDisplayLabel()));
                 }
                 break;
-            case PROPERTIES:
-                for (SourceModelProperty p : e.getDeclaredProperties().values()) {
+            }
+            case PROPERTIES: {
+                List<SourceModelProperty> l = new ArrayList<>(e.getDeclaredProperties().values());
+                for (int i = 0; i < l.size(); i++) {
+                    SourceModelProperty p = l.get(i);
+                    if (ev.isPropertyHidden(p.getPropertyIdentifier())) {
+                        continue;
+                    }
                     String type = (p.getType() != null) ? p.getType().getSimpleName() : "?";
                     String suffix = (p.getCardinality() == Cardinality.LIST) ? " [*]" : "";
-                    lines.add(p.getPropertyIdentifier() + " : " + type + suffix);
+                    rows.add(new MemberRow(i, p.getPropertyIdentifier() + " : " + type + suffix));
                 }
                 break;
-            case METHODS:
+            }
+            case METHODS: {
                 if (e.getImplementationClass() != null) {
-                    for (SourceCustomMethod m : e.getImplementationClass().getCustomMethods()) {
-                        lines.add(m.getMethodName() + "()");
+                    List<SourceCustomMethod> l = e.getImplementationClass().getCustomMethods();
+                    for (int i = 0; i < l.size(); i++) {
+                        if (ev.isMethodHidden(methodIdentifier(l.get(i)))) {
+                            continue;
+                        }
+                        rows.add(new MemberRow(i, l.get(i).getMethodName() + "()"));
                     }
                 }
                 break;
+            }
+        }
+        return rows;
+    }
+
+    /** The text lines shown in a compartment (visible members only). */
+    private List<String> compartmentLines(EntityView ev, Compartment c) {
+        List<MemberRow> rows = compartmentRows(ev, c);
+        List<String> lines = new ArrayList<>(rows.size());
+        for (MemberRow r : rows) {
+            lines.add(r.text);
         }
         return lines;
     }
@@ -1038,11 +1153,13 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
      *  Instances are interned (see {@link #itemPool}) so an unchanged row keeps a stable
      *  identity across walks. */
     private List<CompartmentItem> itemsFor(EntityView ev, Compartment c) {
-        List<String> lines = compartmentLines(ev, c);
-        List<CompartmentItem> items = new ArrayList<>(lines.size());
+        List<MemberRow> rows = compartmentRows(ev, c);
+        List<CompartmentItem> items = new ArrayList<>(rows.size());
         ImageIcon icon = iconForCompartment(c);
-        for (int i = 0; i < lines.size(); i++) {
-            CompartmentItem item = new CompartmentItem(ev, c, i, lines.get(i), icon);
+        for (MemberRow r : rows) {
+            // r.index is the full-collection index → sourceElementFor resolves correctly
+            // even when earlier members are hidden.
+            CompartmentItem item = new CompartmentItem(ev, c, r.index, r.text, icon);
             CompartmentItem canonical = itemPool.get(item);
             if (canonical == null) {
                 itemPool.put(item, item);
@@ -1051,6 +1168,143 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             items.add(canonical);
         }
         return items;
+    }
+
+    // =========================================================================
+    // Member visibility (hide/show a property / initializer / method on the diagram)
+    // =========================================================================
+
+    /** Stable per-entity identifier of an initializer (method name + parameter list). */
+    static String initializerIdentifier(SourceModelInitializer init) {
+        return init.getMethodName() + "(" + String.join(",", init.getParameters()) + ")";
+    }
+
+    /** Stable per-entity identifier of a custom method (its full signature). */
+    static String methodIdentifier(SourceCustomMethod method) {
+        return method.getSignature();
+    }
+
+    /** The entity that declares the given source member, or {@code null}. */
+    private static SourceModelEntity entityOfMember(Object member) {
+        if (member instanceof SourceModelProperty) {
+            return ((SourceModelProperty) member).getModelEntity();
+        }
+        if (member instanceof SourceModelInitializer) {
+            return ((SourceModelInitializer) member).getEntity();
+        }
+        if (member instanceof SourceCustomMethod) {
+            return ((SourceCustomMethod) member).getImplementationClass() != null
+                    ? ((SourceCustomMethod) member).getImplementationClass().getEntity() : null;
+        }
+        return null;
+    }
+
+    /** The {@link EntityView} on this diagram that owns the member's entity, or {@code null}. */
+    private EntityView entityViewForMember(Object member) {
+        SourceModelEntity e = entityOfMember(member);
+        return (e != null) ? entityViewFor(e) : null;
+    }
+
+    /** True if the member's entity is present on this diagram (so it can be hidden/shown). */
+    public boolean isMemberOnDiagram(Object member) {
+        return isHideableMember(member) && entityViewForMember(member) != null;
+    }
+
+    /** True if the given source member (property / initializer / method) is currently hidden. */
+    public boolean isMemberHidden(Object member) {
+        EntityView ev = entityViewForMember(member);
+        if (ev == null) {
+            return false;
+        }
+        if (member instanceof SourceModelProperty) {
+            return ev.isPropertyHidden(((SourceModelProperty) member).getPropertyIdentifier());
+        }
+        if (member instanceof SourceModelInitializer) {
+            return ev.isInitializerHidden(initializerIdentifier((SourceModelInitializer) member));
+        }
+        if (member instanceof SourceCustomMethod) {
+            return ev.isMethodHidden(methodIdentifier((SourceCustomMethod) member));
+        }
+        return false;
+    }
+
+    /** Hides or shows the given source member on this diagram (no-op if not present). */
+    public void setMemberHidden(Object member, boolean hidden) {
+        EntityView ev = entityViewForMember(member);
+        if (ev == null) {
+            return;
+        }
+        if (member instanceof SourceModelProperty) {
+            ev.setPropertyHidden(((SourceModelProperty) member).getPropertyIdentifier(), hidden);
+        }
+        else if (member instanceof SourceModelInitializer) {
+            ev.setInitializerHidden(initializerIdentifier((SourceModelInitializer) member), hidden);
+        }
+        else if (member instanceof SourceCustomMethod) {
+            ev.setMethodHidden(methodIdentifier((SourceCustomMethod) member), hidden);
+        }
+    }
+
+    /** Whether the object is a hide/show-able diagram member. */
+    public static boolean isHideableMember(Object member) {
+        return member instanceof SourceModelProperty
+                || member instanceof SourceModelInitializer
+                || member instanceof SourceCustomMethod;
+    }
+
+    /**
+     * True if the entity's view on this diagram has something to reveal in the given
+     * compartment: the compartment is currently hidden, or some of its members are
+     * individually hidden.
+     */
+    public boolean canShowAllMembers(SourceModelEntity entity, Compartment kind) {
+        EntityView ev = (entity != null) ? entityViewFor(entity) : null;
+        return ev != null
+                && (!isCompartmentDisplayed(ev, kind) || !hiddenList(ev, kind).isEmpty());
+    }
+
+    /**
+     * Reveals every member of the given compartment on this diagram: clears its hidden-member
+     * list and makes the compartment visible. The resulting {@code HIDDEN_*}/{@code DISPLAY_*}
+     * changes drive the editor's re-walk.
+     */
+    public void showAllMembers(SourceModelEntity entity, Compartment kind) {
+        EntityView ev = (entity != null) ? entityViewFor(entity) : null;
+        if (ev == null) {
+            return;
+        }
+        setCompartmentDisplayed(ev, kind, true);
+        for (String id : new ArrayList<>(hiddenList(ev, kind))) {
+            removeHidden(ev, kind, id);
+        }
+    }
+
+    /** The entity view's hidden-member list for the given compartment. */
+    private static List<String> hiddenList(EntityView ev, Compartment kind) {
+        switch (kind) {
+            case INITIALIZERS: return ev.getHiddenInitializers();
+            case METHODS:      return ev.getHiddenMethods();
+            case PROPERTIES:
+            default:           return ev.getHiddenProperties();
+        }
+    }
+
+    private static void removeHidden(EntityView ev, Compartment kind, String id) {
+        switch (kind) {
+            case INITIALIZERS: ev.removeFromHiddenInitializers(id); break;
+            case METHODS:      ev.removeFromHiddenMethods(id); break;
+            case PROPERTIES:
+            default:           ev.removeFromHiddenProperties(id); break;
+        }
+    }
+
+    private static void setCompartmentDisplayed(EntityView ev, Compartment kind, boolean displayed) {
+        switch (kind) {
+            case INITIALIZERS: ev.setDisplayInitializers(displayed); break;
+            case METHODS:      ev.setDisplayMethods(displayed); break;
+            case PROPERTIES:
+            default:           ev.setDisplayProperties(displayed); break;
+        }
     }
 
     /** Builds an item-row GR: a full-width row carrying the element label (its icon is
@@ -1241,12 +1495,18 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
 
     /**
      * Re-walks the drawing and refreshes the compartment layout for one entity view
-     * after its {@code displayInitializers}/{@code displayProperties}/{@code displayMethods}
-     * flags changed (e.g. toggled in the inspector). The re-walk adds or removes the
-     * affected compartment (and its rows); {@link #applyCompartmentGeometry} then
-     * redistributes the remaining compartments' weights below the header.
+     * after a compartment {@code display*} flag or a {@code hidden*} member list changed.
+     * The re-walk adds or removes the affected compartment/rows; {@link #applyCompartmentGeometry}
+     * then redistributes the remaining compartments' weights below the header.
+     *
+     * <p>The root node is invalidated first: hiding a <b>property</b> must also drop its
+     * connector, but changing the entity view's {@code hidden*} list only invalidates the
+     * entity subtree (the row) — the connectors are declared by the <b>root</b> walker
+     * (§9.2), which is only re-run when the root is invalidated.</p>
      */
     public void refreshCompartmentVisibility(EntityView ev) {
+        // Invalidate the whole tree under the root drawable so the connector walk re-runs.
+        invalidateGraphicalObjectsHierarchy(getModel());
         updateGraphicalObjectsHierarchy();
         applyCompartmentGeometry(ev);
     }

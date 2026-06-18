@@ -10,6 +10,8 @@ public abstract class PropertyViewImpl extends ConnectorViewImpl implements Prop
 
     private SourceModelProperty property;
 
+    private boolean connectorPresent;
+
     @Override
     public SourceModelProperty getProperty() {
         return property;
@@ -18,6 +20,24 @@ public abstract class PropertyViewImpl extends ConnectorViewImpl implements Prop
     @Override
     public void setProperty(SourceModelProperty property) {
         this.property = property;
+    }
+
+    @Override
+    public boolean isConnectorPresent() {
+        return connectorPresent;
+    }
+
+    @Override
+    public void setConnectorPresent(boolean connectorPresent) {
+        this.connectorPresent = connectorPresent;
+    }
+
+    @Override
+    public String getKindLabel() {
+        if (property != null && property.isEmbedded()) {
+            return "Composition";
+        }
+        return "Association";
     }
 
     @Override

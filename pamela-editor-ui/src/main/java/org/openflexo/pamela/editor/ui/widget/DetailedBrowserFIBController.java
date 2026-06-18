@@ -170,6 +170,9 @@ public class DetailedBrowserFIBController extends PamelaEditorFIBController<Obje
         if (object instanceof SourceModelInitializer) {
             return PamelaEditorIconLibrary.INITIALIZER_ICON;
         }
+        if (object instanceof org.openflexo.pamela.editor.model.SourceCustomMethod) {
+            return PamelaEditorIconLibrary.METHOD_ICON;
+        }
         if (object instanceof SourceImplementationClass) {
             return PamelaEditorIconLibrary.IMPL_CLASS_ICON;
         }

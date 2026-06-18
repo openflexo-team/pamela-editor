@@ -78,4 +78,44 @@ public abstract class EntityViewImpl implements EntityView {
             removeFromHiddenProperties(propertyIdentifier);
         }
     }
+
+    @Override
+    public boolean isInitializerHidden(String initializerIdentifier) {
+        List<String> hidden = getHiddenInitializers();
+        return hidden != null && hidden.contains(initializerIdentifier);
+    }
+
+    @Override
+    public void setInitializerHidden(String initializerIdentifier, boolean hidden) {
+        if (initializerIdentifier == null) {
+            return;
+        }
+        boolean currentlyHidden = isInitializerHidden(initializerIdentifier);
+        if (hidden && !currentlyHidden) {
+            addToHiddenInitializers(initializerIdentifier);
+        }
+        else if (!hidden && currentlyHidden) {
+            removeFromHiddenInitializers(initializerIdentifier);
+        }
+    }
+
+    @Override
+    public boolean isMethodHidden(String methodIdentifier) {
+        List<String> hidden = getHiddenMethods();
+        return hidden != null && hidden.contains(methodIdentifier);
+    }
+
+    @Override
+    public void setMethodHidden(String methodIdentifier, boolean hidden) {
+        if (methodIdentifier == null) {
+            return;
+        }
+        boolean currentlyHidden = isMethodHidden(methodIdentifier);
+        if (hidden && !currentlyHidden) {
+            addToHiddenMethods(methodIdentifier);
+        }
+        else if (!hidden && currentlyHidden) {
+            removeFromHiddenMethods(methodIdentifier);
+        }
+    }
 }

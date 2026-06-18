@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.model.SourceCustomMethod" name="Inspector">
+    <Label name="MethodLabel" label="method" index="0"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="MethodTF" index="1" data="data.signature" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="OverrideLabel" label="override" index="2"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="OverrideTF" index="3" data="data.override.toString" readOnly="true"
+        constraints="twocols(location=right)" columns="7" localize="true" />
+    <Label name="ClassLabel" label="implementation_class" index="4"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="ClassTF" index="5" data="data.implementationClass.simpleName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="NoGeometryNote" label="no_geometry_note" index="6"
+        constraints="twocols(expandHorizontally=true;location=center)" localize="true" />
+    <LocalizedDictionary>
+        <Localized key="method" lang="English" value="Method" />
+        <Localized key="method" lang="French" value="Méthode" />
+        <Localized key="override" lang="English" value="Override" />
+        <Localized key="override" lang="French" value="Redéfinition" />
+        <Localized key="implementation_class" lang="English" value="Implementation class" />
+        <Localized key="implementation_class" lang="French" value="Classe d'implémentation" />
+        <Localized key="no_geometry_note" lang="English" value="Row of the entity box — no own graphical geometry." />
+        <Localized key="no_geometry_note" lang="French" value="Ligne de la boîte d'entité — pas de géométrie graphique propre." />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Method" />
+</Inspector>

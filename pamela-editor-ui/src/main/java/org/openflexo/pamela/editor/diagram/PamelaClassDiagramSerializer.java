@@ -170,13 +170,10 @@ public class PamelaClassDiagramSerializer {
                 ev.setDisplayMethods(
                         !viewNode.has("displayMethods") || viewNode.get("displayMethods").asBoolean());
 
-                // hiddenProperties — absent in legacy files → none hidden.
-                JsonNode hiddenNode = viewNode.get("hiddenProperties");
-                if (hiddenNode != null && hiddenNode.isArray()) {
-                    for (JsonNode hid : hiddenNode) {
-                        ev.addToHiddenProperties(hid.asText());
-                    }
-                }
+                // hidden member lists — absent in legacy files → none hidden.
+                readStringList(viewNode, "hiddenProperties", ev::addToHiddenProperties);
+                readStringList(viewNode, "hiddenInitializers", ev::addToHiddenInitializers);
+                readStringList(viewNode, "hiddenMethods", ev::addToHiddenMethods);
 
                 // Resolve transient entity reference
                 if (qn != null && session.getMetaModel() != null) {
@@ -241,14 +238,10 @@ public class PamelaClassDiagramSerializer {
                 viewNode.put("displayInitializers", ev.getDisplayInitializers());
                 viewNode.put("displayProperties", ev.getDisplayProperties());
                 viewNode.put("displayMethods", ev.getDisplayMethods());
-                // hiddenProperties — only written when non-empty (default = none hidden).
-                if (ev.getHiddenProperties() != null && !ev.getHiddenProperties().isEmpty()) {
-                    ArrayNode hidden = MAPPER.createArrayNode();
-                    for (String id : ev.getHiddenProperties()) {
-                        hidden.add(id);
-                    }
-                    viewNode.set("hiddenProperties", hidden);
-                }
+                // hidden member lists — only written when non-empty (default = none hidden).
+                writeStringList(viewNode, "hiddenProperties", ev.getHiddenProperties());
+                writeStringList(viewNode, "hiddenInitializers", ev.getHiddenInitializers());
+                writeStringList(viewNode, "hiddenMethods", ev.getHiddenMethods());
                 viewsArray.add(viewNode);
             }
         }
@@ -278,6 +271,28 @@ public class PamelaClassDiagramSerializer {
         root.set("connectorViews", connectorsArray);
 
         MAPPER.writeValue(diagramFile, root);
+    }
+
+    /** Writes a non-empty string list as a JSON array field (skipped when null/empty). */
+    private static void writeStringList(ObjectNode node, String field, java.util.List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return;
+        }
+        ArrayNode array = MAPPER.createArrayNode();
+        for (String v : values) {
+            array.add(v);
+        }
+        node.set(field, array);
+    }
+
+    /** Reads a string-array field (if present) and feeds each value to the consumer. */
+    private static void readStringList(JsonNode node, String field, java.util.function.Consumer<String> sink) {
+        JsonNode array = node.get(field);
+        if (array != null && array.isArray()) {
+            for (JsonNode v : array) {
+                sink.accept(v.asText());
+            }
+        }
     }
 
     /** Returns the file name without its {@code .diagram} (or any) extension. */

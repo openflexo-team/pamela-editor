@@ -39,6 +39,8 @@ public interface EntityView extends AccessibleProxyObject {
     String DISPLAY_PROPERTIES = "displayProperties";
     String DISPLAY_METHODS = "displayMethods";
     String HIDDEN_PROPERTIES = "hiddenProperties";
+    String HIDDEN_INITIALIZERS = "hiddenInitializers";
+    String HIDDEN_METHODS = "hiddenMethods";
 
     @Getter(QUALIFIED_NAME)
     String getQualifiedName();
@@ -105,9 +107,8 @@ public interface EntityView extends AccessibleProxyObject {
     void setDisplayMethods(boolean displayMethods);
 
     /**
-     * Identifiers of the properties whose connector the user explicitly hid on the
-     * diagram. A property connector is shown by default when both endpoints are present
-     * (see {@link ConnectorView}); listing a property identifier here suppresses it.
+     * Identifiers of the properties hidden on this diagram: the property's row in the
+     * box <em>and</em> its connector are suppressed (a hidden member is fully hidden).
      * Empty by default — only non-default (hidden) entries are persisted.
      */
     @Getter(value = HIDDEN_PROPERTIES, cardinality = Cardinality.LIST)
@@ -119,11 +120,43 @@ public interface EntityView extends AccessibleProxyObject {
     @Remover(HIDDEN_PROPERTIES)
     void removeFromHiddenProperties(String propertyIdentifier);
 
-    /** Whether the given property's connector is hidden on this diagram. Non-PAMELA. */
+    /** Identifiers of the initializers hidden on this diagram (row suppressed). */
+    @Getter(value = HIDDEN_INITIALIZERS, cardinality = Cardinality.LIST)
+    List<String> getHiddenInitializers();
+
+    @Adder(HIDDEN_INITIALIZERS)
+    void addToHiddenInitializers(String initializerIdentifier);
+
+    @Remover(HIDDEN_INITIALIZERS)
+    void removeFromHiddenInitializers(String initializerIdentifier);
+
+    /** Identifiers of the custom methods hidden on this diagram (row suppressed). */
+    @Getter(value = HIDDEN_METHODS, cardinality = Cardinality.LIST)
+    List<String> getHiddenMethods();
+
+    @Adder(HIDDEN_METHODS)
+    void addToHiddenMethods(String methodIdentifier);
+
+    @Remover(HIDDEN_METHODS)
+    void removeFromHiddenMethods(String methodIdentifier);
+
+    /** Whether the given property is hidden on this diagram (row + connector). Non-PAMELA. */
     boolean isPropertyHidden(String propertyIdentifier);
 
-    /** Hides or un-hides the given property's connector (idempotent). Non-PAMELA. */
+    /** Hides or un-hides the given property (idempotent). Non-PAMELA. */
     void setPropertyHidden(String propertyIdentifier, boolean hidden);
+
+    /** Whether the given initializer is hidden on this diagram. Non-PAMELA. */
+    boolean isInitializerHidden(String initializerIdentifier);
+
+    /** Hides or un-hides the given initializer (idempotent). Non-PAMELA. */
+    void setInitializerHidden(String initializerIdentifier, boolean hidden);
+
+    /** Whether the given custom method is hidden on this diagram. Non-PAMELA. */
+    boolean isMethodHidden(String methodIdentifier);
+
+    /** Hides or un-hides the given custom method (idempotent). Non-PAMELA. */
+    void setMethodHidden(String methodIdentifier, boolean hidden);
 
     /**
      * Transient reference to the resolved {@link SourceModelEntity}.

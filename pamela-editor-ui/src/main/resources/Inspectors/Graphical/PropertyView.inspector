@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.diagram.PropertyView" name="Inspector">
+    <Label name="PropertyLabel" label="property" index="0"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="PropertyTF" index="1" data="data.label" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="KindLabel" label="kind" index="2"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="KindTF" index="3" data="data.kindLabel" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="SourceLabel" label="source" index="4"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="SourceTF" index="5" data="data.sourceQualifiedName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="TargetLabel" label="target" index="6"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="TargetTF" index="7" data="data.targetQualifiedName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="LabelXLabel" label="label_offset_x" index="8"
+        constraints="twocols(location=left)" localize="true" />
+    <Number name="LabelXField" index="9" minValue="-10000.0" maxValue="10000.0" increment="1.0"
+        numberType="DoubleType" columns="7" data="data.labelX" enable="data.connectorPresent"
+        constraints="twocols(location=right)" localize="true" />
+    <Label name="LabelYLabel" label="label_offset_y" index="10"
+        constraints="twocols(location=left)" localize="true" />
+    <Number name="LabelYField" index="11" minValue="-10000.0" maxValue="10000.0" increment="1.0"
+        numberType="DoubleType" columns="7" data="data.labelY" enable="data.connectorPresent"
+        constraints="twocols(location=right)" localize="true" />
+    <Label name="NoConnectorNote" label="no_connector_note" index="12"
+        visible="data.connectorPresent == false"
+        constraints="twocols(expandHorizontally=true;location=center)" localize="true" />
+    <LocalizedDictionary>
+        <Localized key="property" lang="English" value="Property" />
+        <Localized key="property" lang="French" value="Propriété" />
+        <Localized key="kind" lang="English" value="Kind" />
+        <Localized key="kind" lang="French" value="Type de lien" />
+        <Localized key="source" lang="English" value="Source" />
+        <Localized key="source" lang="French" value="Source" />
+        <Localized key="target" lang="English" value="Target" />
+        <Localized key="target" lang="French" value="Cible" />
+        <Localized key="label_offset_x" lang="English" value="Label offset X" />
+        <Localized key="label_offset_x" lang="French" value="Décalage libellé X" />
+        <Localized key="label_offset_y" lang="English" value="Label offset Y" />
+        <Localized key="label_offset_y" lang="French" value="Décalage libellé Y" />
+        <Localized key="no_connector_note" lang="English" value="Target not on diagram — no connector to position." />
+        <Localized key="no_connector_note" lang="French" value="Cible absente du diagramme — aucun connecteur à positionner." />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Property View" />
+</Inspector>

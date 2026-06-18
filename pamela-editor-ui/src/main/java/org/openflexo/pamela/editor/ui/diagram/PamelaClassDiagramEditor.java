@@ -135,6 +135,31 @@ public class PamelaClassDiagramEditor {
         }
     }
 
+    /** Whether the given source member's entity is present on this diagram. */
+    public boolean isMemberOnDiagram(Object member) {
+        return getDrawing().isMemberOnDiagram(member);
+    }
+
+    /** Whether the given source member is currently hidden on this diagram. */
+    public boolean isMemberHidden(Object member) {
+        return getDrawing().isMemberHidden(member);
+    }
+
+    /** Hides or shows the given source member on this diagram. */
+    public void setMemberHidden(Object member, boolean hidden) {
+        getDrawing().setMemberHidden(member, hidden);
+    }
+
+    /** True if the entity has hidden members (or a hidden compartment) of the given kind. */
+    public boolean canShowAllMembers(SourceModelEntity entity, PamelaClassDiagramDrawing.Compartment kind) {
+        return getDrawing().canShowAllMembers(entity, kind);
+    }
+
+    /** Reveals all members of the given compartment for the entity on this diagram. */
+    public void showAllMembers(SourceModelEntity entity, PamelaClassDiagramDrawing.Compartment kind) {
+        getDrawing().showAllMembers(entity, kind);
+    }
+
     /**
      * Installs listeners that invoke {@code onDirty} whenever the diagram is mutated:
      * an entity view is added/removed (the {@code entityViews} collection changes) or a
@@ -211,15 +236,18 @@ public class PamelaClassDiagramEditor {
         ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.DISPLAY_PROPERTIES, display);
         ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.DISPLAY_METHODS, display);
 
-        // Hiding/un-hiding a property's connector marks dirty and re-walks the drawing so
-        // the connector disappears/reappears immediately.
+        // Hiding/un-hiding a member (property row + connector, initializer or method row)
+        // marks dirty and re-walks the drawing + redistributes compartment weights so the
+        // member disappears/reappears immediately.
         PropertyChangeListener hidden = evt -> {
             onDirty.run();
             if (drawing != null) {
-                drawing.updateGraphicalObjectsHierarchy();
+                drawing.refreshCompartmentVisibility(ev);
             }
         };
         ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.HIDDEN_PROPERTIES, hidden);
+        ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.HIDDEN_INITIALIZERS, hidden);
+        ev.getPropertyChangeSupport().addPropertyChangeListener(EntityView.HIDDEN_METHODS, hidden);
     }
 
     /**
