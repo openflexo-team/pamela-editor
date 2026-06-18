@@ -12,6 +12,11 @@ public abstract class InheritanceViewImpl extends ConnectorViewImpl implements I
     private SourceModelEntity superEntity;
 
     @Override
+    public ConnectorStyle.Category getStyleCategory() {
+        return ConnectorStyle.Category.INHERITANCE;
+    }
+
+    @Override
     public SourceModelEntity getSubEntity() {
         return subEntity;
     }

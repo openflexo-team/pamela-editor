@@ -1,5 +1,7 @@
 package org.openflexo.pamela.editor.diagram;
 
+import java.util.List;
+
 import org.openflexo.pamela.AccessibleProxyObject;
 import org.openflexo.pamela.annotations.Getter;
 import org.openflexo.pamela.annotations.ImplementationClass;
@@ -7,6 +9,7 @@ import org.openflexo.pamela.annotations.Import;
 import org.openflexo.pamela.annotations.Imports;
 import org.openflexo.pamela.annotations.ModelEntity;
 import org.openflexo.pamela.annotations.Setter;
+import org.openflexo.pamela.editor.diagram.ConnectorStyle.Category;
 
 /**
  * Abstract base for the runtime view of one connector of a {@link PamelaClassDiagram}.
@@ -39,6 +42,7 @@ public interface ConnectorView extends AccessibleProxyObject {
     String TARGET_QUALIFIED_NAME = "targetQualifiedName";
     String LABEL_X = "labelX";
     String LABEL_Y = "labelY";
+    String STYLE_ID = "styleId";
 
     @Getter(SOURCE_QUALIFIED_NAME)
     String getSourceQualifiedName();
@@ -67,6 +71,18 @@ public interface ConnectorView extends AccessibleProxyObject {
     void setLabelY(double labelY);
 
     /**
+     * Reference to the applied {@link ConnectorStyle} — its {@link ConnectorStyle#getId() id}.
+     * Empty (the default) means "use the category default" ({@link ConnectorStyle#defaultFor}),
+     * so unset / legacy connectors keep the standard appearance. This is the only style data
+     * persisted — never the individual graphical properties (see {@link ConnectorStyle}).
+     */
+    @Getter(value = STYLE_ID, defaultValue = "")
+    String getStyleId();
+
+    @Setter(STYLE_ID)
+    void setStyleId(String styleId);
+
+    /**
      * The label rendered on the connector, or {@code null} for none. Computed from the
      * resolved model element. Not managed by PAMELA — see {@link ConnectorViewImpl} and
      * the subtype implementations.
@@ -74,8 +90,35 @@ public interface ConnectorView extends AccessibleProxyObject {
     String getLabel();
 
     /**
-     * Whether this view carries data worth persisting (currently: a moved label). The
-     * drawing promotes a transient view into the diagram's {@code connectorViews}
+     * The {@link ConnectorStyle.Category} this connector belongs to — selects the set of
+     * styles applicable to it. Not managed by PAMELA; implemented per subtype
+     * ({@link InheritanceView} → {@code INHERITANCE}, {@link PropertyView} → {@code RELATIONSHIP}).
+     */
+    Category getStyleCategory();
+
+    /**
+     * The resolved {@link ConnectorStyle}: {@link #getStyleId()} looked up, falling back to
+     * the category default when empty / unknown / of the wrong category. Never {@code null}.
+     * Not managed by PAMELA.
+     */
+    ConnectorStyle getStyle();
+
+    /**
+     * Sets the applied style (writes its id into {@link #setStyleId(String)}). A {@code null}
+     * style clears the reference (→ category default). Not managed by PAMELA.
+     */
+    void setStyle(ConnectorStyle style);
+
+    /**
+     * The styles offered for this connector in the graphical inspector drop-down
+     * ({@link ConnectorStyle#stylesFor(Category)} for {@link #getStyleCategory()}).
+     * Not managed by PAMELA.
+     */
+    List<ConnectorStyle> getAvailableStyles();
+
+    /**
+     * Whether this view carries data worth persisting (a moved label, or a non-default
+     * style). The drawing promotes a transient view into the diagram's {@code connectorViews}
      * collection once this becomes {@code true}. Not managed by PAMELA.
      */
     boolean isPersistable();

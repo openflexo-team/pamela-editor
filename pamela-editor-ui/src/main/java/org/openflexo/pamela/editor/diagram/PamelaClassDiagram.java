@@ -74,4 +74,11 @@ public interface PamelaClassDiagram extends AccessibleProxyObject {
      * entity qualified name + property identifier), or {@code null} if none is stored.
      */
     PropertyView findPropertyView(String sourceQualifiedName, String propertyIdentifier);
+
+    /**
+     * Returns the persisted {@link InheritanceView} for the given inheritance link identity
+     * (sub-entity qualified name + super-entity qualified name), or {@code null} if none is
+     * stored. An inheritance view is persisted only when it carries a non-default style.
+     */
+    InheritanceView findInheritanceView(String sourceQualifiedName, String targetQualifiedName);
 }

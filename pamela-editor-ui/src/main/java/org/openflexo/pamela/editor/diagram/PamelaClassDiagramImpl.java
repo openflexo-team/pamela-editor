@@ -23,4 +23,19 @@ public abstract class PamelaClassDiagramImpl implements PamelaClassDiagram {
         }
         return null;
     }
+
+    @Override
+    public InheritanceView findInheritanceView(String sourceQualifiedName, String targetQualifiedName) {
+        if (getConnectorViews() == null) {
+            return null;
+        }
+        for (ConnectorView cv : getConnectorViews()) {
+            if (cv instanceof InheritanceView
+                    && Objects.equals(cv.getSourceQualifiedName(), sourceQualifiedName)
+                    && Objects.equals(cv.getTargetQualifiedName(), targetQualifiedName)) {
+                return (InheritanceView) cv;
+            }
+        }
+        return null;
+    }
 }

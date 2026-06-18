@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.diagram.InheritanceView" name="Inspector">
+    <Label name="SourceLabel" label="source" index="2"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="SourceTF" index="3" data="data.sourceQualifiedName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="TargetLabel" label="target" index="4"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="TargetTF" index="5" data="data.targetQualifiedName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="StyleLabel" label="style" index="6"
+        constraints="twocols(location=left)" localize="true" />
+    <DropDown name="StyleDropDown" index="7" data="data.style" list="data.availableStyles"
+        format="object.displayName" width="120"
+        iteratorClassName="org.openflexo.pamela.editor.diagram.ConnectorStyle" autoSelectFirstRow="true"
+        constraints="twocols(expandHorizontally=true;location=right)" localize="true" />
+    <LocalizedDictionary>
+        <Localized key="source" lang="English" value="Sub-type" />
+        <Localized key="source" lang="French" value="Sous-type" />
+        <Localized key="target" lang="English" value="Super-type" />
+        <Localized key="target" lang="French" value="Super-type" />
+        <Localized key="style" lang="English" value="Style" />
+        <Localized key="style" lang="French" value="Style" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Inheritance View" />
+</Inspector>

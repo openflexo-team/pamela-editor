@@ -184,17 +184,30 @@ public class PamelaClassDiagramSerializer {
             }
         }
 
-        // connectorViews — PropertyView label-position overrides (absent in legacy files).
+        // connectorViews — connector overrides (label position and/or style). Absent in
+        // legacy files. Entries with no "type" default to a property view (legacy format).
         JsonNode connectorsNode = root.get("connectorViews");
         if (connectorsNode != null && connectorsNode.isArray()) {
             for (JsonNode cvNode : connectorsNode) {
                 String source = cvNode.has("source") ? cvNode.get("source").asText() : null;
                 String target = cvNode.has("target") ? cvNode.get("target").asText() : null;
-                String property = cvNode.has("property") ? cvNode.get("property").asText() : null;
-                PropertyView pv = factory.newPropertyView(source, target, property);
-                pv.setLabelX(cvNode.has("labelX") ? cvNode.get("labelX").asDouble() : 0.0);
-                pv.setLabelY(cvNode.has("labelY") ? cvNode.get("labelY").asDouble() : 0.0);
-                diagram.addToConnectorViews(pv);
+                String type = cvNode.has("type") ? cvNode.get("type").asText() : "property";
+                String style = cvNode.has("style") ? cvNode.get("style").asText() : null;
+
+                ConnectorView cv;
+                if ("inheritance".equals(type)) {
+                    cv = factory.newInheritanceView(source, target);
+                } else {
+                    String property = cvNode.has("property") ? cvNode.get("property").asText() : null;
+                    PropertyView pv = factory.newPropertyView(source, target, property);
+                    pv.setLabelX(cvNode.has("labelX") ? cvNode.get("labelX").asDouble() : 0.0);
+                    pv.setLabelY(cvNode.has("labelY") ? cvNode.get("labelY").asDouble() : 0.0);
+                    cv = pv;
+                }
+                if (style != null && !style.isEmpty()) {
+                    cv.setStyleId(style);
+                }
+                diagram.addToConnectorViews(cv);
             }
         }
 
@@ -247,24 +260,33 @@ public class PamelaClassDiagramSerializer {
         }
         root.set("entityViews", viewsArray);
 
-        // connectorViews — only PropertyViews whose label was moved (non-default) are
-        // persisted; inheritance links and default-positioned labels are recomputed.
+        // connectorViews — only connectors carrying non-default data are persisted: a moved
+        // label and/or a non-default style. PropertyViews store the label offset; both kinds
+        // store their style reference. Connectors with default appearance are recomputed.
         ArrayNode connectorsArray = MAPPER.createArrayNode();
         if (diagram.getConnectorViews() != null) {
             for (ConnectorView cv : diagram.getConnectorViews()) {
-                if (!(cv instanceof PropertyView) || !cv.isPersistable()) {
+                if (!cv.isPersistable()) {
                     continue;
                 }
-                PropertyView pv = (PropertyView) cv;
                 ObjectNode cvNode = MAPPER.createObjectNode();
                 cvNode.put("source",
-                        pv.getSourceQualifiedName() != null ? pv.getSourceQualifiedName() : "");
+                        cv.getSourceQualifiedName() != null ? cv.getSourceQualifiedName() : "");
                 cvNode.put("target",
-                        pv.getTargetQualifiedName() != null ? pv.getTargetQualifiedName() : "");
-                cvNode.put("property",
-                        pv.getPropertyIdentifier() != null ? pv.getPropertyIdentifier() : "");
-                cvNode.put("labelX", pv.getLabelX());
-                cvNode.put("labelY", pv.getLabelY());
+                        cv.getTargetQualifiedName() != null ? cv.getTargetQualifiedName() : "");
+                if (cv instanceof PropertyView) {
+                    PropertyView pv = (PropertyView) cv;
+                    cvNode.put("type", "property");
+                    cvNode.put("property",
+                            pv.getPropertyIdentifier() != null ? pv.getPropertyIdentifier() : "");
+                    cvNode.put("labelX", pv.getLabelX());
+                    cvNode.put("labelY", pv.getLabelY());
+                } else if (cv instanceof InheritanceView) {
+                    cvNode.put("type", "inheritance");
+                }
+                if (cv.getStyleId() != null && !cv.getStyleId().isEmpty()) {
+                    cvNode.put("style", cv.getStyleId());
+                }
                 connectorsArray.add(cvNode);
             }
         }

@@ -5,6 +5,7 @@ import java.awt.CardLayout;
 import javax.swing.JPanel;
 
 import org.openflexo.pamela.editor.diagram.EntityView;
+import org.openflexo.pamela.editor.diagram.InheritanceView;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.diagram.PropertyView;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
@@ -156,6 +157,10 @@ public class ContextPanel extends JPanel {
         PamelaClassDiagram diagram = (PamelaClassDiagram) activeElement;
 
         if (element instanceof EntityView) {
+            graphicalInspector.inspectObject(element);
+
+        } else if (element instanceof InheritanceView) {
+            // An inheritance connector: its graphical inspector edits the connector style.
             graphicalInspector.inspectObject(element);
 
         } else if (element instanceof SourceModelEntity) {

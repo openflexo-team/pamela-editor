@@ -33,6 +33,11 @@ public abstract class PropertyViewImpl extends ConnectorViewImpl implements Prop
     }
 
     @Override
+    public ConnectorStyle.Category getStyleCategory() {
+        return ConnectorStyle.Category.RELATIONSHIP;
+    }
+
+    @Override
     public String getKindLabel() {
         if (property != null && property.isEmbedded()) {
             return "Composition";

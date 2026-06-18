@@ -211,6 +211,7 @@ public class PamelaClassDiagramEditor {
         PropertyChangeListener label = evt -> onDirty.run();
         cv.getPropertyChangeSupport().addPropertyChangeListener(ConnectorView.LABEL_X, label);
         cv.getPropertyChangeSupport().addPropertyChangeListener(ConnectorView.LABEL_Y, label);
+        cv.getPropertyChangeSupport().addPropertyChangeListener(ConnectorView.STYLE_ID, label);
     }
 
     /** Registers a geometry listener on an entity view (once) so moves/resizes mark dirty. */

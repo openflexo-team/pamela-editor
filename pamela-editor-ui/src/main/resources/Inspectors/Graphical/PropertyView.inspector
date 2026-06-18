@@ -27,7 +27,13 @@
     <Number name="LabelYField" index="11" minValue="-10000.0" maxValue="10000.0" increment="1.0"
         numberType="DoubleType" columns="7" data="data.labelY" enable="data.connectorPresent"
         constraints="twocols(location=right)" localize="true" />
-    <Label name="NoConnectorNote" label="no_connector_note" index="12"
+    <Label name="StyleLabel" label="style" index="12"
+        constraints="twocols(location=left)" localize="true" />
+    <DropDown name="StyleDropDown" index="13" data="data.style" list="data.availableStyles"
+        format="object.displayName" enable="data.connectorPresent" width="120"
+        iteratorClassName="org.openflexo.pamela.editor.diagram.ConnectorStyle" autoSelectFirstRow="true"
+        constraints="twocols(expandHorizontally=true;location=right)" localize="true" />
+    <Label name="NoConnectorNote" label="no_connector_note" index="14"
         visible="data.connectorPresent == false"
         constraints="twocols(expandHorizontally=true;location=center)" localize="true" />
     <LocalizedDictionary>
@@ -45,6 +51,8 @@
         <Localized key="label_offset_y" lang="French" value="Décalage libellé Y" />
         <Localized key="no_connector_note" lang="English" value="Target not on diagram — no connector to position." />
         <Localized key="no_connector_note" lang="French" value="Cible absente du diagramme — aucun connecteur à positionner." />
+        <Localized key="style" lang="English" value="Style" />
+        <Localized key="style" lang="French" value="Style" />
     </LocalizedDictionary>
     <Parameter name="title" value="Property View" />
 </Inspector>
