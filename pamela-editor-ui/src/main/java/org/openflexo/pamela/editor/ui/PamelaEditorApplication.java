@@ -378,6 +378,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     private Object deferredCentralViewElement;
 
     private PamelaEditorMenuBar menuBar;
+
+    /** True when the macOS application-menu Preferences handler is installed (see §6). */
+    boolean macPreferencesHandlerInstalled;
     LocalizedEditor localizedEditor;
 
     /** Used by {@link PamelaEditorMenuBar} to manage PropertyChange listener registrations. */
@@ -389,6 +392,10 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     // -------------------------------------------------------------------------
 
     public PamelaEditorApplication() {
+        // --- Preferences (must precede the first PamelaEditorPreferences access) ---
+        org.openflexo.pamela.editor.ui.preferences.PreferencesManager.initialize(
+                PAMELA_EDITOR_LOCALIZATION::localizedForKey);
+
         // --- Frame ---
         frame = new JFrame("PAMELA Editor");
         frame.setBounds(PamelaEditorPreferences.getFrameBounds());
@@ -549,6 +556,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         frame.getContentPane().add(buildStatusBar(), BorderLayout.SOUTH);
 
         // --- Menu bar ---
+        macPreferencesHandlerInstalled = installMacPreferencesHandler();
         menuBar = new PamelaEditorMenuBar(this);
         frame.setJMenuBar(menuBar);
 
@@ -1908,6 +1916,47 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     true, false);
         }
         localizedEditor.setVisible(true);
+    }
+
+    /** Opens the thematic preferences window (see {@code preferences-design.md §3}). */
+    public void showPreferences() {
+        org.openflexo.pamela.editor.ui.preferences.PreferencesDialog.showPreferences(
+                frame, PAMELA_EDITOR_LOCALIZATION::localizedForKey);
+    }
+
+    /**
+     * Installs the macOS application-menu <i>Preferences…</i> handler ({@code ⌘,}) when running
+     * on macOS. Returns {@code true} when installed, in which case the menu bar must <em>not</em>
+     * add a redundant explicit item.
+     *
+     * <p>The project targets Java 8, where {@code java.awt.Desktop.setPreferencesHandler} (Java 9+)
+     * is unavailable; on macOS Java 8 the handler is set via {@code com.apple.eawt.Application},
+     * reached through reflection so the code still compiles on any platform/JDK.</p>
+     */
+    boolean installMacPreferencesHandler() {
+        if (!ToolBox.isMacOS()) {
+            return false;
+        }
+        try {
+            Class<?> applicationClass = Class.forName("com.apple.eawt.Application");
+            Object application = applicationClass.getMethod("getApplication").invoke(null);
+            Class<?> handlerInterface = Class.forName("com.apple.eawt.PreferencesHandler");
+            Object handler = java.lang.reflect.Proxy.newProxyInstance(
+                    handlerInterface.getClassLoader(),
+                    new Class<?>[] { handlerInterface },
+                    (proxy, method, args) -> {
+                        if ("handlePreferences".equals(method.getName())) {
+                            showPreferences();
+                        }
+                        return null;
+                    });
+            applicationClass.getMethod("setPreferencesHandler", handlerInterface)
+                    .invoke(application, handler);
+            return true;
+        }
+        catch (Throwable t) {
+            return false;
+        }
     }
 
     // =========================================================================

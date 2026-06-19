@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel dataClassName="org.openflexo.pamela.editor.ui.preferences.PamelaEditorPreferencesModel"
+       controllerClassName="org.openflexo.pamela.editor.ui.preferences.PreferencesBrowserFIBController"
+       layout="border" trackViewPortWidth="true" trackViewPortHeight="true"
+       name="PreferencesBrowser">
+
+  <Browser root="data" name="preferencesBrowser"
+           iteratorClassName="org.openflexo.pamela.editor.ui.preferences.PreferencesNode"
+           selected="controller.selectedNode"
+           selectionMode="SingleTreeSelection"
+           rootVisible="false" showFooter="false" rowHeight="20"
+           constraints="border(location=center)">
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.ui.preferences.PreferencesNode"
+                    name="node" label="node.displayLabel"
+                    icon="controller.iconForObject(node)"
+                    isEditable="false">
+      <Children name="children" data="node.children" />
+    </BrowserElement>
+
+  </Browser>
+</Panel>

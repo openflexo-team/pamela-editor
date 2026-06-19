@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.ui.preferences.GeneralPreferences" name="Inspector">
+    <Label name="LanguageLabel" label="language" index="10"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="LanguageTF" index="11" data="data.language"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" />
+    <Label name="ConfirmLabel" label="confirm_on_delete" index="12"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="ConfirmCB" index="13" data="data.confirmOnDelete"
+        constraints="twocols(location=right)" />
+    <LocalizedDictionary>
+        <Localized key="language" lang="English" value="Language" />
+        <Localized key="language" lang="French" value="Langue" />
+        <Localized key="language" lang="Dutch" value="Taal" />
+        <Localized key="confirm_on_delete" lang="English" value="Confirm on delete" />
+        <Localized key="confirm_on_delete" lang="French" value="Confirmer la suppression" />
+        <Localized key="confirm_on_delete" lang="Dutch" value="Bevestigen bij verwijderen" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="General" />
+</Inspector>

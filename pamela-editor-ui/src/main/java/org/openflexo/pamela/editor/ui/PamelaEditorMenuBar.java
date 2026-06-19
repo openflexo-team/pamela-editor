@@ -10,8 +10,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.List;
-import java.util.prefs.PreferenceChangeEvent;
-import java.util.prefs.PreferenceChangeListener;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -28,6 +26,9 @@ import org.openflexo.diana.control.DianaInteractiveEditor;
 import org.openflexo.diana.swing.control.tools.JDianaDialogInspectors;
 import org.openflexo.pamela.editor.ui.diagram.DianaDrawingEditor;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
+import org.openflexo.pamela.editor.ui.preferences.PreferenceChangeListener;
+import org.openflexo.pamela.editor.ui.preferences.PreferencesNode;
+import org.openflexo.pamela.editor.ui.preferences.RecentFilesPreferences;
 import org.openflexo.pamela.undo.UndoManager;
 import org.openflexo.toolbox.HasPropertyChangeSupport;
 
@@ -265,6 +266,17 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
         editMenu.add(undoItem);
         editMenu.add(redoItem);
 
+        // Preferences: on macOS this lives in the application menu (⌘,) via the Desktop
+        // preferences handler; elsewhere add an explicit Edit > Preferences… item (Ctrl+,).
+        if (!application.macPreferencesHandlerInstalled) {
+            JMenuItem preferencesItem = new JMenuItem(loc("preferences"));
+            preferencesItem.setAccelerator(KeyStroke.getKeyStroke(
+                    KeyEvent.VK_COMMA, PamelaEditorApplication.META_MASK));
+            preferencesItem.addActionListener(e -> application.showPreferences());
+            editMenu.addSeparator();
+            editMenu.add(preferencesItem);
+        }
+
         // ------------------------------------------------------------------ Tools menu
         logsItem = new JMenuItem(loc("logs"));
         logsItem.addActionListener(e -> application.showLogs());
@@ -347,8 +359,8 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
     private boolean willUpdate = false;
 
     @Override
-    public void preferenceChange(PreferenceChangeEvent evt) {
-        if (evt.getKey().startsWith(PamelaEditorPreferences.LAST_FILE)) {
+    public void preferenceChanged(PreferencesNode node, String key, Object oldValue, Object newValue) {
+        if (node instanceof RecentFilesPreferences) {
             if (willUpdate) {
                 return;
             }

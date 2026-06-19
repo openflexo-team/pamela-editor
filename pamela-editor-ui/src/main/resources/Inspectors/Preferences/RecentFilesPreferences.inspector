@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.ui.preferences.RecentFilesPreferences" name="Inspector">
+    <Label name="MaxCountLabel" label="max_count" index="10"
+        constraints="twocols(location=left)" localize="true" />
+    <Number name="MaxCountNB" index="11" data="data.maxCount" numberType="IntegerType"
+        minValue="0" maxValue="100" columns="4"
+        constraints="twocols(location=right)" />
+    <Label name="LastDirLabel" label="last_directory" index="12"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="LastDirTF" index="13" data="data.lastDirectory.toString" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="18" />
+    <Label name="FilesLabel" label="recent_files_count" index="14"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="FilesTF" index="15" data="data.files.size.toString" readOnly="true"
+        constraints="twocols(location=right)" columns="5" />
+    <LocalizedDictionary>
+        <Localized key="max_count" lang="English" value="Max recent files" />
+        <Localized key="max_count" lang="French" value="Nb max de fichiers récents" />
+        <Localized key="max_count" lang="Dutch" value="Max recente bestanden" />
+        <Localized key="last_directory" lang="English" value="Last directory" />
+        <Localized key="last_directory" lang="French" value="Dernier répertoire" />
+        <Localized key="last_directory" lang="Dutch" value="Laatste map" />
+        <Localized key="recent_files_count" lang="English" value="Recent files" />
+        <Localized key="recent_files_count" lang="French" value="Fichiers récents" />
+        <Localized key="recent_files_count" lang="Dutch" value="Recente bestanden" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Recent files" />
+</Inspector>

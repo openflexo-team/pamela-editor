@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.ui.preferences.DiagramPreferences" name="Inspector">
+    <Label name="RelStyleLabel" label="default_relationship_style" index="10"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="RelStyleTF" index="11" data="data.defaultRelationshipStyleId"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="20" />
+    <Label name="InhStyleLabel" label="default_inheritance_style" index="12"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="InhStyleTF" index="13" data="data.defaultInheritanceStyleId"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="20" />
+    <Label name="ShowGridLabel" label="show_grid" index="14"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="ShowGridCB" index="15" data="data.showGrid"
+        constraints="twocols(location=right)" />
+    <LocalizedDictionary>
+        <Localized key="default_relationship_style" lang="English" value="Default relationship style" />
+        <Localized key="default_relationship_style" lang="French" value="Style de relation par défaut" />
+        <Localized key="default_relationship_style" lang="Dutch" value="Standaard relatiestijl" />
+        <Localized key="default_inheritance_style" lang="English" value="Default inheritance style" />
+        <Localized key="default_inheritance_style" lang="French" value="Style d'héritage par défaut" />
+        <Localized key="default_inheritance_style" lang="Dutch" value="Standaard overervingsstijl" />
+        <Localized key="show_grid" lang="English" value="Show grid" />
+        <Localized key="show_grid" lang="French" value="Afficher la grille" />
+        <Localized key="show_grid" lang="Dutch" value="Raster tonen" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Diagram" />
+</Inspector>

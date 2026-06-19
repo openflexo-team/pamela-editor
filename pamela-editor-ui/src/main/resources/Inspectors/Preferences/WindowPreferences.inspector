@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.ui.preferences.WindowPreferences" name="Inspector">
+    <Label name="FrameLabel" label="frame_bounds" index="10"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="FrameTF" index="11" data="data.frameBounds.toString" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="18" />
+    <Label name="InspectorLabel" label="inspector_bounds" index="12"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="InspectorTF" index="13" data="data.inspectorBounds.toString" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="18" />
+    <Label name="PaletteLabel" label="palette_bounds" index="14"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="PaletteTF" index="15" data="data.paletteBounds.toString" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="18" />
+    <LocalizedDictionary>
+        <Localized key="frame_bounds" lang="English" value="Main window" />
+        <Localized key="frame_bounds" lang="French" value="Fenêtre principale" />
+        <Localized key="frame_bounds" lang="Dutch" value="Hoofdvenster" />
+        <Localized key="inspector_bounds" lang="English" value="Inspector window" />
+        <Localized key="inspector_bounds" lang="French" value="Fenêtre inspecteur" />
+        <Localized key="inspector_bounds" lang="Dutch" value="Inspecteurvenster" />
+        <Localized key="palette_bounds" lang="English" value="Palette window" />
+        <Localized key="palette_bounds" lang="French" value="Fenêtre palette" />
+        <Localized key="palette_bounds" lang="Dutch" value="Paletvenster" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Windows" />
+</Inspector>

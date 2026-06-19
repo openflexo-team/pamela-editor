@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.ui.preferences.AnalysisPreferences" name="Inspector">
+    <Label name="BuildCacheLabel" label="build_cache_enabled" index="10"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="BuildCacheCB" index="11" data="data.buildCacheEnabled"
+        constraints="twocols(location=right)" />
+    <LocalizedDictionary>
+        <Localized key="build_cache_enabled" lang="English" value="Enable build cache" />
+        <Localized key="build_cache_enabled" lang="French" value="Activer le cache de construction" />
+        <Localized key="build_cache_enabled" lang="Dutch" value="Build-cache inschakelen" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Analysis" />
+</Inspector>
