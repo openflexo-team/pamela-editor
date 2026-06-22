@@ -52,6 +52,7 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
     private final JMenuItem openItem;
     private final JMenuItem newDiagramItem;
     private final JMenuItem saveItem;
+    private final JMenuItem refreshItem;
     private final JMenuItem closeItem;
     private final JMenuItem quitItem;
     private final JMenu openRecent;
@@ -106,6 +107,13 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
                 KeyEvent.VK_S, PamelaEditorApplication.META_MASK));
         saveItem.addActionListener(e -> application.saveActiveProject());
 
+        // Refresh: re-run the source analysis so changes made on disk outside the
+        // editor (e.g. a class added in the IDE) are picked up. F5 is the de-facto
+        // refresh key and avoids the ⌘R / redo accelerator clash.
+        refreshItem = new JMenuItem(loc("refresh_project"));
+        refreshItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
+        refreshItem.addActionListener(e -> application.refreshActiveProject());
+
         closeItem = new JMenuItem(loc("close"));
         closeItem.addActionListener(e -> {
             // Close the session that contains the currently selected element
@@ -124,6 +132,7 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
         fileMenu.add(newDiagramItem);
         fileMenu.addSeparator();
         fileMenu.add(saveItem);
+        fileMenu.add(refreshItem);
         fileMenu.add(closeItem);
         fileMenu.addSeparator();
         fileMenu.add(quitItem);

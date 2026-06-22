@@ -64,6 +64,11 @@ import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.action.AddAsRootTypeAction;
 import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsPamelaEntityAction;
+import org.openflexo.pamela.editor.ui.action.NewEntityAction;
+import org.openflexo.pamela.editor.ui.action.RenameEntityAction;
+import org.openflexo.pamela.editor.ui.action.DeleteEntityAction;
+import org.openflexo.pamela.editor.ui.action.AddSuperEntityAction;
+import org.openflexo.pamela.editor.ui.action.RemoveSuperEntityAction;
 import org.openflexo.pamela.editor.ui.action.NewClassDiagramAction;
 import org.openflexo.pamela.editor.ui.action.RenameClassDiagramAction;
 import org.openflexo.pamela.editor.ui.action.DeleteClassDiagramAction;
@@ -564,6 +569,12 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         registerAction(new AddSourceFolderAction());
         registerAction(new AddAsRootTypeAction());
         registerAction(new DeclareAsPamelaEntityAction());
+        // --- Model-editing actions (entities) — model-editing-design.md Lot 1 ---
+        registerAction(new NewEntityAction());
+        registerAction(new RenameEntityAction());
+        registerAction(new DeleteEntityAction());
+        registerAction(new AddSuperEntityAction());
+        registerAction(new RemoveSuperEntityAction());
         registerAction(new NewClassDiagramAction());
         registerAction(new RenameClassDiagramAction());
         registerAction(new DeleteClassDiagramAction());
@@ -835,6 +846,42 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             project = projects.get(projects.size() - 1);
         }
         saveProject(project);
+    }
+
+    /**
+     * Re-runs the source analysis of the active project, picking up any
+     * change made on disk outside the editor (e.g. a class added or edited in
+     * the IDE). This is the manual counterpart of the (not-yet-implemented)
+     * file watcher of {@code model-editing-design.md §7}: a freshly added
+     * {@code .java} file appears as a {@code SourceJavaFile} in the browser
+     * after the rebuild (and a new {@code @ModelEntity} materialises if it is
+     * reachable from a root type).
+     *
+     * <p>The build-cache fingerprint already detects on-disk changes and forces
+     * a full reparse when needed, so this never serves a stale model.</p>
+     */
+    public void refreshActiveProject() {
+        PamelaProject project = getProjectForElement(currentSelectedElement);
+        if (project == null && !projects.isEmpty()) {
+            project = projects.get(projects.size() - 1);
+        }
+        if (project == null) {
+            return;
+        }
+        // Re-anchor the selection on the same entity (by qualified name) after the
+        // rebuild, since the rebuild replaces every Source* instance.
+        final SourceMetaModel model = project.getMetaModel();
+        final String selectedEntityQN = currentSelectedElement instanceof SourceModelEntity
+                ? ((SourceModelEntity) currentSelectedElement).getQualifiedName()
+                : null;
+        rebuildProject(project, () -> {
+            if (selectedEntityQN != null && model != null) {
+                SourceModelEntity again = model.getEntity(selectedEntityQN);
+                if (again != null) {
+                    selectInBrowser(again);
+                }
+            }
+        });
     }
 
     /**
@@ -2048,7 +2095,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
      * Returns the project that the given element belongs to, or {@code null}.
      * Used to decide which project's meta-model to show in the validation panel.
      */
-    private PamelaProject getProjectForElement(Object element) {
+    public PamelaProject getProjectForElement(Object element) {
         if (element instanceof PamelaProject) {
             return (PamelaProject) element;
         }

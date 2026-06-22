@@ -88,6 +88,7 @@ rounded=rounded
 save_diagram=save_diagram
 save_diagram_as=save_diagram_as
 save_project=save_project
+refresh_project=Rafraîchir le projet
 shadow_inspector=shadow_inspector
 shape_inspector=shape_inspector
 show_palette=show_palette
