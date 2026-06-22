@@ -23,7 +23,7 @@ task run(type: JavaExec) {
   // Forward paint-performance diagnostic flags from the gradle invocation to the forked JVM,
   // e.g. ./gradlew :pamela-editor-ui:run -Ddiana.paintdebug=true [-Ddiana.disableRegionCache=true]
   ['diana.paintdebug', 'diana.disableRegionCache', 'diana.disableBoundsCache',
-   'bench.resizeOnly', 'bench.validate'].each { String key ->
+   'diana.isvaliddiag', 'bench.resizeOnly', 'bench.validate'].each { String key ->
     if (System.getProperty(key) != null) {
       systemProperty key, System.getProperty(key)
     }
@@ -44,7 +44,7 @@ task paintBench(type: JavaExec) {
     jvmArgs '-Dapple.laf.useScreenMenuBar=true'
   }
   ['diana.paintdebug', 'diana.disableRegionCache', 'diana.disableBoundsCache',
-   'bench.resizeOnly', 'bench.validate'].each { String key ->
+   'diana.isvaliddiag', 'bench.resizeOnly', 'bench.validate'].each { String key ->
     if (System.getProperty(key) != null) {
       systemProperty key, System.getProperty(key)
     }
