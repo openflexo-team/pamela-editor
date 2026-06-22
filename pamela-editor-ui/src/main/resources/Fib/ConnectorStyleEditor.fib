@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel dataClassName="org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreferences"
+       controllerClassName="org.openflexo.pamela.editor.ui.preferences.ConnectorStyleEditorFIBController"
+       layout="border" name="ConnectorStyleEditor"
+       border="empty" borderTop="10" borderBottom="10" borderLeft="10" borderRight="10"
+       trackViewPortWidth="true" trackViewPortHeight="true">
+
+  <!-- Master: list of styles + add/remove -->
+  <Panel name="listPanel" layout="border" constraints="border(location=north)"
+         trackViewPortWidth="true">
+    <Table name="stylesTable" data="data.styles"
+           iteratorClassName="org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference"
+           selectionMode="SingleSelection" visibleRowCount="6" rowHeight="18"
+           createNewRowOnClick="false" showFooter="false" autoSelectFirstRow="true"
+           constraints="border(location=center)">
+      <LabelColumn name="nameCol" data="iterator.name" title="name" columnWidth="160" resizable="true" displayTitle="true" />
+      <LabelColumn name="typeCol" data="iterator.connectorType.name" title="type" columnWidth="110" resizable="true" displayTitle="true" />
+    </Table>
+    <Panel name="buttonsPanel" layout="flow" align="left" constraints="border(location=south)">
+      <Button name="addButton" label="add_style" buttonType="Trigger"
+              action="controller.addStyle()" localize="true" />
+      <Button name="removeButton" label="remove_style" buttonType="Trigger"
+              action="controller.removeStyle(stylesTable.selected)"
+              enable="stylesTable.selected != null" localize="true" />
+    </Panel>
+  </Panel>
+
+  <!-- Detail: edit the selected style -->
+  <Panel name="detailPanel" layout="twocols" constraints="border(location=center)"
+         titleFont="SansSerif,1,11" border="rounded3d"
+         borderTop="2" borderBottom="2" borderLeft="2" borderRight="2" title="selected_style">
+    <Label name="StyleNameLabel" label="name" index="0" constraints="twocols(location=left)" localize="true" />
+    <TextField name="StyleNameTF" index="1" data="stylesTable.selected.name"
+        enable="stylesTable.selected != null" columns="18"
+        constraints="twocols(expandHorizontally=true;location=right)" />
+    <Label name="StyleTypeLabel" label="connector_type" index="2" constraints="twocols(location=left)" localize="true" />
+    <DropDown name="StyleTypeDD" index="3" data="stylesTable.selected.connectorType"
+        iteratorClassName="org.openflexo.diana.connectors.ConnectorSpecification$ConnectorType"
+        format="object.name" enable="stylesTable.selected != null" width="140"
+        constraints="twocols(expandHorizontally=true;location=right)" />
+    <Label name="StyleColorLabel" label="color" index="4" constraints="twocols(location=left)" localize="true" />
+    <Color name="StyleColor" index="5" data="stylesTable.selected.color" allowsNull="false"
+        enable="stylesTable.selected != null" constraints="twocols(location=right)" />
+    <Label name="StyleWidthLabel" label="line_width" index="6" constraints="twocols(location=left)" localize="true" />
+    <Number name="StyleWidth" index="7" data="stylesTable.selected.lineWidth" numberType="DoubleType"
+        minValue="0.5" maxValue="10.0" increment="0.5" columns="5"
+        enable="stylesTable.selected != null" constraints="twocols(location=right)" />
+    <Label name="StyleStraightLabel" label="straight_when_possible" index="8" constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="StyleStraight" index="9" data="stylesTable.selected.straightLineWhenPossible"
+        enable="stylesTable.selected != null" constraints="twocols(location=right)" />
+    <Label name="StyleRoundedLabel" label="rounded" index="10" constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="StyleRounded" index="11" data="stylesTable.selected.rounded"
+        enable="stylesTable.selected != null" constraints="twocols(location=right)" />
+    <Label name="StyleArcLabel" label="arc_size" index="12" constraints="twocols(location=left)" localize="true" />
+    <Number name="StyleArc" index="13" data="stylesTable.selected.arcSize" numberType="IntegerType"
+        minValue="-1" maxValue="50" columns="4"
+        enable="stylesTable.selected != null" constraints="twocols(location=right)" />
+  </Panel>
+
+  <!-- Default-style assignments -->
+  <Panel name="defaultsPanel" layout="twocols" constraints="border(location=south)"
+         titleFont="SansSerif,1,11" border="rounded3d"
+         borderTop="2" borderBottom="2" borderLeft="2" borderRight="2" title="default_styles">
+    <Label name="DefInhLabel" label="default_inheritance" index="0" constraints="twocols(location=left)" localize="true" />
+    <DropDown name="DefInhDD" index="1" data="data.defaultInheritanceStyle" list="data.styles"
+        iteratorClassName="org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference"
+        format="object.name" width="180"
+        constraints="twocols(expandHorizontally=true;location=right)" />
+    <Label name="DefAssocLabel" label="default_association" index="2" constraints="twocols(location=left)" localize="true" />
+    <DropDown name="DefAssocDD" index="3" data="data.defaultAssociationStyle" list="data.styles"
+        iteratorClassName="org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference"
+        format="object.name" width="180"
+        constraints="twocols(expandHorizontally=true;location=right)" />
+  </Panel>
+
+  <LocalizedDictionary>
+    <Localized key="add_style" lang="English" value="Add" />
+    <Localized key="add_style" lang="French" value="Ajouter" />
+    <Localized key="remove_style" lang="English" value="Remove" />
+    <Localized key="remove_style" lang="French" value="Supprimer" />
+    <Localized key="selected_style" lang="English" value="Selected style" />
+    <Localized key="selected_style" lang="French" value="Style sélectionné" />
+    <Localized key="name" lang="English" value="Name" />
+    <Localized key="name" lang="French" value="Nom" />
+    <Localized key="connector_type" lang="English" value="Routing" />
+    <Localized key="connector_type" lang="French" value="Routage" />
+    <Localized key="color" lang="English" value="Color" />
+    <Localized key="color" lang="French" value="Couleur" />
+    <Localized key="line_width" lang="English" value="Line width" />
+    <Localized key="line_width" lang="French" value="Épaisseur" />
+    <Localized key="straight_when_possible" lang="English" value="Straight when possible" />
+    <Localized key="straight_when_possible" lang="French" value="Droit si possible" />
+    <Localized key="rounded" lang="English" value="Rounded corners" />
+    <Localized key="rounded" lang="French" value="Coins arrondis" />
+    <Localized key="arc_size" lang="English" value="Arc size" />
+    <Localized key="arc_size" lang="French" value="Taille d'arc" />
+    <Localized key="default_styles" lang="English" value="Default styles" />
+    <Localized key="default_styles" lang="French" value="Styles par défaut" />
+    <Localized key="default_inheritance" lang="English" value="Inheritance" />
+    <Localized key="default_inheritance" lang="French" value="Héritage" />
+    <Localized key="default_association" lang="English" value="Association" />
+    <Localized key="default_association" lang="French" value="Association" />
+  </LocalizedDictionary>
+</Panel>

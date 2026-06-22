@@ -48,7 +48,10 @@ public class TestPreferences {
         assertNotNull(general.getChild("recent"));
         assertTrue(general.getChild("recent") instanceof RecentFilesPreferences);
 
-        assertTrue(root.getChild("diagram") instanceof DiagramPreferences);
+        PreferencesNode design = root.getChild("classDiagramDesign");
+        assertTrue(design instanceof ClassDiagramDesignPreferences);
+        assertTrue(design.getChild("entities") instanceof EntityStylePreferences);
+        assertEquals("/classDiagramDesign/entities", design.getChild("entities").getPath());
         assertTrue(root.getChild("analysis") instanceof AnalysisPreferences);
     }
 
@@ -84,6 +87,11 @@ public class TestPreferences {
         recent.setLastDirectory(new File("/tmp"));
         analysis.setBuildCacheEnabled(false);
 
+        ClassDiagramDesignPreferences design = (ClassDiagramDesignPreferences) root.getChild("classDiagramDesign");
+        EntityStylePreferences entities = (EntityStylePreferences) design.getChild("entities");
+        entities.setHeaderBackgroundColor(new java.awt.Color(12, 34, 56));
+        entities.setTitleFont(new java.awt.Font("Serif", java.awt.Font.BOLD, 14));
+
         File tmp = File.createTempFile("prefs", ".json");
         tmp.deleteOnExit();
         PreferencesSerializer serializer = new PreferencesSerializer(factory);
@@ -106,6 +114,45 @@ public class TestPreferences {
         assertEquals(new File("/tmp/A.pamela"), recent2.getFiles().get(0));
         assertEquals(new File("/tmp"), recent2.getLastDirectory());
         assertFalse(analysis2.getBuildCacheEnabled());
+
+        EntityStylePreferences entities2 = (EntityStylePreferences)
+                reloaded.getChild("classDiagramDesign").getChild("entities");
+        assertEquals(new java.awt.Color(12, 34, 56), entities2.getHeaderBackgroundColor());
+        assertEquals(new java.awt.Font("Serif", java.awt.Font.BOLD, 14), entities2.getTitleFont());
+    }
+
+    @Test
+    public void testConnectorStylesRoundTrip() throws Exception {
+        PamelaEditorPreferencesModel root = buildTree();
+        ConnectorStylePreferences connectors = (ConnectorStylePreferences)
+                root.getChild("classDiagramDesign").getChild("connectors");
+        assertTrue(connectors.getStyles().isEmpty());
+
+        ConnectorStyleDefaults.seedIfEmpty(connectors, factory);
+        assertEquals(4, connectors.getStyles().size());
+        // Edit one seeded style + reassign a default.
+        connectors.getStyleById("relationship-line").setColor(new java.awt.Color(1, 2, 3));
+        connectors.setDefaultInheritanceStyleId("inheritance-rect-polylin");
+
+        File tmp = File.createTempFile("prefs-connectors", ".json");
+        tmp.deleteOnExit();
+        PreferencesSerializer serializer = new PreferencesSerializer(factory);
+        serializer.save(root, tmp);
+
+        PamelaEditorPreferencesModel reloaded = buildTree();
+        serializer.applyJson(reloaded, tmp);
+        ConnectorStylePreferences connectors2 = (ConnectorStylePreferences)
+                reloaded.getChild("classDiagramDesign").getChild("connectors");
+
+        assertEquals(4, connectors2.getStyles().size());
+        assertEquals(new java.awt.Color(1, 2, 3), connectors2.getStyleById("relationship-line").getColor());
+        assertEquals("inheritance-rect-polylin", connectors2.getDefaultInheritanceStyleId());
+        // Enum + double round-trip on a seeded style.
+        ConnectorStylePreference orth = connectors2.getStyleById("relationship-rect-polylin");
+        assertEquals(org.openflexo.diana.connectors.ConnectorSpecification.ConnectorType.RECT_POLYLIN,
+                orth.getConnectorType());
+        assertTrue(orth.getRounded());
+        assertEquals(10, orth.getArcSize());
     }
 
     @Test

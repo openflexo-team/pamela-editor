@@ -1,6 +1,7 @@
 package org.openflexo.pamela.editor.diagram;
 
 import org.openflexo.pamela.editor.model.SourceModelEntity;
+import org.openflexo.pamela.editor.ui.preferences.PreferencesManager;
 
 /**
  * Implementation of {@link InheritanceView}. Holds the transient resolved sub/super
@@ -12,8 +13,12 @@ public abstract class InheritanceViewImpl extends ConnectorViewImpl implements I
     private SourceModelEntity superEntity;
 
     @Override
-    public ConnectorStyle.Category getStyleCategory() {
-        return ConnectorStyle.Category.INHERITANCE;
+    public String getDefaultStyleId() {
+        PamelaClassDiagram d = getOwningDiagram();
+        if (d != null && d.getDefaultInheritanceStyleId() != null) {
+            return d.getDefaultInheritanceStyleId();
+        }
+        return PreferencesManager.getInstance().connectors().getDefaultInheritanceStyleId();
     }
 
     @Override

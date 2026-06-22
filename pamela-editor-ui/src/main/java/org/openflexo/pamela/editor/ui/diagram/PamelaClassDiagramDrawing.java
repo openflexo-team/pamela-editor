@@ -47,7 +47,6 @@ import org.openflexo.diana.layout.BoxLayoutManagerSpecification.MainAxisPolicy;
 import org.openflexo.diana.layout.BoxLayoutManagerSpecification.Orientation;
 import org.openflexo.diana.shapes.ShapeSpecification.ShapeType;
 import org.openflexo.pamela.annotations.Getter.Cardinality;
-import org.openflexo.pamela.editor.diagram.ConnectorStyle;
 import org.openflexo.pamela.editor.diagram.ConnectorView;
 import org.openflexo.pamela.editor.diagram.EntityView;
 import org.openflexo.pamela.editor.diagram.InheritanceView;
@@ -296,7 +295,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                     gr.setShadowStyle(factory.makeNoneShadowStyle());
                     // Bold, centered title; allow the «abstract»/«unresolved»
                     // stereotype line to wrap onto a second line.
-                    gr.setTextStyle(factory.makeTextStyle(Color.BLACK, HEADER_FONT));
+                    gr.setTextStyle(factory.makeTextStyle(Color.BLACK, titleFont()));
                     gr.setIsMultilineAllowed(true);
                     gr.setIsFloatingLabel(false);
                     // Non-interactive: clicks and drags pass through to the container.
@@ -404,7 +403,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                 @Override
                 public ConnectorGraphicalRepresentation provideGR(
                         ConnectorView cv, DianaModelFactory factory) {
-                    // Routing + colour come from the connector's referenced ConnectorStyle;
+                    // Routing + colour come from the connector's referenced connector style;
                     // the end symbols are kind-driven (see #applyConnectorStyle). Connectors
                     // are drawn source → target:
                     //  - InheritanceView: sub-type → super-type
@@ -500,6 +499,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             @Override
             public void visit(PamelaClassDiagram diagram) {
                 for (ConnectorDraw cd : computeConnectors(diagram)) {
+                    cd.view.setOwningDiagram(diagram); // transient ref for style resolution/capture
                     drawConnector(connectorBinding, cd.view,
                                   entityViewBinding, cd.source,
                                   entityViewBinding, cd.target);
@@ -753,7 +753,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     /**
      * Installs, once per connector-view instance, the listeners that (1) promote a transient
      * view into the diagram's {@code connectorViews} collection when it becomes persistable
-     * (a moved label or a non-default style), and (2) re-apply the {@link ConnectorStyle} to
+     * (a moved label or a non-default style), and (2) re-apply the connector style to
      * the live connector GR when {@code styleId} changes. Idempotent: views already tracked
      * are skipped.
      */
@@ -775,20 +775,58 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     }
 
     /**
-     * Applies the connector's referenced {@link ConnectorStyle} to a freshly-created GR
+     * Applies the connector's referenced connector style to a freshly-created GR
      * (routing, colour, line width and rectilinear-polyline parameters). The end symbols are
      * <em>kind-driven</em>, not part of the style: generalisation triangle for inheritance,
      * filled diamond + arrow for composition, open arrow for association.
      */
+    /**
+     * Resolves the connector's <em>effective</em> style from the diagram's embedded
+     * {@code connectorStyles}: by {@code styleId}, else by the diagram's kind default id, else the
+     * first embedded style. If the referenced style is a catalogue style not yet embedded (the user
+     * just picked it), it is captured into the diagram. Falls back to the catalogue (no mutation)
+     * only if the diagram has no styles at all.
+     */
+    private org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference diagramStyleFor(ConnectorView cv) {
+        PamelaClassDiagram d = getModel();
+        if (d == null) {
+            return cv.getStyle();
+        }
+        String id = cv.getStyleId();
+        org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference s =
+                (id != null && !id.isEmpty()) ? d.getConnectorStyleById(id) : null;
+        if (s == null && id != null && !id.isEmpty() && pamelaFactory != null) {
+            // styleId references a catalogue style not yet embedded → capture it now.
+            s = org.openflexo.pamela.editor.diagram.DiagramStyleSnapshot
+                    .captureConnectorStyle(d, id, pamelaFactory);
+        }
+        if (s == null) {
+            String defId = (cv instanceof InheritanceView)
+                    ? d.getDefaultInheritanceStyleId() : d.getDefaultAssociationStyleId();
+            s = d.getConnectorStyleById(defId);
+            if (s == null && defId != null && pamelaFactory != null) {
+                s = org.openflexo.pamela.editor.diagram.DiagramStyleSnapshot
+                        .captureConnectorStyle(d, defId, pamelaFactory);
+            }
+        }
+        if (s == null && d.getConnectorStyles() != null && !d.getConnectorStyles().isEmpty()) {
+            s = d.getConnectorStyles().get(0);
+        }
+        return s != null ? s : cv.getStyle();
+    }
+
     private void applyConnectorStyle(ConnectorGraphicalRepresentation gr, ConnectorView cv,
                                      DianaModelFactory factory) {
-        ConnectorStyle style = cv.getStyle();
-        gr.setForeground(factory.makeForegroundStyle(style.getColor(), style.getLineWidth()));
+        org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference style = diagramStyleFor(cv);
+        if (style == null) {
+            return;
+        }
+        gr.setForeground(factory.makeForegroundStyle(style.getColor(), (float) style.getLineWidth()));
         ConnectorSpecification spec = factory.makeConnector(style.getConnectorType());
         if (spec instanceof RectPolylinConnectorSpecification) {
             RectPolylinConnectorSpecification rp = (RectPolylinConnectorSpecification) spec;
-            rp.setStraightLineWhenPossible(style.isStraightLineWhenPossible());
-            rp.setIsRounded(style.isRounded());
+            rp.setStraightLineWhenPossible(style.getStraightLineWhenPossible());
+            rp.setIsRounded(style.getRounded());
             if (style.getArcSize() >= 0) {
                 rp.setArcSize(style.getArcSize());
             }
@@ -907,31 +945,67 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         return entity;
     }
 
-    /** Border color of a box: dark gray when resolved, red when unresolved. */
-    private static Color borderColor(EntityView ev) {
-        return ev.getEntity() == null ? new Color(190, 70, 70) : Color.DARK_GRAY;
+    // ---- Entity look, from the diagram's embedded DiagramEntityStyle (hardcoded fallbacks) ----
+
+    private org.openflexo.pamela.editor.diagram.DiagramEntityStyle entityStyle() {
+        return getModel() != null ? getModel().getEntityStyle() : null;
+    }
+
+    private Font titleFont() {
+        org.openflexo.pamela.editor.diagram.DiagramEntityStyle s = entityStyle();
+        Font f = s != null ? s.getTitleFont() : null;
+        return f != null ? f : HEADER_FONT;
+    }
+
+    private Font memberFont() {
+        org.openflexo.pamela.editor.diagram.DiagramEntityStyle s = entityStyle();
+        Font f = s != null ? s.getMemberFont() : null;
+        return f != null ? f : COMPARTMENT_FONT;
+    }
+
+    private Color headerBackground() {
+        org.openflexo.pamela.editor.diagram.DiagramEntityStyle s = entityStyle();
+        Color c = s != null ? s.getHeaderBackgroundColor() : null;
+        return c != null ? c : new Color(230, 240, 255);
+    }
+
+    private Color bodyBackground() {
+        org.openflexo.pamela.editor.diagram.DiagramEntityStyle s = entityStyle();
+        Color c = s != null ? s.getBodyBackgroundColor() : null;
+        return c != null ? c : Color.WHITE;
+    }
+
+    private Color resolvedBorderColor() {
+        org.openflexo.pamela.editor.diagram.DiagramEntityStyle s = entityStyle();
+        Color c = s != null ? s.getBorderColor() : null;
+        return c != null ? c : Color.DARK_GRAY;
+    }
+
+    /** Border color of a box: the preferred border color when resolved, red when unresolved. */
+    private Color borderColor(EntityView ev) {
+        return ev.getEntity() == null ? new Color(190, 70, 70) : resolvedBorderColor();
     }
 
     /**
-     * Styles the container box: white body with a colored border (dark gray when
-     * the entity is resolved, red for an "unresolved" placeholder). The body is
-     * intentionally plain — the colored title band is the header (see below).
+     * Styles the container box: preferred body background with a colored border (preferred
+     * color when resolved, red for an "unresolved" placeholder). The body is intentionally
+     * plain — the colored title band is the header (see below).
      */
     private void applyContainerStyle(ShapeGraphicalRepresentation gr,
                                      EntityView ev, DianaModelFactory f) {
         gr.setForeground(f.makeForegroundStyle(borderColor(ev), 1.0f));
-        gr.setBackground(f.makeColoredBackground(Color.WHITE));
+        gr.setBackground(f.makeColoredBackground(bodyBackground()));
     }
 
     /**
-     * Styles the header band: a colored background (blue when resolved, pink for an
-     * "unresolved" placeholder) with the same border color as the container. Its
-     * bottom edge visually separates the title from the (future) compartments.
+     * Styles the header band: the preferred header background when resolved (pink for an
+     * "unresolved" placeholder) with the same border color as the container. Its bottom
+     * edge visually separates the title from the compartments.
      */
     private void applyHeaderStyle(ShapeGraphicalRepresentation gr,
                                   EntityView ev, DianaModelFactory f) {
         boolean unresolved = ev.getEntity() == null;
-        Color bg = unresolved ? new Color(245, 228, 228) : new Color(230, 240, 255);
+        Color bg = unresolved ? new Color(245, 228, 228) : headerBackground();
         gr.setForeground(f.makeForegroundStyle(borderColor(ev), 1.0f));
         gr.setBackground(f.makeColoredBackground(bg));
     }
@@ -1108,7 +1182,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         // Header: each title line plus a left+right margin that reserves the icon area.
         double headerMargin = 2 * (ICON_INSET + ICON_SIZE);
         for (String line : ev.getDisplayLabel().split("\n")) {
-            w = Math.max(w, stringWidth(HEADER_FONT, line) + headerMargin);
+            w = Math.max(w, stringWidth(titleFont(), line) + headerMargin);
         }
         // Compartments: each item line is preceded by its icon, so reserve the icon
         // offset (ROW_TEXT_INSET_X) plus the text width and a right padding. Skip
@@ -1119,7 +1193,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             }
             for (String line : compartmentLines(ev, c)) {
                 // Rows sit inside the left/right inset band, so reserve 2*RESIZE_MARGIN too.
-                w = Math.max(w, stringWidth(COMPARTMENT_FONT, line)
+                w = Math.max(w, stringWidth(memberFont(), line)
                         + ROW_TEXT_INSET_X + COMPARTMENT_RIGHT_PAD + 2 * RESIZE_MARGIN);
             }
         }
@@ -1149,8 +1223,8 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         // Slice 1: a per-compartment vertical box layout stacks the item rows (full-width,
         // fixed ROW_HEIGHT) — replacing the per-row y=index*ROW_HEIGHT constraint bindings.
         gr.addToLayoutManagerSpecifications(makeRowBoxSpec(f));
-        gr.setBackground(f.makeColoredBackground(Color.WHITE));
-        gr.setForeground(f.makeForegroundStyle(Color.DARK_GRAY, 1.0f));
+        gr.setBackground(f.makeColoredBackground(bodyBackground()));
+        gr.setForeground(f.makeForegroundStyle(resolvedBorderColor(), 1.0f));
         gr.setShadowStyle(f.makeNoneShadowStyle());
         // Non-interactive: clicks/drag target the container.
         gr.setIsSelectable(false);
@@ -1384,7 +1458,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         gr.setBackground(f.makeEmptyBackground());
         gr.setForeground(f.makeNoneForegroundStyle());
         gr.setShadowStyle(f.makeNoneShadowStyle());
-        gr.setTextStyle(f.makeTextStyle(Color.BLACK, COMPARTMENT_FONT));
+        gr.setTextStyle(f.makeTextStyle(Color.BLACK, memberFont()));
         gr.setText(item.text);
         gr.setIsMultilineAllowed(false);
         gr.setIsFloatingLabel(true);
@@ -1546,6 +1620,61 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         // Drop persisted connector data / hidden entries that no longer apply after the
         // rebuild (entity or property removed/renamed in source).
         pruneStaleConnectorData();
+        updateGraphicalObjectsHierarchy();
+    }
+
+    /**
+     * Re-applies the diagram's (just-changed) embedded styles to the live graphics: entity colours
+     * + title font on the existing box nodes, compartment background/border, the member font on the
+     * rows (recreated by clearing the item pool), and the connector styles. Called after the
+     * preferences are applied and the user accepts restyling open diagrams (§6bis, step C).
+     */
+    public void refreshStyles() {
+        PamelaClassDiagram d = getModel();
+        if (d == null) {
+            return;
+        }
+        // Member rows carry the member font from provideGR — recreate them by dropping the pool.
+        itemPool.clear();
+        for (EntityView ev : d.getEntityViews()) {
+            ShapeNode<EntityView> container = getShapeNode(ev, entityViewBinding);
+            if (container != null
+                    && container.getGraphicalRepresentation() instanceof ShapeGraphicalRepresentation) {
+                applyContainerStyle(
+                        (ShapeGraphicalRepresentation) container.getGraphicalRepresentation(), ev, factory);
+            }
+            ShapeNode<EntityView> header = getShapeNode(ev, entityHeaderBinding);
+            if (header != null
+                    && header.getGraphicalRepresentation() instanceof ShapeGraphicalRepresentation) {
+                ShapeGraphicalRepresentation hgr =
+                        (ShapeGraphicalRepresentation) header.getGraphicalRepresentation();
+                applyHeaderStyle(hgr, ev, factory);
+                hgr.setTextStyle(factory.makeTextStyle(Color.BLACK, titleFont()));
+            }
+            ShapeNode<EntityView> icon = getShapeNode(ev, entityIconBinding);
+            if (icon != null
+                    && icon.getGraphicalRepresentation() instanceof ShapeGraphicalRepresentation) {
+                applyIconStyle(
+                        (ShapeGraphicalRepresentation) icon.getGraphicalRepresentation(), ev, factory);
+            }
+            for (Compartment c : Compartment.values()) {
+                ShapeNode<EntityView> comp = getShapeNode(ev, compartmentBinding(c));
+                if (comp != null
+                        && comp.getGraphicalRepresentation() instanceof ShapeGraphicalRepresentation) {
+                    ShapeGraphicalRepresentation cgr =
+                            (ShapeGraphicalRepresentation) comp.getGraphicalRepresentation();
+                    cgr.setBackground(factory.makeColoredBackground(bodyBackground()));
+                    cgr.setForeground(factory.makeForegroundStyle(resolvedBorderColor(), 1.0f));
+                }
+            }
+        }
+        // Re-apply connector styles to the existing connector nodes.
+        for (ConnectorDraw cd : computeConnectors(d)) {
+            cd.view.setOwningDiagram(d);
+            applyConnectorStyle(cd.view);
+        }
+        // Recreate the rows (new member font) and re-walk.
+        invalidateGraphicalObjectsHierarchy(d);
         updateGraphicalObjectsHierarchy();
     }
 

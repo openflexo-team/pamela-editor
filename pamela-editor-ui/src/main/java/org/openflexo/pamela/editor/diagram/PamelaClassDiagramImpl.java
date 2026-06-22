@@ -2,12 +2,27 @@ package org.openflexo.pamela.editor.diagram;
 
 import java.util.Objects;
 
+import org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference;
+
 /**
  * Default implementation class for {@link PamelaClassDiagram}.
  * PAMELA manages all property storage; this class provides the non-PAMELA
  * {@link #findPropertyView(String, String)} lookup.
  */
 public abstract class PamelaClassDiagramImpl implements PamelaClassDiagram {
+
+    @Override
+    public ConnectorStylePreference getConnectorStyleById(String id) {
+        if (id == null || getConnectorStyles() == null) {
+            return null;
+        }
+        for (ConnectorStylePreference s : getConnectorStyles()) {
+            if (id.equals(s.getId())) {
+                return s;
+            }
+        }
+        return null;
+    }
 
     @Override
     public PropertyView findPropertyView(String sourceQualifiedName, String propertyIdentifier) {

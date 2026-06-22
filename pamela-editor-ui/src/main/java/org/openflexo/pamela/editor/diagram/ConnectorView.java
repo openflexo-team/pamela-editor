@@ -9,7 +9,7 @@ import org.openflexo.pamela.annotations.Import;
 import org.openflexo.pamela.annotations.Imports;
 import org.openflexo.pamela.annotations.ModelEntity;
 import org.openflexo.pamela.annotations.Setter;
-import org.openflexo.pamela.editor.diagram.ConnectorStyle.Category;
+import org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference;
 
 /**
  * Abstract base for the runtime view of one connector of a {@link PamelaClassDiagram}.
@@ -71,10 +71,11 @@ public interface ConnectorView extends AccessibleProxyObject {
     void setLabelY(double labelY);
 
     /**
-     * Reference to the applied {@link ConnectorStyle} — its {@link ConnectorStyle#getId() id}.
-     * Empty (the default) means "use the category default" ({@link ConnectorStyle#defaultFor}),
-     * so unset / legacy connectors keep the standard appearance. This is the only style data
-     * persisted — never the individual graphical properties (see {@link ConnectorStyle}).
+     * Reference to the applied {@link ConnectorStylePreference} — its
+     * {@link ConnectorStylePreference#getId() id}. Empty (the default) means "use the
+     * kind default" ({@link #getDefaultStyleId()}), so unset / legacy connectors keep the
+     * standard appearance. This is the only style data persisted on the connector — never the
+     * individual graphical properties (those live in the preferences).
      */
     @Getter(value = STYLE_ID, defaultValue = "")
     String getStyleId();
@@ -90,31 +91,31 @@ public interface ConnectorView extends AccessibleProxyObject {
     String getLabel();
 
     /**
-     * The {@link ConnectorStyle.Category} this connector belongs to — selects the set of
-     * styles applicable to it. Not managed by PAMELA; implemented per subtype
-     * ({@link InheritanceView} → {@code INHERITANCE}, {@link PropertyView} → {@code RELATIONSHIP}).
+     * The id of the default style for this connector's kind, taken from the connector-style
+     * preferences ({@link InheritanceView} → inheritance default, {@link PropertyView} →
+     * association default). Used as the fallback when {@link #getStyleId()} is empty / unknown.
+     * Not managed by PAMELA; implemented per subtype.
      */
-    Category getStyleCategory();
+    String getDefaultStyleId();
 
     /**
-     * The resolved {@link ConnectorStyle}: {@link #getStyleId()} looked up, falling back to
-     * the category default when empty / unknown / of the wrong category. Never {@code null}.
-     * Not managed by PAMELA.
+     * The resolved {@link ConnectorStylePreference}: {@link #getStyleId()} looked up in the
+     * preferences, falling back to {@link #getDefaultStyleId()}, then to the first available
+     * style. May be {@code null} only if no styles are defined at all. Not managed by PAMELA.
      */
-    ConnectorStyle getStyle();
+    ConnectorStylePreference getStyle();
 
     /**
      * Sets the applied style (writes its id into {@link #setStyleId(String)}). A {@code null}
-     * style clears the reference (→ category default). Not managed by PAMELA.
+     * style clears the reference (→ kind default). Not managed by PAMELA.
      */
-    void setStyle(ConnectorStyle style);
+    void setStyle(ConnectorStylePreference style);
 
     /**
-     * The styles offered for this connector in the graphical inspector drop-down
-     * ({@link ConnectorStyle#stylesFor(Category)} for {@link #getStyleCategory()}).
-     * Not managed by PAMELA.
+     * The styles offered in the graphical inspector drop-down — all styles defined in the
+     * connector-style preferences. Not managed by PAMELA.
      */
-    List<ConnectorStyle> getAvailableStyles();
+    List<ConnectorStylePreference> getAvailableStyles();
 
     /**
      * Whether this view carries data worth persisting (a moved label, or a non-default
@@ -122,4 +123,13 @@ public interface ConnectorView extends AccessibleProxyObject {
      * collection once this becomes {@code true}. Not managed by PAMELA.
      */
     boolean isPersistable();
+
+    /**
+     * Transient back-reference to the diagram that owns/draws this connector (set during the
+     * drawing walk, like {@code EntityView.entity}). Used to resolve and capture the diagram's
+     * embedded connector styles. Not serialized, not managed by PAMELA.
+     */
+    PamelaClassDiagram getOwningDiagram();
+
+    void setOwningDiagram(PamelaClassDiagram diagram);
 }

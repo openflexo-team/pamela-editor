@@ -1921,8 +1921,55 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     /** Opens the thematic preferences window (see {@code preferences-design.md §3}). */
     public void showPreferences() {
         org.openflexo.pamela.editor.ui.preferences.PreferencesDialog.showPreferences(
-                frame, PAMELA_EDITOR_LOCALIZATION::localizedForKey);
+                frame, PAMELA_EDITOR_LOCALIZATION::localizedForKey, restyleHandler);
     }
+
+    /**
+     * Restyle hook used by the preferences dialog (§6bis, step C): copies the current style
+     * defaults into every open diagram's embedded styles and refreshes their drawings.
+     */
+    private final org.openflexo.pamela.editor.ui.preferences.DiagramRestyleHandler restyleHandler =
+            new org.openflexo.pamela.editor.ui.preferences.DiagramRestyleHandler() {
+                @Override
+                public boolean hasOpenDiagrams() {
+                    return !diagramEditors.isEmpty();
+                }
+
+                @Override
+                public void restyleOpenDiagrams() {
+                    org.openflexo.pamela.editor.ui.preferences.PreferencesManager prefs =
+                            org.openflexo.pamela.editor.ui.preferences.PreferencesManager.getInstance();
+                    org.openflexo.pamela.editor.ui.preferences.EntityStylePreferences entityDefaults =
+                            prefs.entityStyle();
+                    org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreferences connectorDefaults =
+                            prefs.connectors();
+                    for (java.util.Map.Entry<org.openflexo.pamela.editor.diagram.PamelaClassDiagram,
+                            PamelaClassDiagramEditor> e : diagramEditors.entrySet()) {
+                        org.openflexo.pamela.editor.diagram.PamelaClassDiagram diagram = e.getKey();
+                        // Entity look block ← new default.
+                        org.openflexo.pamela.editor.diagram.DiagramStyleSnapshot.copyEntityStyle(
+                                entityDefaults, diagram.getEntityStyle());
+                        // Each embedded connector style ← its matching catalogue style (by id).
+                        if (diagram.getConnectorStyles() != null && connectorDefaults != null) {
+                            for (org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference s
+                                    : diagram.getConnectorStyles()) {
+                                org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference src =
+                                        connectorDefaults.getStyleById(s.getId());
+                                if (src != null) {
+                                    org.openflexo.pamela.editor.diagram.DiagramStyleSnapshot
+                                            .copyStyleValues(src, s);
+                                }
+                            }
+                            diagram.setDefaultInheritanceStyleId(
+                                    connectorDefaults.getDefaultInheritanceStyleId());
+                            diagram.setDefaultAssociationStyleId(
+                                    connectorDefaults.getDefaultAssociationStyleId());
+                        }
+                        e.getValue().getDrawing().refreshStyles();
+                        markProjectDirty(e.getValue().getSession());
+                    }
+                }
+            };
 
     /**
      * Installs the macOS application-menu <i>Preferences…</i> handler ({@code ⌘,}) when running

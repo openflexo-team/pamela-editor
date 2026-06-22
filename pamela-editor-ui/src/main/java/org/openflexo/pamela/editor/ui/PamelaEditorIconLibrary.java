@@ -77,7 +77,7 @@ public class PamelaEditorIconLibrary {
     public static final ImageIcon DIAGRAM_ICON =
             buildIcon("Icons/ClassDiagram_16x16.png");
 
-    /**
+   /**
      * Icon for a {@link org.openflexo.pamela.editor.model.SourcePackage}.
      * Eclipse JDT-style tan folder with horizontal content lines.
      */
@@ -133,6 +133,13 @@ public class PamelaEditorIconLibrary {
     public static final ImageIcon IMPL_CLASS_ICON =
             buildIcon("Icons/Class_16x16.png");
 
+    public static final ImageIcon SHAPE_ICON =
+            buildIcon("Icons/ShapeIcon.png");
+
+    public static final ImageIcon CONNECTOR_ICON =
+            buildIcon("Icons/ConnectorIcon.png");
+
+ 
     // -------------------------------------------------------------------------
     // Spoon outline icons — Eclipse / JDT style
     // -------------------------------------------------------------------------

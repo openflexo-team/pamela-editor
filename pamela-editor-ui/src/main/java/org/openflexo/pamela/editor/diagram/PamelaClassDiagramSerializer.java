@@ -1,5 +1,7 @@
 package org.openflexo.pamela.editor.diagram;
 
+import java.awt.Color;
+import java.awt.Font;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -10,7 +12,13 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.openflexo.diana.connectors.ConnectorSpecification.ConnectorType;
+import org.openflexo.diana.connectors.RectPolylinConnectorSpecification.RectPolylinAdjustability;
+import org.openflexo.diana.connectors.RectPolylinConnectorSpecification.RectPolylinConstraints;
 import org.openflexo.pamela.editor.ui.PamelaProject;
+import org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference;
+import org.openflexo.pamela.model.StringConverterLibrary;
+import org.openflexo.pamela.model.StringConverterLibrary.Converter;
 
 /**
  * Serializes and deserializes a {@link PamelaClassDiagram} to/from a
@@ -211,6 +219,30 @@ public class PamelaClassDiagramSerializer {
             }
         }
 
+        // Embedded styles (entity look + used connector styles) — §6bis.
+        JsonNode entityStyleNode = root.get("entityStyle");
+        if (entityStyleNode != null && entityStyleNode.isObject()) {
+            DiagramEntityStyle es = factory.newInstance(DiagramEntityStyle.class);
+            readEntityStyle(entityStyleNode, es);
+            diagram.setEntityStyle(es);
+        }
+        JsonNode stylesNode = root.get("connectorStyles");
+        if (stylesNode != null && stylesNode.isArray()) {
+            for (JsonNode sn : stylesNode) {
+                diagram.addToConnectorStyles(readConnectorStyle(sn, factory));
+            }
+        }
+        if (root.has("defaultInheritanceStyleId")) {
+            diagram.setDefaultInheritanceStyleId(root.get("defaultInheritanceStyleId").asText());
+        }
+        if (root.has("defaultAssociationStyleId")) {
+            diagram.setDefaultAssociationStyleId(root.get("defaultAssociationStyleId").asText());
+        }
+        // Legacy file with no embedded styles → snapshot the current preference defaults.
+        if (diagram.getEntityStyle() == null && diagram.getConnectorStyles().isEmpty()) {
+            DiagramStyleSnapshot.initializeFromDefaults(diagram, factory);
+        }
+
         return diagram;
     }
 
@@ -292,6 +324,22 @@ public class PamelaClassDiagramSerializer {
         }
         root.set("connectorViews", connectorsArray);
 
+        // Embedded styles (entity look + used connector styles) — §6bis.
+        root.set("entityStyle", writeEntityStyle(diagram.getEntityStyle()));
+        ArrayNode stylesArray = MAPPER.createArrayNode();
+        if (diagram.getConnectorStyles() != null) {
+            for (ConnectorStylePreference s : diagram.getConnectorStyles()) {
+                stylesArray.add(writeConnectorStyle(s));
+            }
+        }
+        root.set("connectorStyles", stylesArray);
+        if (diagram.getDefaultInheritanceStyleId() != null) {
+            root.put("defaultInheritanceStyleId", diagram.getDefaultInheritanceStyleId());
+        }
+        if (diagram.getDefaultAssociationStyleId() != null) {
+            root.put("defaultAssociationStyleId", diagram.getDefaultAssociationStyleId());
+        }
+
         MAPPER.writeValue(diagramFile, root);
     }
 
@@ -315,6 +363,107 @@ public class PamelaClassDiagramSerializer {
                 sink.accept(v.asText());
             }
         }
+    }
+
+    // ---- Embedded styles (entity look + used connector styles) — §6bis -------------------
+
+    private static final Converter<Color> COLOR_CONV =
+            StringConverterLibrary.getInstance().getConverter(Color.class);
+    private static final Converter<Font> FONT_CONV =
+            StringConverterLibrary.getInstance().getConverter(Font.class);
+
+    private static void putColor(ObjectNode node, String field, Color c) {
+        if (c != null) {
+            node.put(field, COLOR_CONV.convertToString(c));
+        }
+    }
+
+    private static Color readColor(JsonNode node, String field) {
+        try {
+            return node.has(field) ? COLOR_CONV.convertFromString(node.get(field).asText(), null) : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static void putFont(ObjectNode node, String field, Font f) {
+        if (f != null) {
+            node.put(field, FONT_CONV.convertToString(f));
+        }
+    }
+
+    private static Font readFont(JsonNode node, String field) {
+        try {
+            return node.has(field) ? FONT_CONV.convertFromString(node.get(field).asText(), null) : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static ObjectNode writeEntityStyle(DiagramEntityStyle es) {
+        ObjectNode node = MAPPER.createObjectNode();
+        if (es != null) {
+            putColor(node, "headerBackgroundColor", es.getHeaderBackgroundColor());
+            putColor(node, "bodyBackgroundColor", es.getBodyBackgroundColor());
+            putColor(node, "borderColor", es.getBorderColor());
+            putFont(node, "titleFont", es.getTitleFont());
+            putFont(node, "memberFont", es.getMemberFont());
+        }
+        return node;
+    }
+
+    private static void readEntityStyle(JsonNode node, DiagramEntityStyle es) {
+        Color hb = readColor(node, "headerBackgroundColor");
+        if (hb != null) es.setHeaderBackgroundColor(hb);
+        Color bb = readColor(node, "bodyBackgroundColor");
+        if (bb != null) es.setBodyBackgroundColor(bb);
+        Color bc = readColor(node, "borderColor");
+        if (bc != null) es.setBorderColor(bc);
+        Font tf = readFont(node, "titleFont");
+        if (tf != null) es.setTitleFont(tf);
+        Font mf = readFont(node, "memberFont");
+        if (mf != null) es.setMemberFont(mf);
+    }
+
+    private static ObjectNode writeConnectorStyle(ConnectorStylePreference s) {
+        ObjectNode node = MAPPER.createObjectNode();
+        node.put("id", s.getId() != null ? s.getId() : "");
+        node.put("name", s.getName() != null ? s.getName() : "");
+        if (s.getConnectorType() != null) node.put("connectorType", s.getConnectorType().name());
+        putColor(node, "color", s.getColor());
+        node.put("lineWidth", s.getLineWidth());
+        node.put("straightLineWhenPossible", s.getStraightLineWhenPossible());
+        node.put("rounded", s.getRounded());
+        node.put("arcSize", s.getArcSize());
+        if (s.getAdjustability() != null) node.put("adjustability", s.getAdjustability().name());
+        if (s.getConstraints() != null) node.put("constraints", s.getConstraints().name());
+        return node;
+    }
+
+    private static ConnectorStylePreference readConnectorStyle(JsonNode node,
+            PamelaClassDiagramFactory factory) {
+        ConnectorStylePreference s = factory.newInstance(ConnectorStylePreference.class);
+        if (node.has("id")) s.setId(node.get("id").asText());
+        if (node.has("name")) s.setName(node.get("name").asText());
+        if (node.has("connectorType")) {
+            try { s.setConnectorType(ConnectorType.valueOf(node.get("connectorType").asText())); }
+            catch (Exception ignored) { }
+        }
+        Color c = readColor(node, "color");
+        if (c != null) s.setColor(c);
+        if (node.has("lineWidth")) s.setLineWidth(node.get("lineWidth").asDouble());
+        if (node.has("straightLineWhenPossible")) s.setStraightLineWhenPossible(node.get("straightLineWhenPossible").asBoolean());
+        if (node.has("rounded")) s.setRounded(node.get("rounded").asBoolean());
+        if (node.has("arcSize")) s.setArcSize(node.get("arcSize").asInt());
+        if (node.has("adjustability")) {
+            try { s.setAdjustability(RectPolylinAdjustability.valueOf(node.get("adjustability").asText())); }
+            catch (Exception ignored) { }
+        }
+        if (node.has("constraints")) {
+            try { s.setConstraints(RectPolylinConstraints.valueOf(node.get("constraints").asText())); }
+            catch (Exception ignored) { }
+        }
+        return s;
     }
 
     /** Returns the file name without its {@code .diagram} (or any) extension. */

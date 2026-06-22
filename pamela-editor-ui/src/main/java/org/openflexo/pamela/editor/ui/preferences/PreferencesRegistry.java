@@ -45,15 +45,19 @@ public final class PreferencesRegistry {
         }
         builtinsRegistered = true;
         register(new PreferencesContribution(GeneralPreferences.class, "/", "general", 0,
-                "preferences_general", null, null));
+                "preferences_general", "general", null));
         register(new PreferencesContribution(WindowPreferences.class, "/general", "window", 0,
-                "preferences_window", null, null));
+                "preferences_window", "window", null));
         register(new PreferencesContribution(RecentFilesPreferences.class, "/general", "recent", 1,
-                "preferences_recent", null, null));
-        register(new PreferencesContribution(DiagramPreferences.class, "/", "diagram", 1,
-                "preferences_diagram", null, null));
+                "preferences_recent", "recent", null));
+        register(new PreferencesContribution(ClassDiagramDesignPreferences.class, "/", "classDiagramDesign", 1,
+                "preferences_class_diagram_design", "diagram", null));
+        register(new PreferencesContribution(EntityStylePreferences.class, "/classDiagramDesign", "entities", 0,
+                "preferences_entities", "entity", null));
+        register(new PreferencesContribution(ConnectorStylePreferences.class, "/classDiagramDesign", "connectors", 1,
+                "preferences_connectors", "connector", null));
         register(new PreferencesContribution(AnalysisPreferences.class, "/", "analysis", 2,
-                "preferences_analysis", null, null));
+                "preferences_analysis", "analysis", null));
     }
 
     public static synchronized List<PreferencesContribution> contributions() {

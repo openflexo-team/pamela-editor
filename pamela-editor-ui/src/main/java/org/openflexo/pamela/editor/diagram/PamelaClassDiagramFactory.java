@@ -1,23 +1,27 @@
 package org.openflexo.pamela.editor.diagram;
 
 import org.openflexo.diana.DianaModelFactoryImpl;
+import org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference;
 import org.openflexo.pamela.exceptions.ModelDefinitionException;
 import org.openflexo.pamela.factory.EditingContext;
 
 /**
  * PAMELA / Diana factory for the class-diagram model.
- * Configured with {@link PamelaClassDiagram} and {@link EntityView} as managed types.
+ * Configured with {@link PamelaClassDiagram} and {@link EntityView} as managed types, plus the
+ * embedded style entities ({@link DiagramEntityStyle}, {@link ConnectorStylePreference}).
  */
 public class PamelaClassDiagramFactory extends DianaModelFactoryImpl {
 
     public PamelaClassDiagramFactory(EditingContext editingContext) throws ModelDefinitionException {
         super(PamelaClassDiagram.class, EntityView.class,
-                ConnectorView.class, PropertyView.class, InheritanceView.class);
+                ConnectorView.class, PropertyView.class, InheritanceView.class,
+                DiagramEntityStyle.class, ConnectorStylePreference.class);
         setEditingContext(editingContext);
     }
 
     /**
-     * Creates a new empty diagram with the given name.
+     * Creates a new empty diagram with the given name, snapshotting the current preference
+     * defaults (entity look + default connector styles) into it so it is self-contained.
      *
      * @param name the display name for the diagram
      * @return a new {@link PamelaClassDiagram} instance
@@ -25,6 +29,7 @@ public class PamelaClassDiagramFactory extends DianaModelFactoryImpl {
     public PamelaClassDiagram newDiagram(String name) {
         PamelaClassDiagram diagram = newInstance(PamelaClassDiagram.class);
         diagram.setName(name);
+        DiagramStyleSnapshot.initializeFromDefaults(diagram, this);
         return diagram;
     }
 

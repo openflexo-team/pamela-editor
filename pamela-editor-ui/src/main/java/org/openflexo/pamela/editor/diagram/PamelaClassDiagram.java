@@ -11,6 +11,7 @@ import org.openflexo.pamela.annotations.ImplementationClass;
 import org.openflexo.pamela.annotations.ModelEntity;
 import org.openflexo.pamela.annotations.Remover;
 import org.openflexo.pamela.annotations.Setter;
+import org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference;
 
 /**
  * Root model object for a PAMELA class diagram.
@@ -25,6 +26,10 @@ public interface PamelaClassDiagram extends AccessibleProxyObject {
     String NAME = "name";
     String ENTITY_VIEWS = "entityViews";
     String CONNECTOR_VIEWS = "connectorViews";
+    String ENTITY_STYLE = "entityStyle";
+    String CONNECTOR_STYLES = "connectorStyles";
+    String DEFAULT_INHERITANCE_STYLE_ID = "defaultInheritanceStyleId";
+    String DEFAULT_ASSOCIATION_STYLE_ID = "defaultAssociationStyleId";
 
     /**
      * Stable identifier, assigned at creation and never changed. Used as the
@@ -68,6 +73,45 @@ public interface PamelaClassDiagram extends AccessibleProxyObject {
 
     @Remover(CONNECTOR_VIEWS)
     void removeFromConnectorViews(ConnectorView connectorView);
+
+    /**
+     * The entity-look style embedded in this diagram (one block applied to all boxes); a snapshot
+     * of the preference defaults at creation. See {@code preferences-design.md §6bis}.
+     */
+    @Getter(value = ENTITY_STYLE)
+    @Embedded
+    DiagramEntityStyle getEntityStyle();
+
+    @Setter(ENTITY_STYLE)
+    void setEntityStyle(DiagramEntityStyle style);
+
+    /** The connector styles actually used by this diagram (copies of the catalogue styles in use). */
+    @Getter(value = CONNECTOR_STYLES, cardinality = Cardinality.LIST)
+    @Embedded
+    List<ConnectorStylePreference> getConnectorStyles();
+
+    @Adder(CONNECTOR_STYLES)
+    void addToConnectorStyles(ConnectorStylePreference style);
+
+    @Remover(CONNECTOR_STYLES)
+    void removeFromConnectorStyles(ConnectorStylePreference style);
+
+    /** Id of the style applied to inheritance connectors that don't specify their own. */
+    @Getter(DEFAULT_INHERITANCE_STYLE_ID)
+    String getDefaultInheritanceStyleId();
+
+    @Setter(DEFAULT_INHERITANCE_STYLE_ID)
+    void setDefaultInheritanceStyleId(String id);
+
+    /** Id of the style applied to association/composition connectors that don't specify their own. */
+    @Getter(DEFAULT_ASSOCIATION_STYLE_ID)
+    String getDefaultAssociationStyleId();
+
+    @Setter(DEFAULT_ASSOCIATION_STYLE_ID)
+    void setDefaultAssociationStyleId(String id);
+
+    /** The embedded connector style with the given id, or {@code null}. */
+    ConnectorStylePreference getConnectorStyleById(String id);
 
     /**
      * Returns the persisted {@link PropertyView} for the given connector identity (source

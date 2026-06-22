@@ -1,14 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Inspector layout="twocols" darkLevel="0" font="SansSerif,1,12"
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,1,13"
     dataClassName="org.openflexo.pamela.editor.ui.preferences.PreferencesNode" name="Inspector">
-    <Label name="ThemeLabel" label="theme" index="0"
-        constraints="twocols(location=left)" localize="true" />
-    <Label name="ThemeValue" label="data.displayLabel" index="1" localize="false"
-        constraints="twocols(expandHorizontally=true;location=right)" />
-    <LocalizedDictionary>
-        <Localized key="theme" lang="English" value="Theme" />
-        <Localized key="theme" lang="French" value="Thème" />
-        <Localized key="theme" lang="Dutch" value="Thema" />
-    </LocalizedDictionary>
+    <Label name="ThemeTitle" data="data.displayLabel" index="-10" localize="false"
+        align="center" font="SansSerif,1,14"
+        constraints="twocols(expandHorizontally=true;location=center;insetsBottom=6)" />
     <Parameter name="title" value="Preferences" />
 </Inspector>

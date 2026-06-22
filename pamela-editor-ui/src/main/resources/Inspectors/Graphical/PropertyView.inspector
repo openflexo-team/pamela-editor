@@ -30,8 +30,8 @@
     <Label name="StyleLabel" label="style" index="12"
         constraints="twocols(location=left)" localize="true" />
     <DropDown name="StyleDropDown" index="13" data="data.style" list="data.availableStyles"
-        format="object.displayName" enable="data.connectorPresent" width="120"
-        iteratorClassName="org.openflexo.pamela.editor.diagram.ConnectorStyle" autoSelectFirstRow="true"
+        format="object.name" enable="data.connectorPresent" width="120"
+        iteratorClassName="org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference" autoSelectFirstRow="true"
         constraints="twocols(expandHorizontally=true;location=right)" localize="true" />
     <Label name="NoConnectorNote" label="no_connector_note" index="14"
         visible="data.connectorPresent == false"
