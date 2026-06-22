@@ -43,7 +43,7 @@ public interface EntityStylePreferences extends PreferencesNode {
     @Setter(BORDER_COLOR)
     void setBorderColor(Color color);
 
-    @Getter(value = TITLE_FONT, defaultValue = "SansSerif,1,12")
+    @Getter(value = TITLE_FONT, defaultValue = "SansSerif,1,11")
     Font getTitleFont();
 
     @Setter(TITLE_FONT)
