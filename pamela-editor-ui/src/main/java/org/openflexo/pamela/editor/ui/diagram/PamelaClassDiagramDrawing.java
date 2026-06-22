@@ -121,9 +121,12 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
      */
     private static final double RESIZE_MARGIN = 6.0;
 
-    /** Fonts used for the title and compartment text (shared with the width heuristic). */
+    /**
+     * Fallback fonts used only when a diagram has no embedded entity style; kept aligned with the
+     * {@code EntityStylePreferences} {@code defaultValue}s ("SansSerif,1,11" / "SansSerif,0,11").
+     */
     private static final Font HEADER_FONT = new Font("SansSerif", Font.BOLD, 11);
-    private static final Font COMPARTMENT_FONT = new Font("SansSerif", Font.PLAIN, 10);
+    private static final Font COMPARTMENT_FONT = new Font("SansSerif", Font.PLAIN, 11);
 
     /** Background tints highlighting a selected / focused item row (light enough to
      *  keep the black label readable). */
@@ -792,22 +795,21 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         if (d == null) {
             return cv.getStyle();
         }
+        // READ-ONLY resolution: never mutate the diagram model here. This method is called
+        // from provideGR (i.e. *during* the Diana structure walk); embedding a missing style
+        // via captureConnectorStyle() would fire a PropertyChange on the PamelaClassDiagram,
+        // which re-enters updateGraphicalObjectsHierarchy and duplicates the connector node
+        // (orphan node → "something strange ... isValid()" warning). It would also spuriously
+        // mark the project dirty just by displaying a diagram. The embedding of "used styles"
+        // is ensured outside the walk: by the creation snapshot (defaults) and setStyle (user
+        // pick). When a style is not embedded, fall back to the global catalogue read-only.
         String id = cv.getStyleId();
         org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference s =
                 (id != null && !id.isEmpty()) ? d.getConnectorStyleById(id) : null;
-        if (s == null && id != null && !id.isEmpty() && pamelaFactory != null) {
-            // styleId references a catalogue style not yet embedded → capture it now.
-            s = org.openflexo.pamela.editor.diagram.DiagramStyleSnapshot
-                    .captureConnectorStyle(d, id, pamelaFactory);
-        }
         if (s == null) {
             String defId = (cv instanceof InheritanceView)
                     ? d.getDefaultInheritanceStyleId() : d.getDefaultAssociationStyleId();
             s = d.getConnectorStyleById(defId);
-            if (s == null && defId != null && pamelaFactory != null) {
-                s = org.openflexo.pamela.editor.diagram.DiagramStyleSnapshot
-                        .captureConnectorStyle(d, defId, pamelaFactory);
-            }
         }
         if (s == null && d.getConnectorStyles() != null && !d.getConnectorStyles().isEmpty()) {
             s = d.getConnectorStyles().get(0);
@@ -966,7 +968,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     private Color headerBackground() {
         org.openflexo.pamela.editor.diagram.DiagramEntityStyle s = entityStyle();
         Color c = s != null ? s.getHeaderBackgroundColor() : null;
-        return c != null ? c : new Color(230, 240, 255);
+        return c != null ? c : new Color(210, 225, 245);
     }
 
     private Color bodyBackground() {
@@ -978,7 +980,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
     private Color resolvedBorderColor() {
         org.openflexo.pamela.editor.diagram.DiagramEntityStyle s = entityStyle();
         Color c = s != null ? s.getBorderColor() : null;
-        return c != null ? c : Color.DARK_GRAY;
+        return c != null ? c : new Color(105, 105, 105);
     }
 
     /** Border color of a box: the preferred border color when resolved, red when unresolved. */
