@@ -243,6 +243,19 @@ public class PamelaClassDiagramSerializer {
             DiagramStyleSnapshot.initializeFromDefaults(diagram, factory);
         }
 
+        // Ensure every style explicitly referenced by a connector is embedded, so the diagram is
+        // self-contained (§6bis) and the renderer resolves it as an embedded style. The defaults
+        // snapshot above only embeds the two per-kind default styles; a connector may reference a
+        // non-default catalogue style (e.g. inheritance-rect-polylin while the default is
+        // inheritance-line). Without this, diagramStyleFor() would fall back to the global
+        // catalogue at render time but the chosen style would never be persisted.
+        for (ConnectorView cv : diagram.getConnectorViews()) {
+            String id = cv.getStyleId();
+            if (id != null && !id.isEmpty()) {
+                DiagramStyleSnapshot.captureConnectorStyle(diagram, id, factory);
+            }
+        }
+
         return diagram;
     }
 

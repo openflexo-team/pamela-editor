@@ -1,19 +1,116 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
-    dataClassName="org.openflexo.pamela.editor.diagram.PamelaClassDiagram" name="Inspector">
-    <Label name="NameLabel" label="name" index="0"
+<Inspector layout="border" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.diagram.PamelaClassDiagram" name="Inspector"
+    border="empty" borderTop="6" borderBottom="6" borderLeft="6" borderRight="6">
+
+  <!-- Entity look applied to all boxes of this diagram -->
+  <Panel name="entityPanel" layout="twocols" constraints="border(location=north)"
+         titleFont="SansSerif,1,11" border="rounded3d"
+         borderTop="2" borderBottom="2" borderLeft="2" borderRight="2" borderTitle="entities">
+    <Label name="HeaderColorLabel" label="header_background" index="0"
         constraints="twocols(location=left)" localize="true" />
-    <TextField name="NameTF" index="1" data="data.name" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
-    <Label name="EntityViewsLabel" label="entity_views" index="2"
+    <Color name="HeaderColor" index="1" data="data.entityStyle.headerBackgroundColor" allowsNull="false"
+        constraints="twocols(location=right)" />
+    <Label name="BodyColorLabel" label="body_background" index="2"
         constraints="twocols(location=left)" localize="true" />
-    <TextField name="EntityViewsTF" index="3" data="data.entityViews.size" readOnly="true"
-        constraints="twocols(location=right)" columns="5" localize="true" />
-    <LocalizedDictionary>
-        <Localized key="name" lang="English" value="Name" />
-        <Localized key="name" lang="French" value="Nom" />
-        <Localized key="entity_views" lang="English" value="Entity views" />
-        <Localized key="entity_views" lang="French" value="Vues d&apos;entités" />
-    </LocalizedDictionary>
-    <Parameter name="title" value="Diagram" />
+    <Color name="BodyColor" index="3" data="data.entityStyle.bodyBackgroundColor" allowsNull="false"
+        constraints="twocols(location=right)" />
+    <Label name="BorderColorLabel" label="border_color" index="4"
+        constraints="twocols(location=left)" localize="true" />
+    <Color name="BorderColor" index="5" data="data.entityStyle.borderColor" allowsNull="false"
+        constraints="twocols(location=right)" />
+    <Label name="TitleFontLabel" label="title_font" index="6"
+        constraints="twocols(location=left)" localize="true" />
+    <Font name="TitleFont" index="7" data="data.entityStyle.titleFont" allowsNull="false"
+        constraints="twocols(expandHorizontally=true;location=right)" />
+    <Label name="MemberFontLabel" label="member_font" index="8"
+        constraints="twocols(location=left)" localize="true" />
+    <Font name="MemberFont" index="9" data="data.entityStyle.memberFont" allowsNull="false"
+        constraints="twocols(expandHorizontally=true;location=right)" />
+  </Panel>
+
+  <!-- Connector styles used by this diagram (master-detail; styles are captured by use) -->
+  <Panel name="connectorPanel" layout="border" constraints="border(location=center)"
+         titleFont="SansSerif,1,11" border="rounded3d"
+         borderTop="2" borderBottom="2" borderLeft="2" borderRight="2" borderTitle="connectors">
+    <Table name="dgStylesTable" data="data.connectorStyles"
+           iteratorClassName="org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference"
+           selectionMode="SingleSelection" visibleRowCount="4" rowHeight="18"
+           createNewRowOnClick="false" showFooter="false" autoSelectFirstRow="true"
+           constraints="border(location=north)">
+      <LabelColumn name="dgNameCol" data="iterator.name" title="name" columnWidth="150" resizable="true" displayTitle="true" />
+      <LabelColumn name="dgTypeCol" data="iterator.connectorType.name" title="type" columnWidth="110" resizable="true" displayTitle="true" />
+    </Table>
+    <Panel name="dgDetailPanel" layout="twocols" constraints="border(location=center)">
+      <Label name="dgStyleNameLabel" label="name" index="0" constraints="twocols(location=left)" localize="true" />
+      <TextField name="dgStyleNameTF" index="1" data="dgStylesTable.selected.name"
+          enable="dgStylesTable.selected != null" columns="16"
+          constraints="twocols(expandHorizontally=true;location=right)" />
+      <Label name="dgStyleTypeLabel" label="connector_type" index="2" constraints="twocols(location=left)" localize="true" />
+      <DropDown name="dgStyleTypeDD" index="3" data="dgStylesTable.selected.connectorType"
+          iteratorClassName="org.openflexo.diana.connectors.ConnectorSpecification$ConnectorType"
+          format="object.name" enable="dgStylesTable.selected != null" width="130"
+          constraints="twocols(expandHorizontally=true;location=right)" />
+      <Label name="dgStyleColorLabel" label="color" index="4" constraints="twocols(location=left)" localize="true" />
+      <Color name="dgStyleColor" index="5" data="dgStylesTable.selected.color" allowsNull="false"
+          enable="dgStylesTable.selected != null" constraints="twocols(location=right)" />
+      <Label name="dgStyleWidthLabel" label="line_width" index="6" constraints="twocols(location=left)" localize="true" />
+      <Number name="dgStyleWidth" index="7" data="dgStylesTable.selected.lineWidth" numberType="DoubleType"
+          minValue="0.5" maxValue="10.0" increment="0.5" columns="5"
+          enable="dgStylesTable.selected != null" constraints="twocols(location=right)" />
+      <Label name="dgStyleRoundedLabel" label="rounded" index="8" constraints="twocols(location=left)" localize="true" />
+      <CheckBox name="dgStyleRounded" index="9" data="dgStylesTable.selected.rounded"
+          enable="dgStylesTable.selected != null" constraints="twocols(location=right)" />
+    </Panel>
+  </Panel>
+
+  <!-- Default connector styles for this diagram -->
+  <Panel name="dgDefaultsPanel" layout="twocols" constraints="border(location=south)"
+         titleFont="SansSerif,1,11" border="rounded3d"
+         borderTop="2" borderBottom="2" borderLeft="2" borderRight="2" borderTitle="default_styles">
+    <Label name="dgDefInhLabel" label="default_inheritance" index="0" constraints="twocols(location=left)" localize="true" />
+    <DropDown name="dgDefInhDD" index="1" data="data.defaultInheritanceStyle" list="data.connectorStyles"
+        iteratorClassName="org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference"
+        format="object.name" width="170"
+        constraints="twocols(expandHorizontally=true;location=right)" />
+    <Label name="dgDefAssocLabel" label="default_association" index="2" constraints="twocols(location=left)" localize="true" />
+    <DropDown name="dgDefAssocDD" index="3" data="data.defaultAssociationStyle" list="data.connectorStyles"
+        iteratorClassName="org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference"
+        format="object.name" width="170"
+        constraints="twocols(expandHorizontally=true;location=right)" />
+  </Panel>
+
+  <LocalizedDictionary>
+    <Localized key="entities" lang="English" value="Entities" />
+    <Localized key="entities" lang="French" value="Entités" />
+    <Localized key="connectors" lang="English" value="Connectors" />
+    <Localized key="connectors" lang="French" value="Connecteurs" />
+    <Localized key="header_background" lang="English" value="Header background" />
+    <Localized key="header_background" lang="French" value="Fond de l'en-tête" />
+    <Localized key="body_background" lang="English" value="Body background" />
+    <Localized key="body_background" lang="French" value="Fond du corps" />
+    <Localized key="border_color" lang="English" value="Border color" />
+    <Localized key="border_color" lang="French" value="Couleur de bordure" />
+    <Localized key="title_font" lang="English" value="Title font" />
+    <Localized key="title_font" lang="French" value="Police du titre" />
+    <Localized key="member_font" lang="English" value="Member font" />
+    <Localized key="member_font" lang="French" value="Police des membres" />
+    <Localized key="name" lang="English" value="Name" />
+    <Localized key="name" lang="French" value="Nom" />
+    <Localized key="connector_type" lang="English" value="Routing" />
+    <Localized key="connector_type" lang="French" value="Routage" />
+    <Localized key="color" lang="English" value="Color" />
+    <Localized key="color" lang="French" value="Couleur" />
+    <Localized key="line_width" lang="English" value="Line width" />
+    <Localized key="line_width" lang="French" value="Épaisseur" />
+    <Localized key="rounded" lang="English" value="Rounded corners" />
+    <Localized key="rounded" lang="French" value="Coins arrondis" />
+    <Localized key="default_styles" lang="English" value="Default styles" />
+    <Localized key="default_styles" lang="French" value="Styles par défaut" />
+    <Localized key="default_inheritance" lang="English" value="Inheritance" />
+    <Localized key="default_inheritance" lang="French" value="Héritage" />
+    <Localized key="default_association" lang="English" value="Association" />
+    <Localized key="default_association" lang="French" value="Association" />
+  </LocalizedDictionary>
+  <Parameter name="title" value="Diagram" />
 </Inspector>

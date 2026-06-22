@@ -772,6 +772,16 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         cv.getPropertyChangeSupport().addPropertyChangeListener(ConnectorView.LABEL_X, promote);
         cv.getPropertyChangeSupport().addPropertyChangeListener(ConnectorView.LABEL_Y, promote);
         cv.getPropertyChangeSupport().addPropertyChangeListener(ConnectorView.STYLE_ID, evt -> {
+            // Embed the newly picked catalogue style into the diagram so it is persisted in the
+            // .diagram sidecar and resolved as an embedded style next time (§6bis: a diagram is
+            // self-contained). Safe here: a STYLE_ID change is fired from the inspector on the EDT,
+            // outside the Diana structure walk — unlike capturing inside diagramStyleFor()/provideGR,
+            // which re-entered updateGraphicalObjectsHierarchy (see 9fb1f1b).
+            String newId = cv.getStyleId();
+            if (newId != null && !newId.isEmpty()) {
+                org.openflexo.pamela.editor.diagram.DiagramStyleSnapshot.captureConnectorStyle(
+                        diagram, newId, pamelaFactory);
+            }
             promote.propertyChange(evt);
             applyConnectorStyle(cv);
         });
@@ -804,13 +814,30 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         // is ensured outside the walk: by the creation snapshot (defaults) and setStyle (user
         // pick). When a style is not embedded, fall back to the global catalogue read-only.
         String id = cv.getStyleId();
-        org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference s =
-                (id != null && !id.isEmpty()) ? d.getConnectorStyleById(id) : null;
-        if (s == null) {
-            String defId = (cv instanceof InheritanceView)
-                    ? d.getDefaultInheritanceStyleId() : d.getDefaultAssociationStyleId();
-            s = d.getConnectorStyleById(defId);
+        if (id != null && !id.isEmpty()) {
+            // The connector references an explicit style. Prefer the diagram's embedded copy;
+            // if it is not embedded (e.g. a legacy diagram seeded only with the defaults, or a
+            // style the user just picked that setStyle has not captured yet), resolve it from the
+            // global catalogue rather than silently substituting the per-kind default. This keeps
+            // the rendering consistent with the inspector (which resolves against the catalogue)
+            // and stays read-only here — embedding the style is done outside the walk (setStyle,
+            // load), see ConnectorViewImpl#setStyle and PamelaClassDiagramSerializer#load.
+            org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference s =
+                    d.getConnectorStyleById(id);
+            if (s != null) {
+                return s;
+            }
+            org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference global = cv.getStyle();
+            if (global != null) {
+                return global;
+            }
         }
+        // No explicit style: fall back to the diagram's per-kind default, then its first embedded
+        // style, then the global catalogue resolution.
+        String defId = (cv instanceof InheritanceView)
+                ? d.getDefaultInheritanceStyleId() : d.getDefaultAssociationStyleId();
+        org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference s =
+                d.getConnectorStyleById(defId);
         if (s == null && d.getConnectorStyles() != null && !d.getConnectorStyles().isEmpty()) {
             s = d.getConnectorStyles().get(0);
         }

@@ -8,10 +8,12 @@ import java.util.Set;
 import javax.swing.JComponent;
 
 import org.openflexo.pamela.editor.diagram.ConnectorView;
+import org.openflexo.pamela.editor.diagram.DiagramEntityStyle;
 import org.openflexo.pamela.editor.diagram.EntityView;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.ui.PamelaProject;
+import org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference;
 
 /**
  * Orchestrates the Diana rendering of a single {@link PamelaClassDiagram}.
@@ -201,6 +203,44 @@ public class PamelaClassDiagramEditor {
         for (ConnectorView cv : diagram.getConnectorViews()) {
             trackConnectorLabel(cv);
         }
+
+        trackStyles();
+    }
+
+    /**
+     * Tracks edits to the diagram's embedded styles (entity look + connector styles + default ids),
+     * made via the graphical diagram inspector: each change re-applies the styles to the live
+     * graphics ({@link PamelaClassDiagramDrawing#refreshStyles()}) and marks the project dirty.
+     */
+    private void trackStyles() {
+        PropertyChangeListener restyle = evt -> {
+            if (drawing != null) {
+                drawing.refreshStyles();
+            }
+            if (onDirty != null) {
+                onDirty.run();
+            }
+        };
+        DiagramEntityStyle es = diagram.getEntityStyle();
+        if (es != null) {
+            es.getPropertyChangeSupport().addPropertyChangeListener(restyle);
+        }
+        for (ConnectorStylePreference s : diagram.getConnectorStyles()) {
+            s.getPropertyChangeSupport().addPropertyChangeListener(restyle);
+        }
+        // New styles captured into the diagram (e.g. picking a catalogue style) → observe them too.
+        diagram.getPropertyChangeSupport().addPropertyChangeListener(
+                PamelaClassDiagram.CONNECTOR_STYLES, evt -> {
+                    if (evt.getNewValue() instanceof ConnectorStylePreference) {
+                        ((ConnectorStylePreference) evt.getNewValue())
+                                .getPropertyChangeSupport().addPropertyChangeListener(restyle);
+                    }
+                    restyle.propertyChange(evt);
+                });
+        diagram.getPropertyChangeSupport().addPropertyChangeListener(
+                PamelaClassDiagram.DEFAULT_INHERITANCE_STYLE_ID, restyle);
+        diagram.getPropertyChangeSupport().addPropertyChangeListener(
+                PamelaClassDiagram.DEFAULT_ASSOCIATION_STYLE_ID, restyle);
     }
 
     /** Registers a label-position listener on a connector view (once) so moves mark dirty. */

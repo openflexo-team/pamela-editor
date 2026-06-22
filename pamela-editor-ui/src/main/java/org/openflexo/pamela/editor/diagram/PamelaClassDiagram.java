@@ -113,6 +113,15 @@ public interface PamelaClassDiagram extends AccessibleProxyObject {
     /** The embedded connector style with the given id, or {@code null}. */
     ConnectorStylePreference getConnectorStyleById(String id);
 
+    // Object-valued views of the default-style ids, for binding to a style drop-down.
+    ConnectorStylePreference getDefaultInheritanceStyle();
+
+    void setDefaultInheritanceStyle(ConnectorStylePreference style);
+
+    ConnectorStylePreference getDefaultAssociationStyle();
+
+    void setDefaultAssociationStyle(ConnectorStylePreference style);
+
     /**
      * Returns the persisted {@link PropertyView} for the given connector identity (source
      * entity qualified name + property identifier), or {@code null} if none is stored.

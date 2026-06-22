@@ -25,6 +25,26 @@ public abstract class PamelaClassDiagramImpl implements PamelaClassDiagram {
     }
 
     @Override
+    public ConnectorStylePreference getDefaultInheritanceStyle() {
+        return getConnectorStyleById(getDefaultInheritanceStyleId());
+    }
+
+    @Override
+    public void setDefaultInheritanceStyle(ConnectorStylePreference style) {
+        setDefaultInheritanceStyleId(style != null ? style.getId() : null);
+    }
+
+    @Override
+    public ConnectorStylePreference getDefaultAssociationStyle() {
+        return getConnectorStyleById(getDefaultAssociationStyleId());
+    }
+
+    @Override
+    public void setDefaultAssociationStyle(ConnectorStylePreference style) {
+        setDefaultAssociationStyleId(style != null ? style.getId() : null);
+    }
+
+    @Override
     public PropertyView findPropertyView(String sourceQualifiedName, String propertyIdentifier) {
         if (getConnectorViews() == null) {
             return null;
