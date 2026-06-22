@@ -57,14 +57,14 @@ public interface ConnectorView extends AccessibleProxyObject {
     void setTargetQualifiedName(String targetQualifiedName);
 
     /** Label X offset relative to the connector centre. */
-    @Getter(value = LABEL_X, defaultValue = "0.0")
+    @Getter(value = LABEL_X, defaultValue = "0.0", ignoreForEquality = true)
     double getLabelX();
 
     @Setter(LABEL_X)
     void setLabelX(double labelX);
 
     /** Label Y offset relative to the connector centre. */
-    @Getter(value = LABEL_Y, defaultValue = "0.0")
+    @Getter(value = LABEL_Y, defaultValue = "0.0", ignoreForEquality = true)
     double getLabelY();
 
     @Setter(LABEL_Y)
@@ -77,7 +77,7 @@ public interface ConnectorView extends AccessibleProxyObject {
      * standard appearance. This is the only style data persisted on the connector — never the
      * individual graphical properties (those live in the preferences).
      */
-    @Getter(value = STYLE_ID, defaultValue = "")
+    @Getter(value = STYLE_ID, defaultValue = "", ignoreForEquality = true)
     String getStyleId();
 
     @Setter(STYLE_ID)

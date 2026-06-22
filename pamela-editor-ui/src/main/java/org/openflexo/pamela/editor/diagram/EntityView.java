@@ -48,25 +48,25 @@ public interface EntityView extends AccessibleProxyObject {
     @Setter(QUALIFIED_NAME)
     void setQualifiedName(String qualifiedName);
 
-    @Getter(value = X, defaultValue = "100.0")
+    @Getter(value = X, defaultValue = "100.0", ignoreForEquality = true)
     double getX();
 
     @Setter(X)
     void setX(double x);
 
-    @Getter(value = Y, defaultValue = "100.0")
+    @Getter(value = Y, defaultValue = "100.0", ignoreForEquality = true)
     double getY();
 
     @Setter(Y)
     void setY(double y);
 
-    @Getter(value = WIDTH, defaultValue = "200.0")
+    @Getter(value = WIDTH, defaultValue = "200.0", ignoreForEquality = true)
     double getWidth();
 
     @Setter(WIDTH)
     void setWidth(double width);
 
-    @Getter(value = HEIGHT, defaultValue = "120.0")
+    @Getter(value = HEIGHT, defaultValue = "120.0", ignoreForEquality = true)
     double getHeight();
 
     @Setter(HEIGHT)
@@ -78,7 +78,7 @@ public interface EntityView extends AccessibleProxyObject {
      * on drop the value is set to {@code true} only when the entity actually has
      * initializers (see {@code DianaDrawingEditor.addEntity}).
      */
-    @Getter(value = DISPLAY_INITIALIZERS, defaultValue = "true")
+    @Getter(value = DISPLAY_INITIALIZERS, defaultValue = "true", ignoreForEquality = true)
     boolean getDisplayInitializers();
 
     @Setter(DISPLAY_INITIALIZERS)
@@ -89,7 +89,7 @@ public interface EntityView extends AccessibleProxyObject {
      * Defaults to {@code true}, and stays {@code true} on drop (but may be edited
      * to {@code false} in the inspector).
      */
-    @Getter(value = DISPLAY_PROPERTIES, defaultValue = "true")
+    @Getter(value = DISPLAY_PROPERTIES, defaultValue = "true", ignoreForEquality = true)
     boolean getDisplayProperties();
 
     @Setter(DISPLAY_PROPERTIES)
@@ -100,7 +100,7 @@ public interface EntityView extends AccessibleProxyObject {
      * Defaults to {@code true}; on drop the value is set to {@code true} only when
      * the entity's implementation class actually has custom methods.
      */
-    @Getter(value = DISPLAY_METHODS, defaultValue = "true")
+    @Getter(value = DISPLAY_METHODS, defaultValue = "true", ignoreForEquality = true)
     boolean getDisplayMethods();
 
     @Setter(DISPLAY_METHODS)
@@ -111,7 +111,7 @@ public interface EntityView extends AccessibleProxyObject {
      * box <em>and</em> its connector are suppressed (a hidden member is fully hidden).
      * Empty by default — only non-default (hidden) entries are persisted.
      */
-    @Getter(value = HIDDEN_PROPERTIES, cardinality = Cardinality.LIST)
+    @Getter(value = HIDDEN_PROPERTIES, cardinality = Cardinality.LIST, ignoreForEquality = true)
     List<String> getHiddenProperties();
 
     @Adder(HIDDEN_PROPERTIES)
@@ -121,7 +121,7 @@ public interface EntityView extends AccessibleProxyObject {
     void removeFromHiddenProperties(String propertyIdentifier);
 
     /** Identifiers of the initializers hidden on this diagram (row suppressed). */
-    @Getter(value = HIDDEN_INITIALIZERS, cardinality = Cardinality.LIST)
+    @Getter(value = HIDDEN_INITIALIZERS, cardinality = Cardinality.LIST, ignoreForEquality = true)
     List<String> getHiddenInitializers();
 
     @Adder(HIDDEN_INITIALIZERS)
@@ -131,7 +131,7 @@ public interface EntityView extends AccessibleProxyObject {
     void removeFromHiddenInitializers(String initializerIdentifier);
 
     /** Identifiers of the custom methods hidden on this diagram (row suppressed). */
-    @Getter(value = HIDDEN_METHODS, cardinality = Cardinality.LIST)
+    @Getter(value = HIDDEN_METHODS, cardinality = Cardinality.LIST, ignoreForEquality = true)
     List<String> getHiddenMethods();
 
     @Adder(HIDDEN_METHODS)
