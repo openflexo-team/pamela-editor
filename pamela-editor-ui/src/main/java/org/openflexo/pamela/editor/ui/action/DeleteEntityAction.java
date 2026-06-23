@@ -2,13 +2,13 @@ package org.openflexo.pamela.editor.ui.action;
 
 import java.io.IOException;
 
-import javax.swing.JOptionPane;
-
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaProject;
+import org.openflexo.pamela.editor.ui.dialog.ConfirmParameters;
+import org.openflexo.pamela.editor.ui.dialog.ModelEditingDialogs;
 
 /**
  * Contextual action: deletes a {@link SourceModelEntity}, removing its backing
@@ -43,11 +43,11 @@ public class DeleteEntityAction implements ContextualAction {
         SourcePackage pkg = entity.getSourcePackage();
         final String packageName = pkg != null ? pkg.getQualifiedName() : null;
 
-        int choice = JOptionPane.showConfirmDialog(app.getFrame(),
+        ConfirmParameters confirm = new ConfirmParameters(
                 "Delete entity '" + qualifiedName + "' and its source file from disk?\n"
                         + "This cannot be undone.",
-                "Delete Entity", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
-        if (choice != JOptionPane.OK_OPTION) {
+                "Delete");
+        if (!ModelEditingDialogs.confirm(app.getFrame(), "Delete Entity", confirm)) {
             return;
         }
 

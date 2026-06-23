@@ -1,12 +1,16 @@
 package org.openflexo.pamela.editor.ui.action;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaProject;
+import org.openflexo.pamela.editor.ui.dialog.ModelEditingDialogs;
+import org.openflexo.pamela.editor.ui.dialog.SingleNameParameters;
 
 /**
  * Contextual action: creates a brand-new PAMELA entity (a new annotated
@@ -43,25 +47,22 @@ public class NewEntityAction implements ContextualAction {
             return;
         }
 
-        String name = ModelEditingSupport.promptForName(app, "New Entity",
-                "Entity name (simple Java type name):", "NewEntity");
-        if (name == null) {
+        // Forbid names that already exist as entities in this package.
+        Set<String> forbidden = new HashSet<>();
+        for (SourceModelEntity e : pkg.getEntities()) {
+            forbidden.add(e.getSimpleName());
+        }
+        SingleNameParameters params = new SingleNameParameters(
+                "Entity name (simple Java type name):", "NewEntity", forbidden);
+        if (!ModelEditingDialogs.showForm(app.getFrame(),
+                ModelEditingDialogs.SINGLE_NAME_FIB, "New Entity", params)) {
             return; // cancelled
         }
-        if (!ModelEditingSupport.isValidJavaIdentifier(name)) {
-            ModelEditingSupport.error(app, "New Entity",
-                    "'" + name + "' is not a valid Java type name.");
-            return;
-        }
+        String name = params.getTrimmedName();
 
         String pkgPrefix = pkg.getQualifiedName() == null || pkg.getQualifiedName().isEmpty()
                 ? "" : pkg.getQualifiedName() + ".";
         final String qualifiedName = pkgPrefix + name;
-        if (model.getEntity(qualifiedName) != null) {
-            ModelEditingSupport.error(app, "New Entity",
-                    "An entity named '" + qualifiedName + "' already exists.");
-            return;
-        }
 
         try {
             model.createEntity(name, pkg);

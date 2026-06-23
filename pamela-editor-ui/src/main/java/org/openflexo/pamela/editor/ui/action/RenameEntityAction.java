@@ -1,11 +1,16 @@
 package org.openflexo.pamela.editor.ui.action;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
+import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaProject;
+import org.openflexo.pamela.editor.ui.dialog.ModelEditingDialogs;
+import org.openflexo.pamela.editor.ui.dialog.SingleNameParameters;
 
 /**
  * Contextual action: renames a {@link SourceModelEntity} (its simple type
@@ -38,26 +43,33 @@ public class RenameEntityAction implements ContextualAction {
         }
 
         final String oldQualifiedName = entity.getQualifiedName();
-        String newName = ModelEditingSupport.promptForName(app, "Rename Entity",
-                "New entity name:", entity.getSimpleName());
-        if (newName == null || newName.equals(entity.getSimpleName())) {
-            return; // cancelled or unchanged
+
+        // Forbid sibling entity names in the same package, except the current one
+        // (so "unchanged" is still a valid — but no-op — input).
+        Set<String> forbidden = new HashSet<>();
+        SourcePackage pkg = entity.getSourcePackage();
+        if (pkg != null) {
+            for (SourceModelEntity e : pkg.getEntities()) {
+                if (e != entity) {
+                    forbidden.add(e.getSimpleName());
+                }
+            }
         }
-        if (!ModelEditingSupport.isValidJavaIdentifier(newName)) {
-            ModelEditingSupport.error(app, "Rename Entity",
-                    "'" + newName + "' is not a valid Java type name.");
-            return;
+        SingleNameParameters params = new SingleNameParameters(
+                "New entity name:", entity.getSimpleName(), forbidden);
+        if (!ModelEditingDialogs.showForm(app.getFrame(),
+                ModelEditingDialogs.SINGLE_NAME_FIB, "Rename Entity", params)) {
+            return; // cancelled
+        }
+        String newName = params.getTrimmedName();
+        if (newName.equals(entity.getSimpleName())) {
+            return; // unchanged
         }
 
         String pkgPrefix = oldQualifiedName.contains(".")
                 ? oldQualifiedName.substring(0, oldQualifiedName.lastIndexOf('.') + 1)
                 : "";
         final String newQualifiedName = pkgPrefix + newName;
-        if (model.getEntity(newQualifiedName) != null) {
-            ModelEditingSupport.error(app, "Rename Entity",
-                    "An entity named '" + newQualifiedName + "' already exists.");
-            return;
-        }
 
         try {
             boolean wasRoot = model.getRootTypeNames().contains(oldQualifiedName);

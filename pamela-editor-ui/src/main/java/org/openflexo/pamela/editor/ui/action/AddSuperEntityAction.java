@@ -5,12 +5,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import javax.swing.JOptionPane;
-
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaProject;
+import org.openflexo.pamela.editor.ui.dialog.ModelEditingDialogs;
+import org.openflexo.pamela.editor.ui.dialog.PickFromListParameters;
 
 /**
  * Contextual action: adds an inheritance link by making this entity extend
@@ -47,17 +47,17 @@ public class AddSuperEntityAction implements ContextualAction {
         if (candidates.isEmpty()) {
             return;
         }
-        String[] names = candidates.stream()
-                .map(SourceModelEntity::getQualifiedName)
-                .sorted().toArray(String[]::new);
+        List<String> names = new ArrayList<>();
+        candidates.stream().map(SourceModelEntity::getQualifiedName).sorted()
+                .forEach(names::add);
 
-        Object answer = JOptionPane.showInputDialog(app.getFrame(),
-                "Super-entity for '" + entity.getSimpleName() + "':",
-                "Add Super-Entity", JOptionPane.PLAIN_MESSAGE, null, names, names[0]);
-        if (answer == null) {
+        PickFromListParameters params = new PickFromListParameters(
+                "Super-entity for '" + entity.getSimpleName() + "':", names);
+        if (!ModelEditingDialogs.showForm(app.getFrame(),
+                ModelEditingDialogs.PICK_FROM_LIST_FIB, "Add Super-Entity", params)) {
             return; // cancelled
         }
-        SourceModelEntity superEntity = model.getEntity(answer.toString());
+        SourceModelEntity superEntity = model.getEntity(params.getSelected());
         if (superEntity == null) {
             return;
         }

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel dataClassName="org.openflexo.pamela.editor.ui.dialog.ConfirmParameters"
+       controllerClassName="org.openflexo.gina.controller.FIBController"
+       layout="border" name="ConfirmDialog"
+       border="empty" borderTop="12" borderBottom="10" borderLeft="12" borderRight="12"
+       width="400">
+
+  <Label name="messageLabel" data="data.message" label="" localize="false"
+         align="left" constraints="border(location=center)" />
+
+  <Panel name="buttons" layout="flow" align="right" constraints="border(location=south)">
+    <Button name="noButton" label="cancel" buttonType="Trigger"
+            action="controller.chooseNoAndDispose()" localize="true" />
+    <Button name="yesButton" data="data.confirmLabel" label="" localize="false"
+            buttonType="Trigger" isDefault="true"
+            action="controller.chooseYesAndDispose()" />
+  </Panel>
+</Panel>

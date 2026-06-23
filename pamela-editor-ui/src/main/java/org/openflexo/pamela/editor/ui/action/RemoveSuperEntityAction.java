@@ -1,14 +1,15 @@
 package org.openflexo.pamela.editor.ui.action;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-
-import javax.swing.JOptionPane;
 
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaProject;
+import org.openflexo.pamela.editor.ui.dialog.ModelEditingDialogs;
+import org.openflexo.pamela.editor.ui.dialog.PickFromListParameters;
 
 /**
  * Contextual action: removes an inheritance link by dropping one of this
@@ -43,17 +44,17 @@ public class RemoveSuperEntityAction implements ContextualAction {
         if (directSupers.isEmpty()) {
             return;
         }
-        String[] names = directSupers.stream()
-                .map(SourceModelEntity::getQualifiedName)
-                .sorted().toArray(String[]::new);
+        List<String> names = new ArrayList<>();
+        directSupers.stream().map(SourceModelEntity::getQualifiedName).sorted()
+                .forEach(names::add);
 
-        Object answer = JOptionPane.showInputDialog(app.getFrame(),
-                "Remove super-entity of '" + entity.getSimpleName() + "':",
-                "Remove Super-Entity", JOptionPane.PLAIN_MESSAGE, null, names, names[0]);
-        if (answer == null) {
+        PickFromListParameters params = new PickFromListParameters(
+                "Remove super-entity of '" + entity.getSimpleName() + "':", names);
+        if (!ModelEditingDialogs.showForm(app.getFrame(),
+                ModelEditingDialogs.PICK_FROM_LIST_FIB, "Remove Super-Entity", params)) {
             return; // cancelled
         }
-        SourceModelEntity superEntity = model.getEntity(answer.toString());
+        SourceModelEntity superEntity = model.getEntity(params.getSelected());
         if (superEntity == null) {
             return;
         }
