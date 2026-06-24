@@ -8,7 +8,7 @@
   <Label name="messageLabel" data="data.message" label="" localize="false"
          align="left" constraints="border(location=center)" />
 
-  <Panel name="buttons" layout="flow" align="right" constraints="border(location=south)">
+  <Panel name="buttons" layout="flow" flowAlignment="CENTER" constraints="border(location=south)">
     <Button name="noButton" label="cancel" buttonType="Trigger"
             action="controller.chooseNoAndDispose()" localize="true" />
     <Button name="yesButton" data="data.confirmLabel" label="" localize="true"
