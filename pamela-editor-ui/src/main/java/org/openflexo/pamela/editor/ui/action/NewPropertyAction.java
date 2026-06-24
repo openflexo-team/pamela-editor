@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Supplier;
 
 import org.openflexo.pamela.editor.model.SourceMetaModel;
@@ -58,7 +57,7 @@ public class NewPropertyAction extends ParameteredAction {
     protected boolean prepareDialog(Object target, PamelaEditorApplication app) {
         SourceModelEntity entity = (SourceModelEntity) target;
         this.existingIdentifiers = new HashSet<>(entity.getDeclaredProperties().keySet());
-        this.typeChoices = typeChoices(entity.getMetaModel());
+        this.typeChoices = ModelEditingSupport.typeChoices(entity.getMetaModel());
         this.type = typeChoices.isEmpty() ? null : typeChoices.get(0);
         return true;
     }
@@ -120,23 +119,5 @@ public class NewPropertyAction extends ParameteredAction {
 
     private String getTrimmedIdentifier() {
         return identifier == null ? "" : identifier.trim();
-    }
-
-    /** Common JDK types first, then the metamodel's entity qualified names (sorted). */
-    private static List<String> typeChoices(SourceMetaModel model) {
-        List<String> choices = new ArrayList<>();
-        choices.add("java.lang.String");
-        choices.add("boolean");
-        choices.add("int");
-        choices.add("long");
-        choices.add("double");
-        choices.add("float");
-        choices.add("java.lang.Integer");
-        choices.add("java.lang.Boolean");
-        choices.add("java.util.Date");
-        if (model != null) {
-            choices.addAll(new TreeSet<>(model.getEntities().keySet()));
-        }
-        return choices;
     }
 }

@@ -6,16 +6,24 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import java.lang.annotation.Annotation;
+
+import org.openflexo.pamela.annotations.Adder;
 import org.openflexo.pamela.annotations.CloningStrategy;
 import org.openflexo.pamela.annotations.CloningStrategy.StrategyType;
 import org.openflexo.pamela.annotations.Embedded;
 import org.openflexo.pamela.annotations.Getter;
 import org.openflexo.pamela.annotations.Getter.Cardinality;
+import org.openflexo.pamela.annotations.Remover;
 import org.openflexo.pamela.annotations.ReturnedValue;
+import org.openflexo.pamela.annotations.Setter;
 import org.openflexo.pamela.annotations.XMLAttribute;
 import org.openflexo.pamela.annotations.XMLElement;
 
+import spoon.reflect.declaration.CtAnnotation;
 import spoon.reflect.declaration.CtMethod;
+import spoon.reflect.declaration.CtParameter;
+import spoon.reflect.factory.Factory;
 import spoon.reflect.reference.CtTypeReference;
 
 /**
@@ -304,9 +312,120 @@ public class SourceModelProperty implements SourceElement {
         modelEntity.getCompilationUnit().save();
     }
 
+    /**
+     * Changes the value type of this property (C19 retype).
+     *
+     * <p>For a SINGLE property the getter return type, the setter parameter and
+     * the updater parameter are retyped. For a LIST property the getter's
+     * {@code List<T>} element type and the adder/remover/reindexer parameters are
+     * retyped. Writes the change back through the entity's compilation unit.</p>
+     *
+     * <p>The in-memory {@link SourceType} is not updated — the property is
+     * recreated from source on the next rebuild (the caller's responsibility).</p>
+     *
+     * @param newQualifiedTypeName fully qualified type name (SINGLE) or element
+     *                             type name (LIST), e.g. {@code "java.lang.String"}
+     */
+    public void changeType(String newQualifiedTypeName) throws IOException {
+        Factory factory = ctGetter.getFactory();
+        CtTypeReference<?> newType = factory.Type().createReference(newQualifiedTypeName);
+
+        if (cardinality == Cardinality.LIST) {
+            // getter returns List<newType>
+            CtTypeReference<Object> listRef = (CtTypeReference<Object>) factory.Type()
+                    .createReference("java.util.List");
+            listRef.addActualTypeArgument(newType.clone());
+            ((CtMethod<Object>) ctGetter).setType(listRef);
+            setSingleParamType(ctAdder, newType);
+            setSingleParamType(ctRemover, newType);
+            setSingleParamType(ctReindexer, newType);
+        } else {
+            ((CtMethod<Object>) ctGetter).setType((CtTypeReference) newType.clone());
+            setSingleParamType(ctSetter, newType);
+            setSingleParamType(ctUpdater, newType);
+        }
+        modelEntity.getCompilationUnit().save();
+    }
+
+    /**
+     * Renames this property (C19): changes the PAMELA key (the {@code value} of
+     * every accessor annotation) and renames the accessor methods to the matching
+     * convention ({@code getXxx}/{@code isXxx}, {@code setXxx}, {@code addToXxx},
+     * {@code removeFromXxx}). If this property has a resolved inverse, the inverse
+     * property's {@code @Getter(inverse = …)} is updated to the new key.
+     *
+     * <p>Limitations (first slice): reindexer/updater methods keep their name (only
+     * their annotation {@code value} is updated); direct calls to the renamed
+     * methods in implementation classes / custom code are not rewritten.</p>
+     *
+     * @param newIdentifier the new property key
+     */
+    public void rename(String newIdentifier) throws IOException {
+        Factory factory = ctGetter.getFactory();
+        String cap = capitalise(newIdentifier);
+
+        // Getter: keep the get/is prefix, rename + update @Getter(value).
+        String prefix = getterMethodName.startsWith("is") ? "is" : "get";
+        ctGetter.setSimpleName(prefix + cap);
+        setAnnotationValue(ctGetter, Getter.class, "value", newIdentifier, factory);
+
+        if (ctSetter != null) {
+            ctSetter.setSimpleName("set" + cap);
+            setAnnotationValue(ctSetter, Setter.class, "value", newIdentifier, factory);
+        }
+        if (ctAdder != null) {
+            ctAdder.setSimpleName("addTo" + cap);
+            setAnnotationValue(ctAdder, Adder.class, "value", newIdentifier, factory);
+        }
+        if (ctRemover != null) {
+            ctRemover.setSimpleName("removeFrom" + cap);
+            setAnnotationValue(ctRemover, Remover.class, "value", newIdentifier, factory);
+        }
+
+        modelEntity.getCompilationUnit().save();
+
+        // Update the other side of an inverse relationship, if any.
+        if (inverseProperty != null) {
+            setAnnotationValue(inverseProperty.ctGetter, Getter.class, "inverse",
+                    newIdentifier, factory);
+            inverseProperty.modelEntity.getCompilationUnit().save();
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    private static void setSingleParamType(CtMethod<?> method, CtTypeReference<?> type) {
+        if (method != null && !method.getParameters().isEmpty()) {
+            CtParameter<?> p = method.getParameters().get(0);
+            ((CtParameter<Object>) p).setType((CtTypeReference) type.clone());
+        }
+    }
+
+    /** Replaces (or adds) a String-valued element of a PAMELA accessor annotation. */
+    private static void setAnnotationValue(CtMethod<?> method,
+            Class<? extends Annotation> annotationType, String element, String value,
+            Factory factory) {
+        CtAnnotation<? extends Annotation> ann =
+                method.getAnnotation(factory.Type().createReference(annotationType));
+        if (ann != null) {
+            // getValues() is an unmodifiable view and addValue() turns a repeated
+            // element into an array, so rebuild the element-value map with a fresh
+            // string literal for the target element and re-set it.
+            java.util.Map<String, spoon.reflect.code.CtExpression> values =
+                    new java.util.HashMap<>(ann.getValues());
+            values.put(element, factory.createLiteral(value));
+            ann.setValues(values);
+        }
+    }
+
+    private static String capitalise(String s) {
+        if (s == null || s.isEmpty()) {
+            return s;
+        }
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
 
     private void addIssue(Issue issue) {
         issues.add(issue);

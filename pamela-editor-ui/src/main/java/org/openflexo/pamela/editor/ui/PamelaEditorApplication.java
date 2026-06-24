@@ -70,6 +70,9 @@ import org.openflexo.pamela.editor.ui.action.DeleteEntityAction;
 import org.openflexo.pamela.editor.ui.action.AddSuperEntityAction;
 import org.openflexo.pamela.editor.ui.action.RemoveSuperEntityAction;
 import org.openflexo.pamela.editor.ui.action.NewPropertyAction;
+import org.openflexo.pamela.editor.ui.action.PromoteMethodAction;
+import org.openflexo.pamela.editor.ui.action.RenamePropertyAction;
+import org.openflexo.pamela.editor.ui.action.ChangePropertyTypeAction;
 import org.openflexo.pamela.editor.ui.action.DeletePropertyAction;
 import org.openflexo.pamela.editor.ui.action.NewClassDiagramAction;
 import org.openflexo.pamela.editor.ui.action.RenameClassDiagramAction;
@@ -579,6 +582,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         registerAction(new RemoveSuperEntityAction());
         // --- Model-editing actions (properties) — model-editing-design.md Lot 2 ---
         registerAction(new NewPropertyAction());
+        registerAction(new PromoteMethodAction());
+        registerAction(new RenamePropertyAction());
+        registerAction(new ChangePropertyTypeAction());
         registerAction(new DeletePropertyAction());
         registerAction(new NewClassDiagramAction());
         registerAction(new RenameClassDiagramAction());

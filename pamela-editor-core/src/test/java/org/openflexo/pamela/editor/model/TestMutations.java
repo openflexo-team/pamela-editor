@@ -531,4 +531,193 @@ public class TestMutations {
         assertNotNull("Foo3 must be discoverable after reload", mm2.getEntity("test.model1.Foo3"));
         assertEquals("After reload, entity count must be 3", 3, mm2.getEntities().size());
     }
+
+    // =========================================================================
+    // Test 10 — promoteMethodToProperty (co-construction: promote a plain getter)
+    // =========================================================================
+
+    /**
+     * A developer wrote a plain {@code getName()}/{@code setName(...)} pair in the
+     * IDE; promoting {@code getName} adds {@code @Getter}/{@code @Setter} and makes
+     * it a PAMELA property on the next rebuild.
+     */
+    @Test
+    public void testPromoteMethodToProperty() throws IOException {
+        // --- Setup ---
+        File workDir = tmp.newFolder("testPromote");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+
+        // Inject a plain, un-annotated getter/setter pair into Foo1.
+        File foo1File = new File(srcCopy, "Foo1.java");
+        String foo1 = new String(Files.readAllBytes(foo1File.toPath()));
+        int lastBrace = foo1.lastIndexOf('}');
+        String injected = "\n\tpublic String getName();\n\n"
+                + "\tpublic void setName(String aName);\n\n";
+        foo1 = foo1.substring(0, lastBrace) + injected + foo1.substring(lastBrace);
+        Files.write(foo1File.toPath(), foo1.getBytes());
+
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity entity = mm.getEntity("test.model1.Foo1");
+        assertNotNull(entity);
+        // Only "foo2" is a property so far; getName is plain Java.
+        assertEquals(1, entity.getDeclaredProperties().size());
+        assertFalse("getName must not be a property yet",
+                entity.getDeclaredProperties().containsKey("name"));
+        assertTrue("getName must be promotable",
+                entity.getPromotableGetterNames().contains("getName"));
+
+        // --- Mutate ---
+        entity.promoteMethodToProperty("getName", "name", true);
+
+        // --- File assertions ---
+        String content = new String(Files.readAllBytes(foo1File.toPath()));
+        assertTrue("@Getter(value = \"name\") must be inserted",
+                content.contains("@Getter(value = \"name\")"));
+        assertTrue("@Setter(value = \"name\") must be inserted",
+                content.contains("@Setter(value = \"name\")"));
+        assertTrue("original getFoo2 property must be preserved",
+                content.contains("getFoo2"));
+
+        // --- Rebuild: name should now materialise as a property ---
+        mm.rebuildMetaModel();
+        SourceModelEntity rebuilt = mm.getEntity("test.model1.Foo1");
+        assertNotNull(rebuilt);
+        assertTrue("name must now be a property",
+                rebuilt.getDeclaredProperties().containsKey("name"));
+        assertEquals(2, rebuilt.getDeclaredProperties().size());
+        SourceModelProperty nameProp = rebuilt.getDeclaredProperties().get("name");
+        assertEquals(Cardinality.SINGLE, nameProp.getCardinality());
+
+        // --- Reload from disk ---
+        File pamelaFile2 = new File(workDir, "test2.pamela");
+        writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
+        SourceModelEntity reloaded = mm2.getEntity("test.model1.Foo1");
+        assertNotNull(reloaded);
+        assertTrue("name property must survive reload",
+                reloaded.getDeclaredProperties().containsKey("name"));
+    }
+
+    // =========================================================================
+    // Test 11 — changeType
+    // =========================================================================
+
+    /** Retype Foo1.foo2 from {@code Foo2} to {@code String}. */
+    @Test
+    public void testChangePropertyType() throws IOException {
+        File workDir = tmp.newFolder("testChangeType");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity foo1 = mm.getEntity("test.model1.Foo1");
+        SourceModelProperty foo2Prop = foo1.getDeclaredProperties().get("foo2");
+        assertNotNull(foo2Prop);
+        assertEquals("Foo2", foo2Prop.getType().getSimpleName());
+
+        // --- Mutate ---
+        foo2Prop.changeType("java.lang.String");
+
+        String content = new String(Files.readAllBytes(new File(srcCopy, "Foo1.java").toPath()));
+        assertTrue("getter must now return String", content.contains("String getFoo2"));
+
+        // --- Rebuild ---
+        mm.rebuildMetaModel();
+        SourceModelEntity rebuilt = mm.getEntity("test.model1.Foo1");
+        assertEquals("String",
+                rebuilt.getDeclaredProperties().get("foo2").getType().getSimpleName());
+    }
+
+    // =========================================================================
+    // Test 12 — renameProperty
+    // =========================================================================
+
+    /** Rename Foo1.foo2 → bar: methods and @Getter/@Setter value follow. */
+    @Test
+    public void testRenameProperty() throws IOException {
+        File workDir = tmp.newFolder("testRenameProp");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity foo1 = mm.getEntity("test.model1.Foo1");
+        SourceModelProperty foo2Prop = foo1.getDeclaredProperties().get("foo2");
+        assertNotNull(foo2Prop);
+
+        // --- Mutate ---
+        foo2Prop.rename("bar");
+
+        String content = new String(Files.readAllBytes(new File(srcCopy, "Foo1.java").toPath()));
+        assertTrue("getter renamed to getBar", content.contains("getBar"));
+        assertTrue("setter renamed to setBar", content.contains("setBar"));
+        assertTrue("@Getter value updated to \"bar\"", content.contains("\"bar\""));
+
+        // --- Rebuild ---
+        mm.rebuildMetaModel();
+        SourceModelEntity rebuilt = mm.getEntity("test.model1.Foo1");
+        assertTrue("bar must now be a property",
+                rebuilt.getDeclaredProperties().containsKey("bar"));
+        assertFalse("foo2 must be gone",
+                rebuilt.getDeclaredProperties().containsKey("foo2"));
+
+        // --- Reload ---
+        File pamelaFile2 = new File(workDir, "test2.pamela");
+        writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
+        assertTrue("bar must survive reload",
+                mm2.getEntity("test.model1.Foo1").getDeclaredProperties().containsKey("bar"));
+    }
+
+    // =========================================================================
+    // Test 13 — renameProperty updates the inverse side (model2)
+    // =========================================================================
+
+    /**
+     * Renaming {@code AbstractNode.outgoingEdges} must update the inverse
+     * {@code @Getter(inverse = …)} on {@code Edge.startNode}.
+     */
+    @Test
+    public void testRenamePropertyUpdatesInverse() throws IOException {
+        File workDir = tmp.newFolder("testRenameInverse");
+        File srcCopy = copyDir(MODEL2_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model2.FlexoProcess");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity node = mm.getEntity("test.model2.AbstractNode");
+        assertNotNull(node);
+        SourceModelProperty outgoing = node.getDeclaredProperties().get("outgoingEdges");
+        assertNotNull(outgoing);
+        assertNotNull("outgoingEdges must have a resolved inverse",
+                outgoing.getInverseProperty());
+
+        // --- Mutate ---
+        outgoing.rename("outEdges");
+
+        // --- File assertions: this side renamed, inverse side updated ---
+        String nodeSrc = new String(Files.readAllBytes(new File(srcCopy, "AbstractNode.java").toPath()));
+        assertTrue("accessor renamed", nodeSrc.contains("getOutEdges"));
+        assertTrue("adder renamed", nodeSrc.contains("addToOutEdges"));
+        assertTrue("key updated", nodeSrc.contains("\"outEdges\""));
+
+        String edgeSrc = new String(Files.readAllBytes(new File(srcCopy, "Edge.java").toPath()));
+        assertTrue("inverse on Edge.startNode must point to the new key",
+                edgeSrc.contains("\"outEdges\""));
+
+        // --- Rebuild: property renamed and inverse still resolves both ways ---
+        mm.rebuildMetaModel();
+        SourceModelEntity node2 = mm.getEntity("test.model2.AbstractNode");
+        assertTrue("outEdges must now be a property",
+                node2.getDeclaredProperties().containsKey("outEdges"));
+        assertFalse("outgoingEdges must be gone",
+                node2.getDeclaredProperties().containsKey("outgoingEdges"));
+        SourceModelProperty outEdges = node2.getDeclaredProperties().get("outEdges");
+        assertNotNull("inverse must still resolve after rename",
+                outEdges.getInverseProperty());
+    }
 }

@@ -444,6 +444,149 @@ public class SourceModelEntity implements SourceElement {
     }
 
     /**
+     * Returns the names of this entity's methods that can be <em>promoted</em> to
+     * a PAMELA property: public, no-argument, non-{@code void} getters
+     * ({@code getXxx} / {@code isXxx}) that are not already annotated with a PAMELA
+     * accessor ({@code @Getter}/{@code @Setter}/{@code @Adder}/{@code @Remover}).
+     *
+     * <p>LIST-shaped getters ({@code List<T>}) are excluded for now — only SINGLE
+     * properties can be promoted in this first slice.</p>
+     */
+    public List<String> getPromotableGetterNames() {
+        List<String> result = new ArrayList<>();
+        for (CtMethod<?> m : ctType.getMethods()) {
+            if (isPromotableGetter(m)) {
+                result.add(m.getSimpleName());
+            }
+        }
+        Collections.sort(result);
+        return result;
+    }
+
+    /**
+     * Promotes an existing plain getter method into a PAMELA property by inserting
+     * an {@code @Getter} annotation (and, optionally, an {@code @Setter} on the
+     * matching {@code setXxx} method) — the "promote" path of
+     * {@code model-editing-design.md §1.1} for C4.
+     *
+     * <p>The edit is a targeted text insertion (like
+     * {@link SourceMetaModel#declareAsEntity}), not an AST re-print, so it is
+     * minimal-diff and immune to the Sniper annotation-insertion defect. The new
+     * {@link SourceModelProperty} materialises on the next meta-model rebuild,
+     * which the caller is responsible for triggering.</p>
+     *
+     * @param getterName         the existing getter method name (must be promotable)
+     * @param propertyIdentifier the PAMELA property key to assign
+     * @param includeSetter      also annotate the matching {@code setXxx} method if present
+     * @throws IOException if the source file cannot be written
+     */
+    public void promoteMethodToProperty(String getterName, String propertyIdentifier,
+                                        boolean includeSetter) throws IOException {
+        CtMethod<?> getter = findDeclaredMethod(getterName, 0);
+        if (getter == null || !isPromotableGetter(getter)) {
+            throw new IllegalStateException("Not a promotable getter: " + getterName);
+        }
+        if (getter.getPosition() == null || !getter.getPosition().isValidPosition()) {
+            throw new IllegalStateException("No source position for method " + getterName);
+        }
+
+        File javaFile = compilationUnit.getFile();
+        String source = new String(java.nio.file.Files.readAllBytes(javaFile.toPath()),
+                java.nio.charset.StandardCharsets.UTF_8);
+
+        // Collect insertions; apply by DESCENDING offset so earlier offsets stay valid.
+        List<int[]> offsets = new ArrayList<>();   // [offset] paired with texts below
+        List<String> texts = new ArrayList<>();
+        offsets.add(new int[] { getter.getPosition().getSourceStart() });
+        texts.add("@Getter(value = \"" + propertyIdentifier + "\")");
+
+        CtMethod<?> setter = null;
+        if (includeSetter) {
+            setter = findSetterFor(getterName, getter.getType());
+            if (setter != null && setter.getPosition() != null
+                    && setter.getPosition().isValidPosition()) {
+                offsets.add(new int[] { setter.getPosition().getSourceStart() });
+                texts.add("@Setter(value = \"" + propertyIdentifier + "\")");
+            } else {
+                setter = null;
+            }
+        }
+
+        // Sort the (offset, text) pairs by descending offset.
+        Integer[] order = new Integer[offsets.size()];
+        for (int i = 0; i < order.length; i++) {
+            order[i] = i;
+        }
+        java.util.Arrays.sort(order, (a, b) ->
+                Integer.compare(offsets.get(b)[0], offsets.get(a)[0]));
+        for (int i : order) {
+            source = SourceAnnotationEditor.insertAnnotationLine(source, offsets.get(i)[0], texts.get(i));
+        }
+
+        source = SourceAnnotationEditor.ensureImport(source, Getter.class.getName());
+        if (setter != null) {
+            source = SourceAnnotationEditor.ensureImport(source, Setter.class.getName());
+        }
+
+        java.nio.file.Files.write(javaFile.toPath(),
+                source.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    // --- promote helpers -----------------------------------------------------
+
+    private boolean isPromotableGetter(CtMethod<?> m) {
+        if (!m.getParameters().isEmpty()) {
+            return false;
+        }
+        CtTypeReference<?> returnType = m.getType();
+        if (returnType == null || "void".equals(returnType.getQualifiedName())) {
+            return false;
+        }
+        if ("java.util.List".equals(returnType.getQualifiedName())) {
+            return false; // LIST promote deferred
+        }
+        String name = m.getSimpleName();
+        boolean getterShaped = (name.startsWith("get") && name.length() > 3)
+                || (name.startsWith("is") && name.length() > 2);
+        if (!getterShaped) {
+            return false;
+        }
+        return m.getAnnotation(Getter.class) == null
+                && m.getAnnotation(Setter.class) == null
+                && m.getAnnotation(Adder.class) == null
+                && m.getAnnotation(Remover.class) == null;
+    }
+
+    /** Finds a declared method by name with exactly {@code paramCount} parameters. */
+    private CtMethod<?> findDeclaredMethod(String name, int paramCount) {
+        for (CtMethod<?> m : ctType.getMethods()) {
+            if (m.getSimpleName().equals(name) && m.getParameters().size() == paramCount) {
+                return m;
+            }
+        }
+        return null;
+    }
+
+    /** Finds the {@code setXxx(T)} matching {@code getXxx}/{@code isXxx}, or null. */
+    private CtMethod<?> findSetterFor(String getterName, CtTypeReference<?> valueType) {
+        String base = getterName.startsWith("is")
+                ? getterName.substring(2) : getterName.substring(3);
+        String setterName = "set" + base;
+        for (CtMethod<?> m : ctType.getMethods()) {
+            if (m.getSimpleName().equals(setterName)
+                    && m.getParameters().size() == 1
+                    && m.getAnnotation(Setter.class) == null) {
+                CtTypeReference<?> paramType = m.getParameters().get(0).getType();
+                if (paramType != null && valueType != null
+                        && paramType.getQualifiedName().equals(valueType.getQualifiedName())) {
+                    return m;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Deletes this entity from the meta-model and removes its backing {@code .java}
      * file from disk.
      *

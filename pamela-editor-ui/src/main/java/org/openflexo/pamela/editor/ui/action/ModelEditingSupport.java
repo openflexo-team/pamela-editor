@@ -1,7 +1,12 @@
 package org.openflexo.pamela.editor.ui.action;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeSet;
+
 import javax.swing.JOptionPane;
 
+import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 
 /**
@@ -48,6 +53,28 @@ public final class ModelEditingSupport {
     public static boolean isAvailableIdentifier(String name, java.util.Set<String> taken) {
         String n = name == null ? "" : name.trim();
         return isValidJavaIdentifier(n) && !taken.contains(n);
+    }
+
+    /**
+     * The type choices shown in property type pickers: common JDK types first,
+     * then the metamodel's entity qualified names (sorted). A dedicated free-text
+     * {@code TypeSelector} widget is the agreed follow-up.
+     */
+    public static List<String> typeChoices(SourceMetaModel model) {
+        List<String> choices = new ArrayList<>();
+        choices.add("java.lang.String");
+        choices.add("boolean");
+        choices.add("int");
+        choices.add("long");
+        choices.add("double");
+        choices.add("float");
+        choices.add("java.lang.Integer");
+        choices.add("java.lang.Boolean");
+        choices.add("java.util.Date");
+        if (model != null) {
+            choices.addAll(new TreeSet<>(model.getEntities().keySet()));
+        }
+        return choices;
     }
 
     /** Shows a blocking error dialog with the given title and message. */

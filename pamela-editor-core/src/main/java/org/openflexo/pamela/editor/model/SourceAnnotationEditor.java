@@ -50,6 +50,19 @@ public final class SourceAnnotationEditor {
      */
     public static String addAnnotation(String source, int declarationStart,
                                        String simpleName, String qualifiedName) {
+        return addAnnotation(source, declarationStart, simpleName, qualifiedName, null);
+    }
+
+    /**
+     * Like {@link #addAnnotation(String, int, String, String)} but with annotation
+     * arguments, e.g. {@code argsText = "value = \"name\""} inserts
+     * {@code @Getter(value = "name")}.
+     *
+     * @param argsText the annotation arguments (without the enclosing parentheses),
+     *                 or {@code null}/empty for a marker annotation
+     */
+    public static String addAnnotation(String source, int declarationStart,
+                                       String simpleName, String qualifiedName, String argsText) {
         if (source == null || declarationStart < 0 || declarationStart > source.length()) {
             throw new IllegalArgumentException("Invalid declaration offset");
         }
@@ -62,14 +75,30 @@ public final class SourceAnnotationEditor {
             return ensureImport(source, qualifiedName);
         }
 
-        String indent = leadingWhitespace(source, lineStart);
-        String annotationLine = indent + "@" + simpleName + "\n";
-
-        String withAnnotation = source.substring(0, lineStart)
-                + annotationLine
-                + source.substring(lineStart);
-
+        String annotationText = "@" + simpleName
+                + (argsText == null || argsText.isEmpty() ? "" : "(" + argsText + ")");
+        String withAnnotation = insertAnnotationLine(source, declarationStart, annotationText);
         return ensureImport(withAnnotation, qualifiedName);
+    }
+
+    /**
+     * Inserts {@code annotationText} (e.g. {@code "@Getter(value = \"name\")"}) on
+     * its own line directly above the declaration starting at
+     * {@code declarationStart}, matching its indentation. Does <b>not</b> touch
+     * imports and does <b>not</b> check idempotency — the caller controls both.
+     *
+     * <p>When several annotations are inserted into the same source for different
+     * declarations, apply them in <b>descending offset order</b> so each insertion
+     * leaves the smaller (not-yet-processed) offsets valid.</p>
+     */
+    public static String insertAnnotationLine(String source, int declarationStart, String annotationText) {
+        if (source == null || declarationStart < 0 || declarationStart > source.length()) {
+            throw new IllegalArgumentException("Invalid declaration offset");
+        }
+        int lineStart = source.lastIndexOf('\n', declarationStart - 1) + 1;
+        String indent = leadingWhitespace(source, lineStart);
+        String line = indent + annotationText + "\n";
+        return source.substring(0, lineStart) + line + source.substring(lineStart);
     }
 
     /**
@@ -137,7 +166,7 @@ public final class SourceAnnotationEditor {
      * Adds {@code import qualifiedName;} after the {@code package} statement if it
      * is absent. Types in {@code java.lang} or in the default package are skipped.
      */
-    private static String ensureImport(String source, String qualifiedName) {
+    public static String ensureImport(String source, String qualifiedName) {
         if (qualifiedName == null || !qualifiedName.contains(".")
                 || qualifiedName.startsWith("java.lang.")) {
             return source;

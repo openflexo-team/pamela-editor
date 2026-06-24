@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel dataClassName="org.openflexo.pamela.editor.ui.action.PromoteMethodAction"
+       controllerClassName="org.openflexo.gina.controller.FIBController"
+       layout="twocols" name="PromoteMethodForm" border="empty">
+
+  <Label name="methodLabel" label="Getter method:" localize="false" align="left"
+         index="0" constraints="twocols(location=left)" />
+  <DropDown name="getterDD" data="data.selectedGetter" list="data.getterChoices"
+         iteratorClassName="java.lang.String" showReset="false" width="240"
+         index="1" constraints="twocols(expandHorizontally=true;location=right)" />
+
+  <Label name="idLabel" label="Property name:" localize="false" align="left"
+         index="2" constraints="twocols(location=left)" />
+  <TextField name="idTF" data="data.propertyIdentifier" columns="22" validateOnReturn="false"
+         index="3" constraints="twocols(expandHorizontally=true;location=right)" />
+
+  <Label name="setterLabel" label="Also annotate matching setter" localize="false" align="left"
+         index="4" constraints="twocols(location=left)" />
+  <CheckBox name="setterCB" data="data.includeSetter"
+         index="5" constraints="twocols(location=right)" />
+</Panel>
