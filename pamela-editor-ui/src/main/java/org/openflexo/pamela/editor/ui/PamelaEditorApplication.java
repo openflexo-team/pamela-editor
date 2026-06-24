@@ -2133,6 +2133,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             return getProjectForElement(
                     ((SourceModelProperty) element).getModelEntity());
         }
+        if (element instanceof SourceJavaFile) {
+            return getProjectForElement(((SourceJavaFile) element).getMetaModel());
+        }
         return null;
     }
 

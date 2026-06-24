@@ -15,7 +15,7 @@ import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
  * (properties / initializers / methods). Applicable only when the entity is on the active
  * diagram and that compartment actually has something to reveal.</p>
  */
-public class ShowAllMembersAction implements ContextualAction {
+public class ShowAllMembersAction extends ContextualAction {
 
     private final PamelaEditorApplication app;
     private final Compartment kind;
@@ -51,7 +51,7 @@ public class ShowAllMembersAction implements ContextualAction {
     }
 
     @Override
-    public void perform(Object target, PamelaEditorApplication app) {
+    protected void doPerform(Object target, PamelaEditorApplication app) {
         PamelaClassDiagramEditor editor = app.getActiveDiagramEditor();
         if (editor != null && target instanceof SourceModelEntity) {
             editor.showAllMembers((SourceModelEntity) target, kind);

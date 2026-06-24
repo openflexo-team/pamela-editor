@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel dataClassName="org.openflexo.pamela.editor.ui.action.ParameteredAction"
+       controllerClassName="org.openflexo.gina.controller.FIBController"
+       layout="border" name="ModelEditingDialog"
+       border="empty" borderTop="10" borderBottom="10" borderLeft="12" borderRight="12"
+       width="420">
+
+  <!-- Action-specific form fragment, bound to the same data (the action). -->
+  <FIBReferencedComponent name="form" dynamicComponentFile="data.formFib" data="data"
+       manageDynamicModel="true" constraints="border(location=center)" />
+
+  <Panel name="buttons" layout="flow" align="right" constraints="border(location=south)">
+    <Button name="cancelButton" label="cancel" buttonType="Trigger"
+            action="controller.cancelAndDispose()" localize="true" />
+    <Button name="okButton" label="ok" buttonType="Trigger" isDefault="true"
+            action="controller.validateAndDispose()" enable="data.inputValid" localize="true" />
+  </Panel>
+</Panel>

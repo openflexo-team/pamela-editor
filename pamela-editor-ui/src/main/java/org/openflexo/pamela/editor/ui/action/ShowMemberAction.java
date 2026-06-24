@@ -13,7 +13,7 @@ import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
  * detailed browser regardless of diagram visibility). It is applicable only when there is an
  * active diagram on which the member's entity is present and the member is currently hidden.</p>
  */
-public class ShowMemberAction implements ContextualAction {
+public class ShowMemberAction extends ContextualAction {
 
     private final PamelaEditorApplication app;
 
@@ -38,7 +38,7 @@ public class ShowMemberAction implements ContextualAction {
     }
 
     @Override
-    public void perform(Object target, PamelaEditorApplication app) {
+    protected void doPerform(Object target, PamelaEditorApplication app) {
         PamelaClassDiagramEditor editor = app.getActiveDiagramEditor();
         if (editor != null) {
             editor.setMemberHidden(target, false);

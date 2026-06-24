@@ -1,27 +1,32 @@
 package org.openflexo.pamela.editor.ui.action;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaProject;
-import org.openflexo.pamela.editor.ui.dialog.ModelEditingDialogs;
-import org.openflexo.pamela.editor.ui.dialog.PickFromListParameters;
+import org.openflexo.rm.Resource;
+import org.openflexo.rm.ResourceLocator;
 
 /**
- * Contextual action: adds an inheritance link by making this entity extend
- * another {@link SourceModelEntity} (adds a super-interface).
+ * Adds an inheritance link by making an entity extend another
+ * {@link SourceModelEntity} (adds a super-interface).
  *
- * <p>Delegates to {@link SourceModelEntity#addSuperEntity}. Candidates exclude
- * the entity itself, its existing direct super-entities, and any entity that is
- * (transitively) a sub-entity of this one — the last guard avoids obvious
- * inheritance cycles.</p>
+ * <p>Flat action with its own {@code choices}/{@code selected} parameters and
+ * form fragment ({@code AddSuperEntityForm.fib}). Candidates exclude the entity
+ * itself, its direct super-entities, and its (transitive) sub-entities.</p>
  */
-public class AddSuperEntityAction implements ContextualAction {
+public class AddSuperEntityAction extends ParameteredAction {
+
+    public static final Resource FORM_FIB =
+            ResourceLocator.locateResource("Fib/dialogs/AddSuperEntityForm.fib");
+
+    private List<String> choices = Collections.emptyList();
+    private String selected;
 
     @Override
     public String getLabel() {
@@ -35,48 +40,61 @@ public class AddSuperEntityAction implements ContextualAction {
     }
 
     @Override
-    public void perform(Object target, PamelaEditorApplication app) {
-        SourceModelEntity entity = (SourceModelEntity) target;
-        SourceMetaModel model = entity.getMetaModel();
-        PamelaProject project = app.getProjectForElement(entity);
-        if (model == null || project == null) {
-            return;
-        }
+    public Resource getFormFib() {
+        return FORM_FIB;
+    }
 
+    @Override
+    protected String getDialogTitle() {
+        return "Add Super-Entity";
+    }
+
+    @Override
+    protected boolean prepareDialog(Object target, PamelaEditorApplication app) {
+        SourceModelEntity entity = (SourceModelEntity) target;
         List<SourceModelEntity> candidates = candidates(entity);
         if (candidates.isEmpty()) {
-            return;
+            return false;
         }
-        List<String> names = new ArrayList<>();
+        choices = new ArrayList<>();
         candidates.stream().map(SourceModelEntity::getQualifiedName).sorted()
-                .forEach(names::add);
+                .forEach(choices::add);
+        selected = choices.get(0);
+        return true;
+    }
 
-        PickFromListParameters params = new PickFromListParameters(
-                "Super-entity for '" + entity.getSimpleName() + "':", names);
-        if (!ModelEditingDialogs.showForm(app.getFrame(),
-                ModelEditingDialogs.PICK_FROM_LIST_FIB, "Add Super-Entity", params)) {
-            return; // cancelled
-        }
-        SourceModelEntity superEntity = model.getEntity(params.getSelected());
+    @Override
+    public boolean isInputValid() {
+        return selected != null && !selected.isEmpty();
+    }
+
+    @Override
+    protected Supplier<Object> applyMutation(Object target, PamelaEditorApplication app,
+            PamelaProject project) throws Exception {
+        SourceModelEntity entity = (SourceModelEntity) target;
+        SourceMetaModel model = entity.getMetaModel();
+        SourceModelEntity superEntity = model.getEntity(selected);
         if (superEntity == null) {
-            return;
+            return null;
         }
+        final String entityQN = entity.getQualifiedName();
+        entity.addSuperEntity(superEntity);
+        return () -> model.getEntity(entityQN);
+    }
 
-        try {
-            entity.addSuperEntity(superEntity);
-        } catch (IOException | RuntimeException e) {
-            ModelEditingSupport.error(app, "Add Super-Entity",
-                    "Could not add super-entity:\n" + e.getMessage());
-            return;
-        }
+    // --- bound by AddSuperEntityForm.fib ------------------------------------
 
-        final String qn = entity.getQualifiedName();
-        app.rebuildProject(project, () -> {
-            SourceModelEntity refreshed = model.getEntity(qn);
-            if (refreshed != null) {
-                app.selectInBrowser(refreshed);
-            }
-        });
+    public List<String> getChoices() {
+        return choices;
+    }
+
+    public String getSelected() {
+        return selected;
+    }
+
+    public void setSelected(String selected) {
+        this.selected = selected;
+        fireInputValidChanged();
     }
 
     // -------------------------------------------------------------------------

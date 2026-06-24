@@ -11,7 +11,7 @@
   <Panel name="buttons" layout="flow" align="right" constraints="border(location=south)">
     <Button name="noButton" label="cancel" buttonType="Trigger"
             action="controller.chooseNoAndDispose()" localize="true" />
-    <Button name="yesButton" data="data.confirmLabel" label="" localize="false"
+    <Button name="yesButton" data="data.confirmLabel" label="" localize="true"
             buttonType="Trigger" isDefault="true"
             action="controller.chooseYesAndDispose()" />
   </Panel>

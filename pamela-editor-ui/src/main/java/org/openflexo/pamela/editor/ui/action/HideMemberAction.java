@@ -18,7 +18,7 @@ import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
  * <p>The member stays available in the browser; re-show it with {@link ShowMemberAction}
  * from the browser's contextual menu.</p>
  */
-public class HideMemberAction implements ContextualAction {
+public class HideMemberAction extends ContextualAction {
 
     private final PamelaEditorApplication app;
 
@@ -43,7 +43,7 @@ public class HideMemberAction implements ContextualAction {
     }
 
     @Override
-    public void perform(Object target, PamelaEditorApplication app) {
+    protected void doPerform(Object target, PamelaEditorApplication app) {
         PamelaClassDiagramEditor editor = app.getActiveDiagramEditor();
         if (editor != null) {
             editor.setMemberHidden(target, true);

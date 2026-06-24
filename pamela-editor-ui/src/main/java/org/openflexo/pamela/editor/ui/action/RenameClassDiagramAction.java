@@ -7,7 +7,7 @@ import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
  * Contextual action: renames a {@link PamelaClassDiagram} (display name only).
  * The diagram's stable id and sidecar file are unchanged.
  */
-public class RenameClassDiagramAction implements ContextualAction {
+public class RenameClassDiagramAction extends ContextualAction {
 
     @Override
     public String getLabel() {
@@ -20,7 +20,7 @@ public class RenameClassDiagramAction implements ContextualAction {
     }
 
     @Override
-    public void perform(Object target, PamelaEditorApplication app) {
+    protected void doPerform(Object target, PamelaEditorApplication app) {
         app.renameDiagram((PamelaClassDiagram) target);
     }
 }

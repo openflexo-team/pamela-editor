@@ -7,7 +7,7 @@ import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
  * Contextual action: deletes a {@link PamelaClassDiagram} after confirmation.
  * The sidecar {@code .diagram} file is removed when the project is next saved.
  */
-public class DeleteClassDiagramAction implements ContextualAction {
+public class DeleteClassDiagramAction extends ContextualAction {
 
     @Override
     public String getLabel() {
@@ -20,7 +20,7 @@ public class DeleteClassDiagramAction implements ContextualAction {
     }
 
     @Override
-    public void perform(Object target, PamelaEditorApplication app) {
+    protected void doPerform(Object target, PamelaEditorApplication app) {
         app.deleteDiagram((PamelaClassDiagram) target);
     }
 }

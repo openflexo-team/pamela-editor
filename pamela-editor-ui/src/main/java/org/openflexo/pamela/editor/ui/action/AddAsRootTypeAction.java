@@ -1,23 +1,21 @@
 package org.openflexo.pamela.editor.ui.action;
 
+import java.util.function.Supplier;
+
 import org.openflexo.pamela.editor.model.SourceJavaFile;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaProject;
 
 /**
- * Contextual action: adds the selected {@link SourceJavaFile} as a root type
- * in its metamodel and triggers a background rebuild.
+ * Adds the selected {@link SourceJavaFile} as a root type in its metamodel and
+ * triggers a background rebuild.
  *
- * <p>Only shown for Java files that:
- * <ul>
- *   <li>contain an {@code @ModelEntity} annotation (detected by
- *       {@link SourceJavaFile#isPotentialModelEntity()}), and</li>
- *   <li>are not already registered as a root type.</li>
- * </ul>
- * </p>
+ * <p>Only shown for Java files that contain an {@code @ModelEntity} annotation
+ * ({@link SourceJavaFile#isPotentialModelEntity()}) and are not already
+ * registered as a root type.</p>
  */
-public class AddAsRootTypeAction implements ContextualAction {
+public class AddAsRootTypeAction extends SourceEditingAction {
 
     @Override
     public String getLabel() {
@@ -39,32 +37,10 @@ public class AddAsRootTypeAction implements ContextualAction {
     }
 
     @Override
-    public void perform(Object target, PamelaEditorApplication app) {
+    protected Supplier<Object> applyMutation(Object target, PamelaEditorApplication app,
+            PamelaProject project) throws Exception {
         SourceJavaFile file = (SourceJavaFile) target;
-        SourceMetaModel model = file.getMetaModel();
-        if (model == null) {
-            return;
-        }
-
-        // Register the root type
-        model.addRootTypeName(file.getQualifiedName());
-
-        // Find the owning project and trigger a background rebuild
-        PamelaProject project = findSession(model, app);
-        if (project != null) {
-            app.rebuildProject(project);
-        }
-    }
-
-    // -------------------------------------------------------------------------
-
-    private static PamelaProject findSession(SourceMetaModel model,
-                                                    PamelaEditorApplication app) {
-        for (PamelaProject s : app.getProjects()) {
-            if (s.getMetaModel() == model) {
-                return s;
-            }
-        }
-        return null;
+        file.getMetaModel().addRootTypeName(file.getQualifiedName());
+        return null; // no reselection
     }
 }

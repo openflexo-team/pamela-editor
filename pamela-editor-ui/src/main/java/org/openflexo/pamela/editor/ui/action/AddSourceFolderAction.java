@@ -20,7 +20,7 @@ import org.openflexo.pamela.editor.ui.PamelaProject;
  * {@code MetaModelSummaryViewFIBController} can delegate to it without
  * duplicating code.</p>
  */
-public class AddSourceFolderAction implements ContextualAction {
+public class AddSourceFolderAction extends ContextualAction {
 
     @Override
     public String getLabel() {
@@ -34,7 +34,7 @@ public class AddSourceFolderAction implements ContextualAction {
     }
 
     @Override
-    public void perform(Object target, PamelaEditorApplication app) {
+    protected void doPerform(Object target, PamelaEditorApplication app) {
         SourceMetaModel model;
         File projectDir = null;
 

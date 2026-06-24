@@ -12,7 +12,7 @@ import org.openflexo.pamela.editor.ui.PamelaProject;
  * for a name, registers the diagram on the project and opens it in the central
  * view.</p>
  */
-public class NewClassDiagramAction implements ContextualAction {
+public class NewClassDiagramAction extends ContextualAction {
 
     @Override
     public String getLabel() {
@@ -26,7 +26,7 @@ public class NewClassDiagramAction implements ContextualAction {
     }
 
     @Override
-    public void perform(Object target, PamelaEditorApplication app) {
+    protected void doPerform(Object target, PamelaEditorApplication app) {
         app.newDiagram((PamelaProject) target);
     }
 }

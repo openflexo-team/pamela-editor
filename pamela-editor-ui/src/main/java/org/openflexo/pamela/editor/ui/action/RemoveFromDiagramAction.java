@@ -13,7 +13,7 @@ import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
  * an individual member (property / initializer / method) is a different action — see
  * {@link HideMemberAction}.</p>
  */
-public class RemoveFromDiagramAction implements ContextualAction {
+public class RemoveFromDiagramAction extends ContextualAction {
 
     @Override
     public String getLabel() {
@@ -26,7 +26,7 @@ public class RemoveFromDiagramAction implements ContextualAction {
     }
 
     @Override
-    public void perform(Object target, PamelaEditorApplication app) {
+    protected void doPerform(Object target, PamelaEditorApplication app) {
         PamelaClassDiagramEditor editor = app.getActiveDiagramEditor();
         if (editor == null) {
             return;

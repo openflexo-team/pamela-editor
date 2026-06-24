@@ -6,32 +6,29 @@ import org.openflexo.gina.ApplicationFIBLibrary.ApplicationFIBLibraryImpl;
 import org.openflexo.gina.controller.FIBController.Status;
 import org.openflexo.gina.swing.utils.JFIBDialog;
 import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
+import org.openflexo.pamela.editor.ui.action.ParameteredAction;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
 
 /**
- * Shared plumbing to show a model-editing parameter dialog as a modal FIB
- * dialog and read back its outcome.
+ * Shared plumbing to show a model-editing dialog as a modal FIB dialog.
  *
- * <p>Each dialog is a {@code .fib} form under {@code Fib/dialogs/} bound to a
- * plain parameter bean (a {@link org.openflexo.toolbox.HasPropertyChangeSupport}
- * POJO). The form's OK button is {@code action="controller.validateAndDispose()"}
- * gated by {@code enable="data.inputValid"}; Cancel is
- * {@code controller.cancelAndDispose()}. Confirmation dialogs use
- * {@code chooseYesAndDispose()} / {@code chooseNoAndDispose()}.</p>
- *
- * <p>No custom controller is needed: the base {@code FIBController} already
- * provides {@code validateAndDispose()} / {@code cancelAndDispose()} /
- * {@code chooseYesAndDispose()} / {@code chooseNoAndDispose()}.</p>
+ * <p>Parameter dialogs use a single generic <b>shell</b>
+ * ({@code Fib/dialogs/ModelEditingDialog.fib}) that owns the Validate/Cancel
+ * buttons once and embeds the action's specific form fragment via a
+ * {@code FIBReferencedComponent} ({@code dynamicComponentFile="data.formFib"},
+ * {@code data="data"}). The dialog's data object is the
+ * {@link ParameteredAction} itself, so the shell's
+ * {@code enable="data.inputValid"} and the embedded fragment's {@code data.*}
+ * bindings all resolve against the same action. No custom controller is needed:
+ * the base {@code FIBController} provides {@code validateAndDispose()} /
+ * {@code cancelAndDispose()} / {@code chooseYesAndDispose()} /
+ * {@code chooseNoAndDispose()}.</p>
  */
 public final class ModelEditingDialogs {
 
-    public static final Resource SINGLE_NAME_FIB =
-            ResourceLocator.locateResource("Fib/dialogs/SingleNameDialog.fib");
-    public static final Resource PICK_FROM_LIST_FIB =
-            ResourceLocator.locateResource("Fib/dialogs/PickFromListDialog.fib");
-    public static final Resource NEW_PROPERTY_FIB =
-            ResourceLocator.locateResource("Fib/dialogs/NewPropertyDialog.fib");
+    public static final Resource MODEL_EDITING_DIALOG_FIB =
+            ResourceLocator.locateResource("Fib/dialogs/ModelEditingDialog.fib");
     public static final Resource CONFIRM_FIB =
             ResourceLocator.locateResource("Fib/dialogs/ConfirmDialog.fib");
 
@@ -39,18 +36,14 @@ public final class ModelEditingDialogs {
     }
 
     /**
-     * Shows {@code fib} bound to {@code data} as a modal dialog titled
-     * {@code title}. Returns {@code true} when the user validated (status
-     * {@link Status#VALIDATED}).
+     * Shows the generic shell embedding {@code action}'s form fragment, bound to
+     * {@code action}. Returns {@code true} when the user validated.
      */
-    public static boolean showForm(Window owner, Resource fib, String title, Object data) {
-        return show(owner, fib, title, data) == Status.VALIDATED;
+    public static boolean showDialog(Window owner, String title, ParameteredAction action) {
+        return show(owner, MODEL_EDITING_DIALOG_FIB, title, action) == Status.VALIDATED;
     }
 
-    /**
-     * Shows a yes/no confirmation. Returns {@code true} when the user chose Yes
-     * (status {@link Status#YES}).
-     */
+    /** Shows a yes/no confirmation. Returns {@code true} when the user chose Yes. */
     public static boolean confirm(Window owner, String title, ConfirmParameters data) {
         return show(owner, CONFIRM_FIB, title, data) == Status.YES;
     }

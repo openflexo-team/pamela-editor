@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel dataClassName="org.openflexo.pamela.editor.ui.action.RemoveSuperEntityAction"
+       controllerClassName="org.openflexo.gina.controller.FIBController"
+       layout="twocols" name="RemoveSuperEntityForm" border="empty">
+
+  <Label name="superLabel" label="Super-entity to remove:" localize="false"
+         align="left" index="0" constraints="twocols(location=left)" />
+  <DropDown name="superDD" data="data.selected" list="data.choices"
+         iteratorClassName="java.lang.String" showReset="false" width="260"
+         index="1" constraints="twocols(expandHorizontally=true;location=right)" />
+</Panel>

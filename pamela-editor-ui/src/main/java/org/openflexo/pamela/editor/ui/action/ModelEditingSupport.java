@@ -40,6 +40,16 @@ public final class ModelEditingSupport {
         return true;
     }
 
+    /**
+     * Validity rule shared by the name/identifier dialogs: a legal Java
+     * identifier that is not already taken. Shared as a helper (behaviour),
+     * never via a form-shaped superclass.
+     */
+    public static boolean isAvailableIdentifier(String name, java.util.Set<String> taken) {
+        String n = name == null ? "" : name.trim();
+        return isValidJavaIdentifier(n) && !taken.contains(n);
+    }
+
     /** Shows a blocking error dialog with the given title and message. */
     public static void error(PamelaEditorApplication app, String title, String message) {
         JOptionPane.showMessageDialog(app.getFrame(), message, title,

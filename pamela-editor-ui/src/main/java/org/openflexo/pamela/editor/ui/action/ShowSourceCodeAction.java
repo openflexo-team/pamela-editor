@@ -11,7 +11,7 @@ import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
  * <p>Pure navigation — no model mutation. Applicable both in the browsers and on the
  * class diagram (right-click a box or a property row), giving those menus content.</p>
  */
-public class ShowSourceCodeAction implements ContextualAction {
+public class ShowSourceCodeAction extends ContextualAction {
 
     @Override
     public String getLabel() {
@@ -25,7 +25,7 @@ public class ShowSourceCodeAction implements ContextualAction {
     }
 
     @Override
-    public void perform(Object target, PamelaEditorApplication app) {
+    protected void doPerform(Object target, PamelaEditorApplication app) {
         // The navigating (one-arg) selection: switches the central view to the source,
         // and highlights the property's methods when target is a SourceModelProperty.
         app.setCurrentSelectedElement(target);

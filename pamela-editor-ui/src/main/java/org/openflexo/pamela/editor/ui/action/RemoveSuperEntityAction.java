@@ -1,24 +1,32 @@
 package org.openflexo.pamela.editor.ui.action;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaProject;
-import org.openflexo.pamela.editor.ui.dialog.ModelEditingDialogs;
-import org.openflexo.pamela.editor.ui.dialog.PickFromListParameters;
+import org.openflexo.rm.Resource;
+import org.openflexo.rm.ResourceLocator;
 
 /**
- * Contextual action: removes an inheritance link by dropping one of this
- * entity's direct super-entities (removes a super-interface).
+ * Removes an inheritance link by dropping one of an entity's direct
+ * super-entities (removes a super-interface).
  *
- * <p>Delegates to {@link SourceModelEntity#removeSuperEntity}. Only applicable
- * when the entity has at least one direct super-entity.</p>
+ * <p>Flat action with its own {@code choices}/{@code selected} parameters and
+ * form fragment ({@code RemoveSuperEntityForm.fib}). Delegates to
+ * {@link SourceModelEntity#removeSuperEntity}.</p>
  */
-public class RemoveSuperEntityAction implements ContextualAction {
+public class RemoveSuperEntityAction extends ParameteredAction {
+
+    public static final Resource FORM_FIB =
+            ResourceLocator.locateResource("Fib/dialogs/RemoveSuperEntityForm.fib");
+
+    private List<String> choices = Collections.emptyList();
+    private String selected;
 
     @Override
     public String getLabel() {
@@ -32,47 +40,60 @@ public class RemoveSuperEntityAction implements ContextualAction {
     }
 
     @Override
-    public void perform(Object target, PamelaEditorApplication app) {
-        SourceModelEntity entity = (SourceModelEntity) target;
-        SourceMetaModel model = entity.getMetaModel();
-        PamelaProject project = app.getProjectForElement(entity);
-        if (model == null || project == null) {
-            return;
-        }
+    public Resource getFormFib() {
+        return FORM_FIB;
+    }
 
+    @Override
+    protected String getDialogTitle() {
+        return "Remove Super-Entity";
+    }
+
+    @Override
+    protected boolean prepareDialog(Object target, PamelaEditorApplication app) {
+        SourceModelEntity entity = (SourceModelEntity) target;
         List<SourceModelEntity> directSupers = entity.getDirectSuperEntities();
         if (directSupers.isEmpty()) {
-            return;
+            return false;
         }
-        List<String> names = new ArrayList<>();
+        choices = new ArrayList<>();
         directSupers.stream().map(SourceModelEntity::getQualifiedName).sorted()
-                .forEach(names::add);
+                .forEach(choices::add);
+        selected = choices.get(0);
+        return true;
+    }
 
-        PickFromListParameters params = new PickFromListParameters(
-                "Remove super-entity of '" + entity.getSimpleName() + "':", names);
-        if (!ModelEditingDialogs.showForm(app.getFrame(),
-                ModelEditingDialogs.PICK_FROM_LIST_FIB, "Remove Super-Entity", params)) {
-            return; // cancelled
-        }
-        SourceModelEntity superEntity = model.getEntity(params.getSelected());
+    @Override
+    public boolean isInputValid() {
+        return selected != null && !selected.isEmpty();
+    }
+
+    @Override
+    protected Supplier<Object> applyMutation(Object target, PamelaEditorApplication app,
+            PamelaProject project) throws Exception {
+        SourceModelEntity entity = (SourceModelEntity) target;
+        SourceMetaModel model = entity.getMetaModel();
+        SourceModelEntity superEntity = model.getEntity(selected);
         if (superEntity == null) {
-            return;
+            return null;
         }
+        final String entityQN = entity.getQualifiedName();
+        entity.removeSuperEntity(superEntity);
+        return () -> model.getEntity(entityQN);
+    }
 
-        try {
-            entity.removeSuperEntity(superEntity);
-        } catch (IOException | RuntimeException e) {
-            ModelEditingSupport.error(app, "Remove Super-Entity",
-                    "Could not remove super-entity:\n" + e.getMessage());
-            return;
-        }
+    // --- bound by RemoveSuperEntityForm.fib ---------------------------------
 
-        final String qn = entity.getQualifiedName();
-        app.rebuildProject(project, () -> {
-            SourceModelEntity refreshed = model.getEntity(qn);
-            if (refreshed != null) {
-                app.selectInBrowser(refreshed);
-            }
-        });
+    public List<String> getChoices() {
+        return choices;
+    }
+
+    public String getSelected() {
+        return selected;
+    }
+
+    public void setSelected(String selected) {
+        this.selected = selected;
+        fireInputValidChanged();
     }
 }
