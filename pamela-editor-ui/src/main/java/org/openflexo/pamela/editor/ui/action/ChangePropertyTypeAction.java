@@ -1,29 +1,35 @@
 package org.openflexo.pamela.editor.ui.action;
 
-import java.util.Collections;
-import java.util.List;
+import java.lang.reflect.Type;
 import java.util.function.Supplier;
 
+import org.openflexo.connie.type.CustomTypeManager;
+import org.openflexo.gina.controller.CustomTypeEditorProvider;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourceModelProperty;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaProject;
+import org.openflexo.pamela.editor.ui.type.PamelaCustomTypeEditorProvider;
+import org.openflexo.pamela.editor.ui.type.PamelaCustomTypeManager;
+import org.openflexo.pamela.editor.ui.type.PamelaEntityTypeFactory;
+import org.openflexo.pamela.editor.ui.type.PamelaTypes;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
 
 /**
  * Changes the value type of a {@link SourceModelProperty} (C19 retype). For a
- * LIST property the chosen type is the element type. Delegates to
- * {@link SourceModelProperty#changeType}.
+ * LIST property the chosen type is the element type. The type is edited with the
+ * Gina {@code TypeSelector} widget.
  */
 public class ChangePropertyTypeAction extends ParameteredAction {
 
     public static final Resource FORM_FIB =
             ResourceLocator.locateResource("Fib/dialogs/ChangePropertyTypeForm.fib");
 
-    private List<String> typeChoices = Collections.emptyList();
-    private String type;
+    private Type type;
+    private CustomTypeManager customTypeManager;
+    private CustomTypeEditorProvider customTypeEditorProvider;
 
     @Override
     public String getLabel() {
@@ -48,20 +54,18 @@ public class ChangePropertyTypeAction extends ParameteredAction {
     @Override
     protected boolean prepareDialog(Object target, PamelaEditorApplication app) {
         SourceModelProperty property = (SourceModelProperty) target;
-        SourceModelEntity entity = property.getModelEntity();
-        typeChoices = ModelEditingSupport.typeChoices(entity.getMetaModel());
-        // Pre-select the current type (its qualified name = element type for LIST).
+        SourceMetaModel model = property.getModelEntity().getMetaModel();
+        PamelaEntityTypeFactory factory = new PamelaEntityTypeFactory(model);
+        customTypeManager = new PamelaCustomTypeManager(factory);
+        customTypeEditorProvider = new PamelaCustomTypeEditorProvider(factory);
         String current = property.getType() != null ? property.getType().getQualifiedName() : null;
-        if (current != null && !typeChoices.contains(current)) {
-            typeChoices.add(0, current);
-        }
-        type = current != null ? current : (typeChoices.isEmpty() ? null : typeChoices.get(0));
+        type = PamelaTypes.forQualifiedName(current, model);
         return true;
     }
 
     @Override
     public boolean isInputValid() {
-        return type != null && !type.isEmpty();
+        return type != null;
     }
 
     @Override
@@ -71,22 +75,26 @@ public class ChangePropertyTypeAction extends ParameteredAction {
         SourceModelEntity entity = property.getModelEntity();
         SourceMetaModel model = entity.getMetaModel();
         final String entityQN = entity.getQualifiedName();
-        property.changeType(type);
+        property.changeType(PamelaTypes.qualifiedNameOf(type));
         return () -> model.getEntity(entityQN);
     }
 
     // --- bound by ChangePropertyTypeForm.fib --------------------------------
 
-    public List<String> getTypeChoices() {
-        return typeChoices;
-    }
-
-    public String getType() {
+    public Type getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(Type type) {
         this.type = type;
         fireInputValidChanged();
+    }
+
+    public CustomTypeManager getCustomTypeManager() {
+        return customTypeManager;
+    }
+
+    public CustomTypeEditorProvider getCustomTypeEditorProvider() {
+        return customTypeEditorProvider;
     }
 }

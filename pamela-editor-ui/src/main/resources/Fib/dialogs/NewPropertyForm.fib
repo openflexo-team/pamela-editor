@@ -15,7 +15,10 @@
 
   <Label name="typeLabel" label="Type" localize="false" align="left"
          index="4" constraints="twocols(location=left)" />
-  <DropDown name="typeDD" data="data.type" list="data.typeChoices"
-         iteratorClassName="java.lang.String" showReset="false" width="260"
-         index="5" constraints="twocols(expandHorizontally=true;location=right)" />
+  <Custom name="typeSelector" componentClassName="org.openflexo.gina.swing.utils.TypeSelector"
+         data="data.type" manageDynamicModel="true" width="260"
+         index="5" constraints="twocols(expandHorizontally=true;location=right)">
+    <Assignment variable="component.customTypeManager" value="data.customTypeManager" />
+    <Assignment variable="component.customTypeEditorProvider" value="data.customTypeEditorProvider" />
+  </Custom>
 </Panel>

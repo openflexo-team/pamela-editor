@@ -1,26 +1,27 @@
 package org.openflexo.pamela.editor.ui.action;
 
-import java.util.ArrayList;
+import java.lang.reflect.Type;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.openflexo.connie.type.CustomTypeManager;
+import org.openflexo.gina.controller.CustomTypeEditorProvider;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaProject;
+import org.openflexo.pamela.editor.ui.type.PamelaCustomTypeEditorProvider;
+import org.openflexo.pamela.editor.ui.type.PamelaCustomTypeManager;
+import org.openflexo.pamela.editor.ui.type.PamelaEntityTypeFactory;
+import org.openflexo.pamela.editor.ui.type.PamelaTypes;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
 
 /**
- * Adds a new property (SINGLE or LIST) to a {@link SourceModelEntity} — the
- * "create" path of {@code model-editing-design.md §1.1} for properties (C4 / C5).
- *
- * <p>The action carries the bound parameters (identifier, cardinality, type) and
- * delegates the source generation to {@link SourceModelEntity#addSingleProperty}
- * / {@code addListProperty}. The type is selected from a fixed list (entities +
- * common JDK types); a free-text {@code TypeSelector} widget is a follow-up.</p>
+ * Adds a new property (SINGLE or LIST) to a {@link SourceModelEntity} (C4 / C5).
+ * The value type is chosen with the Gina {@code TypeSelector} widget (JDK types
+ * + PAMELA source entities via {@link PamelaCustomTypeManager}).
  */
 public class NewPropertyAction extends ParameteredAction {
 
@@ -29,9 +30,10 @@ public class NewPropertyAction extends ParameteredAction {
 
     private String identifier = "";
     private boolean list;
-    private String type;
-    private List<String> typeChoices = new ArrayList<>();
+    private Type type;
     private Set<String> existingIdentifiers = new HashSet<>();
+    private CustomTypeManager customTypeManager;
+    private CustomTypeEditorProvider customTypeEditorProvider;
 
     @Override
     public String getLabel() {
@@ -56,9 +58,12 @@ public class NewPropertyAction extends ParameteredAction {
     @Override
     protected boolean prepareDialog(Object target, PamelaEditorApplication app) {
         SourceModelEntity entity = (SourceModelEntity) target;
-        this.existingIdentifiers = new HashSet<>(entity.getDeclaredProperties().keySet());
-        this.typeChoices = ModelEditingSupport.typeChoices(entity.getMetaModel());
-        this.type = typeChoices.isEmpty() ? null : typeChoices.get(0);
+        SourceMetaModel model = entity.getMetaModel();
+        existingIdentifiers = new HashSet<>(entity.getDeclaredProperties().keySet());
+        PamelaEntityTypeFactory factory = new PamelaEntityTypeFactory(model);
+        customTypeManager = new PamelaCustomTypeManager(factory);
+        customTypeEditorProvider = new PamelaCustomTypeEditorProvider(factory);
+        type = String.class;
         return true;
     }
 
@@ -69,10 +74,11 @@ public class NewPropertyAction extends ParameteredAction {
         SourceMetaModel model = entity.getMetaModel();
         final String entityQN = entity.getQualifiedName();
         String id = getTrimmedIdentifier();
+        String typeQN = PamelaTypes.qualifiedNameOf(type);
         if (list) {
-            entity.addListProperty(id, type);
+            entity.addListProperty(id, typeQN);
         } else {
-            entity.addSingleProperty(id, type);
+            entity.addSingleProperty(id, typeQN);
         }
         return () -> model.getEntity(entityQN);
     }
@@ -82,7 +88,7 @@ public class NewPropertyAction extends ParameteredAction {
         String id = getTrimmedIdentifier();
         return ModelEditingSupport.isValidJavaIdentifier(id)
                 && !existingIdentifiers.contains(id)
-                && type != null && !type.isEmpty();
+                && type != null;
     }
 
     // --- bound by NewPropertyForm.fib ---------------------------------------
@@ -104,17 +110,21 @@ public class NewPropertyAction extends ParameteredAction {
         this.list = list;
     }
 
-    public String getType() {
+    public Type getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(Type type) {
         this.type = type;
         fireInputValidChanged();
     }
 
-    public List<String> getTypeChoices() {
-        return typeChoices;
+    public CustomTypeManager getCustomTypeManager() {
+        return customTypeManager;
+    }
+
+    public CustomTypeEditorProvider getCustomTypeEditorProvider() {
+        return customTypeEditorProvider;
     }
 
     private String getTrimmedIdentifier() {
