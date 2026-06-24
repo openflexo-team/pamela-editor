@@ -720,4 +720,114 @@ public class TestMutations {
         assertNotNull("inverse must still resolve after rename",
                 outEdges.getInverseProperty());
     }
+
+    // =========================================================================
+    // Test 14 — toggle @Embedded (composition)
+    // =========================================================================
+
+    /** Add then remove {@code @Embedded} on Foo1.foo2. */
+    @Test
+    public void testToggleEmbedded() throws IOException {
+        File workDir = tmp.newFolder("testEmbedded");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        File foo1File = new File(srcCopy, "Foo1.java");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelProperty foo2 = mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("foo2");
+        assertFalse("not embedded initially", foo2.isEmbedded());
+
+        // --- Add @Embedded ---
+        foo2.setEmbedded(true);
+        assertTrue("@Embedded must be inserted",
+                new String(Files.readAllBytes(foo1File.toPath())).contains("@Embedded"));
+        mm.rebuildMetaModel();
+        assertTrue("property must now be embedded",
+                mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("foo2").isEmbedded());
+
+        // --- Remove @Embedded ---
+        mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("foo2").setEmbedded(false);
+        assertFalse("@Embedded must be removed",
+                new String(Files.readAllBytes(foo1File.toPath())).contains("@Embedded"));
+        mm.rebuildMetaModel();
+        assertFalse("property must no longer be embedded",
+                mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("foo2").isEmbedded());
+    }
+
+    // =========================================================================
+    // Test 15 — add / remove setter (SINGLE accessor toggle)
+    // =========================================================================
+
+    @Test
+    public void testAddRemoveSetter() throws IOException {
+        File workDir = tmp.newFolder("testSetter");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        File foo1File = new File(srcCopy, "Foo1.java");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        // Start from a SINGLE property that has a setter.
+        mm.getEntity("test.model1.Foo1").addSingleProperty("label", "java.lang.String");
+        mm.rebuildMetaModel();
+        assertNotNull("setter present after creation", mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("label").getSetterMethodName());
+
+        // --- Remove the setter ---
+        mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("label").removeSetter();
+        assertFalse("setLabel removed from source",
+                new String(Files.readAllBytes(foo1File.toPath())).contains("setLabel"));
+        mm.rebuildMetaModel();
+        assertNull("no setter after removal", mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("label").getSetterMethodName());
+
+        // --- Add it back ---
+        mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("label").addSetter();
+        assertTrue("setLabel re-added to source",
+                new String(Files.readAllBytes(foo1File.toPath())).contains("setLabel"));
+        mm.rebuildMetaModel();
+        assertNotNull("setter present again", mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("label").getSetterMethodName());
+    }
+
+    // =========================================================================
+    // Test 16 — add / remove adder+remover (LIST accessor toggle)
+    // =========================================================================
+
+    @Test
+    public void testAddRemoveAdderRemover() throws IOException {
+        File workDir = tmp.newFolder("testAdder");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        File foo1File = new File(srcCopy, "Foo1.java");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        mm.getEntity("test.model1.Foo1").addListProperty("items", "java.lang.String");
+        mm.rebuildMetaModel();
+        assertNotNull("adder present after creation", mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("items").getAdderMethodName());
+
+        // --- Remove adder + remover ---
+        mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("items").removeAdderRemover();
+        String afterRemove = new String(Files.readAllBytes(foo1File.toPath()));
+        assertFalse("addToItems removed", afterRemove.contains("addToItems"));
+        assertFalse("removeFromItems removed", afterRemove.contains("removeFromItems"));
+        mm.rebuildMetaModel();
+        assertNull("no adder after removal", mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("items").getAdderMethodName());
+
+        // --- Add them back ---
+        mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("items").addAdderRemover();
+        String afterAdd = new String(Files.readAllBytes(foo1File.toPath()));
+        assertTrue("addToItems re-added", afterAdd.contains("addToItems"));
+        assertTrue("removeFromItems re-added", afterAdd.contains("removeFromItems"));
+        mm.rebuildMetaModel();
+        assertNotNull("adder present again", mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("items").getAdderMethodName());
+        assertNotNull("remover present again", mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("items").getRemoverMethodName());
+    }
 }

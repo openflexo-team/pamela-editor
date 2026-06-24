@@ -73,6 +73,10 @@ import org.openflexo.pamela.editor.ui.action.NewPropertyAction;
 import org.openflexo.pamela.editor.ui.action.PromoteMethodAction;
 import org.openflexo.pamela.editor.ui.action.RenamePropertyAction;
 import org.openflexo.pamela.editor.ui.action.ChangePropertyTypeAction;
+import org.openflexo.pamela.editor.ui.action.AddSetterAction;
+import org.openflexo.pamela.editor.ui.action.RemoveSetterAction;
+import org.openflexo.pamela.editor.ui.action.AddAdderRemoverAction;
+import org.openflexo.pamela.editor.ui.action.RemoveAdderRemoverAction;
 import org.openflexo.pamela.editor.ui.action.DeletePropertyAction;
 import org.openflexo.pamela.editor.ui.action.NewClassDiagramAction;
 import org.openflexo.pamela.editor.ui.action.RenameClassDiagramAction;
@@ -585,6 +589,11 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         registerAction(new PromoteMethodAction());
         registerAction(new RenamePropertyAction());
         registerAction(new ChangePropertyTypeAction());
+        // --- Accessor toggles — model-editing-design.md Lot 3 ---
+        registerAction(new AddSetterAction());
+        registerAction(new RemoveSetterAction());
+        registerAction(new AddAdderRemoverAction());
+        registerAction(new RemoveAdderRemoverAction());
         registerAction(new DeletePropertyAction());
         registerAction(new NewClassDiagramAction());
         registerAction(new RenameClassDiagramAction());

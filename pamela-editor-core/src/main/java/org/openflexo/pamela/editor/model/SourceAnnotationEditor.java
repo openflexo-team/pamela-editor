@@ -117,18 +117,28 @@ public final class SourceAnnotationEditor {
         int lineStart = source.lastIndexOf('\n', declarationStart - 1) + 1;
         String token = "@" + simpleName;
 
-        // Walk backwards over preceding lines looking for the annotation line.
-        int cursor = lineStart;
-        while (cursor > 0) {
-            int prevLineStart = source.lastIndexOf('\n', cursor - 2) + 1;
-            String line = source.substring(prevLineStart, cursor).trim();
+        // Scan the declaration's own line first (the Spoon position may point at the
+        // first annotation, which sits on this line), then walk upward over the
+        // contiguous annotation lines preceding it.
+        int scan = lineStart;
+        while (scan >= 0) {
+            int lineEnd = source.indexOf('\n', scan);
+            if (lineEnd < 0) {
+                lineEnd = source.length();
+            }
+            String line = source.substring(scan, lineEnd).trim();
             if (line.equals(token) || line.startsWith(token + "(") || line.startsWith(token + " ")) {
-                return source.substring(0, prevLineStart) + source.substring(cursor);
+                int removeEnd = lineEnd < source.length() ? lineEnd + 1 : lineEnd;
+                return source.substring(0, scan) + source.substring(removeEnd);
             }
-            if (!line.isEmpty() && !line.startsWith("@")) {
-                break; // hit non-annotation content — stop searching
+            // Above the declaration line, stop at the first non-annotation, non-blank line.
+            if (scan < lineStart && !line.isEmpty() && !line.startsWith("@")) {
+                break;
             }
-            cursor = prevLineStart;
+            if (scan == 0) {
+                break;
+            }
+            scan = source.lastIndexOf('\n', scan - 2) + 1; // previous line start
         }
         return source;
     }

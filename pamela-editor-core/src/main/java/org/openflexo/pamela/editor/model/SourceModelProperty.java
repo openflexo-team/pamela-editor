@@ -23,6 +23,8 @@ import org.openflexo.pamela.annotations.XMLElement;
 import spoon.reflect.declaration.CtAnnotation;
 import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtParameter;
+import spoon.reflect.declaration.CtType;
+import spoon.reflect.declaration.ModifierKind;
 import spoon.reflect.factory.Factory;
 import spoon.reflect.reference.CtTypeReference;
 
@@ -392,9 +394,127 @@ public class SourceModelProperty implements SourceElement {
         }
     }
 
+    /**
+     * Adds or removes the {@code @Embedded} annotation on this property's getter,
+     * switching it between composition ({@code @Embedded}) and a plain reference
+     * (C10). Uses a targeted text edit (like {@link SourceMetaModel#declareAsEntity}),
+     * not an AST re-print. The change materialises on the next rebuild.
+     *
+     * @param embedded {@code true} to add {@code @Embedded}, {@code false} to remove it
+     */
+    public void setEmbedded(boolean embedded) throws IOException {
+        if (ctGetter.getPosition() == null || !ctGetter.getPosition().isValidPosition()) {
+            throw new IllegalStateException("No source position for getter " + getterMethodName);
+        }
+        java.io.File javaFile = modelEntity.getCompilationUnit().getFile();
+        String source = new String(java.nio.file.Files.readAllBytes(javaFile.toPath()),
+                java.nio.charset.StandardCharsets.UTF_8);
+        int start = ctGetter.getPosition().getSourceStart();
+        String edited = embedded
+                ? SourceAnnotationEditor.addAnnotation(source, start, "Embedded", Embedded.class.getName())
+                : SourceAnnotationEditor.removeAnnotation(source, start, "Embedded");
+        java.nio.file.Files.write(javaFile.toPath(),
+                edited.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Adds a {@code @Setter} accessor to a SINGLE property that lacks one (C8).
+     * Generates {@code void setXxx(T)} and writes it back via the AST printer.
+     * No-op if a setter already exists.
+     */
+    public void addSetter() throws IOException {
+        if (cardinality != Cardinality.SINGLE) {
+            throw new IllegalStateException("addSetter applies to SINGLE properties only");
+        }
+        if (ctSetter != null) {
+            return;
+        }
+        Factory factory = ctGetter.getFactory();
+        CtMethod<Void> setter = buildVoidAccessor(factory, "set" + capitalise(propertyIdentifier),
+                ctGetter.getType(), Setter.class);
+        modelEntity.getCtType().addMethod(setter);
+        modelEntity.getCompilationUnit().save();
+    }
+
+    /** Removes this property's {@code @Setter} accessor (C8). No-op if absent. */
+    public void removeSetter() throws IOException {
+        if (ctSetter == null) {
+            return;
+        }
+        modelEntity.getCtType().removeMethod(ctSetter);
+        modelEntity.getCompilationUnit().save();
+    }
+
+    /**
+     * Adds {@code @Adder}/{@code @Remover} accessors to a LIST property that lacks
+     * them (C8). Generates {@code void addToXxx(T)} / {@code void removeFromXxx(T)}.
+     * Only the missing ones are generated.
+     */
+    public void addAdderRemover() throws IOException {
+        if (cardinality != Cardinality.LIST) {
+            throw new IllegalStateException("addAdderRemover applies to LIST properties only");
+        }
+        Factory factory = ctGetter.getFactory();
+        CtTypeReference<?> elementType = ctGetter.getType().getActualTypeArguments().isEmpty()
+                ? factory.Type().OBJECT
+                : ctGetter.getType().getActualTypeArguments().get(0);
+        String cap = capitalise(propertyIdentifier);
+        boolean changed = false;
+        if (ctAdder == null) {
+            modelEntity.getCtType().addMethod(
+                    buildVoidAccessor(factory, "addTo" + cap, elementType, Adder.class));
+            changed = true;
+        }
+        if (ctRemover == null) {
+            modelEntity.getCtType().addMethod(
+                    buildVoidAccessor(factory, "removeFrom" + cap, elementType, Remover.class));
+            changed = true;
+        }
+        if (changed) {
+            modelEntity.getCompilationUnit().save();
+        }
+    }
+
+    /** Removes this property's {@code @Adder}/{@code @Remover} accessors (C8). */
+    public void removeAdderRemover() throws IOException {
+        CtType<?> ct = modelEntity.getCtType();
+        boolean changed = false;
+        if (ctAdder != null) {
+            ct.removeMethod(ctAdder);
+            changed = true;
+        }
+        if (ctRemover != null) {
+            ct.removeMethod(ctRemover);
+            changed = true;
+        }
+        if (changed) {
+            modelEntity.getCompilationUnit().save();
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    /** Builds a {@code public void name(paramType value)} method annotated with the PAMELA key. */
+    private CtMethod<Void> buildVoidAccessor(Factory factory, String name,
+            CtTypeReference<?> paramType, Class<? extends java.lang.annotation.Annotation> annotationType) {
+        CtMethod<Void> method = factory.Core().createMethod();
+        method.setSimpleName(name);
+        method.setType((CtTypeReference<Void>) factory.Type().VOID_PRIMITIVE);
+        method.addModifier(ModifierKind.PUBLIC);
+
+        CtParameter<Object> param = factory.Core().createParameter();
+        param.setSimpleName("value");
+        param.setType((CtTypeReference<Object>) paramType.clone());
+        method.addParameter(param);
+
+        CtAnnotation<?> annotation = factory.Core().createAnnotation();
+        annotation.setAnnotationType(factory.Type().createReference(annotationType));
+        annotation.addValue("value", propertyIdentifier);
+        method.addAnnotation(annotation);
+        return method;
+    }
 
     private static void setSingleParamType(CtMethod<?> method, CtTypeReference<?> type) {
         if (method != null && !method.getParameters().isEmpty()) {

@@ -1,0 +1,42 @@
+package org.openflexo.pamela.editor.ui.action;
+
+import java.util.function.Supplier;
+
+import org.openflexo.pamela.annotations.Getter.Cardinality;
+import org.openflexo.pamela.editor.model.SourceMetaModel;
+import org.openflexo.pamela.editor.model.SourceModelEntity;
+import org.openflexo.pamela.editor.model.SourceModelProperty;
+import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
+import org.openflexo.pamela.editor.ui.PamelaProject;
+
+/**
+ * Adds a {@code @Setter} accessor to a SINGLE property that has none (C8).
+ * Toggle action (no dialog); delegates to {@link SourceModelProperty#addSetter}.
+ */
+public class AddSetterAction extends SourceEditingAction {
+
+    @Override
+    public String getLabel() {
+        return "Add Setter";
+    }
+
+    @Override
+    public boolean isApplicable(Object target) {
+        if (!(target instanceof SourceModelProperty)) {
+            return false;
+        }
+        SourceModelProperty p = (SourceModelProperty) target;
+        return p.getCardinality() == Cardinality.SINGLE && p.getSetterMethodName() == null;
+    }
+
+    @Override
+    protected Supplier<Object> applyMutation(Object target, PamelaEditorApplication app,
+            PamelaProject project) throws Exception {
+        SourceModelProperty p = (SourceModelProperty) target;
+        SourceModelEntity entity = p.getModelEntity();
+        SourceMetaModel model = entity.getMetaModel();
+        final String entityQN = entity.getQualifiedName();
+        p.addSetter();
+        return () -> model.getEntity(entityQN);
+    }
+}
