@@ -15,7 +15,7 @@
         constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
     <Label name="AbstractLabel" label="abstract" index="6"
         constraints="twocols(location=left)" localize="true" />
-    <CheckBox name="AbstractCB" index="7" data="data.abstract" readOnly="true"
+    <CheckBox name="AbstractCB" index="7" data="data.abstract" readOnly="false"
         constraints="twocols(location=right)" localize="true" />
     <Label name="InitPolicyLabel" label="init_policy" index="8"
         constraints="twocols(location=left)" localize="true" />

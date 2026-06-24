@@ -46,10 +46,14 @@ import spoon.reflect.visitor.filter.TypeFilter;
  * </ul>
  * </p>
  */
-public class SourceModelEntity implements SourceElement {
+public class SourceModelEntity implements SourceElement,
+        org.openflexo.toolbox.HasPropertyChangeSupport {
 
     // Internal Spoon reference — never exposed in the public API
     private final CtType<?> ctType;
+
+    private final java.beans.PropertyChangeSupport pcSupport =
+            new java.beans.PropertyChangeSupport(this);
 
     // Identity — non-final to allow rename
     private String qualifiedName;
@@ -58,7 +62,7 @@ public class SourceModelEntity implements SourceElement {
     private final SourceMetaModel metaModel;
 
     // @ModelEntity annotation parameters
-    private final boolean abstractEntity;
+    private boolean abstractEntity;
     private final InitPolicy initPolicy;
     private final boolean inheritInitializers;
 
@@ -710,6 +714,38 @@ public class SourceModelEntity implements SourceElement {
         return abstractEntity;
     }
 
+    /**
+     * Editable setter (Lot 4 inspector): toggles {@code @ModelEntity(isAbstract=…)}
+     * in the source and fires a {@code PropertyChange}. Per the editable-inspector
+     * contract it mutates the source and updates the in-memory field but does
+     * <b>not</b> rebuild — the UI observes the event and triggers the rebuild
+     * (see {@code model-editing-design.md §6}).
+     *
+     * @throws IOException if the source file cannot be written
+     */
+    public void setAbstract(boolean isAbstract) throws IOException {
+        if (isAbstract == this.abstractEntity) {
+            return;
+        }
+        if (ctType.getPosition() == null || !ctType.getPosition().isValidPosition()) {
+            throw new IllegalStateException("No source position for " + qualifiedName);
+        }
+        java.io.File javaFile = compilationUnit.getFile();
+        String source = new String(java.nio.file.Files.readAllBytes(javaFile.toPath()),
+                java.nio.charset.StandardCharsets.UTF_8);
+        int declStart = ctType.getPosition().getSourceStart();
+        // isAbstract defaults to false in PAMELA, so removing the parameter (null)
+        // is the canonical way to express the non-abstract case.
+        String edited = SourceAnnotationEditor.setAnnotationParameter(
+                source, declStart, "ModelEntity", "isAbstract", isAbstract ? "true" : null);
+        java.nio.file.Files.write(javaFile.toPath(),
+                edited.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+        boolean old = this.abstractEntity;
+        this.abstractEntity = isAbstract;
+        pcSupport.firePropertyChange("abstract", old, isAbstract);
+    }
+
     /** Initialization policy declared on {@code @ModelEntity}. */
     public InitPolicy getInitPolicy() {
         return initPolicy;
@@ -778,6 +814,16 @@ public class SourceModelEntity implements SourceElement {
      */
     public List<Issue> getIssues() {
         return Collections.unmodifiableList(issues);
+    }
+
+    @Override
+    public java.beans.PropertyChangeSupport getPropertyChangeSupport() {
+        return pcSupport;
+    }
+
+    @Override
+    public String getDeletedProperty() {
+        return null;
     }
 
     @Override

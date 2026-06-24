@@ -757,6 +757,43 @@ public class TestMutations {
     }
 
     // =========================================================================
+    // Test 14b — setAbstract (editable inspector flag; fires PropertyChange)
+    // =========================================================================
+
+    @Test
+    public void testSetAbstract() throws IOException {
+        File workDir = tmp.newFolder("testAbstract");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        File foo1File = new File(srcCopy, "Foo1.java");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity foo1 = mm.getEntity("test.model1.Foo1");
+        assertFalse(foo1.isAbstract());
+
+        final boolean[] fired = { false };
+        foo1.getPropertyChangeSupport().addPropertyChangeListener("abstract",
+                evt -> fired[0] = true);
+
+        // --- Make abstract ---
+        foo1.setAbstract(true);
+        assertTrue("PropertyChange must fire", fired[0]);
+        assertTrue(foo1.isAbstract());
+        assertTrue("@ModelEntity(isAbstract = true) in source",
+                new String(Files.readAllBytes(foo1File.toPath())).contains("@ModelEntity(isAbstract = true)"));
+        mm.rebuildMetaModel();
+        assertTrue("abstract survives rebuild", mm.getEntity("test.model1.Foo1").isAbstract());
+
+        // --- Make concrete again (parameter removed) ---
+        mm.getEntity("test.model1.Foo1").setAbstract(false);
+        String src = new String(Files.readAllBytes(foo1File.toPath()));
+        assertFalse("isAbstract parameter removed", src.contains("isAbstract"));
+        mm.rebuildMetaModel();
+        assertFalse(mm.getEntity("test.model1.Foo1").isAbstract());
+    }
+
+    // =========================================================================
     // Test 15 — add / remove setter (SINGLE accessor toggle)
     // =========================================================================
 

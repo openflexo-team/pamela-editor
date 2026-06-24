@@ -1241,6 +1241,11 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             try {
                 // 2. Refresh the inspector (always for the actual selected element)
                 inspectorController.inspectObject(element);
+                // 2b. Observe the inspected element for in-inspector edits: an editable
+                //     Source* setter mutates the source and fires a PropertyChange; the
+                //     application reacts by rebuilding (the model never calls the rebuild
+                //     itself — see model-editing-design.md §6).
+                installEditListener(element);
             } catch (Exception e) {
                 logger.warning("Inspector refresh failed: " + e.getMessage());
                 e.printStackTrace();
@@ -2115,6 +2120,51 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
      * Returns the project that the given element belongs to, or {@code null}.
      * Used to decide which project's meta-model to show in the validation panel.
      */
+    // =========================================================================
+    // Editable inspector — observe edits on the inspected element (Lot 4)
+    // =========================================================================
+
+    private Object editListenedElement;
+    private final java.beans.PropertyChangeListener editListener = this::onInspectedElementEdited;
+
+    /**
+     * Observes the currently inspected element for in-inspector edits. An editable
+     * {@code Source*} setter mutates the source and fires a {@code PropertyChange};
+     * the application reacts (rebuild) — the model never calls the rebuild itself.
+     */
+    private void installEditListener(Object element) {
+        if (editListenedElement instanceof org.openflexo.toolbox.HasPropertyChangeSupport) {
+            ((org.openflexo.toolbox.HasPropertyChangeSupport) editListenedElement)
+                    .getPropertyChangeSupport().removePropertyChangeListener(editListener);
+        }
+        editListenedElement = null;
+        if (element instanceof org.openflexo.toolbox.HasPropertyChangeSupport
+                && getProjectForElement(element) != null) {
+            ((org.openflexo.toolbox.HasPropertyChangeSupport) element)
+                    .getPropertyChangeSupport().addPropertyChangeListener(editListener);
+            editListenedElement = element;
+        }
+    }
+
+    private void onInspectedElementEdited(java.beans.PropertyChangeEvent evt) {
+        Object element = evt.getSource();
+        PamelaProject project = getProjectForElement(element);
+        if (project == null) {
+            return;
+        }
+        // The Source* instance is replaced by the rebuild; re-anchor on the fresh one.
+        final String entityQN = element instanceof SourceModelEntity
+                ? ((SourceModelEntity) element).getQualifiedName() : null;
+        rebuildProject(project, () -> {
+            if (entityQN != null && project.getMetaModel() != null) {
+                SourceModelEntity fresh = project.getMetaModel().getEntity(entityQN);
+                if (fresh != null) {
+                    selectInBrowser(fresh);
+                }
+            }
+        });
+    }
+
     public PamelaProject getProjectForElement(Object element) {
         if (element instanceof PamelaProject) {
             return (PamelaProject) element;

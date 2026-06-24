@@ -143,9 +143,198 @@ public final class SourceAnnotationEditor {
         return source;
     }
 
+    /**
+     * Sets, replaces, or removes a named parameter of an annotation already
+     * present on the declaration at {@code declarationStart}.
+     *
+     * <p>{@code valueExpression} is the raw Java expression for the value
+     * (e.g. {@code "true"}, {@code "\"abc\""}, {@code "Cardinality.LIST"});
+     * {@code null} removes the parameter. Handles an annotation with no
+     * parentheses ({@code @ModelEntity} → {@code @ModelEntity(isAbstract = true)})
+     * and existing parameters (the parameter is replaced in place or appended;
+     * removing the last one drops the parentheses). Minimal-diff text edit — no
+     * AST re-print.</p>
+     *
+     * @return the edited source, or the original if the annotation is not found
+     */
+    public static String setAnnotationParameter(String source, int declarationStart,
+            String annotationSimpleName, String parameterName, String valueExpression) {
+        if (source == null || declarationStart < 0 || declarationStart > source.length()) {
+            throw new IllegalArgumentException("Invalid declaration offset");
+        }
+        int annStart = findAnnotation(source, declarationStart, annotationSimpleName);
+        if (annStart < 0) {
+            return source;
+        }
+        int afterName = annStart + 1 + annotationSimpleName.length();
+        // Skip whitespace after the annotation name.
+        int i = afterName;
+        while (i < source.length() && Character.isWhitespace(source.charAt(i))) {
+            i++;
+        }
+
+        String argsInner = "";
+        int annEnd; // exclusive end of the whole annotation in source
+        if (i < source.length() && source.charAt(i) == '(') {
+            int close = matchingParen(source, i);
+            if (close < 0) {
+                return source;
+            }
+            argsInner = source.substring(i + 1, close).trim();
+            annEnd = close + 1;
+        } else {
+            annEnd = afterName;
+        }
+
+        java.util.List<String> segments = splitTopLevel(argsInner);
+        int found = -1;
+        for (int s = 0; s < segments.size(); s++) {
+            if (segmentMatchesParameter(segments.get(s), parameterName)) {
+                found = s;
+                break;
+            }
+        }
+        if (valueExpression != null) {
+            String seg = parameterName + " = " + valueExpression;
+            if (found >= 0) {
+                segments.set(found, seg);
+            } else {
+                segments.add(seg);
+            }
+        } else if (found >= 0) {
+            segments.remove(found);
+        }
+
+        StringBuilder newAnn = new StringBuilder("@").append(annotationSimpleName);
+        if (!segments.isEmpty()) {
+            newAnn.append('(').append(String.join(", ", segments)).append(')');
+        }
+        return source.substring(0, annStart) + newAnn + source.substring(annEnd);
+    }
+
     // -------------------------------------------------------------------------
     // Internals
     // -------------------------------------------------------------------------
+
+    /**
+     * Locates {@code @annotationSimpleName} in the annotation block at/above the
+     * declaration starting at {@code declarationStart}. Returns the offset of the
+     * {@code @}, or {@code -1}.
+     */
+    private static int findAnnotation(String source, int declarationStart, String simpleName) {
+        int lineStart = source.lastIndexOf('\n', declarationStart - 1) + 1;
+        String token = "@" + simpleName;
+        int scan = lineStart;
+        while (scan >= 0) {
+            int lineEnd = source.indexOf('\n', scan);
+            if (lineEnd < 0) {
+                lineEnd = source.length();
+            }
+            String line = source.substring(scan, lineEnd);
+            int idx = line.indexOf(token);
+            if (idx >= 0) {
+                int after = idx + token.length();
+                // Ensure it's the whole annotation name (not @ModelEntityXxx).
+                if (after >= line.length() || !Character.isJavaIdentifierPart(line.charAt(after))) {
+                    return scan + idx;
+                }
+            }
+            if (scan < lineStart && !line.trim().isEmpty() && !line.trim().startsWith("@")) {
+                break;
+            }
+            if (scan == 0) {
+                break;
+            }
+            scan = source.lastIndexOf('\n', scan - 2) + 1;
+        }
+        return -1;
+    }
+
+    /** Index of the {@code )} matching the {@code (} at {@code openIndex}, or -1. */
+    private static int matchingParen(String source, int openIndex) {
+        int depth = 0;
+        boolean inString = false, inChar = false;
+        for (int i = openIndex; i < source.length(); i++) {
+            char c = source.charAt(i);
+            if (inString) {
+                if (c == '\\') {
+                    i++;
+                } else if (c == '"') {
+                    inString = false;
+                }
+            } else if (inChar) {
+                if (c == '\\') {
+                    i++;
+                } else if (c == '\'') {
+                    inChar = false;
+                }
+            } else if (c == '"') {
+                inString = true;
+            } else if (c == '\'') {
+                inChar = true;
+            } else if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                depth--;
+                if (depth == 0) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    /** Splits annotation arguments on top-level commas (ignoring nested brackets/strings). */
+    private static java.util.List<String> splitTopLevel(String args) {
+        java.util.List<String> result = new java.util.ArrayList<>();
+        if (args.isEmpty()) {
+            return result;
+        }
+        int depth = 0;
+        boolean inString = false, inChar = false;
+        int start = 0;
+        for (int i = 0; i < args.length(); i++) {
+            char c = args.charAt(i);
+            if (inString) {
+                if (c == '\\') {
+                    i++;
+                } else if (c == '"') {
+                    inString = false;
+                }
+            } else if (inChar) {
+                if (c == '\\') {
+                    i++;
+                } else if (c == '\'') {
+                    inChar = false;
+                }
+            } else if (c == '"') {
+                inString = true;
+            } else if (c == '\'') {
+                inChar = true;
+            } else if (c == '(' || c == '[' || c == '{') {
+                depth++;
+            } else if (c == ')' || c == ']' || c == '}') {
+                depth--;
+            } else if (c == ',' && depth == 0) {
+                result.add(args.substring(start, i).trim());
+                start = i + 1;
+            }
+        }
+        result.add(args.substring(start).trim());
+        return result;
+    }
+
+    /** True if {@code segment} is {@code paramName = …}. */
+    private static boolean segmentMatchesParameter(String segment, String paramName) {
+        if (!segment.startsWith(paramName)) {
+            return false;
+        }
+        int rest = paramName.length();
+        while (rest < segment.length() && Character.isWhitespace(segment.charAt(rest))) {
+            rest++;
+        }
+        return rest < segment.length() && segment.charAt(rest) == '=';
+    }
 
     private static boolean isAlreadyAnnotated(String source, int lineStart, String simpleName) {
         String token = "@" + simpleName;
