@@ -1,4 +1,6 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaProject;
@@ -13,6 +15,17 @@ import org.openflexo.pamela.editor.ui.PamelaProject;
  * view.</p>
  */
 public class NewClassDiagramAction extends ContextualAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.NEW;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.DIAGRAM_ICON;
+    }
 
     @Override
     public String getLabel() {

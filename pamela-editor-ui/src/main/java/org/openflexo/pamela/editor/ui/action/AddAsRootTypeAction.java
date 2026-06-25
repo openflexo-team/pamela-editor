@@ -1,4 +1,7 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.icon.IconMarker;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import java.util.function.Supplier;
 
@@ -16,6 +19,22 @@ import org.openflexo.pamela.editor.ui.PamelaProject;
  * registered as a root type.</p>
  */
 public class AddAsRootTypeAction extends SourceEditingAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.PROMOTE;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.ENTITY_ICON;
+    }
+
+    @Override
+    protected IconMarker[] getMarkers() {
+        return new IconMarker[] { PamelaEditorIconLibrary.REINJECT };
+    }
 
     @Override
     public String getLabel() {

@@ -1,4 +1,7 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.icon.IconMarker;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramDrawing;
@@ -14,6 +17,22 @@ import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
  * active diagram on which the member's entity is present and the member is currently hidden.</p>
  */
 public class ShowMemberAction extends ContextualAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.DIAGRAM;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.PROPERTY_ICON;
+    }
+
+    @Override
+    protected IconMarker[] getMarkers() {
+        return new IconMarker[] { PamelaEditorIconLibrary.PLUS };
+    }
 
     private final PamelaEditorApplication app;
 

@@ -1,4 +1,7 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.icon.IconMarker;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
@@ -16,6 +19,30 @@ import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
  * diagram and that compartment actually has something to reveal.</p>
  */
 public class ShowAllMembersAction extends ContextualAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.DIAGRAM;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        switch (kind) {
+            case INITIALIZERS:
+                return PamelaEditorIconLibrary.INITIALIZER_ICON;
+            case METHODS:
+                return PamelaEditorIconLibrary.METHOD_ICON;
+            case PROPERTIES:
+            default:
+                return PamelaEditorIconLibrary.PROPERTY_ICON;
+        }
+    }
+
+    @Override
+    protected IconMarker[] getMarkers() {
+        return new IconMarker[] { PamelaEditorIconLibrary.PLUS };
+    }
 
     private final PamelaEditorApplication app;
     private final Compartment kind;

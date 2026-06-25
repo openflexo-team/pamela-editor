@@ -1,4 +1,7 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.icon.IconMarker;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +24,22 @@ import org.openflexo.rm.ResourceLocator;
  * {@link SourceModelEntity#removeSuperEntity}.</p>
  */
 public class RemoveSuperEntityAction extends ParameteredAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.REFACTOR;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.ENTITY_ICON;
+    }
+
+    @Override
+    protected IconMarker[] getMarkers() {
+        return new IconMarker[] { PamelaEditorIconLibrary.MINUS };
+    }
 
     public static final Resource FORM_FIB =
             ResourceLocator.locateResource("Fib/dialogs/RemoveSuperEntityForm.fib");

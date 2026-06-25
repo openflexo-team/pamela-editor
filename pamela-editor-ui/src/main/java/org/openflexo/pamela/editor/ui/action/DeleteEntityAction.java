@@ -1,4 +1,6 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import java.util.function.Supplier;
 
@@ -16,6 +18,17 @@ import org.openflexo.pamela.editor.ui.dialog.ModelEditingDialogs;
  * and unregisters the type as a root if it was one.
  */
 public class DeleteEntityAction extends SourceEditingAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.DELETE;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.ENTITY_ICON;
+    }
 
     @Override
     public String getLabel() {

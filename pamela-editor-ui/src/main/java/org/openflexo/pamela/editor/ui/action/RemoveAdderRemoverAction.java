@@ -1,4 +1,7 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.icon.IconMarker;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import java.util.function.Supplier;
 
@@ -14,6 +17,22 @@ import org.openflexo.pamela.editor.ui.PamelaProject;
  * Toggle action; delegates to {@link SourceModelProperty#removeAdderRemover}.
  */
 public class RemoveAdderRemoverAction extends SourceEditingAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.GENERATE;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.METHOD_ICON;
+    }
+
+    @Override
+    protected IconMarker[] getMarkers() {
+        return new IconMarker[] { PamelaEditorIconLibrary.MINUS };
+    }
 
     @Override
     public String getLabel() {

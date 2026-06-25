@@ -1,4 +1,6 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import java.util.function.Supplier;
 
@@ -17,6 +19,17 @@ import org.openflexo.pamela.editor.ui.PamelaProject;
  * materialises on the rebuild. Shown for any Java file not yet an entity.</p>
  */
 public class DeclareAsPamelaEntityAction extends SourceEditingAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.PROMOTE;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.ENTITY_ICON;
+    }
 
     @Override
     public String getLabel() {

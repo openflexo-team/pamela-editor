@@ -1,4 +1,6 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
@@ -8,6 +10,17 @@ import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
  * The diagram's stable id and sidecar file are unchanged.
  */
 public class RenameClassDiagramAction extends ContextualAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.REFACTOR;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.DIAGRAM_ICON;
+    }
 
     @Override
     public String getLabel() {

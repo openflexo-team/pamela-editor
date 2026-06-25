@@ -1,4 +1,6 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -22,6 +24,17 @@ import org.openflexo.rm.ResourceLocator;
  * ({@code NewEntityForm.fib}) — its class identity is not tied to its dialog shape.</p>
  */
 public class NewEntityAction extends ParameteredAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.NEW;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.ENTITY_ICON;
+    }
 
     public static final Resource FORM_FIB =
             ResourceLocator.locateResource("Fib/dialogs/NewEntityForm.fib");

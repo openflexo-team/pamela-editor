@@ -1,4 +1,6 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
@@ -8,6 +10,17 @@ import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
  * The sidecar {@code .diagram} file is removed when the project is next saved.
  */
 public class DeleteClassDiagramAction extends ContextualAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.DELETE;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.DIAGRAM_ICON;
+    }
 
     @Override
     public String getLabel() {

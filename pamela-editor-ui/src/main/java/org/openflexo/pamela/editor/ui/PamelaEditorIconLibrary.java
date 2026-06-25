@@ -2,6 +2,7 @@ package org.openflexo.pamela.editor.ui;
 
 import javax.swing.ImageIcon;
 
+import org.openflexo.icon.IconFactory;
 import org.openflexo.icon.IconMarker;
 import org.openflexo.icon.ImageIconResource;
 import org.openflexo.rm.Resource;
@@ -52,6 +53,19 @@ public class PamelaEditorIconLibrary {
             new IconMarker(buildIcon("Icons/Markers/Delete.png"), 8, 8);
     public static final IconMarker DUPLICATE =
             new IconMarker(buildIcon("Icons/Markers/Plus.png"), 8, 0);
+
+    /** Intent markers used to compose action icons (element icon &oplus; marker). */
+    public static final IconMarker PLUS = DUPLICATE;
+    public static final IconMarker MINUS =
+            new IconMarker(buildIcon("Icons/Markers/Minus.png"), 8, 0);
+    public static final IconMarker GENERATE =
+            new IconMarker(buildIcon("Icons/Markers/Generate.png"), 8, 0);
+    public static final IconMarker IMPORT =
+            new IconMarker(buildIcon("Icons/Markers/Import.gif"), 8, 0);
+    public static final IconMarker REINJECT =
+            new IconMarker(buildIcon("Icons/Markers/Reinject.png"), 8, 0);
+    public static final IconMarker SYNC =
+            new IconMarker(buildIcon("Icons/Markers/Sync.png"), 8, 0);
 
     // -------------------------------------------------------------------------
     // Model element icons
@@ -229,6 +243,21 @@ public class PamelaEditorIconLibrary {
      * Loads an icon from the classpath. Returns {@code null} if the resource
      * cannot be located (prevents NPE on missing icon files).
      */
+    /**
+     * Composes a base icon with intent markers (e.g. an entity icon &oplus; a
+     * {@code +} marker for "new entity"). Null-safe: returns {@code base} when no
+     * marker is given, and {@code null} when {@code base} is {@code null}.
+     */
+    public static ImageIcon decorate(ImageIcon base, IconMarker... markers) {
+        if (base == null) {
+            return null;
+        }
+        if (markers == null || markers.length == 0) {
+            return base;
+        }
+        return IconFactory.getImageIcon(base, markers);
+    }
+
     private static ImageIcon buildIcon(String path) {
         Resource r = ResourceLocator.locateResource(path);
         if (r == null) {

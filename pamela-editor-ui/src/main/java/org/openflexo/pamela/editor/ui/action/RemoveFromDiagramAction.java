@@ -1,4 +1,7 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.icon.IconMarker;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import org.openflexo.pamela.editor.diagram.EntityView;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
@@ -14,6 +17,22 @@ import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
  * {@link HideMemberAction}.</p>
  */
 public class RemoveFromDiagramAction extends ContextualAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.DIAGRAM;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.ENTITY_ICON;
+    }
+
+    @Override
+    protected IconMarker[] getMarkers() {
+        return new IconMarker[] { PamelaEditorIconLibrary.MINUS };
+    }
 
     @Override
     public String getLabel() {

@@ -1,4 +1,6 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import java.awt.Component;
 import java.io.File;
@@ -21,6 +23,17 @@ import org.openflexo.pamela.editor.ui.PamelaProject;
  * duplicating code.</p>
  */
 public class AddSourceFolderAction extends ContextualAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.NEW;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.SOURCE_FOLDER_ICON;
+    }
 
     @Override
     public String getLabel() {

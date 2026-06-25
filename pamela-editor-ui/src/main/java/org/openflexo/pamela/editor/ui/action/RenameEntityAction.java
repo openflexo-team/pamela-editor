@@ -1,4 +1,6 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -22,6 +24,17 @@ import org.openflexo.rm.ResourceLocator;
  * if the entity was a root type the root list is re-keyed.</p>
  */
 public class RenameEntityAction extends ParameteredAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.REFACTOR;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.ENTITY_ICON;
+    }
 
     public static final Resource FORM_FIB =
             ResourceLocator.locateResource("Fib/dialogs/RenameEntityForm.fib");

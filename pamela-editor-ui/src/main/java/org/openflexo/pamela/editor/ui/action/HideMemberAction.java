@@ -1,4 +1,7 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.icon.IconMarker;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramDrawing;
@@ -19,6 +22,22 @@ import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
  * from the browser's contextual menu.</p>
  */
 public class HideMemberAction extends ContextualAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.DIAGRAM;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.PROPERTY_ICON;
+    }
+
+    @Override
+    protected IconMarker[] getMarkers() {
+        return new IconMarker[] { PamelaEditorIconLibrary.MINUS };
+    }
 
     private final PamelaEditorApplication app;
 

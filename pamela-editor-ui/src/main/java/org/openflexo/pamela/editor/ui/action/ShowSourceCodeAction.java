@@ -1,4 +1,6 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourceModelProperty;
@@ -12,6 +14,17 @@ import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
  * class diagram (right-click a box or a property row), giving those menus content.</p>
  */
 public class ShowSourceCodeAction extends ContextualAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.OPEN;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.JAVA_FILE_ICON;
+    }
 
     @Override
     public String getLabel() {

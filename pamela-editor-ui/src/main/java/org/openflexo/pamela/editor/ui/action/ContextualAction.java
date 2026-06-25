@@ -2,7 +2,9 @@ package org.openflexo.pamela.editor.ui.action;
 
 import javax.swing.ImageIcon;
 
+import org.openflexo.icon.IconMarker;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
 
 /**
  * Base class for an action that can appear in a contextual (right-click) menu.
@@ -34,9 +36,42 @@ public abstract class ContextualAction {
     /** The label shown in the contextual menu item (short, title case). */
     public abstract String getLabel();
 
-    /** Optional icon shown next to the label. {@code null} for none. */
-    public ImageIcon getIcon() {
+    /**
+     * The semantic group this action belongs to — drives menu ordering, dividers,
+     * submenu routing and the default icon marker. See {@code context-menu-design.md}.
+     * Default {@link ActionGroup#OPEN} (inline, at the top).
+     */
+    public ActionGroup getGroup() {
+        return ActionGroup.OPEN;
+    }
+
+    /**
+     * The base icon of this action — usually the target element's icon (entity,
+     * property, method…). {@code null} for no icon. Composed with {@link #getMarkers()}
+     * by {@link #getIcon()}.
+     */
+    protected ImageIcon getBaseIcon() {
         return null;
+    }
+
+    /**
+     * The intent markers overlaid on {@link #getBaseIcon()}. Default = the group's
+     * marker ({@link ActionGroup#getDefaultMarker()}); an action overrides this when its
+     * marker differs from the group default (e.g. a {@code Remove*} action in the
+     * GENERATE group uses {@code MINUS} rather than {@code GENERATE}).
+     */
+    protected IconMarker[] getMarkers() {
+        IconMarker m = getGroup().getDefaultMarker();
+        return m == null ? new IconMarker[0] : new IconMarker[] { m };
+    }
+
+    /**
+     * The icon shown next to the label. By default composes {@link #getBaseIcon()} with
+     * {@link #getMarkers()}; {@code null} when there is no base icon. An action may
+     * override this wholesale.
+     */
+    public ImageIcon getIcon() {
+        return PamelaEditorIconLibrary.decorate(getBaseIcon(), getMarkers());
     }
 
     /**

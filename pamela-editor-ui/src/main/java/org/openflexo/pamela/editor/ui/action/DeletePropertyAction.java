@@ -1,4 +1,6 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import java.util.function.Supplier;
 
@@ -17,6 +19,17 @@ import org.openflexo.pamela.editor.ui.dialog.ModelEditingDialogs;
  * row and its connector (same facet — {@code ui-design.md §18.4}).
  */
 public class DeletePropertyAction extends SourceEditingAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.DELETE;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.PROPERTY_ICON;
+    }
 
     @Override
     public String getLabel() {

@@ -1,4 +1,6 @@
 package org.openflexo.pamela.editor.ui.action;
+import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import javax.swing.ImageIcon;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -19,6 +21,17 @@ import org.openflexo.rm.ResourceLocator;
  * {@link SourceModelProperty#rename}.
  */
 public class RenamePropertyAction extends ParameteredAction {
+
+
+    @Override
+    public ActionGroup getGroup() {
+        return ActionGroup.REFACTOR;
+    }
+
+    @Override
+    protected ImageIcon getBaseIcon() {
+        return PamelaEditorIconLibrary.PROPERTY_ICON;
+    }
 
     public static final Resource FORM_FIB =
             ResourceLocator.locateResource("Fib/dialogs/RenamePropertyForm.fib");

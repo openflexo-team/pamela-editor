@@ -18,11 +18,11 @@ import java.io.File;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.swing.JButton;
@@ -30,6 +30,7 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -61,6 +62,7 @@ import org.openflexo.pamela.editor.model.SourceModelInitializer;
 import org.openflexo.pamela.editor.model.SourceModelProperty;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourcePackage;
+import org.openflexo.pamela.editor.ui.action.ActionGroup;
 import org.openflexo.pamela.editor.ui.action.AddAsRootTypeAction;
 import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsPamelaEntityAction;
@@ -334,30 +336,64 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if (targetFacets == null || targetFacets.isEmpty()) {
             return;
         }
-        JPopupMenu menu = new JPopupMenu();
-        Set<ContextualAction> alreadyAdded = Collections.newSetFromMap(new IdentityHashMap<>());
-        boolean any = false;
+        // 1. Collect applicable (action, boundFacet) pairs, deduped by action identity;
+        //    the first facet that matches an action binds it (preserves §18.4 behaviour).
+        Map<ContextualAction, Object> boundFacet = new IdentityHashMap<>();
+        List<ContextualAction> ordered = new ArrayList<>();
         for (Object facet : targetFacets) {
             if (facet == null) {
                 continue;
             }
             for (ContextualAction action : getActionsFor(facet)) {
-                if (!alreadyAdded.add(action)) {
+                if (boundFacet.containsKey(action)) {
                     continue;
                 }
-                JMenuItem item = new JMenuItem(action.getLabel());
-                if (action.getIcon() != null) {
-                    item.setIcon(action.getIcon());
-                }
-                final Object actionTarget = facet;
-                item.addActionListener(e -> action.perform(actionTarget, this));
-                menu.add(item);
-                any = true;
+                boundFacet.put(action, facet);
+                ordered.add(action);
             }
         }
-        if (!any) {
+        if (ordered.isEmpty()) {
             return;
         }
+
+        // 2. Sort by (group order, registration order) — a stable secondary key keeps the
+        //    intra-group order as registered.
+        ordered.sort(Comparator
+                .comparingInt((ContextualAction a) -> a.getGroup().ordinal())
+                .thenComparingInt(registeredActions::indexOf));
+
+        // 3. Render: a divider between groups, submenu routing for submenu groups (a submenu
+        //    group with a single applicable action collapses to an inline item).
+        JPopupMenu menu = new JPopupMenu();
+        boolean firstGroup = true;
+        int i = 0;
+        while (i < ordered.size()) {
+            ActionGroup group = ordered.get(i).getGroup();
+            int j = i;
+            while (j < ordered.size() && ordered.get(j).getGroup() == group) {
+                j++;
+            }
+            if (!firstGroup) {
+                menu.addSeparator();
+            }
+            firstGroup = false;
+
+            if (group.isSubmenu() && j - i >= 2) {
+                JMenu submenu = new JMenu(loc(group.getSubmenuLabelKey()));
+                for (int k = i; k < ordered.size() && k < j; k++) {
+                    ContextualAction action = ordered.get(k);
+                    submenu.add(makeMenuItem(action, boundFacet.get(action)));
+                }
+                menu.add(submenu);
+            } else {
+                for (int k = i; k < j; k++) {
+                    ContextualAction action = ordered.get(k);
+                    menu.add(makeMenuItem(action, boundFacet.get(action)));
+                }
+            }
+            i = j;
+        }
+
         if (invoker != null) {
             menu.show(invoker, x, y);
         } else {
@@ -366,6 +402,16 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             menu.setLocation(x, y);
             menu.setVisible(true);
         }
+    }
+
+    /** Builds a menu item for an action bound to the facet that matched it. */
+    private JMenuItem makeMenuItem(ContextualAction action, Object facet) {
+        JMenuItem item = new JMenuItem(action.getLabel());
+        if (action.getIcon() != null) {
+            item.setIcon(action.getIcon());
+        }
+        item.addActionListener(e -> action.perform(facet, this));
+        return item;
     }
 
     /** The currently selected element (any Source* or PamelaClassDiagram). */
