@@ -1,13 +1,20 @@
 package test.model2;
 
+import java.util.List;
+
+import org.openflexo.pamela.annotations.Adder;
 import org.openflexo.pamela.annotations.CloningStrategy;
+import org.openflexo.pamela.annotations.Embedded;
 import org.openflexo.pamela.annotations.CloningStrategy.StrategyType;
+import org.openflexo.pamela.annotations.Getter.Cardinality;
 import org.openflexo.pamela.annotations.Getter;
 import org.openflexo.pamela.annotations.ImplementationClass;
 import org.openflexo.pamela.annotations.Initializer;
 import org.openflexo.pamela.annotations.ModelEntity;
 import org.openflexo.pamela.annotations.Operation;
 import org.openflexo.pamela.annotations.Parameter;
+import org.openflexo.pamela.annotations.PastingPoint;
+import org.openflexo.pamela.annotations.Remover;
 import org.openflexo.pamela.annotations.ReturnedValue;
 import org.openflexo.pamela.annotations.Setter;
 import org.openflexo.pamela.annotations.XMLElement;
@@ -54,4 +61,15 @@ public interface Edge extends WKFObject {
 	
 	// Could be promoted to a property
 	public String getDescription();
+	
+	// A good candidate for a setter
+	public void setDescription(String aDescription);
+		
+	List<String> getFoos();
+
+	void addToFoos(String node);
+
+	void removeFromFoos(String node);
+
+	public int getNewProperty();
 }
