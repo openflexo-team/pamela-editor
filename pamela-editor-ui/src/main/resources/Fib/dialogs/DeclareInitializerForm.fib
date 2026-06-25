@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  DeclareInitializerForm.fib — "Declare as Initializer" (model-editing-design.md §3.3a).
+  One row per method parameter (up to 6): a "name : Type" label + a property dropdown.
+  Rows beyond the method's parameter count are hidden (data.paramN.show).
+  A 0-parameter initializer shows no rows (just validate).
+-->
+<Panel dataClassName="org.openflexo.pamela.editor.ui.action.DeclareAsInitializerAction"
+       controllerClassName="org.openflexo.gina.controller.FIBController"
+       layout="twocols" name="DeclareInitializerForm" border="empty">
+
+  <Label name="hint" label="Map each parameter to a property:" localize="false" align="left"
+         index="0" constraints="twocols(location=center)" />
+
+  <TextField name="p0lbl" data="data.param0.label" readOnly="true" columns="18"
+         visible="data.param0.show" index="1" constraints="twocols(location=left)" />
+  <DropDown name="p0dd" data="data.param0.selected" list="data.param0.candidates"
+         iteratorClassName="java.lang.String" showReset="false" width="200"
+         visible="data.param0.show" index="2" constraints="twocols(expandHorizontally=true;location=right)" />
+
+  <TextField name="p1lbl" data="data.param1.label" readOnly="true" columns="18"
+         visible="data.param1.show" index="3" constraints="twocols(location=left)" />
+  <DropDown name="p1dd" data="data.param1.selected" list="data.param1.candidates"
+         iteratorClassName="java.lang.String" showReset="false" width="200"
+         visible="data.param1.show" index="4" constraints="twocols(expandHorizontally=true;location=right)" />
+
+  <TextField name="p2lbl" data="data.param2.label" readOnly="true" columns="18"
+         visible="data.param2.show" index="5" constraints="twocols(location=left)" />
+  <DropDown name="p2dd" data="data.param2.selected" list="data.param2.candidates"
+         iteratorClassName="java.lang.String" showReset="false" width="200"
+         visible="data.param2.show" index="6" constraints="twocols(expandHorizontally=true;location=right)" />
+
+  <TextField name="p3lbl" data="data.param3.label" readOnly="true" columns="18"
+         visible="data.param3.show" index="7" constraints="twocols(location=left)" />
+  <DropDown name="p3dd" data="data.param3.selected" list="data.param3.candidates"
+         iteratorClassName="java.lang.String" showReset="false" width="200"
+         visible="data.param3.show" index="8" constraints="twocols(expandHorizontally=true;location=right)" />
+
+  <TextField name="p4lbl" data="data.param4.label" readOnly="true" columns="18"
+         visible="data.param4.show" index="9" constraints="twocols(location=left)" />
+  <DropDown name="p4dd" data="data.param4.selected" list="data.param4.candidates"
+         iteratorClassName="java.lang.String" showReset="false" width="200"
+         visible="data.param4.show" index="10" constraints="twocols(expandHorizontally=true;location=right)" />
+
+  <TextField name="p5lbl" data="data.param5.label" readOnly="true" columns="18"
+         visible="data.param5.show" index="11" constraints="twocols(location=left)" />
+  <DropDown name="p5dd" data="data.param5.selected" list="data.param5.candidates"
+         iteratorClassName="java.lang.String" showReset="false" width="200"
+         visible="data.param5.show" index="12" constraints="twocols(expandHorizontally=true;location=right)" />
+</Panel>

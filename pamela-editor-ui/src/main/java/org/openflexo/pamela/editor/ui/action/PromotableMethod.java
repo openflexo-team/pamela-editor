@@ -25,6 +25,8 @@ public final class PromotableMethod {
     private final SourceModelEntity entity;
     private final String methodName;
     private final List<String> parameterTypeQualifiedNames;
+    private final List<String> parameterTypeSimpleNames;
+    private final List<String> parameterNames;
     private final String returnTypeQualifiedName;
     private final boolean returnsList;
     private final String listElementTypeQualifiedName; // null unless returnsList
@@ -33,21 +35,20 @@ public final class PromotableMethod {
         this.entity = entity;
         this.methodName = m.getSimpleName();
         this.parameterTypeQualifiedNames = new ArrayList<>();
-        for (CtTypeReference<?> p : extractParameterTypes(m)) {
-            parameterTypeQualifiedNames.add(p != null ? p.getQualifiedName() : null);
-        }
+        this.parameterTypeSimpleNames = new ArrayList<>();
+        this.parameterNames = new ArrayList<>();
+        m.getParameters().forEach(p -> {
+            CtTypeReference<?> t = p.getType();
+            parameterTypeQualifiedNames.add(t != null ? t.getQualifiedName() : null);
+            parameterTypeSimpleNames.add(t != null ? t.getSimpleName() : "?");
+            parameterNames.add(p.getSimpleName());
+        });
         CtTypeReference<?> ret = m.getType();
         this.returnTypeQualifiedName = ret != null ? ret.getQualifiedName() : "void";
         this.returnsList = ret != null && "java.util.List".equals(ret.getQualifiedName());
         this.listElementTypeQualifiedName = returnsList && !ret.getActualTypeArguments().isEmpty()
                 ? ret.getActualTypeArguments().get(0).getQualifiedName()
                 : null;
-    }
-
-    private static List<CtTypeReference<?>> extractParameterTypes(CtMethod<?> m) {
-        List<CtTypeReference<?>> types = new ArrayList<>();
-        m.getParameters().forEach(p -> types.add(p.getType()));
-        return types;
     }
 
     public SourceModelEntity getEntity() {
@@ -66,6 +67,17 @@ public final class PromotableMethod {
     public String getParameterTypeQualifiedName(int i) {
         return i >= 0 && i < parameterTypeQualifiedNames.size()
                 ? parameterTypeQualifiedNames.get(i) : null;
+    }
+
+    /** Simple type name of parameter {@code i} (for display), or {@code "?"}. */
+    public String getParameterTypeSimpleName(int i) {
+        return i >= 0 && i < parameterTypeSimpleNames.size()
+                ? parameterTypeSimpleNames.get(i) : "?";
+    }
+
+    /** Declared name of parameter {@code i}, or {@code null}. */
+    public String getParameterName(int i) {
+        return i >= 0 && i < parameterNames.size() ? parameterNames.get(i) : null;
     }
 
     public String getReturnTypeQualifiedName() {

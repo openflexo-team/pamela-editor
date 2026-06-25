@@ -66,6 +66,9 @@ import org.openflexo.pamela.editor.ui.action.ActionGroup;
 import org.openflexo.pamela.editor.ui.action.AddAsRootTypeAction;
 import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsAdderAction;
+import org.openflexo.pamela.editor.ui.action.DeclareAsFinderAction;
+import org.openflexo.pamela.editor.ui.action.DeclareAsInitializerAction;
+import org.openflexo.pamela.editor.ui.action.DeclareAsOperationAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsReindexerAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsRemoverAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsSetterAction;
@@ -664,6 +667,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         registerAction(new DeclareAsAdderAction());
         registerAction(new DeclareAsRemoverAction());
         registerAction(new DeclareAsReindexerAction());
+        registerAction(new DeclareAsOperationAction());
+        registerAction(new DeclareAsInitializerAction());
+        registerAction(new DeclareAsFinderAction());
         // --- Accessor toggles — model-editing-design.md Lot 3 ---
         registerAction(new AddSetterAction());
         registerAction(new RemoveSetterAction());

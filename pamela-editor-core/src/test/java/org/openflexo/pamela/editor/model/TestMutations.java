@@ -1072,4 +1072,104 @@ public class TestMutations {
         assertEquals("getDescription", desc.getGetterMethodName());
         assertEquals("setDescription", desc.getSetterMethodName());
     }
+
+    // =========================================================================
+    // Lot 6b — declare operation / initializer / finder
+    // =========================================================================
+
+    /** Declare a plain method as an {@code @Operation} marker. */
+    @Test
+    public void testDeclareOperation() throws IOException {
+        File workDir = tmp.newFolder("testDeclareOperation");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+
+        File foo1File = new File(srcCopy, "Foo1.java");
+        String foo1 = new String(Files.readAllBytes(foo1File.toPath()));
+        int lastBrace = foo1.lastIndexOf('}');
+        foo1 = foo1.substring(0, lastBrace)
+                + "\n\tpublic void doSomething();\n\n"
+                + foo1.substring(lastBrace);
+        Files.write(foo1File.toPath(), foo1.getBytes());
+
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+
+        mm.getEntity("test.model1.Foo1").declareOperation("doSomething", 0);
+
+        String content = new String(Files.readAllBytes(foo1File.toPath()));
+        assertTrue("@Operation inserted", content.contains("@Operation"));
+        assertTrue("import added",
+                content.contains("import org.openflexo.pamela.annotations.Operation;"));
+        mm.rebuildMetaModel();
+        assertNotNull(mm.getEntity("test.model1.Foo1"));
+    }
+
+    /** Declare a method as an {@code @Initializer} with {@code @Parameter} on each argument. */
+    @Test
+    public void testDeclareInitializer() throws IOException {
+        File workDir = tmp.newFolder("testDeclareInitializer");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+
+        // An existing property + a plain factory method taking a value of that property's type.
+        File foo1File = new File(srcCopy, "Foo1.java");
+        String foo1 = new String(Files.readAllBytes(foo1File.toPath()));
+        int lastBrace = foo1.lastIndexOf('}');
+        foo1 = foo1.substring(0, lastBrace)
+                + "\n\t@org.openflexo.pamela.annotations.Getter(value = \"label\")\n"
+                + "\tpublic String getLabel();\n\n"
+                + "\tpublic Foo1 build(String label);\n\n"
+                + foo1.substring(lastBrace);
+        Files.write(foo1File.toPath(), foo1.getBytes());
+
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+
+        mm.getEntity("test.model1.Foo1")
+                .declareInitializer("build", java.util.Arrays.asList("label"));
+
+        String content = new String(Files.readAllBytes(foo1File.toPath()));
+        assertTrue("@Initializer inserted", content.contains("@Initializer"));
+        assertTrue("@Parameter inserted inline on the argument",
+                content.contains("@Parameter(\"label\") String label"));
+
+        mm.rebuildMetaModel();
+        SourceModelEntity rebuilt = mm.getEntity("test.model1.Foo1");
+        boolean found = rebuilt.getInitializers().stream()
+                .anyMatch(i -> "build".equals(i.getMethodName()));
+        assertTrue("build must be recognised as an initializer after rebuild", found);
+    }
+
+    /** Declare a plain one-arg method as an {@code @Finder} over a LIST property. */
+    @Test
+    public void testDeclareFinder() throws IOException {
+        File workDir = tmp.newFolder("testDeclareFinder");
+        File srcCopy = copyDir(MODEL2_SRC, workDir);
+
+        // Inject a plain finder-shaped method into FlexoProcess (nodes : List<AbstractNode>).
+        File procFile = new File(srcCopy, "FlexoProcess.java");
+        String proc = new String(Files.readAllBytes(procFile.toPath()));
+        int lastBrace = proc.lastIndexOf('}');
+        proc = proc.substring(0, lastBrace)
+                + "\n\tAbstractNode findNode(String key);\n\n"
+                + proc.substring(lastBrace);
+        Files.write(procFile.toPath(), proc.getBytes());
+
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy,
+                "test.model2.FlexoProcess", "test.model2.AbstractNode");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+
+        mm.getEntity("test.model2.FlexoProcess")
+                .declareFinder("findNode", "nodes", "name", false);
+
+        String content = new String(Files.readAllBytes(procFile.toPath()));
+        assertTrue("@Finder inserted",
+                content.contains("@Finder(collection = \"nodes\", attribute = \"name\")"));
+        assertTrue("import added",
+                content.contains("import org.openflexo.pamela.annotations.Finder;"));
+        mm.rebuildMetaModel();
+        assertNotNull(mm.getEntity("test.model2.FlexoProcess"));
+    }
 }

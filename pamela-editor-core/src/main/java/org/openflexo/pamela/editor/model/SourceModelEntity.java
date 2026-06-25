@@ -11,10 +11,14 @@ import java.util.Map;
 import java.util.Set;
 
 import org.openflexo.pamela.annotations.Adder;
+import org.openflexo.pamela.annotations.Finder;
 import org.openflexo.pamela.annotations.Getter;
 import org.openflexo.pamela.annotations.Getter.Cardinality;
+import org.openflexo.pamela.annotations.Initializer;
 import org.openflexo.pamela.annotations.ModelEntity;
 import org.openflexo.pamela.annotations.ModelEntity.InitPolicy;
+import org.openflexo.pamela.annotations.Operation;
+import org.openflexo.pamela.annotations.Parameter;
 import org.openflexo.pamela.annotations.Reindexer;
 import org.openflexo.pamela.annotations.Remover;
 import org.openflexo.pamela.annotations.Setter;
@@ -685,6 +689,117 @@ public class SourceModelEntity implements SourceElement,
             result.add(new MethodSignature(m.getSimpleName(), paramTypes));
         }
         return result;
+    }
+
+    // -------------------------------------------------------------------------
+    // Lot 6b — declare an existing method as an operation / initializer / finder
+    // (model-editing-design.md §3.3a). All targeted text edits (annotation line +
+    // import), minimal-diff and Sniper-safe; the concept materialises on rebuild.
+    // -------------------------------------------------------------------------
+
+    /** Marks an existing method as an {@code @Operation} (editor-facing marker). */
+    public void declareOperation(String methodName, int paramCount) throws IOException {
+        CtMethod<?> m = requireMethodWithPosition(methodName, paramCount);
+        File javaFile = compilationUnit.getFile();
+        String source = readSource(javaFile);
+        source = SourceAnnotationEditor.insertAnnotationLine(source,
+                m.getPosition().getSourceStart(), "@Operation");
+        source = SourceAnnotationEditor.ensureImport(source, Operation.class.getName());
+        writeSource(javaFile, source);
+    }
+
+    /**
+     * Declares an existing method as an {@code @Initializer} (a factory), mapping each of its
+     * parameters to a property via an inline {@code @Parameter("propId")}. {@code parameterPropertyIds}
+     * is ordered by parameter (size = the method's parameter count). The {@code @Initializer} line and
+     * every {@code @Parameter} are written in one descending-offset pass.
+     */
+    public void declareInitializer(String methodName, List<String> parameterPropertyIds)
+            throws IOException {
+        int paramCount = parameterPropertyIds.size();
+        CtMethod<?> m = requireMethodWithPosition(methodName, paramCount);
+
+        // (offset, isLineInsertion, text), applied by DESCENDING offset so earlier offsets stay valid.
+        List<int[]> meta = new ArrayList<>();   // [offset, isLine?1:0]
+        List<String> texts = new ArrayList<>();
+
+        meta.add(new int[] { m.getPosition().getSourceStart(), 1 });
+        texts.add("@Initializer");
+
+        for (int i = 0; i < paramCount; i++) {
+            CtParameter<?> p = m.getParameters().get(i);
+            if (p.getPosition() == null || !p.getPosition().isValidPosition()) {
+                throw new IllegalStateException("No source position for parameter " + i
+                        + " of " + methodName);
+            }
+            meta.add(new int[] { p.getPosition().getSourceStart(), 0 });
+            texts.add("@Parameter(\"" + parameterPropertyIds.get(i) + "\") ");
+        }
+
+        File javaFile = compilationUnit.getFile();
+        String source = readSource(javaFile);
+
+        Integer[] order = new Integer[meta.size()];
+        for (int i = 0; i < order.length; i++) {
+            order[i] = i;
+        }
+        java.util.Arrays.sort(order, (a, b) -> Integer.compare(meta.get(b)[0], meta.get(a)[0]));
+        for (int i : order) {
+            int offset = meta.get(i)[0];
+            if (meta.get(i)[1] == 1) {
+                source = SourceAnnotationEditor.insertAnnotationLine(source, offset, texts.get(i));
+            } else {
+                source = source.substring(0, offset) + texts.get(i) + source.substring(offset);
+            }
+        }
+        source = SourceAnnotationEditor.ensureImport(source, Initializer.class.getName());
+        source = SourceAnnotationEditor.ensureImport(source, Parameter.class.getName());
+        writeSource(javaFile, source);
+    }
+
+    /**
+     * Declares an existing one-argument method as an {@code @Finder} over a LIST property
+     * ({@code collectionPropertyId}), matching the argument against the element property
+     * {@code attributeName}. {@code multiValued} mirrors the return type ({@code List<E>} → true).
+     */
+    public void declareFinder(String methodName, String collectionPropertyId, String attributeName,
+            boolean multiValued) throws IOException {
+        CtMethod<?> m = requireMethodWithPosition(methodName, 1);
+        StringBuilder ann = new StringBuilder("@Finder(collection = \"")
+                .append(collectionPropertyId).append("\", attribute = \"").append(attributeName)
+                .append("\"");
+        if (multiValued) {
+            ann.append(", isMultiValued = true");
+        }
+        ann.append(")");
+        File javaFile = compilationUnit.getFile();
+        String source = readSource(javaFile);
+        source = SourceAnnotationEditor.insertAnnotationLine(source,
+                m.getPosition().getSourceStart(), ann.toString());
+        source = SourceAnnotationEditor.ensureImport(source, Finder.class.getName());
+        writeSource(javaFile, source);
+    }
+
+    private CtMethod<?> requireMethodWithPosition(String methodName, int paramCount) {
+        CtMethod<?> m = findDeclaredMethod(methodName, paramCount);
+        if (m == null) {
+            throw new IllegalStateException("No method " + methodName + " with " + paramCount
+                    + " param(s) on " + qualifiedName);
+        }
+        if (m.getPosition() == null || !m.getPosition().isValidPosition()) {
+            throw new IllegalStateException("No source position for method " + methodName);
+        }
+        return m;
+    }
+
+    private static String readSource(File f) throws IOException {
+        return new String(java.nio.file.Files.readAllBytes(f.toPath()),
+                java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private static void writeSource(File f, String content) throws IOException {
+        java.nio.file.Files.write(f.toPath(),
+                content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     /** Finds a declared method by name with exactly {@code paramCount} parameters. */
