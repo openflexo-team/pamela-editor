@@ -173,22 +173,20 @@ class PrettyPrinter {
                 sb.append(" (abstract)");
             }
             sb.append("\n");
-            // Custom methods
-            List<SourceCustomMethod> methods = impl.getCustomMethods();
-            if (!methods.isEmpty()) {
-                sb.append(childPrefix).append("    Custom methods:\n");
-                for (int i = 0; i < methods.size(); i++) {
-                    boolean lastMethod = (i == methods.size() - 1);
-                    SourceCustomMethod m = methods.get(i);
-                    String methodBranch = lastMethod
-                            ? childPrefix + "      └── "
-                            : childPrefix + "      ├── ";
-                    sb.append(methodBranch).append(m.getMethodName()).append("()");
-                    if (m.isOverride()) {
-                        sb.append(" [@Override]");
-                    }
-                    sb.append("\n");
-                }
+        }
+
+        // Operations (custom methods, sourced from the interface)
+        List<SourceCustomMethod> methods = entity.getDeclaredCustomMethods();
+        if (!methods.isEmpty()) {
+            sb.append(childPrefix).append("  Operations    :\n");
+            for (int i = 0; i < methods.size(); i++) {
+                boolean lastMethod = (i == methods.size() - 1);
+                SourceCustomMethod m = methods.get(i);
+                String methodBranch = lastMethod
+                        ? childPrefix + "    └── "
+                        : childPrefix + "    ├── ";
+                sb.append(methodBranch).append(m.getSignature())
+                        .append(" [").append(m.getKind()).append("]\n");
             }
         }
 

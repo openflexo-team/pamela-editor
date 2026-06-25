@@ -5,10 +5,19 @@
         constraints="twocols(location=left)" localize="true" />
     <CheckBox name="BuildCacheCB" index="11" data="data.buildCacheEnabled"
         constraints="twocols(location=right)" />
+    <Label name="CustomMethodFilterLabel" label="custom_method_filter" index="12"
+        constraints="twocols(location=left)" localize="true" />
+    <DropDown name="CustomMethodFilterDD" index="13" data="data.customMethodFilter"
+        iteratorClassName="org.openflexo.pamela.editor.model.CustomMethodFilter"
+        format="object.name" width="200"
+        constraints="twocols(expandHorizontally=true;location=right)" />
     <LocalizedDictionary>
         <Localized key="build_cache_enabled" lang="English" value="Enable build cache" />
         <Localized key="build_cache_enabled" lang="French" value="Activer le cache de construction" />
         <Localized key="build_cache_enabled" lang="Dutch" value="Build-cache inschakelen" />
+        <Localized key="custom_method_filter" lang="English" value="Operations shown" />
+        <Localized key="custom_method_filter" lang="French" value="Opérations affichées" />
+        <Localized key="custom_method_filter" lang="Dutch" value="Getoonde operaties" />
     </LocalizedDictionary>
     <Parameter name="title" value="Analysis" />
 </Inspector>

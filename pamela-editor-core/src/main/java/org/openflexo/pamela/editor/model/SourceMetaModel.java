@@ -14,13 +14,17 @@ import java.util.List;
 import java.util.Map;
 
 import org.openflexo.pamela.annotations.Adder;
+import org.openflexo.pamela.annotations.Deleter;
+import org.openflexo.pamela.annotations.Finder;
 import org.openflexo.pamela.annotations.Getter;
 import org.openflexo.pamela.annotations.ImplementationClass;
 import org.openflexo.pamela.annotations.Initializer;
 import org.openflexo.pamela.annotations.ModelEntity;
+import org.openflexo.pamela.annotations.Operation;
 import org.openflexo.pamela.annotations.Reindexer;
 import org.openflexo.pamela.annotations.Remover;
 import org.openflexo.pamela.annotations.Setter;
+import org.openflexo.pamela.annotations.Updater;
 
 import spoon.Launcher;
 import spoon.reflect.CtModel;
@@ -111,6 +115,9 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
     // Optional progress listener, notified during buildMetaModel() (parse + phases).
     // Null = no progress reporting. Called on the build thread (never the EDT).
     private BuildProgressListener progressListener;
+
+    // Which interface methods are surfaced as SourceCustomMethods (custom-method-design.md).
+    private CustomMethodFilter customMethodFilter = CustomMethodFilter.DEFAULT;
 
     // Public model
     private String name;
@@ -400,6 +407,20 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         this.buildCacheFile = buildCacheFile;
     }
 
+    /**
+     * Sets the filter deciding which interface methods are surfaced as
+     * {@link SourceCustomMethod}s. Must be set before {@code buildMetaModel()} to take effect;
+     * defaults to {@link CustomMethodFilter#DEFAULT}. A {@code null} value resets to the default.
+     */
+    public void setCustomMethodFilter(CustomMethodFilter filter) {
+        this.customMethodFilter = (filter != null) ? filter : CustomMethodFilter.DEFAULT;
+    }
+
+    /** The current custom-method visibility filter. */
+    public CustomMethodFilter getCustomMethodFilter() {
+        return customMethodFilter;
+    }
+
     /** The build-cache sidecar file, or {@code null} if caching is disabled. */
     public File getBuildCacheFile() {
         return buildCacheFile;
@@ -604,6 +625,10 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                 }
             }
 
+            // Build custom methods (operations) from the interface, after the impl class
+            // is resolved so the IMPLEMENTED_IN_IMPL filter and the impl link work.
+            buildCustomMethods(entity, ctType);
+
             // Validate initPolicy = REQUIRED + no initializer + not abstract
             if (!entity.isAbstract()
                     && entity.getInitializers().isEmpty()
@@ -676,6 +701,18 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                             + "' has no corresponding @Getter for property '" + reindexer.value() + "'"));
                 }
             }
+
+            Updater updater = method.getAnnotation(Updater.class);
+            if (updater != null) {
+                SourceModelProperty prop = entity.getDeclaredProperties().get(updater.value());
+                if (prop != null) {
+                    prop.registerUpdater(method);
+                } else {
+                    fireIssue(new Error("@Updater '" + method.getSimpleName()
+                            + "' on entity '" + entity.getQualifiedName()
+                            + "' has no corresponding @Getter for property '" + updater.value() + "'"));
+                }
+            }
         }
 
         // Validate adder/remover consistency per property
@@ -694,6 +731,68 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                 entity.addInitializer(new SourceModelInitializer(method, entity));
             }
         }
+    }
+
+    /**
+     * Builds the {@link SourceCustomMethod}s (operations) for an entity from its
+     * <em>interface</em> methods, applying the {@link CustomMethodFilter}.
+     *
+     * <p>Candidates = interface methods that are neither a property accessor nor an
+     * {@code @Initializer}. The kind is derived from the carried annotation
+     * ({@code @Finder}/{@code @Deleter}/{@code @Operation}, else PLAIN). See
+     * {@code custom-method-design.md}.</p>
+     */
+    private void buildCustomMethods(SourceModelEntity entity, CtType<?> ctType) {
+        SourceImplementationClass impl = entity.getImplementationClass();
+        for (CtMethod<?> method : ctType.getMethods()) {
+            if (isPropertyAccessor(method) || method.getAnnotation(Initializer.class) != null) {
+                continue;
+            }
+            if (method.getModifiers().contains(spoon.reflect.declaration.ModifierKind.STATIC)) {
+                continue;
+            }
+
+            SourceCustomMethod.Kind kind;
+            if (method.getAnnotation(Finder.class) != null) {
+                kind = SourceCustomMethod.Kind.FINDER;
+            } else if (method.getAnnotation(Deleter.class) != null) {
+                kind = SourceCustomMethod.Kind.DELETER;
+            } else if (method.getAnnotation(Operation.class) != null) {
+                kind = SourceCustomMethod.Kind.OPERATION;
+            } else {
+                kind = SourceCustomMethod.Kind.PLAIN;
+            }
+
+            CtMethod<?> implMethod = (impl != null) ? impl.findImplementingMethod(method) : null;
+            boolean implemented = implMethod != null && implMethod.getBody() != null;
+
+            boolean include;
+            switch (customMethodFilter) {
+                case ALL_INTERFACE_METHODS:
+                    include = true;
+                    break;
+                case IMPLEMENTED_IN_IMPL:
+                    include = implemented;
+                    break;
+                case PAMELA_ANNOTATED:
+                default:
+                    include = kind != SourceCustomMethod.Kind.PLAIN;
+                    break;
+            }
+            if (include) {
+                entity.addCustomMethod(new SourceCustomMethod(method, entity, kind, implMethod));
+            }
+        }
+    }
+
+    /** {@code true} if the method carries a PAMELA property-accessor annotation. */
+    private static boolean isPropertyAccessor(CtMethod<?> method) {
+        return method.getAnnotation(Getter.class) != null
+                || method.getAnnotation(Setter.class) != null
+                || method.getAnnotation(Adder.class) != null
+                || method.getAnnotation(Remover.class) != null
+                || method.getAnnotation(Reindexer.class) != null
+                || method.getAnnotation(Updater.class) != null;
     }
 
     /**

@@ -1137,14 +1137,12 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                 break;
             }
             case METHODS: {
-                if (e.getImplementationClass() != null) {
-                    List<SourceCustomMethod> l = e.getImplementationClass().getCustomMethods();
-                    for (int i = 0; i < l.size(); i++) {
-                        if (ev.isMethodHidden(methodIdentifier(l.get(i)))) {
-                            continue;
-                        }
-                        rows.add(new MemberRow(i, l.get(i).getMethodName() + "()"));
+                List<SourceCustomMethod> l = e.getDeclaredCustomMethods();
+                for (int i = 0; i < l.size(); i++) {
+                    if (ev.isMethodHidden(methodIdentifier(l.get(i)))) {
+                        continue;
                     }
+                    rows.add(new MemberRow(i, l.get(i).getMethodName() + "()"));
                 }
                 break;
             }
@@ -1352,8 +1350,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
             return ((SourceModelInitializer) member).getEntity();
         }
         if (member instanceof SourceCustomMethod) {
-            return ((SourceCustomMethod) member).getImplementationClass() != null
-                    ? ((SourceCustomMethod) member).getImplementationClass().getEntity() : null;
+            return ((SourceCustomMethod) member).getEntity();
         }
         return null;
     }
@@ -1908,10 +1905,7 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
                 return (item.index < l.size()) ? l.get(item.index) : null;
             }
             case METHODS: {
-                if (e.getImplementationClass() == null) {
-                    return null;
-                }
-                List<SourceCustomMethod> l = e.getImplementationClass().getCustomMethods();
+                List<SourceCustomMethod> l = e.getDeclaredCustomMethods();
                 return (item.index < l.size()) ? l.get(item.index) : null;
             }
             default:

@@ -15,7 +15,7 @@
         constraints="twocols(location=right)" localize="true" />
     <Label name="CustomMethodsLabel" label="custom_methods" index="6"
         constraints="twocols(location=left)" localize="true" />
-    <TextField name="CustomMethodsTF" index="7" data="data.customMethods.size" readOnly="true"
+    <TextField name="CustomMethodsTF" index="7" data="data.entity.declaredCustomMethods.size" readOnly="true"
         constraints="twocols(location=right)" columns="5" localize="true" />
     <LocalizedDictionary>
         <Localized key="simple_name" lang="English" value="Simple name" />

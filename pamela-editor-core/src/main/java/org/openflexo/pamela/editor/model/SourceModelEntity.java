@@ -81,6 +81,9 @@ public class SourceModelEntity implements SourceElement,
     // Lifecycle
     private final List<SourceModelInitializer> initializers;
 
+    // Operations — custom methods sourced from the interface (custom-method-design.md)
+    private final List<SourceCustomMethod> declaredCustomMethods;
+
     // Serialization
     private final String xmlTag;
 
@@ -101,6 +104,7 @@ public class SourceModelEntity implements SourceElement,
         this.declaredProperties = new LinkedHashMap<>();
         this.directSuperEntities = new ArrayList<>();
         this.initializers = new ArrayList<>();
+        this.declaredCustomMethods = new ArrayList<>();
         this.issues = new ArrayList<>();
 
         // Read @ModelEntity annotation parameters
@@ -149,6 +153,10 @@ public class SourceModelEntity implements SourceElement,
 
     void addInitializer(SourceModelInitializer initializer) {
         initializers.add(initializer);
+    }
+
+    void addCustomMethod(SourceCustomMethod method) {
+        declaredCustomMethods.add(method);
     }
 
     private void addIssue(Issue issue) {
@@ -799,6 +807,16 @@ public class SourceModelEntity implements SourceElement,
      */
     public List<SourceModelInitializer> getInitializers() {
         return Collections.unmodifiableList(initializers);
+    }
+
+    /**
+     * Custom methods (operations) declared on this entity's interface, after applying the
+     * meta-model's {@link CustomMethodFilter}. See {@code custom-method-design.md}.
+     *
+     * @return an unmodifiable list in declaration order
+     */
+    public List<SourceCustomMethod> getDeclaredCustomMethods() {
+        return Collections.unmodifiableList(declaredCustomMethods);
     }
 
     /**

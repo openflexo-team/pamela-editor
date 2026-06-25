@@ -221,15 +221,71 @@ public class TestModel2 {
         assertEquals("test.model2.FlexoProcessImpl", implClass.getQualifiedName());
         assertEquals("FlexoProcessImpl", implClass.getSimpleName());
         assertTrue("FlexoProcessImpl should be abstract", implClass.isAbstract());
+    }
 
-        // Custom methods: FlexoProcessImpl declares toString, getNodeNamed, getEdgeNamed
-        assertFalse("FlexoProcessImpl should have custom methods",
-                implClass.getCustomMethods().isEmpty());
+    // =========================================================================
+    // Custom methods (operations) — sourced from the interface, filter-driven
+    // =========================================================================
 
-        // Verify at least toString is present
-        boolean hasToString = implClass.getCustomMethods().stream()
-                .anyMatch(m -> "toString".equals(m.getMethodName()));
-        assertTrue("FlexoProcessImpl should have a toString custom method", hasToString);
+    /**
+     * Under the default {@code PAMELA_ANNOTATED} filter, FlexoProcess surfaces only its two
+     * {@code @Finder} operations (getNodeNamed, getNodesNamed). The unannotated interface
+     * method getEdgeNamed is hidden, and the impl-only {@code toString} is never a candidate
+     * (it is not declared on the interface). See {@code custom-method-design.md}.
+     */
+    @Test
+    public void testFlexoProcessOperationsDefaultFilter() {
+        SourceModelEntity flexoProcess = metaModelFromFlexoProcess.getEntity("test.model2.FlexoProcess");
+        java.util.Set<String> names = new java.util.HashSet<>();
+        for (SourceCustomMethod m : flexoProcess.getDeclaredCustomMethods()) {
+            names.add(m.getMethodName());
+        }
+        assertTrue("getNodeNamed (@Finder) should be an operation", names.contains("getNodeNamed"));
+        assertTrue("getNodesNamed (@Finder) should be an operation", names.contains("getNodesNamed"));
+        assertFalse("getEdgeNamed (unannotated) must be hidden under PAMELA_ANNOTATED",
+                names.contains("getEdgeNamed"));
+        assertFalse("toString must never be a candidate (impl-only, not on interface)",
+                names.contains("toString"));
+
+        for (SourceCustomMethod m : flexoProcess.getDeclaredCustomMethods()) {
+            if (m.getMethodName().startsWith("getNode")) {
+                assertEquals(SourceCustomMethod.Kind.FINDER, m.getKind());
+            }
+        }
+    }
+
+    /**
+     * Under {@code ALL_INTERFACE_METHODS}, the unannotated interface method getEdgeNamed is
+     * also surfaced, but the impl-only toString still is not (it is not on the interface).
+     */
+    @Test
+    public void testFlexoProcessOperationsAllInterfaceMethods() throws IOException {
+        File testDir = new File(System.getProperty("user.dir") + "/src/test/java/test");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(
+                new File(testDir, "model2-from-flexoprocess.pamela"), null,
+                CustomMethodFilter.ALL_INTERFACE_METHODS);
+        SourceModelEntity flexoProcess = mm.getEntity("test.model2.FlexoProcess");
+        java.util.Set<String> names = new java.util.HashSet<>();
+        for (SourceCustomMethod m : flexoProcess.getDeclaredCustomMethods()) {
+            names.add(m.getMethodName());
+        }
+        assertTrue("getEdgeNamed should be visible under ALL_INTERFACE_METHODS",
+                names.contains("getEdgeNamed"));
+        assertTrue("getNodeNamed should still be visible", names.contains("getNodeNamed"));
+        assertFalse("toString is impl-only and never a candidate", names.contains("toString"));
+    }
+
+    /**
+     * Edge: {@code toString} is overridden in EdgeImpl only (not declared on the Edge
+     * interface), so it must not appear as an operation under any filter.
+     */
+    @Test
+    public void testEdgeHasNoToStringOperation() {
+        SourceModelEntity edge = metaModelFromFlexoProcess.getEntity("test.model2.Edge");
+        for (SourceCustomMethod m : edge.getDeclaredCustomMethods()) {
+            assertFalse("Edge must not surface toString as an operation",
+                    "toString".equals(m.getMethodName()));
+        }
     }
 
     @Test

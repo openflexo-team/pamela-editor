@@ -83,7 +83,7 @@
             isEditable="false">
            	<Children id="53" name="initializers" data="entity.initializers" />
             <Children id="54" name="properties" data="entity.declaredProperties.values()" />
-            <Children id="56" name="methods" data="entity.implementationClass.customMethods" />
+            <Children id="56" name="methods" data="entity.declaredCustomMethods" />
         </BrowserElement>
 
         <BrowserElement id="40"

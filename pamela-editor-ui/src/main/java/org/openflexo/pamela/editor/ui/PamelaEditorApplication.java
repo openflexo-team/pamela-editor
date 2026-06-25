@@ -456,6 +456,21 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         org.openflexo.pamela.editor.ui.preferences.PreferencesManager.initialize(
                 PAMELA_EDITOR_LOCALIZATION::localizedForKey);
 
+        // Changing the custom-method visibility filter (Analysis preference) must refresh the
+        // operations shown in the browsers and diagrams → rebuild every open project, which
+        // re-reads the filter (currentCustomMethodFilter) during analysis.
+        org.openflexo.pamela.editor.ui.preferences.PreferencesManager.getInstance()
+                .addPreferenceChangeListener((node, key, oldValue, newValue) -> {
+                    if (org.openflexo.pamela.editor.ui.preferences.AnalysisPreferences
+                            .CUSTOM_METHOD_FILTER.equals(key)) {
+                        javax.swing.SwingUtilities.invokeLater(() -> {
+                            for (PamelaProject p : new ArrayList<>(projects)) {
+                                rebuildProject(p);
+                            }
+                        });
+                    }
+                });
+
         // --- Frame ---
         frame = new JFrame("PAMELA Editor");
         frame.setBounds(PamelaEditorPreferences.getFrameBounds());
@@ -746,7 +761,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                             setProgress(Math.max(0, Math.min(100, (int) Math.round(fraction * 100))));
                             publish(message);
                         };
-                SourceMetaModel metaModel = SourceMetaModelSerializer.load(pamelaFile, pl);
+                SourceMetaModel metaModel =
+                        SourceMetaModelSerializer.load(pamelaFile, pl, currentCustomMethodFilter());
                 logger.info(metaModel.prettyPrint());
 
                 // 2. Create project (lightweight)
@@ -1070,6 +1086,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                             publish(message);
                         };
                 metaModel.setProgressListener(pl);
+                metaModel.setCustomMethodFilter(currentCustomMethodFilter());
                 try {
                     metaModel.rebuildMetaModel();
                 } finally {
@@ -1400,6 +1417,24 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
      *
      * <p>For all other element types, the element itself is returned.</p>
      */
+    /**
+     * The current custom-method visibility filter, read from the Analysis preferences
+     * (falls back to {@link org.openflexo.pamela.editor.model.CustomMethodFilter#DEFAULT}
+     * if preferences are unavailable).
+     */
+    private org.openflexo.pamela.editor.model.CustomMethodFilter currentCustomMethodFilter() {
+        try {
+            org.openflexo.pamela.editor.ui.preferences.AnalysisPreferences analysis =
+                    org.openflexo.pamela.editor.ui.preferences.PreferencesManager.getInstance().analysis();
+            if (analysis != null && analysis.getCustomMethodFilter() != null) {
+                return analysis.getCustomMethodFilter();
+            }
+        } catch (Exception ignored) {
+            // preferences not available — fall back to default
+        }
+        return org.openflexo.pamela.editor.model.CustomMethodFilter.DEFAULT;
+    }
+
     private Object getDetailedBrowserElement(Object element) {
         if (element instanceof SourceModelProperty) {
             return ((SourceModelProperty) element).getModelEntity();
@@ -1411,8 +1446,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             return ((SourceImplementationClass) element).getEntity();
         }
         if (element instanceof SourceCustomMethod) {
-            SourceImplementationClass impl = ((SourceCustomMethod) element).getImplementationClass();
-            return impl != null ? impl.getEntity() : element;
+            SourceModelEntity owner = ((SourceCustomMethod) element).getEntity();
+            return owner != null ? owner : element;
         }
         return element;
     }
@@ -1450,9 +1485,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             targetSelection = element;
         } else if (element instanceof SourceCustomMethod) {
             // Custom methods have no equivalent node; fall back to the parent EntityView.
-            SourceImplementationClass impl = ((SourceCustomMethod) element).getImplementationClass();
-            if (impl != null) {
-                targetSelection = findEntityViewInDiagram(impl.getEntity(), diagram);
+            SourceModelEntity owner = ((SourceCustomMethod) element).getEntity();
+            if (owner != null) {
+                targetSelection = findEntityViewInDiagram(owner, diagram);
             }
         }
         // PamelaClassDiagram or null → targetSelection stays null (deselect)
@@ -1512,9 +1547,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             return element;
         }
         if (element instanceof SourceCustomMethod) {
-            SourceImplementationClass impl = ((SourceCustomMethod) element).getImplementationClass();
-            if (impl != null) {
-                return findEntityViewInDiagram(impl.getEntity(), diagram);
+            SourceModelEntity owner = ((SourceCustomMethod) element).getEntity();
+            if (owner != null) {
+                return findEntityViewInDiagram(owner, diagram);
             }
         }
         return null;

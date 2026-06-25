@@ -1,20 +1,8 @@
 package org.openflexo.pamela.editor.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.openflexo.pamela.annotations.Adder;
-import org.openflexo.pamela.annotations.Getter;
-import org.openflexo.pamela.annotations.Initializer;
-import org.openflexo.pamela.annotations.Remover;
-import org.openflexo.pamela.annotations.Reindexer;
-import org.openflexo.pamela.annotations.Setter;
-
 import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtMethod;
+import spoon.reflect.declaration.CtParameter;
 import spoon.reflect.declaration.ModifierKind;
 
 /**
@@ -43,7 +31,6 @@ public class SourceImplementationClass implements SourceElement {
     private final String qualifiedName;
     private final String simpleName;
     private final boolean abstractClass;
-    private final List<SourceCustomMethod> customMethods;
 
     /**
      * Constructs a {@code SourceImplementationClass}.
@@ -75,9 +62,6 @@ public class SourceImplementationClass implements SourceElement {
                     "Implementation class " + qualifiedName
                     + " does not implement @ModelEntity interface " + entity.getQualifiedName()));
         }
-
-        // Build custom methods: collect methods not annotated with PAMELA property annotations
-        this.customMethods = buildCustomMethods();
     }
 
     /**
@@ -104,73 +88,41 @@ public class SourceImplementationClass implements SourceElement {
     }
 
     /**
-     * Builds the list of {@link SourceCustomMethod}s: methods declared
-     * directly on this class that are not PAMELA property methods.
-     */
-    private List<SourceCustomMethod> buildCustomMethods() {
-        Set<String> pamelaNames = buildPamelaMethodNames();
-        Set<CtMethod<?>> methods = ctClass.getMethods();
-        List<SourceCustomMethod> result = new ArrayList<>();
-        for (CtMethod<?> method : methods) {
-            if (!isPamelaPropertyMethod(method) && !pamelaNames.contains(method.getSimpleName())) {
-                result.add(new SourceCustomMethod(method, this));
-            }
-        }
-        return Collections.unmodifiableList(result);
-    }
-
-    /**
-     * Builds the set of method names that are managed by PAMELA on the entity interface
-     * and all its super-interfaces, by walking the Spoon type hierarchy directly.
+     * Finds the method on this implementation class that implements the given entity-interface
+     * method, matched by simple name and parameter types. Used to source-navigate from an
+     * operation to its hand-written body and to drive the
+     * {@link CustomMethodFilter#IMPLEMENTED_IN_IMPL} filter.
      *
-     * <p>This must use Spoon (not {@link SourceModelEntity#getAllProperties()}) because
-     * it is called during Phase 2, before the {@code directSuperEntities} links are
-     * established in Phase 3. An impl-class method whose name appears here is a PAMELA
-     * property override (e.g. {@code @Override setStartNode()}) and must not be shown
-     * as a custom method, even when it carries no PAMELA annotation itself.</p>
+     * @param interfaceMethod a method declared on the entity interface
+     * @return the matching impl method, or {@code null} if the class does not declare it
      */
-    private Set<String> buildPamelaMethodNames() {
-        Set<String> names = new java.util.HashSet<>();
-        collectPamelaMethodNames(entity.getCtType(), names,
-                new java.util.HashSet<>());
-        return names;
-    }
-
-    /**
-     * Recursively collects the names of PAMELA-annotated methods from {@code type}
-     * and all its super-interfaces.
-     */
-    private static void collectPamelaMethodNames(spoon.reflect.declaration.CtType<?> type,
-            Set<String> names, Set<String> visited) {
-        if (type == null) return;
-        String qn = type.getQualifiedName();
-        if (!visited.add(qn)) return;
-        for (CtMethod<?> method : type.getMethods()) {
-            if (isPamelaPropertyMethod(method)) {
-                names.add(method.getSimpleName());
+    CtMethod<?> findImplementingMethod(CtMethod<?> interfaceMethod) {
+        for (CtMethod<?> m : ctClass.getMethods()) {
+            if (m.getSimpleName().equals(interfaceMethod.getSimpleName())
+                    && sameParameterTypes(m, interfaceMethod)) {
+                return m;
             }
         }
-        for (spoon.reflect.reference.CtTypeReference<?> superRef : type.getSuperInterfaces()) {
-            spoon.reflect.declaration.CtType<?> superType = superRef.getTypeDeclaration();
-            if (superType != null && !superType.isShadow()) {
-                collectPamelaMethodNames(superType, names, visited);
-            }
-        }
+        return null;
     }
 
-    /**
-     * Returns {@code true} if the method carries any PAMELA property annotation.
-     * This covers methods on the impl class that are themselves annotated (rare but
-     * possible). The name-based check in {@link #buildPamelaMethodNames()} handles
-     * {@code @Override} methods whose annotation lives on the interface.
-     */
-    private static boolean isPamelaPropertyMethod(CtMethod<?> method) {
-        return method.getAnnotation(Getter.class) != null
-                || method.getAnnotation(Setter.class) != null
-                || method.getAnnotation(Adder.class) != null
-                || method.getAnnotation(Remover.class) != null
-                || method.getAnnotation(Reindexer.class) != null
-                || method.getAnnotation(Initializer.class) != null;
+    /** Compares two methods' parameter lists by erased qualified type name. */
+    private static boolean sameParameterTypes(CtMethod<?> a, CtMethod<?> b) {
+        java.util.List<CtParameter<?>> pa = a.getParameters();
+        java.util.List<CtParameter<?>> pb = b.getParameters();
+        if (pa.size() != pb.size()) {
+            return false;
+        }
+        for (int i = 0; i < pa.size(); i++) {
+            spoon.reflect.reference.CtTypeReference<?> ta = pa.get(i).getType();
+            spoon.reflect.reference.CtTypeReference<?> tb = pb.get(i).getType();
+            String na = (ta != null) ? ta.getQualifiedName() : "";
+            String nb = (tb != null) ? tb.getQualifiedName() : "";
+            if (!na.equals(nb)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // -------------------------------------------------------------------------
@@ -208,14 +160,6 @@ public class SourceImplementationClass implements SourceElement {
      */
     public boolean isAbstract() {
         return abstractClass;
-    }
-
-    /**
-     * Methods declared in this class that are <em>not</em> managed by PAMELA
-     * (no {@code @Getter}, {@code @Setter}, etc.).
-     */
-    public List<SourceCustomMethod> getCustomMethods() {
-        return customMethods;
     }
 
     @Override

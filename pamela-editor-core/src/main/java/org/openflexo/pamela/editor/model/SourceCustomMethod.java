@@ -3,48 +3,64 @@ package org.openflexo.pamela.editor.model;
 import spoon.reflect.declaration.CtMethod;
 
 /**
- * Represents a method in a {@link SourceImplementationClass} that is
- * <em>not</em> managed by PAMELA (i.e., not annotated with {@code @Getter},
- * {@code @Setter}, {@code @Adder}, etc.).
+ * Represents a significant <em>operation</em> of a {@link SourceModelEntity} — a method
+ * declared on the entity <em>interface</em> that is not a PAMELA property accessor
+ * ({@code @Getter/@Setter/@Adder/@Remover/@Reindexer/@Updater}) and not an
+ * {@code @Initializer}.
  *
- * <p>This is where developer logic lives — {@code toString()}, computed helpers,
- * business rules, overrides of PAMELA-generated method signatures, etc.</p>
+ * <p>Conceptually the API of a PAMELA entity is its interface, so custom methods are sourced
+ * from the interface, not from the implementation class. The implementation class is, at most,
+ * a filter hint and a navigation target (see {@code custom-method-design.md}). Examples:
+ * {@code @Finder} queries, {@code @Deleter} destructors, {@code @Operation}-marked or plain
+ * hand-written business methods.</p>
  */
 public class SourceCustomMethod implements SourceElement {
 
-    // Internal Spoon reference — never exposed in the public API
-    private final CtMethod<?> ctMethod;
+    /** The kind of operation, derived from the carried PAMELA annotation (if any). */
+    public enum Kind {
+        /** Carries {@code @Finder}. */
+        FINDER,
+        /** Carries {@code @Deleter}. */
+        DELETER,
+        /** Carries {@code @Operation}. */
+        OPERATION,
+        /** No PAMELA operation annotation. */
+        PLAIN
+    }
 
-    private final SourceImplementationClass implementationClass;
+    // Internal Spoon references — never exposed in the public API
+    private final CtMethod<?> ctMethod;       // the interface method (identity)
+    private final CtMethod<?> ctImplMethod;   // optional impl method (navigation / filter), may be null
+
+    private final SourceModelEntity entity;
+    private final Kind kind;
     private final String methodName;
     private final String signature;
-    private final boolean override;
 
     /**
      * Constructs a {@code SourceCustomMethod}.
      *
-     * @param ctMethod            the Spoon method node (must not be {@code null})
-     * @param implementationClass the owning implementation class
+     * @param ctMethod     the interface method node (must not be {@code null}) — the identity
+     * @param entity       the owning {@code @ModelEntity}
+     * @param kind         the operation kind (from the carried annotation, or {@link Kind#PLAIN})
+     * @param ctImplMethod the matching implementation-class method, or {@code null} if none
      */
-    public SourceCustomMethod(CtMethod<?> ctMethod, SourceImplementationClass implementationClass) {
+    public SourceCustomMethod(CtMethod<?> ctMethod, SourceModelEntity entity, Kind kind,
+            CtMethod<?> ctImplMethod) {
         this.ctMethod = ctMethod;
-        this.implementationClass = implementationClass;
+        this.entity = entity;
+        this.kind = kind;
+        this.ctImplMethod = ctImplMethod;
         this.methodName = ctMethod.getSimpleName();
         this.signature = buildSignature(ctMethod);
-        this.override = ctMethod.getAnnotation(Override.class) != null;
     }
 
     /**
      * Builds a human-readable signature string from the Spoon method node,
-     * e.g. {@code "public String getGreeting()"}.
+     * e.g. {@code "Edge getEdgeNamed(String name)"}.
      */
     private static String buildSignature(CtMethod<?> method) {
         StringBuilder sb = new StringBuilder();
-        // Visibility modifier
-        sb.append(method.getVisibility() != null ? method.getVisibility().toString() : "");
-        if (sb.length() > 0) {
-            sb.append(' ');
-        }
         // Return type
         sb.append(method.getType() != null ? method.getType().getSimpleName() : "void");
         sb.append(' ');
@@ -70,31 +86,34 @@ public class SourceCustomMethod implements SourceElement {
     // Public API
     // -------------------------------------------------------------------------
 
-    /** The implementation class that owns this method. */
-    public SourceImplementationClass getImplementationClass() {
-        return implementationClass;
+    /** The {@code @ModelEntity} that declares this operation. */
+    public SourceModelEntity getEntity() {
+        return entity;
     }
 
-    /** The simple name of the method, e.g. {@code "getGreeting"}. */
+    /** The kind of operation (finder / deleter / operation / plain). */
+    public Kind getKind() {
+        return kind;
+    }
+
+    /** The simple name of the method, e.g. {@code "getEdgeNamed"}. */
     public String getMethodName() {
         return methodName;
     }
 
     /**
-     * A human-readable signature string, e.g.
-     * {@code "public String getGreeting()"}.
+     * A human-readable signature string, e.g. {@code "Edge getEdgeNamed(String name)"}.
      */
     public String getSignature() {
         return signature;
     }
 
     /**
-     * {@code true} if the method is annotated with {@code @Override},
-     * meaning it overrides a method declared on the {@code @ModelEntity}
-     * interface (or one of its supers).
+     * {@code true} if this operation has a hand-written body in the implementation class
+     * (used by the {@link CustomMethodFilter#IMPLEMENTED_IN_IMPL} filter and as a navigation hint).
      */
-    public boolean isOverride() {
-        return override;
+    public boolean isImplemented() {
+        return ctImplMethod != null && ctImplMethod.getBody() != null;
     }
 
     @Override

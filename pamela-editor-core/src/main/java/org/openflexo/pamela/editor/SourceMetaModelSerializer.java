@@ -84,6 +84,24 @@ public class SourceMetaModelSerializer {
     public static SourceMetaModel load(File pamelaFile,
             org.openflexo.pamela.editor.model.BuildProgressListener progressListener)
             throws IOException {
+        return load(pamelaFile, progressListener, null);
+    }
+
+    /**
+     * Loads a {@link SourceMetaModel} from a {@code .pamela} project file, reporting build
+     * progress and applying the given custom-method visibility filter.
+     *
+     * @param pamelaFile         the {@code .pamela} file to load; must exist
+     * @param progressListener   optional progress listener (may be {@code null})
+     * @param customMethodFilter which interface methods are surfaced as operations
+     *                           (may be {@code null} → default)
+     * @return a fully built {@link SourceMetaModel}
+     * @throws IOException as {@link #load(File)}
+     */
+    public static SourceMetaModel load(File pamelaFile,
+            org.openflexo.pamela.editor.model.BuildProgressListener progressListener,
+            org.openflexo.pamela.editor.model.CustomMethodFilter customMethodFilter)
+            throws IOException {
         if (!pamelaFile.exists()) {
             throw new IOException("Project file not found: " + pamelaFile.getAbsolutePath());
         }
@@ -142,6 +160,7 @@ public class SourceMetaModelSerializer {
                 org.openflexo.pamela.editor.model.SourceBuildCache.cacheFileFor(pamelaFile));
 
         mm.setProgressListener(progressListener);
+        mm.setCustomMethodFilter(customMethodFilter);
         mm.buildMetaModel();
         return mm;
     }
