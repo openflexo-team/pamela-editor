@@ -25,6 +25,7 @@ public interface Edge extends WKFObject {
 
 	public static final String START_NODE = "startNode";
 	public static final String END_NODE = "endNode";
+	public static final String NODES = "nodes";
 
 	@Initializer
 	public Edge init(@Parameter(START_NODE) AbstractNode start, @Parameter(END_NODE) AbstractNode end);
@@ -49,8 +50,8 @@ public interface Edge extends WKFObject {
 	@Getter(value = END_NODE, inverse = AbstractNode.INCOMING_EDGES)
 	@XMLElement(context = "End")
 	@CloningStrategy(StrategyType.IGNORE)
-	public AbstractNode getEndNode();
-
+	public AbstractNode getEndNode();	
+	
 	@Setter(END_NODE)
 	public void setEndNode(AbstractNode node);
 	
@@ -72,4 +73,20 @@ public interface Edge extends WKFObject {
 	void removeFromFoos(String node);
 
 	public int getNewProperty();
+	
+	@Getter(value = NODES, cardinality = Cardinality.LIST, inverse = WKFObject.PROCESS)
+	List<AbstractNode> getNodes();
+
+	@Setter(NODES)
+	void setNodes(List<AbstractNode> nodes);
+
+	@Adder(NODES)
+	@PastingPoint
+	void addToNodes(AbstractNode node);
+
+	@Remover(NODES)
+	void removeFromNodes(AbstractNode node);
+
+	AbstractNode getNodeWithName(String name);
+	
 }
