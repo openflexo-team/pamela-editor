@@ -57,9 +57,9 @@ public interface AbstractNode extends WKFObject {
 	@Remover(OUTGOING_EDGES)
 	public void removeFromOutgoingEdges(Edge edge);
 
+	@Embedded
 	@Getter(value = INCOMING_EDGES, cardinality = Cardinality.LIST, inverse = Edge.END_NODE)
 	@XMLElement(context = "Incoming")
-	@Embedded(closureConditions = { Edge.START_NODE }, deletionConditions = { Edge.START_NODE })
 	@CloningStrategy(StrategyType.CLONE)
 	public List<Edge> getIncomingEdges();
 

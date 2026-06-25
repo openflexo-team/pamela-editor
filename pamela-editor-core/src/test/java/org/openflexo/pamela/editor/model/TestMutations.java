@@ -794,6 +794,47 @@ public class TestMutations {
     }
 
     // =========================================================================
+    // Test 14c — editable @Getter parameters (isDerived / defaultValue)
+    // =========================================================================
+
+    @Test
+    public void testEditableGetterParameters() throws IOException {
+        File workDir = tmp.newFolder("testGetterParams");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        File foo1File = new File(srcCopy, "Foo1.java");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelProperty foo2 = mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("foo2");
+
+        final boolean[] fired = { false };
+        foo2.getPropertyChangeSupport().addPropertyChangeListener("derived", e -> fired[0] = true);
+
+        // --- isDerived ---
+        foo2.setDerived(true);
+        assertTrue(fired[0]);
+        assertTrue(foo2.isDerived());
+        assertTrue(new String(Files.readAllBytes(foo1File.toPath())).contains("isDerived = true"));
+
+        // --- defaultValue ---
+        foo2.setDefaultValue("hello");
+        assertTrue(new String(Files.readAllBytes(foo1File.toPath())).contains("defaultValue = \"hello\""));
+
+        // --- Rebuild reflects both ---
+        mm.rebuildMetaModel();
+        SourceModelProperty rebuilt = mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("foo2");
+        assertTrue("derived survives rebuild", rebuilt.isDerived());
+        assertEquals("hello", rebuilt.getDefaultValue());
+
+        // --- Clearing defaultValue removes the parameter ---
+        rebuilt.setDefaultValue("");
+        assertFalse(new String(Files.readAllBytes(foo1File.toPath())).contains("defaultValue"));
+    }
+
+    // =========================================================================
     // Test 15 — add / remove setter (SINGLE accessor toggle)
     // =========================================================================
 

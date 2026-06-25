@@ -114,33 +114,17 @@ public final class SourceAnnotationEditor {
         if (source == null || declarationStart < 0 || declarationStart > source.length()) {
             throw new IllegalArgumentException("Invalid declaration offset");
         }
-        int lineStart = source.lastIndexOf('\n', declarationStart - 1) + 1;
-        String token = "@" + simpleName;
-
-        // Scan the declaration's own line first (the Spoon position may point at the
-        // first annotation, which sits on this line), then walk upward over the
-        // contiguous annotation lines preceding it.
-        int scan = lineStart;
-        while (scan >= 0) {
-            int lineEnd = source.indexOf('\n', scan);
-            if (lineEnd < 0) {
-                lineEnd = source.length();
-            }
-            String line = source.substring(scan, lineEnd).trim();
-            if (line.equals(token) || line.startsWith(token + "(") || line.startsWith(token + " ")) {
-                int removeEnd = lineEnd < source.length() ? lineEnd + 1 : lineEnd;
-                return source.substring(0, scan) + source.substring(removeEnd);
-            }
-            // Above the declaration line, stop at the first non-annotation, non-blank line.
-            if (scan < lineStart && !line.isEmpty() && !line.startsWith("@")) {
-                break;
-            }
-            if (scan == 0) {
-                break;
-            }
-            scan = source.lastIndexOf('\n', scan - 2) + 1; // previous line start
+        int annAt = findAnnotation(source, declarationStart, simpleName);
+        if (annAt < 0) {
+            return source;
         }
-        return source;
+        int lineStart = source.lastIndexOf('\n', annAt - 1) + 1;
+        int lineEnd = source.indexOf('\n', annAt);
+        if (lineEnd < 0) {
+            lineEnd = source.length();
+        }
+        int removeEnd = lineEnd < source.length() ? lineEnd + 1 : lineEnd;
+        return source.substring(0, lineStart) + source.substring(removeEnd);
     }
 
     /**
@@ -222,30 +206,45 @@ public final class SourceAnnotationEditor {
      * {@code @}, or {@code -1}.
      */
     private static int findAnnotation(String source, int declarationStart, String simpleName) {
-        int lineStart = source.lastIndexOf('\n', declarationStart - 1) + 1;
         String token = "@" + simpleName;
-        int scan = lineStart;
-        while (scan >= 0) {
-            int lineEnd = source.indexOf('\n', scan);
+        int lineStart = source.lastIndexOf('\n', declarationStart - 1) + 1;
+
+        // The Spoon position of an annotated declaration may point at the FIRST
+        // annotation (so the target annotation can sit BELOW it, between it and the
+        // declaration) or at the declaration itself (annotations ABOVE). So scan the
+        // whole contiguous annotation block: walk up to its top, then down to the
+        // declaration, examining each line.
+        int top = lineStart;
+        while (top > 0) {
+            int prevStart = source.lastIndexOf('\n', top - 2) + 1;
+            String prevLine = source.substring(prevStart, Math.max(prevStart, top - 1)).trim();
+            if (prevLine.isEmpty() || prevLine.startsWith("@")) {
+                top = prevStart;
+            } else {
+                break;
+            }
+        }
+        int cur = top;
+        while (cur < source.length()) {
+            int lineEnd = source.indexOf('\n', cur);
             if (lineEnd < 0) {
                 lineEnd = source.length();
             }
-            String line = source.substring(scan, lineEnd);
+            String line = source.substring(cur, lineEnd);
             int idx = line.indexOf(token);
             if (idx >= 0) {
                 int after = idx + token.length();
-                // Ensure it's the whole annotation name (not @ModelEntityXxx).
+                // Whole annotation name (not @ModelEntityXxx) — next char must not
+                // continue the identifier.
                 if (after >= line.length() || !Character.isJavaIdentifierPart(line.charAt(after))) {
-                    return scan + idx;
+                    return cur + idx;
                 }
             }
-            if (scan < lineStart && !line.trim().isEmpty() && !line.trim().startsWith("@")) {
-                break;
+            String trimmed = line.trim();
+            if (!trimmed.isEmpty() && !trimmed.startsWith("@")) {
+                break; // reached the declaration line
             }
-            if (scan == 0) {
-                break;
-            }
-            scan = source.lastIndexOf('\n', scan - 2) + 1;
+            cur = lineEnd + 1;
         }
         return -1;
     }
@@ -337,20 +336,8 @@ public final class SourceAnnotationEditor {
     }
 
     private static boolean isAlreadyAnnotated(String source, int lineStart, String simpleName) {
-        String token = "@" + simpleName;
-        int cursor = lineStart;
-        while (cursor > 0) {
-            int prevLineStart = source.lastIndexOf('\n', cursor - 2) + 1;
-            String line = source.substring(prevLineStart, cursor).trim();
-            if (line.equals(token) || line.startsWith(token + "(") || line.startsWith(token + " ")) {
-                return true;
-            }
-            if (!line.isEmpty() && !line.startsWith("@")) {
-                return false; // reached the previous statement
-            }
-            cursor = prevLineStart;
-        }
-        return false;
+        // Scan the whole annotation block (handles multi-annotation declarations).
+        return findAnnotation(source, lineStart, simpleName) >= 0;
     }
 
     private static String leadingWhitespace(String source, int lineStart) {

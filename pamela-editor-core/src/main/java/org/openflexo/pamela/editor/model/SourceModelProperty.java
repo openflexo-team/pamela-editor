@@ -48,7 +48,11 @@ import spoon.reflect.reference.CtTypeReference;
  * </ul>
  * </p>
  */
-public class SourceModelProperty implements SourceElement {
+public class SourceModelProperty implements SourceElement,
+        org.openflexo.toolbox.HasPropertyChangeSupport {
+
+    private final java.beans.PropertyChangeSupport pcSupport =
+            new java.beans.PropertyChangeSupport(this);
 
     // Internal Spoon references — never exposed in the public API
     private final CtMethod<?> ctGetter;
@@ -76,20 +80,20 @@ public class SourceModelProperty implements SourceElement {
     private String reindexerMethodName;
     private String updaterMethodName;
 
-    // @Getter parameters
-    private final String defaultValue;
-    private final boolean derived;
-    private final boolean ignoreType;
-    private final boolean ignoreForEquality;
-    private final boolean allowsMultipleOccurrences;
+    // @Getter parameters — non-final: editable via the inspector (Lot 4)
+    private String defaultValue;
+    private boolean derived;
+    private boolean ignoreType;
+    private boolean ignoreForEquality;
+    private boolean allowsMultipleOccurrences;
     private final boolean stringConvertable;
 
     // Relationships
     private final String inversePropertyIdentifier;
     private SourceModelProperty inverseProperty; // resolved during Phase 3
 
-    // Embedding (@Embedded)
-    private final boolean embedded;
+    // Embedding (@Embedded) — non-final: editable via the inspector (Lot 4)
+    private boolean embedded;
     private final List<String> embeddedClosureConditions;
     private final List<String> embeddedDeletionConditions;
 
@@ -403,18 +407,105 @@ public class SourceModelProperty implements SourceElement {
      * @param embedded {@code true} to add {@code @Embedded}, {@code false} to remove it
      */
     public void setEmbedded(boolean embedded) throws IOException {
-        if (ctGetter.getPosition() == null || !ctGetter.getPosition().isValidPosition()) {
-            throw new IllegalStateException("No source position for getter " + getterMethodName);
+        if (embedded == this.embedded) {
+            return;
         }
+        requireGetterPosition();
         java.io.File javaFile = modelEntity.getCompilationUnit().getFile();
-        String source = new String(java.nio.file.Files.readAllBytes(javaFile.toPath()),
-                java.nio.charset.StandardCharsets.UTF_8);
+        String source = readSource(javaFile);
         int start = ctGetter.getPosition().getSourceStart();
         String edited = embedded
                 ? SourceAnnotationEditor.addAnnotation(source, start, "Embedded", Embedded.class.getName())
                 : SourceAnnotationEditor.removeAnnotation(source, start, "Embedded");
-        java.nio.file.Files.write(javaFile.toPath(),
-                edited.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        writeSource(javaFile, edited);
+        boolean old = this.embedded;
+        this.embedded = embedded;
+        pcSupport.firePropertyChange("embedded", old, embedded);
+    }
+
+    /**
+     * Editable inspector setters for {@code @Getter} parameters (Lot 4). Each
+     * mutates the source via a targeted annotation-parameter text edit, updates
+     * the in-memory field and fires a {@code PropertyChange} — but does <b>not</b>
+     * rebuild (the UI reacts to the event). See {@code model-editing-design.md §6}.
+     */
+    public void setDerived(boolean derived) throws IOException {
+        if (derived == this.derived) {
+            return;
+        }
+        editGetterParameter("isDerived", derived ? "true" : null);
+        boolean old = this.derived;
+        this.derived = derived;
+        pcSupport.firePropertyChange("derived", old, derived);
+    }
+
+    public void setIgnoreType(boolean ignoreType) throws IOException {
+        if (ignoreType == this.ignoreType) {
+            return;
+        }
+        editGetterParameter("ignoreType", ignoreType ? "true" : null);
+        boolean old = this.ignoreType;
+        this.ignoreType = ignoreType;
+        pcSupport.firePropertyChange("ignoreType", old, ignoreType);
+    }
+
+    public void setIgnoreForEquality(boolean ignoreForEquality) throws IOException {
+        if (ignoreForEquality == this.ignoreForEquality) {
+            return;
+        }
+        editGetterParameter("ignoreForEquality", ignoreForEquality ? "true" : null);
+        boolean old = this.ignoreForEquality;
+        this.ignoreForEquality = ignoreForEquality;
+        pcSupport.firePropertyChange("ignoreForEquality", old, ignoreForEquality);
+    }
+
+    public void setAllowsMultipleOccurrences(boolean allows) throws IOException {
+        if (allows == this.allowsMultipleOccurrences) {
+            return;
+        }
+        // Note the PAMELA annotation spelling: allowsMultipleOccurences.
+        editGetterParameter("allowsMultipleOccurences", allows ? "true" : null);
+        boolean old = this.allowsMultipleOccurrences;
+        this.allowsMultipleOccurrences = allows;
+        pcSupport.firePropertyChange("allowsMultipleOccurrences", old, allows);
+    }
+
+    public void setDefaultValue(String defaultValue) throws IOException {
+        String normalized = defaultValue == null ? "" : defaultValue;
+        if (normalized.equals(this.defaultValue)) {
+            return;
+        }
+        String valueExpr = normalized.isEmpty() ? null : "\"" + normalized + "\"";
+        editGetterParameter("defaultValue", valueExpr);
+        String old = this.defaultValue;
+        this.defaultValue = normalized;
+        pcSupport.firePropertyChange("defaultValue", old, normalized);
+    }
+
+    /** Targeted text edit of a {@code @Getter} parameter on this property's getter. */
+    private void editGetterParameter(String parameter, String valueExpr) throws IOException {
+        requireGetterPosition();
+        java.io.File javaFile = modelEntity.getCompilationUnit().getFile();
+        String source = readSource(javaFile);
+        String edited = SourceAnnotationEditor.setAnnotationParameter(
+                source, ctGetter.getPosition().getSourceStart(), "Getter", parameter, valueExpr);
+        writeSource(javaFile, edited);
+    }
+
+    private void requireGetterPosition() {
+        if (ctGetter.getPosition() == null || !ctGetter.getPosition().isValidPosition()) {
+            throw new IllegalStateException("No source position for getter " + getterMethodName);
+        }
+    }
+
+    private static String readSource(java.io.File f) throws IOException {
+        return new String(java.nio.file.Files.readAllBytes(f.toPath()),
+                java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private static void writeSource(java.io.File f, String content) throws IOException {
+        java.nio.file.Files.write(f.toPath(),
+                content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     /**
@@ -725,6 +816,16 @@ public class SourceModelProperty implements SourceElement {
      */
     public List<Issue> getIssues() {
         return Collections.unmodifiableList(issues);
+    }
+
+    @Override
+    public java.beans.PropertyChangeSupport getPropertyChangeSupport() {
+        return pcSupport;
+    }
+
+    @Override
+    public String getDeletedProperty() {
+        return null;
     }
 
     @Override

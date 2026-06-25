@@ -2152,15 +2152,34 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if (project == null) {
             return;
         }
-        // The Source* instance is replaced by the rebuild; re-anchor on the fresh one.
-        final String entityQN = element instanceof SourceModelEntity
-                ? ((SourceModelEntity) element).getQualifiedName() : null;
+        // The Source* instance is replaced by the rebuild; capture how to re-resolve
+        // the fresh element (by qualified name / property identifier) afterwards.
+        final SourceMetaModel model = project.getMetaModel();
+        final java.util.function.Supplier<Object> resolveFresh;
+        if (element instanceof SourceModelEntity) {
+            final String qn = ((SourceModelEntity) element).getQualifiedName();
+            resolveFresh = () -> model.getEntity(qn);
+        } else if (element instanceof SourceModelProperty) {
+            SourceModelProperty p = (SourceModelProperty) element;
+            final String entityQN = p.getModelEntity().getQualifiedName();
+            final String propertyId = p.getPropertyIdentifier();
+            resolveFresh = () -> {
+                SourceModelEntity e = model.getEntity(entityQN);
+                return e != null ? e.getDeclaredProperties().get(propertyId) : null;
+            };
+        } else {
+            resolveFresh = () -> null;
+        }
         rebuildProject(project, () -> {
-            if (entityQN != null && project.getMetaModel() != null) {
-                SourceModelEntity fresh = project.getMetaModel().getEntity(entityQN);
-                if (fresh != null) {
-                    selectInBrowser(fresh);
-                }
+            Object fresh = resolveFresh.get();
+            if (fresh instanceof SourceModelEntity) {
+                selectInBrowser(fresh); // re-anchor the browser too
+            } else if (fresh != null) {
+                // Property (and others): re-inspect with central-view navigation so the
+                // detailed browser is rebound to the parent entity (getDetailedBrowserElement)
+                // and the central source view refreshes to the edited file. (navigateCentralView
+                // = false routes to the diagram soft-selection branch, which is wrong here.)
+                setCurrentSelectedElement(fresh, true);
             }
         });
     }

@@ -63,6 +63,32 @@ public class TestSourceAnnotationEditor {
     }
 
     @Test
+    public void testRemoveAnnotationFromMultiAnnotationBlock() {
+        // Mirrors model2 AbstractNode.incomingEdges: @Embedded sits BELOW @Getter,
+        // and the declaration position points at the first annotation (@Getter).
+        String src = "\t@Getter(value = X, cardinality = Cardinality.LIST)\n"
+                + "\t@XMLElement(context = \"Incoming\")\n"
+                + "\t@Embedded(closureConditions = { Y })\n"
+                + "\t@CloningStrategy(StrategyType.CLONE)\n"
+                + "\tpublic List<Edge> getIncomingEdges();\n";
+        int declAtFirstAnnotation = src.indexOf("@Getter");
+        String out = SourceAnnotationEditor.removeAnnotation(src, declAtFirstAnnotation, "Embedded");
+        assertEquals("\t@Getter(value = X, cardinality = Cardinality.LIST)\n"
+                + "\t@XMLElement(context = \"Incoming\")\n"
+                + "\t@CloningStrategy(StrategyType.CLONE)\n"
+                + "\tpublic List<Edge> getIncomingEdges();\n", out);
+    }
+
+    @Test
+    public void testSetParameterOnFirstAnnotationOfBlock() {
+        String src = "\t@Getter(value = X)\n\t@Embedded\n\tList<Edge> getX();\n";
+        int declAtFirst = src.indexOf("@Getter");
+        String out = SourceAnnotationEditor.setAnnotationParameter(
+                src, declAtFirst, "Getter", "isDerived", "true");
+        assertEquals("\t@Getter(value = X, isDerived = true)\n\t@Embedded\n\tList<Edge> getX();\n", out);
+    }
+
+    @Test
     public void testAnnotationNotFoundReturnsOriginal() {
         String src = "@ModelEntity\npublic interface Foo {\n}\n";
         String out = SourceAnnotationEditor.setAnnotationParameter(
