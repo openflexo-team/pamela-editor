@@ -212,7 +212,7 @@ public class SourceCodeView extends JPanel {
         try {
             int offset = textArea.getLineStartOffset(line - 1);
             textArea.setCaretPosition(offset);
-            textArea.scrollRectToVisible(textArea.modelToView(offset));
+            scrollToOffset(offset);
             textArea.requestFocus();
         } catch (BadLocationException e) {
             // line out of range — ignore silently
@@ -266,8 +266,23 @@ public class SourceCodeView extends JPanel {
     private void scrollToOffset(int offset) {
         try {
             textArea.setCaretPosition(offset);
-            textArea.scrollRectToVisible(
-                    textArea.modelToView(offset));
+            java.awt.Rectangle rect = textArea.modelToView(offset);
+            if (rect != null) {
+                textArea.scrollRectToVisible(rect);
+            } else {
+                // The text area is not laid out yet (freshly created during a rebuild):
+                // modelToView returns null. Retry once after the layout pass.
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    try {
+                        java.awt.Rectangle r = textArea.modelToView(offset);
+                        if (r != null) {
+                            textArea.scrollRectToVisible(r);
+                        }
+                    } catch (BadLocationException ignored) {
+                        // offset out of range — ignore
+                    }
+                });
+            }
         } catch (BadLocationException e) {
             // safe to ignore
         }
