@@ -1661,6 +1661,19 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             return;
         }
 
+        // SourceModelInitializer / SourceCustomMethod: no dedicated view — show the parent
+        // entity's source and highlight the method declaration (ui-design.md §5.3).
+        if (element instanceof SourceModelInitializer) {
+            SourceModelInitializer init = (SourceModelInitializer) element;
+            highlightMethodInEntityView(init.getEntity(), init.getDeclarationLine());
+            return;
+        }
+        if (element instanceof SourceCustomMethod) {
+            SourceCustomMethod method = (SourceCustomMethod) element;
+            highlightMethodInEntityView(method.getEntity(), method.getDeclarationLine());
+            return;
+        }
+
         // Already showing this element — do nothing
         if (element == currentHistoryElement) {
             return;
@@ -1676,6 +1689,24 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         currentHistoryElement = element;
         showViewForElement(element);
         updateNavButtons();
+    }
+
+    /**
+     * Shows the given entity's source-code view and highlights the method declaration at the
+     * given 1-based line. Used for elements without a dedicated central view (initializers,
+     * custom methods); the line disambiguates overloaded methods.
+     */
+    private void highlightMethodInEntityView(SourceModelEntity entity, int declarationLine) {
+        if (entity == null) {
+            return;
+        }
+        openOrSwitchCentralView(entity);
+        JComponent view = viewCache.get(entity);
+        if (view instanceof SourceCodeView) {
+            ((SourceCodeView) view).highlightLine(declarationLine);
+        }
+        // Reflect the selection in the SpoonOutlineView (context panel).
+        contextPanel.selectMethodAtLine(declarationLine);
     }
 
     /**

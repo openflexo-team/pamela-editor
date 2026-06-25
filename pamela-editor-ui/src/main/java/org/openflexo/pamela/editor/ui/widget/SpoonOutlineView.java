@@ -189,7 +189,25 @@ public class SpoonOutlineView extends FIBJPanel<SpoonOutlineModel> {
         if (prop.getUpdaterMethodName()   != null) methodNames.add(prop.getUpdaterMethodName());
 
         if (methodNames.isEmpty()) return;
+        selectMatchingMethods(m -> methodNames.contains(m.getSimpleName()));
+    }
 
+    /**
+     * Selects, in the outline tree, the single method declaration at the given 1-based source
+     * line. Unambiguous for overloaded initializers / operations (same name, distinct lines).
+     * Used for an initializer or a custom method (operation) selected in the DetailedBrowser.
+     *
+     * @param line 1-based declaration line; values &lt; 1 are a no-op
+     */
+    public void selectMethodAtLine(int line) {
+        if (line < 1) return;
+        selectMatchingMethods(m -> m.getPosition() != null
+                && m.getPosition().isValidPosition()
+                && m.getPosition().getLine() == line);
+    }
+
+    /** Selects every outline node that is a {@link CtMethod} matching the predicate. */
+    private void selectMatchingMethods(java.util.function.Predicate<CtMethod<?>> match) {
         SwingUtilities.invokeLater(() -> {
             JTree tree = findTree(SpoonOutlineView.this);
             if (tree == null) return;
@@ -201,11 +219,8 @@ public class SpoonOutlineView extends FIBJPanel<SpoonOutlineModel> {
                 Object last = path.getLastPathComponent();
                 if (last instanceof BrowserCell) {
                     Object obj = ((BrowserCell) last).getRepresentedObject();
-                    if (obj instanceof CtMethod) {
-                        String name = ((CtMethod<?>) obj).getSimpleName();
-                        if (methodNames.contains(name)) {
-                            matchingPaths.add(path);
-                        }
+                    if (obj instanceof CtMethod && match.test((CtMethod<?>) obj)) {
+                        matchingPaths.add(path);
                     }
                 }
             }

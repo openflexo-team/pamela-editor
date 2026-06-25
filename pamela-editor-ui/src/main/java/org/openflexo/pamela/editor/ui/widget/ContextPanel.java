@@ -134,6 +134,17 @@ public class ContextPanel extends JPanel {
         outlineView.selectMethodsForProperty(prop);
     }
 
+    /**
+     * Selects the method declaration at the given 1-based source line in the SpoonOutlineView,
+     * if the outline card is active (an entity source-code view is shown). Used when an
+     * initializer or a custom method (operation) is selected in the DetailedBrowser; the line
+     * disambiguates overloaded methods.
+     */
+    public void selectMethodAtLine(int line) {
+        if (!(activeElement instanceof SourceModelEntity)) return;
+        outlineView.selectMethodAtLine(line);
+    }
+
     // -------------------------------------------------------------------------
     // Soft-selection update (diagram canvas click, no central-view switch)
     // -------------------------------------------------------------------------

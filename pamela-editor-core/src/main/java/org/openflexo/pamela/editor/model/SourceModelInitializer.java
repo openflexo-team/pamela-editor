@@ -24,6 +24,7 @@ public class SourceModelInitializer implements SourceElement {
     private final SourceModelEntity entity;
     private final String methodName;
     private final List<String> parameters;
+    private final String signature;
 
     /**
      * Constructs a {@code SourceModelInitializer} from a Spoon method node.
@@ -36,6 +37,7 @@ public class SourceModelInitializer implements SourceElement {
         this.entity = entity;
         this.methodName = ctMethod.getSimpleName();
         this.parameters = extractParameters(ctMethod);
+        this.signature = buildSignature(ctMethod);
     }
 
     /**
@@ -49,6 +51,26 @@ public class SourceModelInitializer implements SourceElement {
             result.add(annotation != null ? annotation.value() : "");
         }
         return Collections.unmodifiableList(result);
+    }
+
+    /**
+     * Builds a human-readable signature in the same format as {@link SourceCustomMethod}:
+     * method name and parameter <em>names only</em> (no return type, no parameter types),
+     * e.g. {@code "init(start, end)"}.
+     */
+    private static String buildSignature(CtMethod<?> method) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(method.getSimpleName()).append('(');
+        boolean first = true;
+        for (CtParameter<?> param : method.getParameters()) {
+            if (!first) {
+                sb.append(", ");
+            }
+            sb.append(param.getSimpleName());
+            first = false;
+        }
+        sb.append(')');
+        return sb.toString();
     }
 
     // -------------------------------------------------------------------------
@@ -78,6 +100,23 @@ public class SourceModelInitializer implements SourceElement {
     /** Formatted label, e.g. {@code "init(flexoId,name)"}. */
     public String getDisplayLabel() {
         return methodName + "(" + String.join(",", parameters) + ")";
+    }
+
+    /**
+     * Human-readable signature aligned with {@link SourceCustomMethod#getSignature()}:
+     * return type, name, and parameter names only, e.g. {@code "Edge init(start, end)"}.
+     */
+    public String getSignature() {
+        return signature;
+    }
+
+    /**
+     * The 1-based line of this method's declaration in its source file, or {@code -1} if the
+     * position is unavailable. Disambiguates overloaded initializers (same name, distinct lines).
+     */
+    public int getDeclarationLine() {
+        return (ctMethod.getPosition() != null && ctMethod.getPosition().isValidPosition())
+                ? ctMethod.getPosition().getLine() : -1;
     }
 
     @Override

@@ -56,25 +56,21 @@ public class SourceCustomMethod implements SourceElement {
     }
 
     /**
-     * Builds a human-readable signature string from the Spoon method node,
-     * e.g. {@code "Edge getEdgeNamed(String name)"}.
+     * Builds a human-readable signature string from the Spoon method node — method name and
+     * parameter <em>names only</em> (no return type, no parameter types),
+     * e.g. {@code "getEdgeNamed(name)"}.
      */
     private static String buildSignature(CtMethod<?> method) {
         StringBuilder sb = new StringBuilder();
-        // Return type
-        sb.append(method.getType() != null ? method.getType().getSimpleName() : "void");
-        sb.append(' ');
         // Method name
         sb.append(method.getSimpleName());
-        // Parameters
+        // Parameters — names only
         sb.append('(');
         boolean first = true;
         for (spoon.reflect.declaration.CtParameter<?> param : method.getParameters()) {
             if (!first) {
                 sb.append(", ");
             }
-            sb.append(param.getType() != null ? param.getType().getSimpleName() : "?");
-            sb.append(' ');
             sb.append(param.getSimpleName());
             first = false;
         }
@@ -106,6 +102,15 @@ public class SourceCustomMethod implements SourceElement {
      */
     public String getSignature() {
         return signature;
+    }
+
+    /**
+     * The 1-based line of this method's declaration on the interface, or {@code -1} if the
+     * position is unavailable. Disambiguates overloaded operations (same name, distinct lines).
+     */
+    public int getDeclarationLine() {
+        return (ctMethod.getPosition() != null && ctMethod.getPosition().isValidPosition())
+                ? ctMethod.getPosition().getLine() : -1;
     }
 
     /**

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.model.SourceCustomMethod" name="Inspector">
+    <Label name="MethodNameLabel" label="method_name" index="0"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="MethodNameTF" index="1" data="data.methodName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Label name="SignatureLabel" label="signature" index="2"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="SignatureTF" index="3" data="data.signature" readOnly="true"
+        constraints="twocols(expandHorizontally=true;location=right)" columns="20" localize="true" />
+    <Label name="KindLabel" label="kind" index="4"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="KindTF" index="5" data="data.kind.toString" readOnly="true"
+        constraints="twocols(location=right)" columns="10" localize="true" />
+    <Label name="ImplementedLabel" label="implemented" index="6"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="ImplementedCB" index="7" data="data.implemented" readOnly="true"
+        constraints="twocols(location=right)" />
+    <LocalizedDictionary>
+        <Localized key="method_name" lang="English" value="Method name" />
+        <Localized key="method_name" lang="French" value="Nom de méthode" />
+        <Localized key="signature" lang="English" value="Signature" />
+        <Localized key="signature" lang="French" value="Signature" />
+        <Localized key="kind" lang="English" value="Kind" />
+        <Localized key="kind" lang="French" value="Type" />
+        <Localized key="implemented" lang="English" value="Implemented in impl class" />
+        <Localized key="implemented" lang="French" value="Implémentée dans la classe d'impl" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Operation" />
+</Inspector>

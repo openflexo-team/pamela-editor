@@ -108,17 +108,46 @@ public class SourceCodeView extends JPanel {
      * @param property the property whose methods should be highlighted
      */
     public void highlightProperty(SourceModelProperty property) {
-        clearHighlights();
         if (property == null) {
+            clearHighlights();
             return;
         }
+        highlightMethodNames(gatherMethodNames(property));
+    }
+
+    /**
+     * Highlights the given 1-based source line and scrolls to it. This is unambiguous for
+     * overloaded methods (same name, distinct lines), so it is used when an initializer or a
+     * custom method (operation) is selected in the DetailedBrowser.
+     *
+     * @param line 1-based line number; values &lt; 1 clear the highlights
+     */
+    public void highlightLine(int line) {
+        clearHighlights();
+        if (line < 1) {
+            return;
+        }
+        try {
+            int start = textArea.getLineStartOffset(line - 1);
+            int end = textArea.getLineEndOffset(line - 1);
+            Object tag = textArea.getHighlighter().addHighlight(start, end,
+                    new javax.swing.text.DefaultHighlighter.DefaultHighlightPainter(HIGHLIGHT_COLOR));
+            highlightTags.add(tag);
+            scrollToOffset(start);
+        } catch (BadLocationException e) {
+            // line out of range — ignore silently
+        }
+    }
+
+    /** Highlights the declaration line of each named method and scrolls to the first found. */
+    private void highlightMethodNames(List<String> methodNames) {
+        clearHighlights();
 
         String source = textArea.getText();
         if (source == null || source.isEmpty()) {
             return;
         }
 
-        List<String> methodNames = gatherMethodNames(property);
         int firstOffset = -1;
 
         for (String methodName : methodNames) {
