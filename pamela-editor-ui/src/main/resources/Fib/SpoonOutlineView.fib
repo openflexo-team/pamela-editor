@@ -26,6 +26,7 @@
         name="outlineBrowser"
         selected="controller.outlineSelection"
         clickAction="controller.onElementSelected(outlineBrowser.selected)"
+        rightClickAction="controller.rightClick(outlineBrowser.selected,event)"
         selectionMode="DiscontiguousTreeSelection"
         rootVisible="false"
         showFooter="false"

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Shared form for the method-level "declare as setter/updater/adder/remover/reindexer" actions
+  (DeclareAccessorAction subtypes). The only parameter is the target property; candidates are
+  computed from the method signature (model-editing-design.md §3.3).
+-->
+<Panel dataClassName="org.openflexo.pamela.editor.ui.action.DeclareAccessorAction"
+       controllerClassName="org.openflexo.gina.controller.FIBController"
+       layout="twocols" name="AttachAccessorForm" border="empty">
+
+  <Label name="propLabel" label="Target property:" localize="false" align="left"
+         index="0" constraints="twocols(location=left)" />
+  <DropDown name="propDD" data="data.targetProperty" list="data.candidates"
+         iteratorClassName="org.openflexo.pamela.editor.model.SourceModelProperty"
+         format="object.propertyIdentifier" showReset="false" width="240"
+         index="1" constraints="twocols(expandHorizontally=true;location=right)" />
+</Panel>

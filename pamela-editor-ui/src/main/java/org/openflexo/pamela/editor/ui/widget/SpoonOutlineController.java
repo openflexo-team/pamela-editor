@@ -1,5 +1,8 @@
 package org.openflexo.pamela.editor.ui.widget;
 
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -7,9 +10,14 @@ import java.util.List;
 import javax.swing.ImageIcon;
 
 import org.openflexo.gina.model.FIBComponent;
+import org.openflexo.pamela.editor.model.SourceCustomMethod;
+import org.openflexo.pamela.editor.model.SourceModelEntity;
+import org.openflexo.pamela.editor.model.SourceModelInitializer;
+import org.openflexo.pamela.editor.model.SourceModelProperty;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
 import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
+import org.openflexo.pamela.editor.ui.action.PromotableMethod;
 
 import spoon.reflect.cu.SourcePosition;
 import spoon.reflect.declaration.CtAnnotationType;
@@ -50,12 +58,24 @@ public class SpoonOutlineController extends PamelaEditorFIBController<SpoonOutli
      */
     private Object outlineSelection;
 
+    /**
+     * The {@code Source*} element whose outline is currently shown
+     * ({@link SourceModelEntity} or {@link org.openflexo.pamela.editor.model.SourceJavaFile}).
+     * Set by {@link SpoonOutlineView} on every {@code showEntity}/{@code showJavaFile}/{@code clear};
+     * the authoritative facet a right-clicked outline node maps to (see {@link #rightClick}).
+     */
+    private Object activeSourceFacet;
+
     public SpoonOutlineController(FIBComponent rootComponent) {
         super(rootComponent);
     }
 
     public void setApplication(PamelaEditorApplication application) {
         this.application = application;
+    }
+
+    public void setActiveSourceFacet(Object facet) {
+        this.activeSourceFacet = facet;
     }
 
     public Object getOutlineSelection() {
@@ -111,6 +131,109 @@ public class SpoonOutlineController extends PamelaEditorFIBController<SpoonOutli
         if (pos != null && pos.isValidPosition()) {
             application.scrollSourceViewToLine(pos.getLine());
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Contextual menu (called from FIB rightClickAction)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Builds the contextual menu for a right-clicked outline node, mapping the Spoon node
+     * to the {@code Source*} facet(s) it represents and delegating to the application's
+     * shared menu builder — so the outline offers the same "promote" / refactor / delete
+     * actions as the browsers and the diagram (model-editing-design.md §3.3, ui-design.md §18.4).
+     */
+    public void rightClick(Object selected, Object event) {
+        if (application == null) return;
+        List<Object> facets = facetsFor(selected);
+        if (facets.isEmpty()) return;
+        if (event instanceof MouseEvent) {
+            MouseEvent me = (MouseEvent) event;
+            application.showContextualMenuFor(facets, me.getComponent(), me.getX(), me.getY());
+        } else {
+            Point p = MouseInfo.getPointerInfo().getLocation();
+            application.showContextualMenuFor(facets, null, p.x, p.y);
+        }
+    }
+
+    /**
+     * Maps a right-clicked outline node to the {@code Source*} facet(s) for the menu.
+     *
+     * <ul>
+     *   <li>A {@code CtMethod} clicked inside an entity → the <em>underlying PAMELA concept</em>
+     *       the method backs (its {@link SourceModelProperty}, {@link SourceModelInitializer} or
+     *       {@link SourceCustomMethod}), so the menu offers the actions of <em>that member</em>
+     *       (rename/retype/delete property, hide on diagram…) — <strong>not</strong> the entity's
+     *       actions. A plain, not-yet-PAMELA method maps to a {@link PromotableMethod} facet, on
+     *       which the method-level "promote" actions decide applicability by <strong>signature</strong>
+     *       (getter→new property, declare as setter/adder/remover/reindexer/updater of an existing
+     *       property — §3.3). This mirrors a diagram compartment row, which maps to its member
+     *       facet only (ui-design.md §18.4).</li>
+     *   <li>The type node ({@code CtType}) → the source element whose outline is shown
+     *       ({@link SourceModelEntity} for entity actions, or a {@code SourceJavaFile} for
+     *       "Declare as PAMELA entity" / "Add as root type").</li>
+     *   <li>Any other node (field, constructor, enum value…) → no menu: these back no PAMELA
+     *       concept.</li>
+     * </ul>
+     */
+    private List<Object> facetsFor(Object selected) {
+        if (activeSourceFacet == null) {
+            return Collections.emptyList();
+        }
+        if (selected instanceof CtMethod && activeSourceFacet instanceof SourceModelEntity) {
+            Object concept = resolveMethodConcept((SourceModelEntity) activeSourceFacet,
+                    (CtMethod<?>) selected);
+            return concept != null ? Collections.singletonList(concept) : Collections.emptyList();
+        }
+        if (selected instanceof CtType) {
+            return Collections.singletonList(activeSourceFacet);
+        }
+        // Fields, constructors, enum values… have no underlying PAMELA concept → no menu.
+        return Collections.emptyList();
+    }
+
+    /**
+     * Resolves the PAMELA concept a clicked interface method backs, within {@code entity}:
+     * a property (matched by accessor method name — unique within an entity), an initializer or
+     * a custom method (matched by declaration line — disambiguates overloads). When the method
+     * backs no existing concept it maps to a {@link PromotableMethod} facet (carrying the
+     * signature) so the method-level "promote" actions can decide applicability by signature.
+     */
+    private static Object resolveMethodConcept(SourceModelEntity entity, CtMethod<?> m) {
+        String name = m.getSimpleName();
+
+        // 1. Property accessor (getter/setter/adder/remover/reindexer/updater)
+        for (SourceModelProperty p : entity.getDeclaredProperties().values()) {
+            if (name.equals(p.getGetterMethodName())
+                    || name.equals(p.getSetterMethodName())
+                    || name.equals(p.getAdderMethodName())
+                    || name.equals(p.getRemoverMethodName())
+                    || name.equals(p.getReindexerMethodName())
+                    || name.equals(p.getUpdaterMethodName())) {
+                return p;
+            }
+        }
+
+        int line = (m.getPosition() != null && m.getPosition().isValidPosition())
+                ? m.getPosition().getLine() : -1;
+
+        // 2. Initializer (overloads disambiguated by declaration line)
+        if (line > 0) {
+            for (SourceModelInitializer init : entity.getInitializers()) {
+                if (init.getDeclarationLine() == line) {
+                    return init;
+                }
+            }
+            // 3. Custom method / operation (finder, deleter, operation, plain)
+            for (SourceCustomMethod cm : entity.getDeclaredCustomMethods()) {
+                if (cm.getDeclarationLine() == line) {
+                    return cm;
+                }
+            }
+        }
+
+        // 4. A plain, not-yet-PAMELA method → a promote facet (applicability decided by signature).
+        return new PromotableMethod(entity, m);
     }
 
     // =========================================================================

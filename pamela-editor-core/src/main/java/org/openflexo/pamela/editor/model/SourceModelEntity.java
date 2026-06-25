@@ -15,8 +15,10 @@ import org.openflexo.pamela.annotations.Getter;
 import org.openflexo.pamela.annotations.Getter.Cardinality;
 import org.openflexo.pamela.annotations.ModelEntity;
 import org.openflexo.pamela.annotations.ModelEntity.InitPolicy;
+import org.openflexo.pamela.annotations.Reindexer;
 import org.openflexo.pamela.annotations.Remover;
 import org.openflexo.pamela.annotations.Setter;
+import org.openflexo.pamela.annotations.Updater;
 import org.openflexo.pamela.annotations.XMLElement;
 
 import spoon.reflect.declaration.CtAnnotation;
@@ -546,7 +548,22 @@ public class SourceModelEntity implements SourceElement,
 
     // --- promote helpers -----------------------------------------------------
 
+    /**
+     * Signature-based check (no name convention — model-editing-design.md §3.3): a SINGLE
+     * getter candidate is any no-arg, non-{@code void}, non-{@code List} method not already
+     * carrying a PAMELA accessor annotation. Used by the entity-level "Promote method to
+     * property" dialog (which creates a SINGLE property); LIST getters are promoted from the
+     * method-level action via {@link #promoteGetterToProperty}.
+     */
     private boolean isPromotableGetter(CtMethod<?> m) {
+        if (!isUnannotatedNoArgValueMethod(m)) {
+            return false;
+        }
+        return !"java.util.List".equals(m.getType().getQualifiedName());
+    }
+
+    /** Signature test: no-arg, non-{@code void} return, no existing PAMELA accessor annotation. */
+    private static boolean isUnannotatedNoArgValueMethod(CtMethod<?> m) {
         if (!m.getParameters().isEmpty()) {
             return false;
         }
@@ -554,19 +571,120 @@ public class SourceModelEntity implements SourceElement,
         if (returnType == null || "void".equals(returnType.getQualifiedName())) {
             return false;
         }
-        if ("java.util.List".equals(returnType.getQualifiedName())) {
-            return false; // LIST promote deferred
-        }
-        String name = m.getSimpleName();
-        boolean getterShaped = (name.startsWith("get") && name.length() > 3)
-                || (name.startsWith("is") && name.length() > 2);
-        if (!getterShaped) {
-            return false;
-        }
         return m.getAnnotation(Getter.class) == null
                 && m.getAnnotation(Setter.class) == null
                 && m.getAnnotation(Adder.class) == null
                 && m.getAnnotation(Remover.class) == null;
+    }
+
+    /**
+     * Promotes an existing no-arg getter into a new PAMELA property by inserting an
+     * {@code @Getter} annotation — the method-level "promote" path
+     * (model-editing-design.md §3.3). When {@code list} is true the property is declared
+     * {@code cardinality = Getter.Cardinality.LIST} (the element type is read by PAMELA from
+     * the {@code List<T>} return type). Mutators (setter / adder / remover…) are attached
+     * separately via the dedicated method-level actions.
+     *
+     * <p>Targeted text edit (insert annotation line + import), like
+     * {@link #promoteMethodToProperty}; minimal-diff and Sniper-safe. The new
+     * {@link SourceModelProperty} materialises on the next rebuild (caller-triggered).</p>
+     */
+    public void promoteGetterToProperty(String getterName, String propertyIdentifier, boolean list)
+            throws IOException {
+        promoteGetterToProperty(getterName, propertyIdentifier, list,
+                java.util.Collections.emptyMap());
+    }
+
+    /**
+     * Promotes a getter into a new property and, in the <strong>same</strong> targeted text edit,
+     * attaches existing sibling methods as the property's other accessors
+     * ({@code extraAccessors}: annotation class → method name) — the "promote a getter and pull in
+     * its setter/adder/remover/reindexer" path (model-editing-design.md §3.3a). Each accessor's
+     * parameter count is derived from its role ({@code @Reindexer} = 2, the others = 1). All
+     * annotations are inserted in one descending-offset pass (earlier offsets stay valid) with the
+     * imports ensured once; minimal-diff and Sniper-safe.
+     */
+    public void promoteGetterToProperty(String getterName, String propertyIdentifier, boolean list,
+            java.util.Map<Class<? extends java.lang.annotation.Annotation>, String> extraAccessors)
+            throws IOException {
+        CtMethod<?> getter = findDeclaredMethod(getterName, 0);
+        if (getter == null || !isUnannotatedNoArgValueMethod(getter)) {
+            throw new IllegalStateException("Not a promotable getter: " + getterName);
+        }
+        if (getter.getPosition() == null || !getter.getPosition().isValidPosition()) {
+            throw new IllegalStateException("No source position for method " + getterName);
+        }
+
+        // Collect (offset, annotation-text) insertions; apply by DESCENDING offset.
+        List<Integer> offsets = new ArrayList<>();
+        List<String> texts = new ArrayList<>();
+        java.util.Set<String> imports = new java.util.LinkedHashSet<>();
+
+        offsets.add(getter.getPosition().getSourceStart());
+        texts.add(list
+                ? "@Getter(value = \"" + propertyIdentifier + "\", cardinality = Getter.Cardinality.LIST)"
+                : "@Getter(value = \"" + propertyIdentifier + "\")");
+        imports.add(Getter.class.getName());
+
+        for (java.util.Map.Entry<Class<? extends java.lang.annotation.Annotation>, String> e
+                : extraAccessors.entrySet()) {
+            Class<? extends java.lang.annotation.Annotation> annClass = e.getKey();
+            String methodName = e.getValue();
+            if (methodName == null) {
+                continue;
+            }
+            int paramCount = annClass == Reindexer.class ? 2 : 1;
+            CtMethod<?> accessor = findDeclaredMethod(methodName, paramCount);
+            if (accessor == null || accessor.getPosition() == null
+                    || !accessor.getPosition().isValidPosition()) {
+                continue;
+            }
+            offsets.add(accessor.getPosition().getSourceStart());
+            texts.add("@" + annClass.getSimpleName() + "(value = \"" + propertyIdentifier + "\")");
+            imports.add(annClass.getName());
+        }
+
+        File javaFile = compilationUnit.getFile();
+        String source = new String(java.nio.file.Files.readAllBytes(javaFile.toPath()),
+                java.nio.charset.StandardCharsets.UTF_8);
+
+        Integer[] order = new Integer[offsets.size()];
+        for (int i = 0; i < order.length; i++) {
+            order[i] = i;
+        }
+        java.util.Arrays.sort(order, (a, b) -> Integer.compare(offsets.get(b), offsets.get(a)));
+        for (int i : order) {
+            source = SourceAnnotationEditor.insertAnnotationLine(source, offsets.get(i), texts.get(i));
+        }
+        for (String imp : imports) {
+            source = SourceAnnotationEditor.ensureImport(source, imp);
+        }
+        java.nio.file.Files.write(javaFile.toPath(),
+                source.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Declared methods that carry <em>no</em> PAMELA accessor annotation, as Spoon-free
+     * {@link MethodSignature}s (name + parameter type qualified names). Used by the UI to find,
+     * by signature, the candidate setter/adder/remover/reindexer methods to pull in when a getter
+     * is promoted (model-editing-design.md §3.3a).
+     */
+    public List<MethodSignature> getCandidateAccessorMethods() {
+        List<MethodSignature> result = new ArrayList<>();
+        for (CtMethod<?> m : ctType.getMethods()) {
+            if (m.getAnnotation(Getter.class) != null || m.getAnnotation(Setter.class) != null
+                    || m.getAnnotation(Adder.class) != null || m.getAnnotation(Remover.class) != null
+                    || m.getAnnotation(Reindexer.class) != null
+                    || m.getAnnotation(Updater.class) != null) {
+                continue;
+            }
+            List<String> paramTypes = new ArrayList<>();
+            for (CtParameter<?> p : m.getParameters()) {
+                paramTypes.add(p.getType() != null ? p.getType().getQualifiedName() : null);
+            }
+            result.add(new MethodSignature(m.getSimpleName(), paramTypes));
+        }
+        return result;
     }
 
     /** Finds a declared method by name with exactly {@code paramCount} parameters. */

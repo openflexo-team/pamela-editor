@@ -908,4 +908,168 @@ public class TestMutations {
         assertNotNull("remover present again", mm.getEntity("test.model1.Foo1")
                 .getDeclaredProperties().get("items").getRemoverMethodName());
     }
+
+    // =========================================================================
+    // Method-level promote (signature-based) — model-editing-design.md §3.3
+    // =========================================================================
+
+    /** Promote a plain {@code List<T>} getter into a LIST property (cardinality from the return type). */
+    @Test
+    public void testPromoteGetterToListProperty() throws IOException {
+        File workDir = tmp.newFolder("testPromoteList");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+
+        // Inject a plain, un-annotated List getter into Foo1.
+        File foo1File = new File(srcCopy, "Foo1.java");
+        String foo1 = new String(Files.readAllBytes(foo1File.toPath()));
+        int lastBrace = foo1.lastIndexOf('}');
+        foo1 = foo1.substring(0, lastBrace)
+                + "\n\tpublic java.util.List<String> getTags();\n\n"
+                + foo1.substring(lastBrace);
+        Files.write(foo1File.toPath(), foo1.getBytes());
+
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity entity = mm.getEntity("test.model1.Foo1");
+        assertNotNull(entity);
+
+        // --- Mutate ---
+        entity.promoteGetterToProperty("getTags", "tags", true);
+
+        // --- File assertions ---
+        String content = new String(Files.readAllBytes(foo1File.toPath()));
+        assertTrue("LIST @Getter must be inserted",
+                content.contains("@Getter(value = \"tags\", cardinality = Getter.Cardinality.LIST)"));
+
+        // --- Rebuild ---
+        mm.rebuildMetaModel();
+        SourceModelEntity rebuilt = mm.getEntity("test.model1.Foo1");
+        SourceModelProperty tags = rebuilt.getDeclaredProperties().get("tags");
+        assertNotNull("tags must materialise as a property", tags);
+        assertEquals(Cardinality.LIST, tags.getCardinality());
+        assertEquals("java.lang.String", tags.getType().getQualifiedName());
+    }
+
+    /** Attach an existing plain {@code setXxx}-shaped method as the {@code @Setter} of a property. */
+    @Test
+    public void testAttachSetter() throws IOException {
+        File workDir = tmp.newFolder("testAttachSetter");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+
+        // Inject a property getter (no setter) + a plain, differently-named one-arg method.
+        File foo1File = new File(srcCopy, "Foo1.java");
+        String foo1 = new String(Files.readAllBytes(foo1File.toPath()));
+        int lastBrace = foo1.lastIndexOf('}');
+        foo1 = foo1.substring(0, lastBrace)
+                + "\n\t@org.openflexo.pamela.annotations.Getter(value = \"label\")\n"
+                + "\tpublic String getLabel();\n\n"
+                + "\tpublic void assignLabel(String aLabel);\n\n"
+                + foo1.substring(lastBrace);
+        Files.write(foo1File.toPath(), foo1.getBytes());
+
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity entity = mm.getEntity("test.model1.Foo1");
+        SourceModelProperty label = entity.getDeclaredProperties().get("label");
+        assertNotNull("label property must exist", label);
+        assertNull("label has no setter yet", label.getSetterMethodName());
+
+        // --- Mutate: attach the existing method as the setter ---
+        label.attachSetter("assignLabel");
+
+        // --- File assertion ---
+        String content = new String(Files.readAllBytes(foo1File.toPath()));
+        assertTrue("@Setter(value = \"label\") must be inserted on assignLabel",
+                content.contains("@Setter(value = \"label\")"));
+
+        // --- Rebuild: assignLabel must now be the property's setter ---
+        mm.rebuildMetaModel();
+        SourceModelProperty rebuilt = mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("label");
+        assertEquals("assignLabel", rebuilt.getSetterMethodName());
+    }
+
+    /** Attach an existing plain one-arg method as the {@code @Adder} of a LIST property. */
+    @Test
+    public void testAttachAdder() throws IOException {
+        File workDir = tmp.newFolder("testAttachAdder");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+
+        File foo1File = new File(srcCopy, "Foo1.java");
+        String foo1 = new String(Files.readAllBytes(foo1File.toPath()));
+        int lastBrace = foo1.lastIndexOf('}');
+        foo1 = foo1.substring(0, lastBrace)
+                + "\n\t@org.openflexo.pamela.annotations.Getter(value = \"tags\","
+                + " cardinality = org.openflexo.pamela.annotations.Getter.Cardinality.LIST)\n"
+                + "\tpublic java.util.List<String> getTags();\n\n"
+                + "\tpublic void include(String aTag);\n\n"
+                + foo1.substring(lastBrace);
+        Files.write(foo1File.toPath(), foo1.getBytes());
+
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelProperty tags = mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("tags");
+        assertNotNull("tags LIST property must exist", tags);
+        assertEquals(Cardinality.LIST, tags.getCardinality());
+        assertNull("tags has no adder yet", tags.getAdderMethodName());
+
+        // --- Mutate ---
+        tags.attachAdder("include");
+
+        String content = new String(Files.readAllBytes(foo1File.toPath()));
+        assertTrue("@Adder(value = \"tags\") must be inserted",
+                content.contains("@Adder(value = \"tags\")"));
+
+        mm.rebuildMetaModel();
+        SourceModelProperty rebuilt = mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("tags");
+        assertEquals("include", rebuilt.getAdderMethodName());
+    }
+
+    /**
+     * Promote a getter AND pull in an existing sibling setter in one text edit
+     * (model-editing-design.md §3.3a — the {@code extraAccessors} overload).
+     */
+    @Test
+    public void testPromoteGetterWithSetter() throws IOException {
+        File workDir = tmp.newFolder("testPromoteWithSetter");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+
+        // Plain getter + matching plain setter, both un-annotated.
+        File foo1File = new File(srcCopy, "Foo1.java");
+        String foo1 = new String(Files.readAllBytes(foo1File.toPath()));
+        int lastBrace = foo1.lastIndexOf('}');
+        foo1 = foo1.substring(0, lastBrace)
+                + "\n\tpublic String getDescription();\n\n"
+                + "\tpublic void setDescription(String aDescription);\n\n"
+                + foo1.substring(lastBrace);
+        Files.write(foo1File.toPath(), foo1.getBytes());
+
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity entity = mm.getEntity("test.model1.Foo1");
+
+        // --- Mutate: promote getter + attach the sibling setter in one pass ---
+        java.util.Map<Class<? extends java.lang.annotation.Annotation>, String> extras =
+                new java.util.LinkedHashMap<>();
+        extras.put(org.openflexo.pamela.annotations.Setter.class, "setDescription");
+        entity.promoteGetterToProperty("getDescription", "description", false, extras);
+
+        String content = new String(Files.readAllBytes(foo1File.toPath()));
+        assertTrue("@Getter inserted", content.contains("@Getter(value = \"description\")"));
+        assertTrue("@Setter inserted on the sibling", content.contains("@Setter(value = \"description\")"));
+
+        mm.rebuildMetaModel();
+        SourceModelProperty desc = mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("description");
+        assertNotNull("description property must materialise", desc);
+        assertEquals(Cardinality.SINGLE, desc.getCardinality());
+        assertEquals("getDescription", desc.getGetterMethodName());
+        assertEquals("setDescription", desc.getSetterMethodName());
+    }
 }

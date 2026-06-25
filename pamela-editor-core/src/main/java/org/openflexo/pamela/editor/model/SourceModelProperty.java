@@ -14,9 +14,11 @@ import org.openflexo.pamela.annotations.CloningStrategy.StrategyType;
 import org.openflexo.pamela.annotations.Embedded;
 import org.openflexo.pamela.annotations.Getter;
 import org.openflexo.pamela.annotations.Getter.Cardinality;
+import org.openflexo.pamela.annotations.Reindexer;
 import org.openflexo.pamela.annotations.Remover;
 import org.openflexo.pamela.annotations.ReturnedValue;
 import org.openflexo.pamela.annotations.Setter;
+import org.openflexo.pamela.annotations.Updater;
 import org.openflexo.pamela.annotations.XMLAttribute;
 import org.openflexo.pamela.annotations.XMLElement;
 
@@ -581,6 +583,72 @@ public class SourceModelProperty implements SourceElement,
         if (changed) {
             modelEntity.getCompilationUnit().save();
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Attach an EXISTING method as a PAMELA accessor (the "complete" promote path,
+    // model-editing-design.md §3.3). Unlike addSetter/addAdderRemover (which generate
+    // a fresh method), these annotate a developer-written method already on the
+    // interface. Targeted text edit (insert annotation line + import), like
+    // SourceModelEntity.promoteMethodToProperty — minimal-diff and immune to the Sniper
+    // annotation-insertion defect (spoon-type-system-analysis.md §10). The accessor link
+    // materialises on the next meta-model rebuild (the caller triggers it).
+    // -------------------------------------------------------------------------
+
+    /** Annotates an existing {@code method(T)} as this SINGLE property's {@code @Setter}. */
+    public void attachSetter(String methodName) throws IOException {
+        attachAccessor(methodName, 1, Setter.class);
+    }
+
+    /** Annotates an existing {@code method(T)} as this SINGLE property's {@code @Updater}. */
+    public void attachUpdater(String methodName) throws IOException {
+        attachAccessor(methodName, 1, Updater.class);
+    }
+
+    /** Annotates an existing {@code method(T)} as this LIST property's {@code @Adder}. */
+    public void attachAdder(String methodName) throws IOException {
+        attachAccessor(methodName, 1, Adder.class);
+    }
+
+    /** Annotates an existing {@code method(T)} as this LIST property's {@code @Remover}. */
+    public void attachRemover(String methodName) throws IOException {
+        attachAccessor(methodName, 1, Remover.class);
+    }
+
+    /** Annotates an existing {@code method(T, int)} as this LIST property's {@code @Reindexer}. */
+    public void attachReindexer(String methodName) throws IOException {
+        attachAccessor(methodName, 2, Reindexer.class);
+    }
+
+    /**
+     * Inserts {@code @<Accessor>(value = "<propertyIdentifier>")} on the existing method
+     * {@code methodName} with {@code paramCount} parameters, and ensures the annotation import.
+     */
+    private void attachAccessor(String methodName, int paramCount,
+            Class<? extends Annotation> annotationType) throws IOException {
+        CtType<?> ctType = modelEntity.getCtType();
+        CtMethod<?> method = null;
+        for (CtMethod<?> m : ctType.getMethods()) {
+            if (m.getSimpleName().equals(methodName) && m.getParameters().size() == paramCount) {
+                method = m;
+                break;
+            }
+        }
+        if (method == null || method.getPosition() == null
+                || !method.getPosition().isValidPosition()) {
+            throw new IllegalStateException("No source position for method " + methodName
+                    + "(" + paramCount + " param(s)) on " + modelEntity.getQualifiedName());
+        }
+
+        java.io.File javaFile = modelEntity.getCompilationUnit().getFile();
+        String source = new String(java.nio.file.Files.readAllBytes(javaFile.toPath()),
+                java.nio.charset.StandardCharsets.UTF_8);
+        source = SourceAnnotationEditor.insertAnnotationLine(source,
+                method.getPosition().getSourceStart(),
+                "@" + annotationType.getSimpleName() + "(value = \"" + propertyIdentifier + "\")");
+        source = SourceAnnotationEditor.ensureImport(source, annotationType.getName());
+        java.nio.file.Files.write(javaFile.toPath(),
+                source.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     // -------------------------------------------------------------------------

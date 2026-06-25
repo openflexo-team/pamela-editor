@@ -65,6 +65,13 @@ import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.action.ActionGroup;
 import org.openflexo.pamela.editor.ui.action.AddAsRootTypeAction;
 import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
+import org.openflexo.pamela.editor.ui.action.DeclareAsAdderAction;
+import org.openflexo.pamela.editor.ui.action.DeclareAsReindexerAction;
+import org.openflexo.pamela.editor.ui.action.DeclareAsRemoverAction;
+import org.openflexo.pamela.editor.ui.action.DeclareAsSetterAction;
+import org.openflexo.pamela.editor.ui.action.DeclareAsUpdaterAction;
+import org.openflexo.pamela.editor.ui.action.PromotableMethod;
+import org.openflexo.pamela.editor.ui.action.PromoteGetterAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsPamelaEntityAction;
 import org.openflexo.pamela.editor.ui.action.NewEntityAction;
 import org.openflexo.pamela.editor.ui.action.RenameEntityAction;
@@ -650,6 +657,13 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         registerAction(new PromoteMethodAction());
         registerAction(new RenamePropertyAction());
         registerAction(new ChangePropertyTypeAction());
+        // --- Method-level "promote" actions (signature-based) — model-editing-design.md §3.3 ---
+        registerAction(new PromoteGetterAction());
+        registerAction(new DeclareAsSetterAction());
+        registerAction(new DeclareAsUpdaterAction());
+        registerAction(new DeclareAsAdderAction());
+        registerAction(new DeclareAsRemoverAction());
+        registerAction(new DeclareAsReindexerAction());
         // --- Accessor toggles — model-editing-design.md Lot 3 ---
         registerAction(new AddSetterAction());
         registerAction(new RemoveSetterAction());
@@ -2335,6 +2349,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }
         if (element instanceof SourceJavaFile) {
             return getProjectForElement(((SourceJavaFile) element).getMetaModel());
+        }
+        if (element instanceof PromotableMethod) {
+            return getProjectForElement(((PromotableMethod) element).getEntity());
         }
         return null;
     }

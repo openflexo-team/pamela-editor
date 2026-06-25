@@ -60,15 +60,16 @@ public class SpoonOutlineView extends FIBJPanel<SpoonOutlineModel> {
             ResourceLocator.locateResource("Fib/SpoonOutlineView.fib");
 
     private final SpoonOutlineModel model;
+    private final SpoonOutlineController controller;
 
     public SpoonOutlineView(PamelaEditorApplication app) {
         super(FIB_FILE, new SpoonOutlineModel(),
               ApplicationFIBLibraryImpl.instance(),
               PamelaEditorFIBController.EDITOR_LOCALIZATION);
         this.model = (SpoonOutlineModel) getEditedObject();
-        SpoonOutlineController ctrl = (SpoonOutlineController) getController();
-        if (ctrl != null) {
-            ctrl.setApplication(app);
+        this.controller = (SpoonOutlineController) getController();
+        if (controller != null) {
+            controller.setApplication(app);
         }
     }
 
@@ -89,6 +90,7 @@ public class SpoonOutlineView extends FIBJPanel<SpoonOutlineModel> {
      * Always synchronous — the CU is guaranteed to be present.
      */
     public void showEntity(SourceModelEntity entity) {
+        if (controller != null) controller.setActiveSourceFacet(entity);
         SourceCompilationUnit cu = entity.getCompilationUnit();
         if (cu != null) {
             model.setLoading(false);
@@ -108,6 +110,7 @@ public class SpoonOutlineView extends FIBJPanel<SpoonOutlineModel> {
      * launched in a background thread (decision D3).</p>
      */
     public void showJavaFile(SourceJavaFile file, SourceMetaModel metaModel) {
+        if (controller != null) controller.setActiveSourceFacet(file);
         // Try to find the CU from the metamodel
         String qualifiedName = file.getQualifiedName();
         SourceCompilationUnit cu = (qualifiedName != null && !qualifiedName.isEmpty())
@@ -164,6 +167,7 @@ public class SpoonOutlineView extends FIBJPanel<SpoonOutlineModel> {
 
     /** Clears the outline (e.g. when no source-code element is selected). */
     public void clear() {
+        if (controller != null) controller.setActiveSourceFacet(null);
         model.setLoading(false);
         model.setRootTypes(Collections.emptyList());
     }
