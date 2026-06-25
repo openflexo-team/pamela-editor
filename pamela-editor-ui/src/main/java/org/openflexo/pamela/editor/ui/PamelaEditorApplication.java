@@ -1410,6 +1410,10 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if (element instanceof SourceImplementationClass) {
             return ((SourceImplementationClass) element).getEntity();
         }
+        if (element instanceof SourceCustomMethod) {
+            SourceImplementationClass impl = ((SourceCustomMethod) element).getImplementationClass();
+            return impl != null ? impl.getEntity() : element;
+        }
         return element;
     }
 
