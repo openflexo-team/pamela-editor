@@ -2187,7 +2187,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                                     connectorDefaults.getDefaultAssociationStyleId());
                         }
                         e.getValue().getDrawing().refreshStyles();
-                        markProjectDirty(e.getValue().getSession());
+                        markProjectDirty(e.getValue().getProject());
                     }
                 }
             };

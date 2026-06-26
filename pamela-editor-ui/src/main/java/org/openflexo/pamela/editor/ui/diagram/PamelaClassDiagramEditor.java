@@ -36,7 +36,7 @@ import org.openflexo.pamela.editor.ui.preferences.ConnectorStylePreference;
  */
 public class PamelaClassDiagramEditor {
 
-    private final PamelaProject session;
+    private final PamelaProject project;
     private final PamelaClassDiagram diagram;
 
     private PamelaClassDiagramDrawing drawing;
@@ -49,8 +49,8 @@ public class PamelaClassDiagramEditor {
     private final Set<ConnectorView> trackedConnectors =
             Collections.newSetFromMap(new IdentityHashMap<>());
 
-    public PamelaClassDiagramEditor(PamelaProject session, PamelaClassDiagram diagram) {
-        this.session = session;
+    public PamelaClassDiagramEditor(PamelaProject project, PamelaClassDiagram diagram) {
+        this.project = project;
         this.diagram = diagram;
     }
 
@@ -63,8 +63,8 @@ public class PamelaClassDiagramEditor {
         if (drawing == null) {
             drawing = new PamelaClassDiagramDrawing(
                     diagram,
-                    session.getMetaModel(),
-                    session.getDiagramFactory());
+                    project.getMetaModel(),
+                    project.getDiagramFactory());
             drawing.init();
         }
         return drawing;
@@ -75,8 +75,8 @@ public class PamelaClassDiagramEditor {
         if (dianaEditor == null) {
             dianaEditor = new DianaDrawingEditor(
                     getDrawing(),
-                    session.getDiagramFactory(),
-                    session.getToolFactory());
+                    project.getDiagramFactory(),
+                    project.getToolFactory());
         }
         return dianaEditor;
     }
@@ -102,8 +102,8 @@ public class PamelaClassDiagramEditor {
     }
 
     /** Returns the session this editor belongs to. */
-    public PamelaProject getSession() {
-        return session;
+    public PamelaProject getProject() {
+        return project;
     }
 
     /**
