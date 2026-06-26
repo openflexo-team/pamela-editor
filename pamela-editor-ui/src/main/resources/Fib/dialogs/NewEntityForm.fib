@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Panel dataClassName="org.openflexo.pamela.editor.ui.action.NewEntityAction"
        controllerClassName="org.openflexo.gina.controller.FIBController"
-       layout="twocols" name="NewEntityForm" border="empty">
+       layout="twocols" name="NewEntityForm" border="empty" width="400" height="100">
 
-  <Label name="nameLabel" label="Entity name (simple Java type name):" localize="false"
+  <Label name="nameLabel" label="Entity name:" localize="false"
          align="left" index="0" constraints="twocols(location=left)" />
   <TextField name="nameTF" data="data.name" columns="22" validateOnReturn="false"
          index="1" constraints="twocols(expandHorizontally=true;location=right)" />

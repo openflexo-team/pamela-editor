@@ -9,7 +9,7 @@
   <FIBReferencedComponent name="form" dynamicComponentFile="data.formFib" data="data"
        manageDynamicModel="true" constraints="border(location=center)" />
 
-  <Panel name="buttons" layout="flow" flowAlignment="CENTER" constraints="border(location=south)">
+  <Panel name="buttons" layout="flow" flowAlignment="CENTER" constraints="border(location=south)" vGap="0">
     <Button name="cancelButton" label="cancel" buttonType="Trigger"
             action="controller.cancelAndDispose()" localize="true" />
     <Button name="okButton" label="ok" buttonType="Trigger" isDefault="true"
