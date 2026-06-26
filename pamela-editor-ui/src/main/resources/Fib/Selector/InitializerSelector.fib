@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel layout="twocols" darkLevel="0"
+       dataClassName="org.openflexo.pamela.editor.ui.widget.InitializerSelector"
+       controllerClassName="org.openflexo.pamela.editor.ui.widget.FIBPamelaObjectSelector$SelectorFIBController"
+       width="300" height="300" border="empty" name="InitializerSelector">
+
+  <List name="PotentialMatches" list="data.matchingValues"
+        iteratorClassName="org.openflexo.pamela.editor.model.SourceModelInitializer"
+        visibleRowCount="4" rowHeight="18" createNewRowOnClick="false"
+        selectionMode="SingleListSelection" selected="data.selectedValue"
+        layoutOrientation="vertical" index="0"
+        constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)"
+        visible="(data.matchingValues.size &gt; 1)" useScrollBar="true"
+        format="object.displayLabel" icon="controller.iconForObject(object)"
+        localize="true" manageDynamicModel="true" showIcon="true"
+        clickAction="controller.selectedObjectChanged()"
+        doubleClickAction="controller.apply()"
+        enterPressedAction="controller.apply()" autoSelectFirstRow="true" />
+
+  <Label name="MatchesLabel" align="right" index="1"
+         data="((&quot;Found &quot; + data.matchingValues.size) + &quot; matches&quot;)"
+         constraints="twocols(expandHorizontally=true;location=center)"
+         visible="((data.matchingValues.size != 1) &amp;&amp; data.isFiltered)"
+         localize="false" />
+
+  <Browser name="initializerBrowser" root="data.rootObject"
+           iteratorClassName="java.lang.Object" deepExploration="false"
+           visibleRowCount="6" rowHeight="18" selectionMode="SingleTreeSelection"
+           selected="data.selectedValue" showFooter="false" rootVisible="true"
+           showRootsHandle="true" manageDynamicModel="true" readOnly="false"
+           clickAction="controller.selectedObjectChanged()"
+           doubleClickAction="controller.apply()"
+           index="2"
+           constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)">
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.model.SourceModelEntity"
+                    name="entity" label="entity.simpleName" icon="controller.iconForObject(entity)">
+      <Children name="initializers" data="entity.initializers" />
+    </BrowserElement>
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.model.SourceModelInitializer"
+                    name="initializer" label="initializer.displayLabel"
+                    icon="controller.iconForObject(initializer)"
+                    enabled="data.isAcceptableValue(initializer)" />
+  </Browser>
+</Panel>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel layout="twocols" darkLevel="0"
+       dataClassName="org.openflexo.pamela.editor.ui.widget.JavaClassSelector"
+       controllerClassName="org.openflexo.pamela.editor.ui.widget.FIBPamelaObjectSelector$SelectorFIBController"
+       width="320" height="340" border="empty" name="JavaClassSelector">
+
+  <List name="PotentialMatches" list="data.matchingValues"
+        iteratorClassName="spoon.reflect.declaration.CtType"
+        visibleRowCount="4" rowHeight="18" createNewRowOnClick="false"
+        selectionMode="SingleListSelection" selected="data.selectedValue"
+        layoutOrientation="vertical" index="0"
+        constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)"
+        visible="(data.matchingValues.size &gt; 1)" useScrollBar="true"
+        format="object.simpleName" icon="controller.iconForObject(object)"
+        localize="true" manageDynamicModel="true" showIcon="true"
+        clickAction="controller.selectedObjectChanged()"
+        doubleClickAction="controller.apply()"
+        enterPressedAction="controller.apply()" autoSelectFirstRow="true" />
+
+  <CheckBox name="hierarchicalCB" selected="data.hierarchical" index="1"
+            label="Hierarchical" localize="false"
+            constraints="twocols(location=center)" />
+
+  <Label name="MatchesLabel" align="right" index="2"
+         data="((&quot;Found &quot; + data.matchingValues.size) + &quot; matches&quot;)"
+         constraints="twocols(expandHorizontally=true;location=center)"
+         visible="((data.matchingValues.size != 1) &amp;&amp; data.isFiltered)"
+         localize="false" />
+
+  <Browser name="classBrowser" root="data"
+           iteratorClassName="java.lang.Object" deepExploration="false"
+           visibleRowCount="7" rowHeight="18" selectionMode="SingleTreeSelection"
+           selected="data.selectedValue" showFooter="false" rootVisible="false"
+           showRootsHandle="true" manageDynamicModel="true" readOnly="false"
+           clickAction="controller.selectedObjectChanged()"
+           doubleClickAction="controller.apply()"
+           index="3"
+           constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)">
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.ui.widget.JavaClassSelector"
+                    name="selector" label="&quot;classes&quot;" icon="null">
+      <Children name="packages" data="selector.packagesInScope" visible="(data.hierarchical == false)" />
+      <Children name="rootClasses" data="selector.rootClasses" visible="data.hierarchical" />
+    </BrowserElement>
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.model.SourcePackage"
+                    name="pkg" label="pkg.qualifiedName" icon="controller.iconForObject(pkg)">
+      <Children name="pkgClasses" data="data.classesInPackage(pkg)" />
+    </BrowserElement>
+
+    <BrowserElement dataClassName="spoon.reflect.declaration.CtClass"
+                    name="clazz" label="controller.labelForObject(clazz)"
+                    icon="controller.iconForObject(clazz)"
+                    enabled="data.isAcceptableValue(clazz)">
+      <Children name="subClasses" data="data.subClassesOf(clazz)" visible="data.hierarchical" />
+    </BrowserElement>
+
+    <BrowserElement dataClassName="spoon.reflect.declaration.CtInterface"
+                    name="iface" label="controller.labelForObject(iface)"
+                    icon="controller.iconForObject(iface)"
+                    enabled="data.isAcceptableValue(iface)">
+      <Children name="subInterfaces" data="data.subClassesOf(iface)" visible="data.hierarchical" />
+    </BrowserElement>
+  </Browser>
+</Panel>

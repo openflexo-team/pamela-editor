@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel layout="twocols" darkLevel="0"
+       dataClassName="org.openflexo.pamela.editor.ui.widget.ModelPropertySelector"
+       controllerClassName="org.openflexo.pamela.editor.ui.widget.FIBPamelaObjectSelector$SelectorFIBController"
+       width="300" height="320" border="empty" name="ModelPropertySelector">
+
+  <List name="PotentialMatches" list="data.matchingValues"
+        iteratorClassName="org.openflexo.pamela.editor.model.SourceModelProperty"
+        visibleRowCount="4" rowHeight="18" createNewRowOnClick="false"
+        selectionMode="SingleListSelection" selected="data.selectedValue"
+        layoutOrientation="vertical" index="0"
+        constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)"
+        visible="(data.matchingValues.size &gt; 1)" useScrollBar="true"
+        format="object.propertyIdentifier" icon="controller.iconForObject(object)"
+        localize="true" manageDynamicModel="true" showIcon="true"
+        clickAction="controller.selectedObjectChanged()"
+        doubleClickAction="controller.apply()"
+        enterPressedAction="controller.apply()" autoSelectFirstRow="true" />
+
+  <Label name="MatchesLabel" align="right" index="1"
+         data="((&quot;Found &quot; + data.matchingValues.size) + &quot; matches&quot;)"
+         constraints="twocols(expandHorizontally=true;location=center)"
+         visible="((data.matchingValues.size != 1) &amp;&amp; data.isFiltered)"
+         localize="false" />
+
+  <Browser name="propertyBrowser" root="data.rootObject"
+           iteratorClassName="java.lang.Object" deepExploration="false"
+           visibleRowCount="6" rowHeight="18" selectionMode="SingleTreeSelection"
+           selected="data.selectedValue" showFooter="false" rootVisible="true"
+           showRootsHandle="true" manageDynamicModel="true" readOnly="false"
+           clickAction="controller.selectedObjectChanged()"
+           doubleClickAction="controller.apply()"
+           index="2"
+           constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)">
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.model.SourceMetaModel"
+                    name="mm" label="mm.name" icon="controller.iconForObject(mm)">
+      <Children name="packages" data="mm.allPackages" />
+    </BrowserElement>
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.model.SourcePackage"
+                    name="pkg" label="pkg.qualifiedName" icon="controller.iconForObject(pkg)">
+      <Children name="entities" data="pkg.entities" />
+    </BrowserElement>
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.model.SourceModelEntity"
+                    name="entity" label="entity.simpleName" icon="controller.iconForObject(entity)">
+      <Children name="properties" data="entity.declaredProperties.values()" />
+    </BrowserElement>
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.model.SourceModelProperty"
+                    name="property" label="property.propertyIdentifier"
+                    icon="controller.iconForObject(property)"
+                    enabled="data.isAcceptableValue(property)" />
+  </Browser>
+</Panel>

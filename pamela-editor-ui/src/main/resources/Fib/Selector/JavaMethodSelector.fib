@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel layout="twocols" darkLevel="0"
+       dataClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+       controllerClassName="org.openflexo.pamela.editor.ui.widget.FIBPamelaObjectSelector$SelectorFIBController"
+       width="340" height="320" border="empty" name="JavaMethodSelector">
+
+  <List name="PotentialMatches" list="data.matchingValues"
+        iteratorClassName="spoon.reflect.declaration.CtMethod"
+        visibleRowCount="4" rowHeight="18" createNewRowOnClick="false"
+        selectionMode="SingleListSelection" selected="data.selectedValue"
+        layoutOrientation="vertical" index="0"
+        constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)"
+        visible="(data.matchingValues.size &gt; 1)" useScrollBar="true"
+        format="controller.labelForObject(object)" icon="controller.iconForObject(object)"
+        localize="true" manageDynamicModel="true" showIcon="true"
+        clickAction="controller.selectedObjectChanged()"
+        doubleClickAction="controller.apply()"
+        enterPressedAction="controller.apply()" autoSelectFirstRow="true" />
+
+  <Label name="MatchesLabel" align="right" index="1"
+         data="((&quot;Found &quot; + data.matchingValues.size) + &quot; matches&quot;)"
+         constraints="twocols(expandHorizontally=true;location=center)"
+         visible="((data.matchingValues.size != 1) &amp;&amp; data.isFiltered)"
+         localize="false" />
+
+  <Browser name="methodBrowser" root="data.rootObject"
+           iteratorClassName="java.lang.Object" deepExploration="false"
+           visibleRowCount="7" rowHeight="18" selectionMode="SingleTreeSelection"
+           selected="data.selectedValue" showFooter="false" rootVisible="true"
+           showRootsHandle="true" manageDynamicModel="true" readOnly="false"
+           clickAction="controller.selectedObjectChanged()"
+           doubleClickAction="controller.apply()"
+           index="2"
+           constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)">
+
+    <BrowserElement dataClassName="spoon.reflect.declaration.CtClass"
+                    name="clazz" label="controller.labelForObject(clazz)"
+                    icon="controller.iconForObject(clazz)">
+      <Children name="classMethods" data="data.declaredMethods" />
+    </BrowserElement>
+
+    <BrowserElement dataClassName="spoon.reflect.declaration.CtInterface"
+                    name="iface" label="controller.labelForObject(iface)"
+                    icon="controller.iconForObject(iface)">
+      <Children name="ifaceMethods" data="data.declaredMethods" />
+    </BrowserElement>
+
+    <BrowserElement dataClassName="spoon.reflect.declaration.CtMethod"
+                    name="method" label="controller.labelForObject(method)"
+                    icon="controller.iconForObject(method)"
+                    enabled="data.isAcceptableValue(method)" />
+  </Browser>
+</Panel>

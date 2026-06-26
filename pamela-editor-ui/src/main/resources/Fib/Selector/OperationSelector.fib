@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel layout="twocols" darkLevel="0"
+       dataClassName="org.openflexo.pamela.editor.ui.widget.OperationSelector"
+       controllerClassName="org.openflexo.pamela.editor.ui.widget.FIBPamelaObjectSelector$SelectorFIBController"
+       width="320" height="300" border="empty" name="OperationSelector">
+
+  <List name="PotentialMatches" list="data.matchingValues"
+        iteratorClassName="org.openflexo.pamela.editor.model.SourceCustomMethod"
+        visibleRowCount="4" rowHeight="18" createNewRowOnClick="false"
+        selectionMode="SingleListSelection" selected="data.selectedValue"
+        layoutOrientation="vertical" index="0"
+        constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)"
+        visible="(data.matchingValues.size &gt; 1)" useScrollBar="true"
+        format="object.signature" icon="controller.iconForObject(object)"
+        localize="true" manageDynamicModel="true" showIcon="true"
+        clickAction="controller.selectedObjectChanged()"
+        doubleClickAction="controller.apply()"
+        enterPressedAction="controller.apply()" autoSelectFirstRow="true" />
+
+  <Label name="MatchesLabel" align="right" index="1"
+         data="((&quot;Found &quot; + data.matchingValues.size) + &quot; matches&quot;)"
+         constraints="twocols(expandHorizontally=true;location=center)"
+         visible="((data.matchingValues.size != 1) &amp;&amp; data.isFiltered)"
+         localize="false" />
+
+  <Browser name="operationBrowser" root="data.rootObject"
+           iteratorClassName="java.lang.Object" deepExploration="false"
+           visibleRowCount="6" rowHeight="18" selectionMode="SingleTreeSelection"
+           selected="data.selectedValue" showFooter="false" rootVisible="true"
+           showRootsHandle="true" manageDynamicModel="true" readOnly="false"
+           clickAction="controller.selectedObjectChanged()"
+           doubleClickAction="controller.apply()"
+           index="2"
+           constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)">
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.model.SourceModelEntity"
+                    name="entity" label="entity.simpleName" icon="controller.iconForObject(entity)">
+      <Children name="operations" data="entity.declaredCustomMethods" />
+    </BrowserElement>
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.model.SourceCustomMethod"
+                    name="operation" label="operation.signature"
+                    icon="controller.iconForObject(operation)"
+                    enabled="data.isAcceptableValue(operation)" />
+  </Browser>
+</Panel>
