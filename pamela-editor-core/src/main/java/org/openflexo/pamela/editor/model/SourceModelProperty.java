@@ -317,7 +317,7 @@ public class SourceModelProperty implements SourceElement,
             ct.removeMethod(ctUpdater);
         }
         modelEntity.removeDeclaredProperty(propertyIdentifier);
-        modelEntity.getCompilationUnit().save();
+        modelEntity.getCompilationUnit().regenerateFromAST();
     }
 
     /**
@@ -352,7 +352,7 @@ public class SourceModelProperty implements SourceElement,
             setSingleParamType(ctSetter, newType);
             setSingleParamType(ctUpdater, newType);
         }
-        modelEntity.getCompilationUnit().save();
+        modelEntity.getCompilationUnit().regenerateFromAST();
     }
 
     /**
@@ -390,13 +390,13 @@ public class SourceModelProperty implements SourceElement,
             setAnnotationValue(ctRemover, Remover.class, "value", newIdentifier, factory);
         }
 
-        modelEntity.getCompilationUnit().save();
+        modelEntity.getCompilationUnit().regenerateFromAST();
 
         // Update the other side of an inverse relationship, if any.
         if (inverseProperty != null) {
             setAnnotationValue(inverseProperty.ctGetter, Getter.class, "inverse",
                     newIdentifier, factory);
-            inverseProperty.modelEntity.getCompilationUnit().save();
+            inverseProperty.modelEntity.getCompilationUnit().regenerateFromAST();
         }
     }
 
@@ -413,13 +413,13 @@ public class SourceModelProperty implements SourceElement,
             return;
         }
         requireGetterPosition();
-        java.io.File javaFile = modelEntity.getCompilationUnit().getFile();
-        String source = readSource(javaFile);
+        SourceCompilationUnit cu = modelEntity.getCompilationUnit();
+        String source = cu.getText();
         int start = ctGetter.getPosition().getSourceStart();
         String edited = embedded
                 ? SourceAnnotationEditor.addAnnotation(source, start, "Embedded", Embedded.class.getName())
                 : SourceAnnotationEditor.removeAnnotation(source, start, "Embedded");
-        writeSource(javaFile, edited);
+        cu.setText(edited);
         boolean old = this.embedded;
         this.embedded = embedded;
         pcSupport.firePropertyChange("embedded", old, embedded);
@@ -487,27 +487,17 @@ public class SourceModelProperty implements SourceElement,
     /** Targeted text edit of a {@code @Getter} parameter on this property's getter. */
     private void editGetterParameter(String parameter, String valueExpr) throws IOException {
         requireGetterPosition();
-        java.io.File javaFile = modelEntity.getCompilationUnit().getFile();
-        String source = readSource(javaFile);
+        SourceCompilationUnit cu = modelEntity.getCompilationUnit();
+        String source = cu.getText();
         String edited = SourceAnnotationEditor.setAnnotationParameter(
                 source, ctGetter.getPosition().getSourceStart(), "Getter", parameter, valueExpr);
-        writeSource(javaFile, edited);
+        cu.setText(edited);
     }
 
     private void requireGetterPosition() {
         if (ctGetter.getPosition() == null || !ctGetter.getPosition().isValidPosition()) {
             throw new IllegalStateException("No source position for getter " + getterMethodName);
         }
-    }
-
-    private static String readSource(java.io.File f) throws IOException {
-        return new String(java.nio.file.Files.readAllBytes(f.toPath()),
-                java.nio.charset.StandardCharsets.UTF_8);
-    }
-
-    private static void writeSource(java.io.File f, String content) throws IOException {
-        java.nio.file.Files.write(f.toPath(),
-                content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     /**
@@ -526,7 +516,7 @@ public class SourceModelProperty implements SourceElement,
         CtMethod<Void> setter = buildVoidAccessor(factory, "set" + capitalise(propertyIdentifier),
                 ctGetter.getType(), Setter.class);
         modelEntity.getCtType().addMethod(setter);
-        modelEntity.getCompilationUnit().save();
+        modelEntity.getCompilationUnit().regenerateFromAST();
     }
 
     /** Removes this property's {@code @Setter} accessor (C8). No-op if absent. */
@@ -535,7 +525,7 @@ public class SourceModelProperty implements SourceElement,
             return;
         }
         modelEntity.getCtType().removeMethod(ctSetter);
-        modelEntity.getCompilationUnit().save();
+        modelEntity.getCompilationUnit().regenerateFromAST();
     }
 
     /**
@@ -564,7 +554,7 @@ public class SourceModelProperty implements SourceElement,
             changed = true;
         }
         if (changed) {
-            modelEntity.getCompilationUnit().save();
+            modelEntity.getCompilationUnit().regenerateFromAST();
         }
     }
 
@@ -581,7 +571,7 @@ public class SourceModelProperty implements SourceElement,
             changed = true;
         }
         if (changed) {
-            modelEntity.getCompilationUnit().save();
+            modelEntity.getCompilationUnit().regenerateFromAST();
         }
     }
 
@@ -640,15 +630,13 @@ public class SourceModelProperty implements SourceElement,
                     + "(" + paramCount + " param(s)) on " + modelEntity.getQualifiedName());
         }
 
-        java.io.File javaFile = modelEntity.getCompilationUnit().getFile();
-        String source = new String(java.nio.file.Files.readAllBytes(javaFile.toPath()),
-                java.nio.charset.StandardCharsets.UTF_8);
+        SourceCompilationUnit cu = modelEntity.getCompilationUnit();
+        String source = cu.getText();
         source = SourceAnnotationEditor.insertAnnotationLine(source,
                 method.getPosition().getSourceStart(),
                 "@" + annotationType.getSimpleName() + "(value = \"" + propertyIdentifier + "\")");
         source = SourceAnnotationEditor.ensureImport(source, annotationType.getName());
-        java.nio.file.Files.write(javaFile.toPath(),
-                source.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        cu.setText(source);
     }
 
     // -------------------------------------------------------------------------

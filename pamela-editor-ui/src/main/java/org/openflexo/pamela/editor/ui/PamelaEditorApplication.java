@@ -1003,6 +1003,15 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             projectDir = new java.io.File(".");
         }
 
+        // 0. Flush unsaved source-model edits (deferred-save dirty buffers) to disk.
+        //    This is the only place model mutations reach disk — see
+        //    editable-source-dirty-buffer-design.md.
+        try {
+            project.getMetaModel().flushAll();
+        } catch (Exception e) {
+            logger.severe("Failed to flush source edits: " + e.getMessage());
+        }
+
         // 1. Write each diagram to <id>.diagram; collect the current file-name set.
         java.util.List<String> diagramFileNames = new java.util.ArrayList<>();
         for (PamelaClassDiagram diagram : project.getDiagrams()) {
@@ -1162,6 +1171,10 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                 pcs.firePropertyChange("abstractEntitiesCount", -1, metaModel.getAbstractEntitiesCount());
                 pcs.firePropertyChange("totalInitializersCount", -1, metaModel.getTotalInitializersCount());
                 pcs.firePropertyChange("issuesCount", -1, metaModel.getIssuesCount());
+
+                // A model-editing mutation leaves the meta-model dirty (deferred save).
+                // Refresh the window title so the unsaved-changes marker (*) appears.
+                updateFrameTitle();
 
                 try {
                     if (afterRebuild != null) {

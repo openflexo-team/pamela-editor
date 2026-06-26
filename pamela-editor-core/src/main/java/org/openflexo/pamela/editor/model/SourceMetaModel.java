@@ -126,6 +126,25 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
     private final Map<String, SourceModelEntity> entities;        // key = qualified type name
     private final List<Issue> issues;
 
+    // Deferred (unsaved) source edits — see editable-source-dirty-buffer-design.md.
+    // Keyed by primary type qualified name so a buffer survives rebuildMetaModel()
+    // (which replaces every SourceCompilationUnit) and can be fed to Spoon as an
+    // in-memory VirtualFile (parse-from-buffer) instead of the on-disk file. Not
+    // cleared by rebuildMetaModel(); cleared only by flushAll().
+    private final Map<String, PendingSource> pendingSources = new LinkedHashMap<>();
+    // Files to remove from disk on the next flush (deferred entity delete / rename old file).
+    private final java.util.Set<File> pendingDeletions = new java.util.LinkedHashSet<>();
+
+    /** An unsaved source edit: the target file (may not exist on disk yet) plus the pending text. */
+    static final class PendingSource {
+        final File file;
+        final String text;
+        PendingSource(File file, String text) {
+            this.file = file;
+            this.text = text;
+        }
+    }
+
     public SourceMetaModel() {
         this.sourceDirectories = new ArrayList<>();
         this.rootTypeNames = new ArrayList<>();
@@ -336,15 +355,7 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         if (progressListener != null) {
             launcher.getEnvironment().setSpoonProgress(new SpoonProgressAdapter(progressListener));
         }
-        if (restrictedInputFiles != null) {
-            for (File f : restrictedInputFiles) {
-                launcher.addInputResource(f.getAbsolutePath());
-            }
-        } else {
-            for (File dir : sourceDirectories) {
-                launcher.addInputResource(dir.getAbsolutePath());
-            }
-        }
+        feedInputResources(launcher);
         ctModel = launcher.buildModel();
 
         // Index every top-level type by qualified name once, so findType() is O(1)
@@ -367,8 +378,11 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         phase3Resolution();
 
         // On a full (cache-miss) build, record the resolved reachable file set so the
-        // next open with an unchanged fingerprint can take the fast path.
-        if (buildCacheFile != null && !cacheHit) {
+        // next open with an unchanged fingerprint can take the fast path. Skip while any
+        // buffer is dirty: the cache mirrors disk (fingerprint = disk mtimes), but a dirty
+        // build resolves from in-memory buffers, so the recorded set would not match disk.
+        if (buildCacheFile != null && !cacheHit
+                && pendingSources.isEmpty() && pendingDeletions.isEmpty()) {
             SourceBuildCache.save(buildCacheFile, fingerprint,
                     getResolvedSourceFiles(), buildCacheFile.getParentFile());
         }
@@ -481,6 +495,13 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
             if (cu != null && !cu.getDeclaredTypes().isEmpty()) {
                 String primaryName = cu.getDeclaredTypes().get(0).getQualifiedName();
                 SourceCompilationUnit sourcecu = new SourceCompilationUnit(cu, this);
+                // Parse-from-buffer: a unit parsed from a VirtualFile has no file path and
+                // its content is a still-unsaved edit. Recover the real file and re-adopt the
+                // dirty buffer so the edit survives the rebuild it triggered.
+                PendingSource pending = pendingSources.get(primaryName);
+                if (pending != null) {
+                    sourcecu.seedFromPending(pending.file, pending.text);
+                }
                 compilationUnits.put(primaryName, sourcecu);
             }
         }
@@ -888,6 +909,94 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
     // =========================================================================
 
     /**
+     * Feeds the Spoon {@code Launcher} with this build's input resources.
+     *
+     * <p>Clean build (no dirty buffers): the original behaviour — the restricted
+     * file set from the build cache, or the whole source directories.</p>
+     *
+     * <p>Dirty build (parse-from-buffer): an explicit file list so that dirty units
+     * are fed as in-memory {@link spoon.support.compiler.VirtualFile}s (their disk
+     * versions skipped) and units pending deletion are excluded. Adding a directory
+     * <em>and</em> a {@code VirtualFile} for a file inside it would make Spoon see
+     * the type twice — hence the file-list mode while dirty.</p>
+     */
+    private void feedInputResources(Launcher launcher) {
+        if (pendingSources.isEmpty() && pendingDeletions.isEmpty()) {
+            if (restrictedInputFiles != null) {
+                for (File f : restrictedInputFiles) {
+                    launcher.addInputResource(f.getAbsolutePath());
+                }
+            } else {
+                for (File dir : sourceDirectories) {
+                    launcher.addInputResource(dir.getAbsolutePath());
+                }
+            }
+            return;
+        }
+
+        // Disk base = the file set this build would otherwise parse.
+        java.util.LinkedHashSet<File> diskFiles = new java.util.LinkedHashSet<>();
+        if (restrictedInputFiles != null) {
+            diskFiles.addAll(restrictedInputFiles);
+        } else {
+            collectJavaFiles(sourceDirectories, diskFiles);
+        }
+
+        java.util.Set<String> pendingPaths = new java.util.HashSet<>();
+        for (PendingSource ps : pendingSources.values()) {
+            if (ps.file != null) {
+                pendingPaths.add(canon(ps.file));
+            }
+        }
+        java.util.Set<String> deletePaths = new java.util.HashSet<>();
+        for (File f : pendingDeletions) {
+            deletePaths.add(canon(f));
+        }
+
+        for (File f : diskFiles) {
+            String c = canon(f);
+            if (pendingPaths.contains(c) || deletePaths.contains(c)) {
+                continue; // dirty unit fed from memory below; deleted unit excluded
+            }
+            launcher.addInputResource(f.getAbsolutePath());
+        }
+        for (PendingSource ps : pendingSources.values()) {
+            String vname = (ps.file != null) ? ps.file.getName() : "Pending.java";
+            launcher.addInputResource(new spoon.support.compiler.VirtualFile(ps.text, vname));
+        }
+    }
+
+    /** Canonical path of a file, falling back to the absolute path on error. */
+    private static String canon(File f) {
+        try {
+            return f.getCanonicalPath();
+        } catch (IOException e) {
+            return f.getAbsolutePath();
+        }
+    }
+
+    /** Recursively collects every {@code .java} file under the given directories. */
+    private static void collectJavaFiles(List<File> dirs, java.util.Set<File> out) {
+        for (File dir : dirs) {
+            collectJavaFiles(dir, out);
+        }
+    }
+
+    private static void collectJavaFiles(File dir, java.util.Set<File> out) {
+        File[] children = dir.listFiles();
+        if (children == null) {
+            return;
+        }
+        for (File child : children) {
+            if (child.isDirectory()) {
+                collectJavaFiles(child, out);
+            } else if (child.getName().endsWith(".java")) {
+                out.add(child);
+            }
+        }
+    }
+
+    /**
      * Resolves a fully qualified type name to a Spoon {@code CtType},
      * searching the entire Spoon model.
      *
@@ -1003,6 +1112,110 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         compilationUnits.remove(primaryTypeName);
     }
 
+    // -------------------------------------------------------------------------
+    // Deferred-save plumbing (pending buffers) — see editable-source-dirty-buffer-design.md.
+    // Package-private; called by SourceCompilationUnit / SourceModelEntity mutations.
+    // -------------------------------------------------------------------------
+
+    /** Records (or replaces) an unsaved source edit for the unit with this primary type name. */
+    void registerPendingSource(String primaryTypeName, File file, String text) {
+        pendingSources.put(primaryTypeName, new PendingSource(file, text));
+    }
+
+    /** Drops the pending edit for this primary type name (called after a flush). */
+    void clearPendingSource(String primaryTypeName) {
+        pendingSources.remove(primaryTypeName);
+    }
+
+    /** The pending (unsaved) source text for this primary type name, or {@code null} if none. */
+    String getPendingSourceText(String primaryTypeName) {
+        PendingSource ps = pendingSources.get(primaryTypeName);
+        return ps != null ? ps.text : null;
+    }
+
+    /** Re-keys a pending buffer when an entity (and its file) is renamed. */
+    void renamePendingSource(String oldPrimaryTypeName, String newPrimaryTypeName, File newFile) {
+        PendingSource ps = pendingSources.remove(oldPrimaryTypeName);
+        if (ps != null) {
+            pendingSources.put(newPrimaryTypeName, new PendingSource(newFile, ps.text));
+        }
+    }
+
+    /** Marks a file for deletion on the next flush (deferred entity delete / rename old file). */
+    void registerPendingDeletion(File f) {
+        if (f != null) {
+            pendingDeletions.add(f);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Public deferred-save API
+    // -------------------------------------------------------------------------
+
+    /** {@code true} if any compilation unit has unsaved (dirty) source edits or pending deletions. */
+    public boolean isDirty() {
+        return !pendingSources.isEmpty() || !pendingDeletions.isEmpty();
+    }
+
+    /** The compilation units whose buffers are dirty (unsaved). */
+    public List<SourceCompilationUnit> getDirtyCompilationUnits() {
+        List<SourceCompilationUnit> result = new ArrayList<>();
+        for (String qn : pendingSources.keySet()) {
+            SourceCompilationUnit cu = compilationUnits.get(qn);
+            if (cu != null) {
+                result.add(cu);
+            }
+        }
+        return Collections.unmodifiableList(result);
+    }
+
+    /**
+     * Writes every dirty buffer to disk and applies deferred deletions, then clears the
+     * dirty state. This is the only disk write of the deferred-save flow; call it on an
+     * explicit <em>Save project</em>.
+     *
+     * @throws IOException if a file write or delete fails
+     */
+    public void flushAll() throws IOException {
+        boolean wasDirty = isDirty();
+
+        // 1. Write pending buffers.
+        java.util.Set<String> writeTargets = new java.util.HashSet<>();
+        for (PendingSource ps : pendingSources.values()) {
+            if (ps.file == null) {
+                continue;
+            }
+            File parent = ps.file.getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
+            java.nio.file.Files.write(ps.file.toPath(),
+                    ps.text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            writeTargets.add(canon(ps.file));
+        }
+
+        // 2. Apply deferred deletions (never delete a file that is also a write target).
+        for (File f : pendingDeletions) {
+            if (!writeTargets.contains(canon(f)) && f.exists()) {
+                f.delete();
+            }
+        }
+
+        // 3. Clear dirty flags on the live compilation units, then drop the pending state.
+        for (String qn : pendingSources.keySet()) {
+            SourceCompilationUnit cu = compilationUnits.get(qn);
+            if (cu != null) {
+                cu.markClean();
+            }
+        }
+        pendingSources.clear();
+        pendingDeletions.clear();
+
+        if (wasDirty) {
+            pcSupport.firePropertyChange("dirty", true, false);
+        }
+    }
+
     // =========================================================================
     // Mutation operations
     // =========================================================================
@@ -1053,8 +1266,9 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         // Create the compilation unit wrapper
         SourceCompilationUnit scu = SourceCompilationUnit.forNewEntity(newInterface, newFile, this);
 
-        // Save the file to disk
-        scu.save();
+        // Buffer the new source (deferred): the .java file is written on the next flush
+        // (Save project). The new entity is dirty from creation, like a new diagram.
+        scu.regenerateFromAST();
 
         // Build the SourceModelEntity
         SourceModelEntity entity = new SourceModelEntity(newInterface, this);
@@ -1112,16 +1326,21 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
 
         File javaFile = file.getFile();
 
-        // Edit the source text directly: insert @ModelEntity above the declaration
-        // (using Spoon's position) and add the import. This is minimal-diff and
-        // avoids the Sniper whitespace defect on annotation insertion.
-        String source = new String(java.nio.file.Files.readAllBytes(javaFile.toPath()),
-                java.nio.charset.StandardCharsets.UTF_8);
+        // Edit the source text (buffered, deferred): insert @ModelEntity above the
+        // declaration (using Spoon's position) and add the import. Minimal-diff and
+        // immune to the Sniper annotation-insertion defect. Written on the next flush.
+        SourceCompilationUnit cu = compilationUnits.get(qualifiedName);
+        String source = (cu != null) ? cu.getText()
+                : new String(java.nio.file.Files.readAllBytes(javaFile.toPath()),
+                        java.nio.charset.StandardCharsets.UTF_8);
         int declarationStart = ctType.getPosition().getSourceStart();
         String edited = SourceAnnotationEditor.addAnnotation(
                 source, declarationStart, "ModelEntity", ModelEntity.class.getName());
-        java.nio.file.Files.write(javaFile.toPath(),
-                edited.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        if (cu != null) {
+            cu.setText(edited);
+        } else {
+            registerPendingSource(qualifiedName, javaFile, edited);
+        }
 
         // Register as a root type so the next rebuild materialises the entity,
         // and drop the stale textual cache on the lightweight file wrapper.

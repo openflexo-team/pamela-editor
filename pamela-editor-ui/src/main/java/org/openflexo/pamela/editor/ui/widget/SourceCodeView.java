@@ -64,8 +64,12 @@ public class SourceCodeView extends JPanel {
     // -------------------------------------------------------------------------
 
     /**
-     * Loads the source text from the entity's {@link SourceCompilationUnit}.
-     * Falls back to an empty string when the file cannot be read.
+     * Loads the source text from the entity's {@link SourceCompilationUnit}'s
+     * in-memory buffer ({@code getText()}), which reflects unsaved (deferred) edits
+     * and is seeded from disk for a clean unit. Using the buffer rather than re-reading
+     * the file shows the current source even while dirty and is robust to a
+     * buffer-parsed unit whose on-disk path is virtual (see
+     * {@code editable-source-dirty-buffer-design.md}).
      */
     private void loadSource() {
         SourceCompilationUnit cu = entity.getCompilationUnit();
@@ -74,23 +78,13 @@ public class SourceCodeView extends JPanel {
             return;
         }
         try {
-            java.io.File file = cu.getFile();
-            if (file == null || !file.exists()) {
-                textArea.setText("// File not found: " + cu.getPrimaryTypeName());
-                return;
-            }
-            String content = readFile(file);
-            textArea.setText(content);
+            String content = cu.getText();
+            textArea.setText(content != null ? content : "");
             textArea.setCaretPosition(0);
         } catch (Exception e) {
             logger.warning("Failed to load source for " + entity.getQualifiedName() + ": " + e.getMessage());
             textArea.setText("// Failed to load source: " + e.getMessage());
         }
-    }
-
-    private static String readFile(java.io.File file) throws java.io.IOException {
-        byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
-        return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     // -------------------------------------------------------------------------

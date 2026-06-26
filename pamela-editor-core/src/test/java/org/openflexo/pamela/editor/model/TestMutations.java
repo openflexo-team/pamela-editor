@@ -131,6 +131,7 @@ public class TestMutations {
 
         // --- Mutate ---
         foo1.rename("Bar1");
+        mm.flushAll();
 
         // --- In-memory assertions ---
         assertEquals("Bar1", foo1.getSimpleName());
@@ -145,6 +146,7 @@ public class TestMutations {
         assertFalse("Foo1.java must be deleted", foo1File.exists());
 
         // --- Reload ---
+        mm.flushAll(); // deferred-save: persist buffers before reloading from disk
         File pamelaFile2 = new File(workDir, "test2.pamela");
         writePamelaFile(pamelaFile2, srcCopy, "test.model1.Bar1");
         SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
@@ -191,6 +193,7 @@ public class TestMutations {
                 foo2.getDeclaredProperties().containsKey("nickname"));
 
         // --- Reload ---
+        mm.flushAll(); // deferred-save: persist buffers before reloading from disk
         File pamelaFile2 = new File(workDir, "test2.pamela");
         writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1");
         SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
@@ -239,6 +242,7 @@ public class TestMutations {
                 beforeCount + 1, foo1.getDeclaredProperties().size());
 
         // --- Reload ---
+        mm.flushAll(); // deferred-save: persist buffers before reloading from disk
         File pamelaFile2 = new File(workDir, "test2.pamela");
         writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1");
         SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
@@ -283,6 +287,7 @@ public class TestMutations {
                 foo1.getDeclaredProperties().containsKey("foo2"));
 
         // --- Reload ---
+        mm.flushAll(); // deferred-save: persist buffers before reloading from disk
         File pamelaFile2 = new File(workDir, "test2.pamela");
         writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1");
         SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
@@ -316,6 +321,7 @@ public class TestMutations {
 
         // --- Mutate ---
         SourceModelEntity foo3 = mm.createEntity("Foo3", pkg);
+        mm.flushAll();
 
         // --- In-memory assertions ---
         assertNotNull(foo3);
@@ -329,6 +335,7 @@ public class TestMutations {
         assertTrue("Foo3.java must exist on disk", foo3File.exists());
 
         // --- Reload ---
+        mm.flushAll(); // deferred-save: persist buffers before reloading from disk
         File pamelaFile2 = new File(workDir, "test2.pamela");
         writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1", "test.model1.Foo3");
         SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
@@ -361,6 +368,7 @@ public class TestMutations {
 
         // --- Mutate ---
         foo2.delete();
+        mm.flushAll();
 
         // --- In-memory assertions ---
         assertNull("Foo2 must be gone from entity map", mm.getEntity("test.model1.Foo2"));
@@ -408,6 +416,7 @@ public class TestMutations {
                 all.containsKey("foo2"));
 
         // --- Reload ---
+        mm.flushAll(); // deferred-save: persist buffers before reloading from disk
         File pamelaFile2 = new File(workDir, "test2.pamela");
         writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1");
         SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
@@ -457,6 +466,7 @@ public class TestMutations {
                 activityNode.getDirectSuperEntities().isEmpty());
 
         // --- Reload ---
+        mm.flushAll(); // deferred-save: persist buffers before reloading from disk
         File pamelaFile2 = new File(workDir, "test2.pamela");
         writePamelaFile(pamelaFile2, srcCopy,
                 "test.model2.ActivityNode",
@@ -505,6 +515,7 @@ public class TestMutations {
 
         // --- Mutate ---
         mm.declareAsEntity(foo3File);
+        mm.flushAll();
 
         // --- In-memory assertions ---
         assertTrue("Foo3 must be registered as a root type",
@@ -525,6 +536,7 @@ public class TestMutations {
         assertEquals("Entity count must now be 3", 3, mm.getEntities().size());
 
         // --- Reload from disk ---
+        mm.flushAll(); // deferred-save: persist buffers before reloading from disk
         File pamelaFile2 = new File(workDir, "test2.pamela");
         writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1", "test.model1.Foo3");
         SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
@@ -573,6 +585,7 @@ public class TestMutations {
         entity.promoteMethodToProperty("getName", "name", true);
 
         // --- File assertions ---
+        mm.flushAll(); // deferred-save: persist the buffer before reading from disk
         String content = new String(Files.readAllBytes(foo1File.toPath()));
         assertTrue("@Getter(value = \"name\") must be inserted",
                 content.contains("@Getter(value = \"name\")"));
@@ -592,6 +605,7 @@ public class TestMutations {
         assertEquals(Cardinality.SINGLE, nameProp.getCardinality());
 
         // --- Reload from disk ---
+        mm.flushAll(); // deferred-save: persist buffers before reloading from disk
         File pamelaFile2 = new File(workDir, "test2.pamela");
         writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1");
         SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
@@ -621,6 +635,7 @@ public class TestMutations {
 
         // --- Mutate ---
         foo2Prop.changeType("java.lang.String");
+        mm.flushAll();
 
         String content = new String(Files.readAllBytes(new File(srcCopy, "Foo1.java").toPath()));
         assertTrue("getter must now return String", content.contains("String getFoo2"));
@@ -651,6 +666,7 @@ public class TestMutations {
 
         // --- Mutate ---
         foo2Prop.rename("bar");
+        mm.flushAll();
 
         String content = new String(Files.readAllBytes(new File(srcCopy, "Foo1.java").toPath()));
         assertTrue("getter renamed to getBar", content.contains("getBar"));
@@ -666,6 +682,7 @@ public class TestMutations {
                 rebuilt.getDeclaredProperties().containsKey("foo2"));
 
         // --- Reload ---
+        mm.flushAll(); // deferred-save: persist buffers before reloading from disk
         File pamelaFile2 = new File(workDir, "test2.pamela");
         writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1");
         SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
@@ -698,6 +715,7 @@ public class TestMutations {
 
         // --- Mutate ---
         outgoing.rename("outEdges");
+        mm.flushAll();
 
         // --- File assertions: this side renamed, inverse side updated ---
         String nodeSrc = new String(Files.readAllBytes(new File(srcCopy, "AbstractNode.java").toPath()));
@@ -741,6 +759,7 @@ public class TestMutations {
 
         // --- Add @Embedded ---
         foo2.setEmbedded(true);
+        mm.flushAll();
         assertTrue("@Embedded must be inserted",
                 new String(Files.readAllBytes(foo1File.toPath())).contains("@Embedded"));
         mm.rebuildMetaModel();
@@ -749,6 +768,7 @@ public class TestMutations {
 
         // --- Remove @Embedded ---
         mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("foo2").setEmbedded(false);
+        mm.flushAll();
         assertFalse("@Embedded must be removed",
                 new String(Files.readAllBytes(foo1File.toPath())).contains("@Embedded"));
         mm.rebuildMetaModel();
@@ -778,6 +798,7 @@ public class TestMutations {
 
         // --- Make abstract ---
         foo1.setAbstract(true);
+        mm.flushAll();
         assertTrue("PropertyChange must fire", fired[0]);
         assertTrue(foo1.isAbstract());
         assertTrue("@ModelEntity(isAbstract = true) in source",
@@ -787,6 +808,7 @@ public class TestMutations {
 
         // --- Make concrete again (parameter removed) ---
         mm.getEntity("test.model1.Foo1").setAbstract(false);
+        mm.flushAll();
         String src = new String(Files.readAllBytes(foo1File.toPath()));
         assertFalse("isAbstract parameter removed", src.contains("isAbstract"));
         mm.rebuildMetaModel();
@@ -814,12 +836,14 @@ public class TestMutations {
 
         // --- isDerived ---
         foo2.setDerived(true);
+        mm.flushAll();
         assertTrue(fired[0]);
         assertTrue(foo2.isDerived());
         assertTrue(new String(Files.readAllBytes(foo1File.toPath())).contains("isDerived = true"));
 
         // --- defaultValue ---
         foo2.setDefaultValue("hello");
+        mm.flushAll();
         assertTrue(new String(Files.readAllBytes(foo1File.toPath())).contains("defaultValue = \"hello\""));
 
         // --- Rebuild reflects both ---
@@ -831,6 +855,7 @@ public class TestMutations {
 
         // --- Clearing defaultValue removes the parameter ---
         rebuilt.setDefaultValue("");
+        mm.flushAll();
         assertFalse(new String(Files.readAllBytes(foo1File.toPath())).contains("defaultValue"));
     }
 
@@ -849,12 +874,14 @@ public class TestMutations {
         SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
         // Start from a SINGLE property that has a setter.
         mm.getEntity("test.model1.Foo1").addSingleProperty("label", "java.lang.String");
+        mm.flushAll();
         mm.rebuildMetaModel();
         assertNotNull("setter present after creation", mm.getEntity("test.model1.Foo1")
                 .getDeclaredProperties().get("label").getSetterMethodName());
 
         // --- Remove the setter ---
         mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("label").removeSetter();
+        mm.flushAll();
         assertFalse("setLabel removed from source",
                 new String(Files.readAllBytes(foo1File.toPath())).contains("setLabel"));
         mm.rebuildMetaModel();
@@ -863,6 +890,7 @@ public class TestMutations {
 
         // --- Add it back ---
         mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("label").addSetter();
+        mm.flushAll();
         assertTrue("setLabel re-added to source",
                 new String(Files.readAllBytes(foo1File.toPath())).contains("setLabel"));
         mm.rebuildMetaModel();
@@ -884,12 +912,14 @@ public class TestMutations {
 
         SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
         mm.getEntity("test.model1.Foo1").addListProperty("items", "java.lang.String");
+        mm.flushAll();
         mm.rebuildMetaModel();
         assertNotNull("adder present after creation", mm.getEntity("test.model1.Foo1")
                 .getDeclaredProperties().get("items").getAdderMethodName());
 
         // --- Remove adder + remover ---
         mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("items").removeAdderRemover();
+        mm.flushAll();
         String afterRemove = new String(Files.readAllBytes(foo1File.toPath()));
         assertFalse("addToItems removed", afterRemove.contains("addToItems"));
         assertFalse("removeFromItems removed", afterRemove.contains("removeFromItems"));
@@ -899,6 +929,7 @@ public class TestMutations {
 
         // --- Add them back ---
         mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("items").addAdderRemover();
+        mm.flushAll();
         String afterAdd = new String(Files.readAllBytes(foo1File.toPath()));
         assertTrue("addToItems re-added", afterAdd.contains("addToItems"));
         assertTrue("removeFromItems re-added", afterAdd.contains("removeFromItems"));
@@ -938,6 +969,7 @@ public class TestMutations {
         entity.promoteGetterToProperty("getTags", "tags", true);
 
         // --- File assertions ---
+        mm.flushAll(); // deferred-save: persist the buffer before reading from disk
         String content = new String(Files.readAllBytes(foo1File.toPath()));
         assertTrue("LIST @Getter must be inserted",
                 content.contains("@Getter(value = \"tags\", cardinality = Getter.Cardinality.LIST)"));
@@ -980,6 +1012,7 @@ public class TestMutations {
         label.attachSetter("assignLabel");
 
         // --- File assertion ---
+        mm.flushAll(); // deferred-save: persist the buffer before reading from disk
         String content = new String(Files.readAllBytes(foo1File.toPath()));
         assertTrue("@Setter(value = \"label\") must be inserted on assignLabel",
                 content.contains("@Setter(value = \"label\")"));
@@ -1020,6 +1053,7 @@ public class TestMutations {
         // --- Mutate ---
         tags.attachAdder("include");
 
+        mm.flushAll(); // deferred-save: persist the buffer before reading from disk
         String content = new String(Files.readAllBytes(foo1File.toPath()));
         assertTrue("@Adder(value = \"tags\") must be inserted",
                 content.contains("@Adder(value = \"tags\")"));
@@ -1060,6 +1094,7 @@ public class TestMutations {
         extras.put(org.openflexo.pamela.annotations.Setter.class, "setDescription");
         entity.promoteGetterToProperty("getDescription", "description", false, extras);
 
+        mm.flushAll(); // deferred-save: persist the buffer before reading from disk
         String content = new String(Files.readAllBytes(foo1File.toPath()));
         assertTrue("@Getter inserted", content.contains("@Getter(value = \"description\")"));
         assertTrue("@Setter inserted on the sibling", content.contains("@Setter(value = \"description\")"));
@@ -1097,6 +1132,7 @@ public class TestMutations {
 
         mm.getEntity("test.model1.Foo1").declareOperation("doSomething", 0);
 
+        mm.flushAll(); // deferred-save: persist the buffer before reading from disk
         String content = new String(Files.readAllBytes(foo1File.toPath()));
         assertTrue("@Operation inserted", content.contains("@Operation"));
         assertTrue("import added",
@@ -1129,6 +1165,7 @@ public class TestMutations {
         mm.getEntity("test.model1.Foo1")
                 .declareInitializer("build", java.util.Arrays.asList("label"));
 
+        mm.flushAll(); // deferred-save: persist the buffer before reading from disk
         String content = new String(Files.readAllBytes(foo1File.toPath()));
         assertTrue("@Initializer inserted", content.contains("@Initializer"));
         assertTrue("@Parameter inserted inline on the argument",
@@ -1163,6 +1200,7 @@ public class TestMutations {
 
         mm.getEntity("test.model2.FlexoProcess")
                 .declareFinder("findNode", "nodes", "name", false);
+        mm.flushAll();
 
         String content = new String(Files.readAllBytes(procFile.toPath()));
         assertTrue("@Finder inserted",
@@ -1171,5 +1209,141 @@ public class TestMutations {
                 content.contains("import org.openflexo.pamela.annotations.Finder;"));
         mm.rebuildMetaModel();
         assertNotNull(mm.getEntity("test.model2.FlexoProcess"));
+    }
+
+    // =========================================================================
+    // Deferred-save contract — editable-source-dirty-buffer-design.md
+    // =========================================================================
+
+    /**
+     * A mutation marks the model dirty and is reflected in-memory immediately, but the
+     * {@code .java} file on disk is NOT written until {@link SourceMetaModel#flushAll()}.
+     */
+    @Test
+    public void testDeferredMutationIsDirtyWithoutDiskWrite() throws IOException {
+        File workDir = tmp.newFolder("testDeferredDirty");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        assertFalse("model must be clean after load", mm.isDirty());
+
+        File foo2File = new File(srcCopy, "Foo2.java");
+        byte[] before = Files.readAllBytes(foo2File.toPath());
+
+        // --- Deferred mutation: no disk write ---
+        SourceModelEntity foo2 = mm.getEntity("test.model1.Foo2");
+        foo2.addSingleProperty("nickname", "java.lang.String");
+
+        assertTrue("model must be dirty after a mutation", mm.isDirty());
+        assertTrue("the new property is visible in-memory immediately",
+                foo2.getDeclaredProperties().containsKey("nickname"));
+        assertTrue("the .java file on disk must be untouched until flush",
+                java.util.Arrays.equals(before, Files.readAllBytes(foo2File.toPath())));
+
+        // --- Flush: now the disk is written ---
+        mm.flushAll();
+        assertFalse("model must be clean after flush", mm.isDirty());
+        String after = new String(Files.readAllBytes(foo2File.toPath()),
+                java.nio.charset.StandardCharsets.UTF_8);
+        assertTrue("flushed source must contain the new getter", after.contains("getNickname"));
+    }
+
+    /**
+     * A rebuild after a deferred mutation parses the in-memory buffer (Spoon
+     * {@code VirtualFile}, parse-from-buffer), so the change materialises in the model
+     * without ever writing the file.
+     */
+    @Test
+    public void testRebuildFromBufferMaterializesWithoutFlush() throws IOException {
+        File workDir = tmp.newFolder("testRebuildFromBuffer");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        File foo1File = new File(srcCopy, "Foo1.java");
+        byte[] before = Files.readAllBytes(foo1File.toPath());
+
+        // --- Deferred mutation, then rebuild WITHOUT flushing ---
+        mm.getEntity("test.model1.Foo1").addListProperty("aliases", "java.lang.String");
+        assertTrue(mm.isDirty());
+        mm.rebuildMetaModel(); // must parse the in-memory buffer, not the disk file
+
+        SourceModelEntity foo1 = mm.getEntity("test.model1.Foo1");
+        assertNotNull(foo1);
+        assertTrue("the deferred property must materialise via parse-from-buffer",
+                foo1.getDeclaredProperties().containsKey("aliases"));
+        assertEquals(Cardinality.LIST,
+                foo1.getDeclaredProperties().get("aliases").getCardinality());
+        assertTrue("the model is still dirty (never flushed)", mm.isDirty());
+        assertTrue("disk must still be unchanged after a buffer-only rebuild",
+                java.util.Arrays.equals(before, Files.readAllBytes(foo1File.toPath())));
+    }
+
+    /**
+     * Renaming an entity is deferred: the file move (write new + delete old) happens
+     * only on flush; the in-memory model is renamed immediately.
+     */
+    @Test
+    public void testDeferredRenameFileMove() throws IOException {
+        File workDir = tmp.newFolder("testDeferredRename");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        File foo1File = new File(srcCopy, "Foo1.java");
+        File bar1File = new File(srcCopy, "Bar1.java");
+
+        // --- Deferred rename: file move not applied yet ---
+        mm.getEntity("test.model1.Foo1").rename("Bar1");
+        assertTrue("model must be dirty after rename", mm.isDirty());
+        assertEquals("Bar1", mm.getEntity("test.model1.Bar1").getSimpleName());
+        assertTrue("old file still on disk until flush", foo1File.exists());
+        assertFalse("new file not on disk until flush", bar1File.exists());
+
+        // --- Flush: applies the file move ---
+        mm.flushAll();
+        assertTrue("Bar1.java written on flush", bar1File.exists());
+        assertFalse("Foo1.java removed on flush", foo1File.exists());
+        assertFalse("clean after flush", mm.isDirty());
+    }
+
+    /**
+     * After a buffer-only rebuild, a dirty unit's compilation unit must still report its
+     * REAL, existing {@code .java} file (a {@code VirtualFile}-parsed unit reports a bogus
+     * virtual path otherwise) — so the source view shows it and a later flush writes the
+     * right file. Regression for "// File not found" after promoting a method.
+     */
+    @Test
+    public void testCompilationUnitFileSurvivesBufferRebuild() throws IOException {
+        File workDir = tmp.newFolder("testCuFileBuffer");
+        File srcCopy = copyDir(MODEL2_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model2.FlexoProcess");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity edge = mm.getEntity("test.model2.Edge");
+        assertNotNull("Edge must be reachable in model2", edge);
+        File edgeFileBefore = edge.getCompilationUnit().getFile();
+        assertNotNull(edgeFileBefore);
+        assertTrue("Edge.java must exist before the edit", edgeFileBefore.exists());
+
+        // Deferred mutation on Edge, then rebuild-from-buffer (no flush).
+        edge.addSingleProperty("note", "java.lang.String");
+        assertTrue(mm.isDirty());
+        mm.rebuildMetaModel();
+
+        SourceCompilationUnit cu = mm.getEntity("test.model2.Edge").getCompilationUnit();
+        assertNotNull("Edge CU must exist after the buffer rebuild", cu);
+        File f = cu.getFile();
+        assertNotNull("CU file must be recovered, not the virtual path", f);
+        assertTrue("CU file must be the real, existing .java file", f.exists());
+        assertEquals("CU file must be the original Edge.java",
+                edgeFileBefore.getCanonicalPath(), f.getCanonicalPath());
+        assertTrue("getText() must return the dirty buffer (what the editor shows)",
+                cu.getText().contains("getNote"));
     }
 }

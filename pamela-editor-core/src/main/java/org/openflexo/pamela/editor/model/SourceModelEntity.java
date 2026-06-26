@@ -282,21 +282,25 @@ public class SourceModelEntity implements SourceElement,
             compilationUnit.updateDeclaredType(ctType);
         }
 
-        // 3. Update the file on disk: rename the .java file
+        // 3. Defer the file move: point the compilation unit at the new file/name,
+        //    regenerate its buffer (dirty, keyed by the new qualified name), drop any
+        //    stale pre-rename buffer, and mark the old file for deletion on flush.
         if (compilationUnit != null && compilationUnit.getFile() != null) {
             File oldFile = compilationUnit.getFile();
             File parentDir = oldFile.getParentFile();
             File newFile = new File(parentDir, newSimpleName + ".java");
             compilationUnit.setFile(newFile);
-            compilationUnit.save();
-            if (!oldFile.equals(newFile) && oldFile.exists()) {
-                oldFile.delete();
+            compilationUnit.setPrimaryTypeName(newQualifiedName);
+            metaModel.clearPendingSource(oldQualifiedName);
+            compilationUnit.regenerateFromAST(); // registers a fresh buffer under newQualifiedName
+            if (!oldFile.equals(newFile)) {
+                metaModel.registerPendingDeletion(oldFile);
             }
         }
 
-        // 4. Save all other affected CUs
+        // 4. Regenerate all other affected CUs (their references were rewritten), deferred.
         for (SourceCompilationUnit cu : affectedCUs) {
-            cu.save();
+            cu.regenerateFromAST();
         }
 
         // 5. Update fields
@@ -365,7 +369,7 @@ public class SourceModelEntity implements SourceElement,
         addDeclaredProperty(prop);
 
         // --- Write back ---
-        compilationUnit.save();
+        compilationUnit.regenerateFromAST();
 
         return prop;
     }
@@ -456,7 +460,7 @@ public class SourceModelEntity implements SourceElement,
         addDeclaredProperty(prop);
 
         // --- Write back ---
-        compilationUnit.save();
+        compilationUnit.regenerateFromAST();
 
         return prop;
     }
@@ -508,9 +512,7 @@ public class SourceModelEntity implements SourceElement,
             throw new IllegalStateException("No source position for method " + getterName);
         }
 
-        File javaFile = compilationUnit.getFile();
-        String source = new String(java.nio.file.Files.readAllBytes(javaFile.toPath()),
-                java.nio.charset.StandardCharsets.UTF_8);
+        String source = compilationUnit.getText();
 
         // Collect insertions; apply by DESCENDING offset so earlier offsets stay valid.
         List<int[]> offsets = new ArrayList<>();   // [offset] paired with texts below
@@ -546,8 +548,7 @@ public class SourceModelEntity implements SourceElement,
             source = SourceAnnotationEditor.ensureImport(source, Setter.class.getName());
         }
 
-        java.nio.file.Files.write(javaFile.toPath(),
-                source.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        compilationUnit.setText(source);
     }
 
     // --- promote helpers -----------------------------------------------------
@@ -648,9 +649,7 @@ public class SourceModelEntity implements SourceElement,
             imports.add(annClass.getName());
         }
 
-        File javaFile = compilationUnit.getFile();
-        String source = new String(java.nio.file.Files.readAllBytes(javaFile.toPath()),
-                java.nio.charset.StandardCharsets.UTF_8);
+        String source = compilationUnit.getText();
 
         Integer[] order = new Integer[offsets.size()];
         for (int i = 0; i < order.length; i++) {
@@ -663,8 +662,7 @@ public class SourceModelEntity implements SourceElement,
         for (String imp : imports) {
             source = SourceAnnotationEditor.ensureImport(source, imp);
         }
-        java.nio.file.Files.write(javaFile.toPath(),
-                source.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        compilationUnit.setText(source);
     }
 
     /**
@@ -700,12 +698,11 @@ public class SourceModelEntity implements SourceElement,
     /** Marks an existing method as an {@code @Operation} (editor-facing marker). */
     public void declareOperation(String methodName, int paramCount) throws IOException {
         CtMethod<?> m = requireMethodWithPosition(methodName, paramCount);
-        File javaFile = compilationUnit.getFile();
-        String source = readSource(javaFile);
+        String source = compilationUnit.getText();
         source = SourceAnnotationEditor.insertAnnotationLine(source,
                 m.getPosition().getSourceStart(), "@Operation");
         source = SourceAnnotationEditor.ensureImport(source, Operation.class.getName());
-        writeSource(javaFile, source);
+        compilationUnit.setText(source);
     }
 
     /**
@@ -736,8 +733,7 @@ public class SourceModelEntity implements SourceElement,
             texts.add("@Parameter(\"" + parameterPropertyIds.get(i) + "\") ");
         }
 
-        File javaFile = compilationUnit.getFile();
-        String source = readSource(javaFile);
+        String source = compilationUnit.getText();
 
         Integer[] order = new Integer[meta.size()];
         for (int i = 0; i < order.length; i++) {
@@ -754,7 +750,7 @@ public class SourceModelEntity implements SourceElement,
         }
         source = SourceAnnotationEditor.ensureImport(source, Initializer.class.getName());
         source = SourceAnnotationEditor.ensureImport(source, Parameter.class.getName());
-        writeSource(javaFile, source);
+        compilationUnit.setText(source);
     }
 
     /**
@@ -772,12 +768,11 @@ public class SourceModelEntity implements SourceElement,
             ann.append(", isMultiValued = true");
         }
         ann.append(")");
-        File javaFile = compilationUnit.getFile();
-        String source = readSource(javaFile);
+        String source = compilationUnit.getText();
         source = SourceAnnotationEditor.insertAnnotationLine(source,
                 m.getPosition().getSourceStart(), ann.toString());
         source = SourceAnnotationEditor.ensureImport(source, Finder.class.getName());
-        writeSource(javaFile, source);
+        compilationUnit.setText(source);
     }
 
     private CtMethod<?> requireMethodWithPosition(String methodName, int paramCount) {
@@ -790,16 +785,6 @@ public class SourceModelEntity implements SourceElement,
             throw new IllegalStateException("No source position for method " + methodName);
         }
         return m;
-    }
-
-    private static String readSource(File f) throws IOException {
-        return new String(java.nio.file.Files.readAllBytes(f.toPath()),
-                java.nio.charset.StandardCharsets.UTF_8);
-    }
-
-    private static void writeSource(File f, String content) throws IOException {
-        java.nio.file.Files.write(f.toPath(),
-                content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     /** Finds a declared method by name with exactly {@code paramCount} parameters. */
@@ -838,15 +823,14 @@ public class SourceModelEntity implements SourceElement,
      * @throws IOException if the file deletion fails
      */
     public void delete() throws IOException {
-        // 1. Delete the backing file
+        // 1. Defer the file removal to the next flush.
         if (compilationUnit != null && compilationUnit.getFile() != null) {
-            File f = compilationUnit.getFile();
-            if (f.exists()) {
-                f.delete();
-            }
+            metaModel.registerPendingDeletion(compilationUnit.getFile());
         }
 
-        // 2. Unregister from meta-model
+        // 2. Drop any unsaved buffer for this unit (it is being deleted) and
+        //    unregister it from the meta-model.
+        metaModel.clearPendingSource(qualifiedName);
         metaModel.unregisterEntity(qualifiedName);
         metaModel.unregisterCompilationUnit(qualifiedName);
 
@@ -870,7 +854,7 @@ public class SourceModelEntity implements SourceElement,
         CtInterface<?> ctInterface = (CtInterface<?>) ctType;
         ctInterface.addSuperInterface(superEntity.getCtType().getReference());
         addDirectSuperEntity(superEntity);
-        compilationUnit.save();
+        compilationUnit.regenerateFromAST();
     }
 
     /**
@@ -901,7 +885,7 @@ public class SourceModelEntity implements SourceElement,
         }
 
         removeDirectSuperEntity(superEntity);
-        compilationUnit.save();
+        compilationUnit.regenerateFromAST();
     }
 
     // -------------------------------------------------------------------------
@@ -971,16 +955,13 @@ public class SourceModelEntity implements SourceElement,
         if (ctType.getPosition() == null || !ctType.getPosition().isValidPosition()) {
             throw new IllegalStateException("No source position for " + qualifiedName);
         }
-        java.io.File javaFile = compilationUnit.getFile();
-        String source = new String(java.nio.file.Files.readAllBytes(javaFile.toPath()),
-                java.nio.charset.StandardCharsets.UTF_8);
+        String source = compilationUnit.getText();
         int declStart = ctType.getPosition().getSourceStart();
         // isAbstract defaults to false in PAMELA, so removing the parameter (null)
         // is the canonical way to express the non-abstract case.
         String edited = SourceAnnotationEditor.setAnnotationParameter(
                 source, declStart, "ModelEntity", "isAbstract", isAbstract ? "true" : null);
-        java.nio.file.Files.write(javaFile.toPath(),
-                edited.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        compilationUnit.setText(edited);
 
         boolean old = this.abstractEntity;
         this.abstractEntity = isAbstract;

@@ -140,9 +140,13 @@ public class PamelaProject {
     // Dirty state and sidecar tracking (diagram lifecycle)
     // -------------------------------------------------------------------------
 
-    /** True when the project has unsaved changes. */
+    /**
+     * True when the project has unsaved changes — either diagram changes (the
+     * {@link #dirty} flag) or unsaved source-model edits held in the meta-model's
+     * dirty buffers (deferred-save; see {@code editable-source-dirty-buffer-design.md}).
+     */
     public boolean isDirty() {
-        return dirty;
+        return dirty || (metaModel != null && metaModel.isDirty());
     }
 
     /** Sets the dirty flag (cleared on save, set on any diagram mutation). */
