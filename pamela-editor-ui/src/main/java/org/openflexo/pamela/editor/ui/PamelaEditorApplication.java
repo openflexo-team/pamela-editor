@@ -948,6 +948,12 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             project = projects.get(projects.size() - 1);
         }
         saveProject(project);
+        // If the active source view had unsaved text edits, re-derive the model from the
+        // just-saved source (deferred-save reconcile on save, D4). Done only on an explicit
+        // save (not the close/quit prompt) so a closing project is never rebuilt.
+        if (project != null && pendingSourceViewReconcile) {
+            reconcileCurrentSelection(project);
+        }
     }
 
     /**
@@ -1193,7 +1199,18 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
      * a {@code Source*} element rebuilds its view from the current source on disk.
      */
     private void invalidateSourceViews() {
-        viewCache.keySet().removeIf(key -> !(key instanceof PamelaClassDiagram));
+        java.util.Iterator<java.util.Map.Entry<Object, JComponent>> it =
+                viewCache.entrySet().iterator();
+        while (it.hasNext()) {
+            java.util.Map.Entry<Object, JComponent> e = it.next();
+            if (!(e.getKey() instanceof PamelaClassDiagram)) {
+                if (e.getValue() instanceof SourceCodeView) {
+                    // Detach the buffer listener of an editable source view before discarding it.
+                    ((SourceCodeView) e.getValue()).dispose();
+                }
+                it.remove();
+            }
+        }
     }
 
     // =========================================================================
@@ -1844,7 +1861,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             return new PackageSummaryView((SourcePackage) element);
         }
         if (element instanceof SourceModelEntity) {
-            return new SourceCodeView((SourceModelEntity) element);
+            return new SourceCodeView((SourceModelEntity) element, this);
         }
         if (element instanceof SourceJavaFile) {
             return new JavaFileView((SourceJavaFile) element);
@@ -2276,6 +2293,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     private Object editListenedElement;
     private final java.beans.PropertyChangeListener editListener = this::onInspectedElementEdited;
 
+    /** Set when the editable source view has unsaved text edits awaiting a model reconcile. */
+    private boolean pendingSourceViewReconcile;
+
     /**
      * Observes the currently inspected element for in-inspector edits. An editable
      * {@code Source*} setter mutates the source and fires a {@code PropertyChange};
@@ -2331,6 +2351,76 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                 setCurrentSelectedElement(fresh, true);
             }
         });
+    }
+
+    // -------------------------------------------------------------------------
+    // Editable source view (Phase 3) — buffer edits & reconciliation
+    // (editable-source-dirty-buffer-design.md §7)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Called by an editable {@link SourceCodeView} on each user keystroke: the edit is
+     * already in the compilation-unit buffer (so the meta-model is dirty); this only
+     * flags a pending reconcile and refreshes the unsaved-changes marker.
+     */
+    public void onSourceBufferEdited() {
+        pendingSourceViewReconcile = true;
+        updateFrameTitle();
+    }
+
+    /**
+     * Re-derives the model from the buffers after a source-text edit (focus-loss path, D4).
+     * Resolves the owning project from the edited entity (robust to a stale instance), then
+     * rebuilds and re-anchors the current selection.
+     */
+    public void reconcileSourceEdit(SourceModelEntity entity) {
+        if (entity == null) {
+            return;
+        }
+        PamelaProject project = null;
+        for (PamelaProject p : projects) {
+            if (p.getMetaModel() == entity.getMetaModel()) {
+                project = p;
+                break;
+            }
+        }
+        if (project != null) {
+            reconcileCurrentSelection(project);
+        }
+    }
+
+    /**
+     * Rebuilds {@code project} (parse-from-buffer) and, on completion, re-anchors the
+     * <em>then-current</em> selection to its fresh instance — read in the callback, not
+     * captured, so a selection the user made while the rebuild ran is honoured (no yank
+     * back to the edited element).
+     */
+    private void reconcileCurrentSelection(PamelaProject project) {
+        pendingSourceViewReconcile = false;
+        final SourceMetaModel model = project.getMetaModel();
+        rebuildProject(project, () -> {
+            Object sel = currentSelectedElement;
+            Object fresh = freshInstanceOf(sel, model);
+            if (fresh != null && fresh != sel) {
+                setCurrentSelectedElement(fresh, true);
+            }
+        });
+    }
+
+    /** Re-resolves a (possibly stale) selected element to its fresh instance after a rebuild. */
+    private Object freshInstanceOf(Object sel, SourceMetaModel model) {
+        if (sel instanceof SourceModelEntity) {
+            return model.getEntity(((SourceModelEntity) sel).getQualifiedName());
+        }
+        if (sel instanceof SourceModelProperty) {
+            SourceModelProperty p = (SourceModelProperty) sel;
+            SourceModelEntity e = model.getEntity(p.getModelEntity().getQualifiedName());
+            return e != null ? e.getDeclaredProperties().get(p.getPropertyIdentifier()) : null;
+        }
+        if (sel instanceof SourcePackage) {
+            return model.getPackage(((SourcePackage) sel).getQualifiedName());
+        }
+        return sel; // diagrams / project: survive the rebuild unchanged
     }
 
     public PamelaProject getProjectForElement(Object element) {

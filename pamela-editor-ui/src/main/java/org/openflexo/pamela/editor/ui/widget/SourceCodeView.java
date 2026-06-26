@@ -16,6 +16,7 @@ import org.openflexo.pamela.editor.model.SourceCompilationUnit;
 import org.openflexo.pamela.editor.model.SourceJavaFile;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourceModelProperty;
+import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 
 /**
  * Central tab view that displays the Java source code of a {@link SourceModelEntity}.
@@ -38,16 +39,27 @@ public class SourceCodeView extends JPanel {
     private static final Color HIGHLIGHT_COLOR = new Color(255, 255, 160); // soft yellow
 
     private final SourceModelEntity entity;
+    private final PamelaEditorApplication app;
     private final RSyntaxTextArea textArea;
     private final List<Object> highlightTags = new ArrayList<>();
 
-    public SourceCodeView(SourceModelEntity entity) {
+    /** True while this view is programmatically setting the document text (suppresses the echo). */
+    private boolean programmaticChange;
+    /** True while pushing a user edit into the buffer (so the buffer's "source" echo is ignored). */
+    private boolean pushingToBuffer;
+    /** True once the user has edited the text since the last reconcile (drives focus-loss rebuild). */
+    private boolean dirtyFromUser;
+    /** Listener on the compilation unit's buffer; detached in {@link #dispose()}. */
+    private java.beans.PropertyChangeListener bufferListener;
+
+    public SourceCodeView(SourceModelEntity entity, PamelaEditorApplication app) {
         super(new BorderLayout());
         this.entity = entity;
+        this.app = app;
 
         textArea = new RSyntaxTextArea();
         textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
-        textArea.setEditable(false);   // read-only in the first sprint
+        textArea.setEditable(true);    // Phase 3: editable, two-way bound to the CU buffer
         textArea.setCodeFoldingEnabled(true);
         textArea.setAntiAliasingEnabled(true);
         textArea.setTabSize(4);
@@ -56,7 +68,8 @@ public class SourceCodeView extends JPanel {
         scrollPane.setLineNumbersEnabled(true);
         add(scrollPane, BorderLayout.CENTER);
 
-        loadSource();
+        loadSource();      // sets the initial text (before listeners are installed)
+        installEditing();  // Document↔buffer binding + focus-loss reconcile
     }
 
     // -------------------------------------------------------------------------
@@ -84,6 +97,97 @@ public class SourceCodeView extends JPanel {
         } catch (Exception e) {
             logger.warning("Failed to load source for " + entity.getQualifiedName() + ": " + e.getMessage());
             textArea.setText("// Failed to load source: " + e.getMessage());
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Editable buffer binding (Phase 3) — editable-source-dirty-buffer-design.md §7
+    // -------------------------------------------------------------------------
+
+    /**
+     * Installs the two-way binding between the text area and the compilation-unit
+     * buffer, plus the focus-loss reconciliation:
+     * <ul>
+     *   <li>Document → buffer: each user edit is pushed into {@code cu.setText(...)}.</li>
+     *   <li>buffer → Document: a buffer change made elsewhere (a model-editing action
+     *       on this file while the view is open) refreshes the text.</li>
+     *   <li>focus lost: if the user edited the text, re-derive the model from the buffer
+     *       (rebuild-from-buffer) — decision D4 ("on save / focus-loss").</li>
+     * </ul>
+     */
+    private void installEditing() {
+        textArea.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { onUserEdit(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { onUserEdit(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { /* attributes only */ }
+        });
+
+        SourceCompilationUnit cu = entity.getCompilationUnit();
+        if (cu != null) {
+            bufferListener = this::onBufferChangedExternally;
+            cu.getPropertyChangeSupport().addPropertyChangeListener("source", bufferListener);
+        }
+
+        textArea.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override public void focusLost(java.awt.event.FocusEvent e) {
+                if (dirtyFromUser && app != null) {
+                    dirtyFromUser = false;
+                    app.reconcileSourceEdit(entity);
+                }
+            }
+        });
+    }
+
+    /** Document → buffer: push the current text into the compilation-unit buffer (no disk write). */
+    private void onUserEdit() {
+        if (programmaticChange) {
+            return;
+        }
+        SourceCompilationUnit cu = entity.getCompilationUnit();
+        if (cu == null) {
+            return;
+        }
+        dirtyFromUser = true;
+        pushingToBuffer = true;
+        try {
+            cu.setText(textArea.getText());
+        } finally {
+            pushingToBuffer = false;
+        }
+        if (app != null) {
+            app.onSourceBufferEdited();
+        }
+    }
+
+    /** buffer → Document: a model-editing action changed the buffer while this view is open. */
+    private void onBufferChangedExternally(java.beans.PropertyChangeEvent evt) {
+        if (pushingToBuffer) {
+            return; // our own edit — the document is already current
+        }
+        Object nv = evt.getNewValue();
+        if (!(nv instanceof String)) {
+            return;
+        }
+        String newText = (String) nv;
+        if (newText.equals(textArea.getText())) {
+            return;
+        }
+        programmaticChange = true;
+        try {
+            int caret = textArea.getCaretPosition();
+            textArea.setText(newText);
+            textArea.setCaretPosition(Math.min(caret, newText.length()));
+        } finally {
+            programmaticChange = false;
+        }
+    }
+
+    /** Detaches the buffer listener. Called when the view is discarded on a rebuild. */
+    public void dispose() {
+        SourceCompilationUnit cu = entity.getCompilationUnit();
+        if (cu != null && bufferListener != null) {
+            cu.getPropertyChangeSupport().removePropertyChangeListener("source", bufferListener);
+            bufferListener = null;
         }
     }
 
