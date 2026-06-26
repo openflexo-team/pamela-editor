@@ -38,7 +38,7 @@ public class SourceCodeView extends JPanel {
     /** Background colour used for property method highlights. */
     private static final Color HIGHLIGHT_COLOR = new Color(255, 255, 160); // soft yellow
 
-    private final SourceModelEntity entity;
+    private SourceModelEntity entity; // re-anchored to the fresh instance on a rebuild (rebind)
     private final PamelaEditorApplication app;
     private final RSyntaxTextArea textArea;
     private final List<Object> highlightTags = new ArrayList<>();
@@ -186,6 +186,38 @@ public class SourceCodeView extends JPanel {
         } finally {
             programmaticChange = false;
         }
+    }
+
+    /**
+     * Re-anchors this view to the fresh {@link SourceModelEntity} instance produced by a
+     * metamodel rebuild, <b>without reloading the text</b>: a rebuild re-derives the model
+     * from the buffer but does not change the buffer text, so the document already matches and
+     * the caret / scroll / focus are preserved (the component is reused, not recreated).
+     * Re-attaches the buffer listener to the fresh compilation unit and clears now-stale
+     * property highlights.
+     */
+    public void rebind(SourceModelEntity freshEntity) {
+        dispose(); // detach the old compilation unit's buffer listener
+        this.entity = freshEntity;
+        SourceCompilationUnit cu = freshEntity.getCompilationUnit();
+        if (cu != null) {
+            bufferListener = this::onBufferChangedExternally;
+            cu.getPropertyChangeSupport().addPropertyChangeListener("source", bufferListener);
+            // Defensive: if the buffer somehow diverged from the document, sync it without
+            // moving the caret. In the normal case they are identical and this is a no-op.
+            String bufferText = cu.getText();
+            if (bufferText != null && !bufferText.equals(textArea.getText())) {
+                int caret = Math.min(textArea.getCaretPosition(), bufferText.length());
+                programmaticChange = true;
+                try {
+                    textArea.setText(bufferText);
+                    textArea.setCaretPosition(caret);
+                } finally {
+                    programmaticChange = false;
+                }
+            }
+        }
+        clearHighlights(); // old highlight ranges referenced stale property instances
     }
 
     /** Detaches the buffer listener. Called when the view is discarded on a rebuild. */

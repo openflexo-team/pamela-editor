@@ -1152,10 +1152,10 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                             "Error",
                             JOptionPane.ERROR_MESSAGE);
                 }
-                // A rebuild recreates all Source* objects and may have changed files
-                // on disk. Drop cached views backed by those (everything except
-                // diagram editors) so they are recreated fresh from disk on next show.
-                invalidateSourceViews();
+                // A rebuild recreates all Source* objects. Re-anchor editable source views
+                // of this model to the fresh entities (preserving caret/scroll/focus) and
+                // drop the other cached views so they are recreated fresh on next show.
+                invalidateSourceViews(metaModel);
 
                 // Diagram editors are kept across a rebuild, but their EntityView.entity
                 // references now point at stale instances (and entities may have appeared
@@ -1198,19 +1198,38 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
      * affected by a meta-model rebuild). Called after a rebuild so that re-showing
      * a {@code Source*} element rebuilds its view from the current source on disk.
      */
-    private void invalidateSourceViews() {
+    private void invalidateSourceViews(SourceMetaModel rebuiltModel) {
+        java.util.Map<Object, JComponent> reanchored = new java.util.IdentityHashMap<>();
         java.util.Iterator<java.util.Map.Entry<Object, JComponent>> it =
                 viewCache.entrySet().iterator();
         while (it.hasNext()) {
             java.util.Map.Entry<Object, JComponent> e = it.next();
-            if (!(e.getKey() instanceof PamelaClassDiagram)) {
-                if (e.getValue() instanceof SourceCodeView) {
-                    // Detach the buffer listener of an editable source view before discarding it.
-                    ((SourceCodeView) e.getValue()).dispose();
-                }
-                it.remove();
+            Object key = e.getKey();
+            JComponent v = e.getValue();
+            if (key instanceof PamelaClassDiagram) {
+                continue; // diagram editors are unaffected by a metamodel rebuild
             }
+            // Keep an editable source view of the rebuilt model: re-anchor it to the fresh
+            // entity instance (preserving caret / scroll / focus) instead of discarding it.
+            if (v instanceof SourceCodeView && key instanceof SourceModelEntity
+                    && ((SourceModelEntity) key).getMetaModel() == rebuiltModel) {
+                SourceModelEntity fresh =
+                        rebuiltModel.getEntity(((SourceModelEntity) key).getQualifiedName());
+                if (fresh != null) {
+                    ((SourceCodeView) v).rebind(fresh);
+                    it.remove();
+                    reanchored.put(fresh, v);
+                    continue;
+                }
+            }
+            // Everything else (summaries, java-file views, source views whose entity vanished)
+            // is discarded and recreated fresh on next show.
+            if (v instanceof SourceCodeView) {
+                ((SourceCodeView) v).dispose();
+            }
+            it.remove();
         }
+        viewCache.putAll(reanchored);
     }
 
     // =========================================================================
@@ -1734,6 +1753,19 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
 
         // Already showing this element — do nothing
         if (element == currentHistoryElement) {
+            return;
+        }
+
+        // Same entity, fresh instance (after a metamodel rebuild): the source view was
+        // re-anchored in place (invalidateSourceViews), so it is already correct. Keep it —
+        // no view swap, so caret / scroll / focus are preserved — and just update the
+        // reference, the title and the context panel.
+        if (element instanceof SourceModelEntity && currentHistoryElement instanceof SourceModelEntity
+                && ((SourceModelEntity) element).getQualifiedName()
+                        .equals(((SourceModelEntity) currentHistoryElement).getQualifiedName())) {
+            currentHistoryElement = element;
+            centralTitleLabel.setText(titleFor(element));
+            contextPanel.showFor(element);
             return;
         }
 
