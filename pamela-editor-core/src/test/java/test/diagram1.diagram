@@ -113,5 +113,48 @@
     "target" : "test.model2.EventNode",
     "type" : "inheritance",
     "style" : "inheritance-rect-polylin"
-  } ]
+  } ],
+  "entityStyle" : {
+    "headerBackgroundColor" : "210,225,245",
+    "bodyBackgroundColor" : "255,255,255",
+    "borderColor" : "105,105,105",
+    "titleFont" : "SansSerif,1,11",
+    "memberFont" : "SansSerif,0,11"
+  },
+  "connectorStyles" : [ {
+    "id" : "inheritance-line",
+    "name" : "Inheritance — straight line",
+    "connectorType" : "LINE",
+    "color" : "0,0,139",
+    "lineWidth" : 1.5,
+    "straightLineWhenPossible" : false,
+    "rounded" : false,
+    "arcSize" : -1,
+    "adjustability" : "BASICALLY_ADJUSTABLE",
+    "constraints" : "NONE"
+  }, {
+    "id" : "relationship-rect-polylin",
+    "name" : "Relationship — orthogonal",
+    "connectorType" : "RECT_POLYLIN",
+    "color" : "64,64,64",
+    "lineWidth" : 1.5,
+    "straightLineWhenPossible" : true,
+    "rounded" : true,
+    "arcSize" : 10,
+    "adjustability" : "BASICALLY_ADJUSTABLE",
+    "constraints" : "NONE"
+  }, {
+    "id" : "inheritance-rect-polylin",
+    "name" : "Inheritance — orthogonal",
+    "connectorType" : "RECT_POLYLIN",
+    "color" : "0,0,139",
+    "lineWidth" : 1.5,
+    "straightLineWhenPossible" : true,
+    "rounded" : false,
+    "arcSize" : -1,
+    "adjustability" : "BASICALLY_ADJUSTABLE",
+    "constraints" : "VERTICAL_LAYOUT"
+  } ],
+  "defaultInheritanceStyleId" : "inheritance-line",
+  "defaultAssociationStyleId" : "relationship-rect-polylin"
 }
