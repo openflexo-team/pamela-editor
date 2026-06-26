@@ -1312,6 +1312,45 @@ public class TestMutations {
     }
 
     /**
+     * Repro of the interactive scenario: open Edge.java, type {@code @Getter("prout")} before
+     * the plain {@code int getNewProperty()} method, then rebuild. The model must keep Edge and
+     * surface the new property (no exception, entity not dropped).
+     */
+    @Test
+    public void testEdgeTextEditAddsProperty() throws IOException {
+        File workDir = tmp.newFolder("testEdgeTextEdit");
+        File srcCopy = copyDir(MODEL2_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model2.FlexoProcess");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity edge = mm.getEntity("test.model2.Edge");
+        assertNotNull("Edge must be reachable", edge);
+        SourceCompilationUnit cu = edge.getCompilationUnit();
+
+        // Simulate the editable-view keystroke: buffer edit, no disk write.
+        String edited = cu.getText().replace("public int getNewProperty();",
+                "@Getter(\"prout\")\n\tpublic int getNewProperty();");
+        assertTrue("the marker method must exist in Edge", edited.contains("@Getter(\"prout\")"));
+        cu.setText(edited);
+
+        // Focus-loss path: rebuild from the buffer (no flush).
+        mm.rebuildMetaModel();
+        SourceModelEntity edge2 = mm.getEntity("test.model2.Edge");
+        assertNotNull("Edge must survive the buffer rebuild", edge2);
+        assertTrue("the new property must appear",
+                edge2.getDeclaredProperties().containsKey("prout"));
+
+        // Save path: flush then rebuild from disk.
+        mm.flushAll();
+        mm.rebuildMetaModel();
+        SourceModelEntity edge3 = mm.getEntity("test.model2.Edge");
+        assertNotNull("Edge must survive the save+rebuild", edge3);
+        assertTrue("the new property must persist",
+                edge3.getDeclaredProperties().containsKey("prout"));
+    }
+
+    /**
      * After a buffer-only rebuild, a dirty unit's compilation unit must still report its
      * REAL, existing {@code .java} file (a {@code VirtualFile}-parsed unit reports a bogus
      * virtual path otherwise) — so the source view shows it and a later flush writes the

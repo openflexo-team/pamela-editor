@@ -130,6 +130,12 @@ public class SourceCodeView extends JPanel {
 
         textArea.addFocusListener(new java.awt.event.FocusAdapter() {
             @Override public void focusLost(java.awt.event.FocusEvent e) {
+                // A temporary focus loss (opening a menu, a popup) is not a navigation away
+                // from the editor — e.g. clicking the Save menu. Skipping it avoids a second,
+                // racing reconcile rebuild; the save path reconciles instead.
+                if (e.isTemporary()) {
+                    return;
+                }
                 if (dirtyFromUser && app != null) {
                     dirtyFromUser = false;
                     app.reconcileSourceEdit(entity);

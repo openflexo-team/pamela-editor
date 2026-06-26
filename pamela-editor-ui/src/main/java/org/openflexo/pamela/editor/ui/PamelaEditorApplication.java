@@ -1616,6 +1616,14 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
 
     /** Called from MetaModelBrowserFIBController on single-click. */
     private void onBrowserSelectionChanged(Object element) {
+        // Ignore a null from the browser: it is almost always a spurious deselect emitted while
+        // Gina rebuilds the tree after a metamodel rebuild — the selected node is briefly removed,
+        // which clears the tree selection and writes null back through the two-way "selected"
+        // binding. Honouring it would empty the detailed browser and inspector. A genuine
+        // programmatic clear (e.g. closing a project) calls setCurrentSelectedElement(null) directly.
+        if (element == null) {
+            return;
+        }
         setCurrentSelectedElement(element);
     }
 
@@ -2401,7 +2409,18 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         rebuildProject(project, () -> {
             Object sel = currentSelectedElement;
             Object fresh = freshInstanceOf(sel, model);
-            if (fresh != null && fresh != sel) {
+            if (fresh == null || fresh == sel) {
+                return;
+            }
+            // Re-anchor the selection. For a browser tree node (entity / package) go through
+            // selectInBrowser, which re-selects via invokeLater AFTER Gina has rebuilt the
+            // tree. A synchronous setCurrentSelectedElement here would be undone by the async
+            // tree rebuild: removing the old node clears the tree selection, which writes null
+            // back through the two-way "selected" binding and empties the detailed browser.
+            // Mirrors onInspectedElementEdited / the action re-anchor path.
+            if (fresh instanceof SourceModelEntity || fresh instanceof SourcePackage) {
+                selectInBrowser(fresh);
+            } else {
                 setCurrentSelectedElement(fresh, true);
             }
         });
