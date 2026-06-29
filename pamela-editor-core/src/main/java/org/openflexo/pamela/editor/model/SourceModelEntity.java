@@ -888,6 +888,40 @@ public class SourceModelEntity implements SourceElement,
         compilationUnit.regenerateFromAST();
     }
 
+    // =========================================================================
+    // Direct super-entities — editable inspector (FlatDesign table).
+    //
+    // The inspector lists getDirectSuperEntities() in a FlatDesign table whose
+    // footer "+" adds a link and "-" removes the selected one. The add is delegated
+    // to the existing AddSuperEntityAction (its own entity-selection dialog), reached
+    // via the UI-intent signal requestAddSuperEntity() (the model fires, the app runs
+    // the action — like requestRename/requestChangeType, model-editing-design.md §6).
+    // The remove goes through unlinkSuperEntity(), which mutates via the existing
+    // removeSuperEntity primitive and fires "directSuperEntities" so the app rebuilds.
+    // =========================================================================
+
+    /**
+     * Removes an inheritance link from the inspector table and fires
+     * {@code "directSuperEntities"} so the application rebuilds. No-op if the
+     * argument is not a current direct super-entity.
+     */
+    public void unlinkSuperEntity(SourceModelEntity superEntity) throws IOException {
+        if (superEntity == null || !directSuperEntities.contains(superEntity)) {
+            return;
+        }
+        removeSuperEntity(superEntity);
+        pcSupport.firePropertyChange("directSuperEntities", superEntity, null);
+    }
+
+    /**
+     * Fires a UI-intent signal that the user asked to add a super-entity (the table's
+     * "+" footer). The model opens no dialog; the application observes the inspected
+     * element and runs {@code AddSuperEntityAction} in response (model-editing-design.md §6).
+     */
+    public void requestAddSuperEntity() {
+        pcSupport.firePropertyChange("addSuperEntityRequested", null, this);
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------

@@ -1073,6 +1073,41 @@ public class TestMutations {
     }
 
     // =========================================================================
+    // Test 19 — inspector super-entity table: unlink (RemoveAction) + add-intent
+    // =========================================================================
+
+    @Test
+    public void testInspectorUnlinkSuperEntity() throws IOException {
+        File workDir = tmp.newFolder("testInspectorSuper");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+
+        // Set up an inheritance link Foo2 -> Foo1.
+        mm.getEntity("test.model1.Foo2").addSuperEntity(mm.getEntity("test.model1.Foo1"));
+        mm.flushAll();
+        mm.rebuildMetaModel();
+        SourceModelEntity foo2 = mm.getEntity("test.model1.Foo2");
+        assertEquals(1, foo2.getDirectSuperEntities().size());
+
+        // --- Remove via the inspector path (table RemoveAction → unlinkSuperEntity) ---
+        foo2.unlinkSuperEntity(foo2.getDirectSuperEntities().get(0));
+        mm.flushAll();
+        mm.rebuildMetaModel();
+        assertTrue("super-entity removed",
+                mm.getEntity("test.model1.Foo2").getDirectSuperEntities().isEmpty());
+
+        // --- Add ("+" footer) is a UI intent: requestAddSuperEntity() fires the signal ---
+        final boolean[] fired = { false };
+        SourceModelEntity foo2b = mm.getEntity("test.model1.Foo2");
+        foo2b.getPropertyChangeSupport().addPropertyChangeListener("addSuperEntityRequested",
+                evt -> fired[0] = true);
+        foo2b.requestAddSuperEntity();
+        assertTrue("requestAddSuperEntity fires the UI-intent signal", fired[0]);
+    }
+
+    // =========================================================================
     // Method-level promote (signature-based) — model-editing-design.md §3.3
     // =========================================================================
 

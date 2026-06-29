@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
-    dataClassName="org.openflexo.pamela.editor.model.SourceModelEntity" name="Inspector">
+    dataClassName="org.openflexo.pamela.editor.model.SourceModelEntity"
+    controllerClassName="org.openflexo.pamela.editor.ui.widget.PamelaModelInspectorFIBController"
+    name="Inspector">
     <Label name="SimpleNameLabel" label="Entity" index="0"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="SimpleNameTF" index="1" data="data.simpleName" readOnly="true"
@@ -22,9 +24,20 @@
     <TextField name="InitPolicyTF" index="9" data="data.initPolicy.name" readOnly="true"
         constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="10" localize="true" />
     <Label name="SuperEntitiesLabel" label="super_entities" index="12"
-        constraints="twocols(location=left)" localize="true" />
-    <TextField name="SuperEntitiesTF" index="13" data="data.directSuperEntities.size" readOnly="true"
-        constraints="twocols(location=right;insetsRight=5)" columns="5" localize="true" />
+        constraints="twocols(expandHorizontally=false;expandVertically=false;location=left)" localize="true" />
+    <Table name="SuperEntitiesTable" iteratorClassName="org.openflexo.pamela.editor.model.SourceModelEntity"
+        lookAndFeel="FlatDesign" showHeader="false" autoSelectFirstRow="false"
+        createNewRowOnClick="false" showFooter="true" selectionMode="SingleSelection"
+        localize="true" manageDynamicModel="true" opaque="false" index="13"
+        data="data.directSuperEntities"
+        constraints="twocols(expandHorizontally=true;expandVertically=false;location=right)">
+        <IconColumn name="icon" data="controller.iconForObject(iterator)"
+            title="icon" columnWidth="25" resizable="false" displayTitle="false" />
+        <LabelColumn name="label" data="iterator.simpleName"
+            title="entity" columnWidth="120" resizable="true" displayTitle="true" />
+        <RemoveAction name="delete" method="data.unlinkSuperEntity(selected)" />
+        <AddAction name="add_super_entity" method="data.requestAddSuperEntity()" />
+    </Table>
     <LocalizedDictionary>
         <Localized key="simple_name" lang="English" value="Simple name" />
         <Localized key="simple_name" lang="French" value="Nom simple" />
@@ -40,6 +53,10 @@
         <Localized key="properties" lang="French" value="Propriétés" />
         <Localized key="super_entities" lang="English" value="Super entities" />
         <Localized key="super_entities" lang="French" value="Super entités" />
+        <Localized key="name" lang="English" value="Name" />
+        <Localized key="name" lang="French" value="Nom" />
+        <Localized key="add_super_entity" lang="English" value="Add" />
+        <Localized key="add_super_entity" lang="French" value="Ajouter" />
     </LocalizedDictionary>
     <Parameter name="title" value="Entity" />
 </Inspector>

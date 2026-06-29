@@ -2374,6 +2374,14 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             new org.openflexo.pamela.editor.ui.action.RenamePropertyAction().perform(element, this);
             return;
         }
+        // UI-intent: the entity inspector's super-entities table "+" footer asked to add a
+        // super-entity — run the existing AddSuperEntityAction (its own selection dialog +
+        // mutation + rebuild) rather than rebuilding here.
+        if ("addSuperEntityRequested".equals(evt.getPropertyName())
+                && element instanceof SourceModelEntity) {
+            new org.openflexo.pamela.editor.ui.action.AddSuperEntityAction().perform(element, this);
+            return;
+        }
        // The Source* instance is replaced by the rebuild; capture how to re-resolve
         // the fresh element (by qualified name / property identifier) afterwards.
         final SourceMetaModel model = project.getMetaModel();
