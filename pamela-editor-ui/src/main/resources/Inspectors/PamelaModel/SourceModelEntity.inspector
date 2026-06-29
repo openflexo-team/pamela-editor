@@ -4,15 +4,15 @@
     <Label name="SimpleNameLabel" label="simple_name" index="0"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="SimpleNameTF" index="1" data="data.simpleName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="QualifiedNameLabel" label="qualified_name" index="2"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="QualifiedNameTF" index="3" data="data.qualifiedName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="PackageLabel" label="package" index="4"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="PackageTF" index="5" data="data.sourcePackage.qualifiedName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="AbstractLabel" label="abstract" index="6"
         constraints="twocols(location=left)" localize="true" />
     <CheckBox name="AbstractCB" index="7" data="data.abstract" readOnly="false"
@@ -20,15 +20,15 @@
     <Label name="InitPolicyLabel" label="init_policy" index="8"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="InitPolicyTF" index="9" data="data.initPolicy.name" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="10" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="10" localize="true" />
     <Label name="PropertiesLabel" label="properties" index="10"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="PropertiesTF" index="11" data="data.declaredProperties.size" readOnly="true"
-        constraints="twocols(location=right)" columns="5" localize="true" />
+        constraints="twocols(location=right;insetsRight=5)" columns="5" localize="true" />
     <Label name="SuperEntitiesLabel" label="super_entities" index="12"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="SuperEntitiesTF" index="13" data="data.directSuperEntities.size" readOnly="true"
-        constraints="twocols(location=right)" columns="5" localize="true" />
+        constraints="twocols(location=right;insetsRight=5)" columns="5" localize="true" />
     <LocalizedDictionary>
         <Localized key="simple_name" lang="English" value="Simple name" />
         <Localized key="simple_name" lang="French" value="Nom simple" />

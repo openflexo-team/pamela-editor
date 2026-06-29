@@ -3,64 +3,75 @@
     dataClassName="org.openflexo.pamela.editor.model.SourceModelProperty" name="Inspector">
     <Label name="IdentifierLabel" label="identifier" index="0"
         constraints="twocols(location=left)" localize="true" />
-    <TextField name="IdentifierTF" index="1" data="data.propertyIdentifier" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+
+    <Panel name="IdentifierRow" layout="border" flowAlignment="LEFT" hGap="0" vGap="0" border="empty" index="1"
+        constraints="twocols(expandHorizontally=true;location=right)">
+        <TextField name="IdentifierTF" data="data.propertyIdentifier" readOnly="true"
+            columns="13" localize="true" constraints="border(location=center)" />
+        <Button name="RenameBtn" buttonType="Trigger" label="Rename…" constraints="border(location=east)" localize="false"
+            action="data.requestRename()" />
+    </Panel>
+
+
+   <!-- <TextField name="IdentifierTF" index="1" data="data.propertyIdentifier" readOnly="true"
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" /> -->
     <Label name="CardinalityLabel" label="cardinality" index="2"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="CardinalityTF" index="3" data="data.cardinality.name" readOnly="true"
-        constraints="twocols(location=right)" columns="8" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" localize="true" />
     <Label name="TypeLabel" label="type" index="4"
         constraints="twocols(location=left)" localize="true" />
-    <Panel name="TypeRow" layout="flow" flowAlignment="LEFT" hGap="4" border="empty" index="5"
+    <Panel name="TypeRow" layout="border" flowAlignment="LEFT" hGap="0" vGap="0" border="empty" index="5"
         constraints="twocols(expandHorizontally=true;location=right)">
         <TextField name="TypeTF" data="data.type.simpleName" readOnly="true"
-            columns="13" localize="true" />
-        <Button name="ChangeTypeBtn" buttonType="Trigger" label="Change type…" localize="false"
+            columns="13" localize="true" constraints="border(location=center)" />
+        <Button name="ChangeTypeBtn" buttonType="Trigger" label="Set…" constraints="border(location=east)" localize="false"
             action="data.requestChangeType()" />
     </Panel>
 
-    <Label name="DefaultValueLabel" label="default_value" index="6"
+    <Label name="GetterLabel" label="getter" index="6"
         constraints="twocols(location=left)" localize="true" />
-    <TextField name="DefaultValueTF" index="7" data="data.defaultValue" readOnly="false"
-        validateOnReturn="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
-    <Label name="DerivedLabel" label="derived" index="8"
+    <TextField name="GetterTF" index="7" data="data.getterMethodName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
+    <Label name="SetterLabel" label="setter" index="8"
         constraints="twocols(location=left)" localize="true" />
-    <CheckBox name="DerivedCB" index="9" data="data.derived" readOnly="false"
-        constraints="twocols(location=right)" localize="true" />
-    <Label name="EmbeddedLabel" label="embedded" index="10"
-        constraints="twocols(location=left)" localize="true" />
-    <CheckBox name="EmbeddedCB" index="11" data="data.embedded" readOnly="false"
-        constraints="twocols(location=right)" localize="true" />
-    <Label name="IgnoreTypeLabel" label="ignore_type" index="12"
-        constraints="twocols(location=left)" localize="true" />
-    <CheckBox name="IgnoreTypeCB" index="13" data="data.ignoreType" readOnly="false"
-        constraints="twocols(location=right)" localize="true" />
-    <Label name="IgnoreEqualityLabel" label="ignore_for_equality" index="14"
-        constraints="twocols(location=left)" localize="true" />
-    <CheckBox name="IgnoreEqualityCB" index="15" data="data.ignoreForEquality" readOnly="false"
-        constraints="twocols(location=right)" localize="true" />
-    <Label name="AllowsMultipleLabel" label="allows_multiple" index="16"
-        constraints="twocols(location=left)" localize="true" />
-    <CheckBox name="AllowsMultipleCB" index="17" data="data.allowsMultipleOccurrences" readOnly="false"
-        constraints="twocols(location=right)" localize="true" />
-
-    <Label name="GetterLabel" label="getter" index="18"
-        constraints="twocols(location=left)" localize="true" />
-    <TextField name="GetterTF" index="19" data="data.getterMethodName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
-    <Label name="SetterLabel" label="setter" index="20"
-        constraints="twocols(location=left)" localize="true" />
-    <TextField name="SetterTF" index="21" data="data.setterMethodName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
-    <Label name="InverseLabel" label="inverse" index="22"
+    <TextField name="SetterTF" index="9" data="data.setterMethodName" readOnly="true"
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
+    <Label name="InverseLabel" label="inverse" index="10"
         constraints="twocols(location=left)" localize="true" />
     <Custom name="InverseSelector"
         componentClassName="org.openflexo.pamela.editor.ui.widget.ModelPropertySelector"
-        data="data.inverse" manageDynamicModel="true" index="23"
-        constraints="twocols(expandHorizontally=true;location=right)">
+        data="data.inverse" manageDynamicModel="true" index="11"
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)">
         <Assignment variable="component.entity" value="data.type.modelEntity" />
     </Custom>
+
+    <Label name="DefaultValueLabel" label="default_value" index="12"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="DefaultValueTF" index="13" data="data.defaultValue" readOnly="false"
+        validateOnReturn="true"
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
+    <Label name="DerivedLabel" label="derived" index="14"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="DerivedCB" index="15" data="data.derived" readOnly="false"
+        constraints="twocols(location=right)" localize="true" />
+    <Label name="EmbeddedLabel" label="embedded" index="16"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="EmbeddedCB" index="17" data="data.embedded" readOnly="false"
+        constraints="twocols(location=right)" localize="true" />
+    <Label name="IgnoreTypeLabel" label="ignore_type" index="18"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="IgnoreTypeCB" index="19" data="data.ignoreType" readOnly="false"
+        constraints="twocols(location=right)" localize="true" />
+    <Label name="IgnoreEqualityLabel" label="ignore_for_equality" index="20"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="IgnoreEqualityCB" index="21" data="data.ignoreForEquality" readOnly="false"
+        constraints="twocols(location=right)" localize="true" />
+    <Label name="AllowsMultipleLabel" label="allows_multiple" index="22"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="AllowsMultipleCB" index="23" data="data.allowsMultipleOccurrences" readOnly="false"
+        constraints="twocols(location=right)" localize="true" />
+
     <LocalizedDictionary>
         <Localized key="identifier" lang="English" value="Identifier" />
         <Localized key="identifier" lang="French" value="Identifiant" />

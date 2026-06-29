@@ -4,11 +4,11 @@
     <Label name="InitializerLabel" label="initializer" index="0"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="InitializerTF" index="1" data="data.displayLabel" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="EntityLabel" label="entity" index="2"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="EntityTF" index="3" data="data.entity.simpleName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="NoGeometryNote" label="no_geometry_note" index="4"
         constraints="twocols(expandHorizontally=true;location=center)" localize="true" />
     <LocalizedDictionary>

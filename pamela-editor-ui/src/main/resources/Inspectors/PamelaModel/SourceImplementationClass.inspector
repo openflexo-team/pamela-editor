@@ -4,11 +4,11 @@
     <Label name="SimpleNameLabel" label="simple_name" index="0"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="SimpleNameTF" index="1" data="data.simpleName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="QualifiedNameLabel" label="qualified_name" index="2"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="QualifiedNameTF" index="3" data="data.qualifiedName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="AbstractLabel" label="abstract" index="4"
         constraints="twocols(location=left)" localize="true" />
     <CheckBox name="AbstractCB" index="5" data="data.abstract" readOnly="true"
@@ -16,7 +16,7 @@
     <Label name="CustomMethodsLabel" label="custom_methods" index="6"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="CustomMethodsTF" index="7" data="data.entity.declaredCustomMethods.size" readOnly="true"
-        constraints="twocols(location=right)" columns="5" localize="true" />
+        constraints="twocols(location=right;insetsRight=5)" columns="5" localize="true" />
     <LocalizedDictionary>
         <Localized key="simple_name" lang="English" value="Simple name" />
         <Localized key="simple_name" lang="French" value="Nom simple" />

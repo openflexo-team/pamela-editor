@@ -4,19 +4,19 @@
     <Label name="NameLabel" label="name" index="0"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="NameTF" index="1" data="data.name" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="PackagesLabel" label="packages" index="2"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="PackagesTF" index="3" data="data.allPackages.size" readOnly="true"
-        constraints="twocols(location=right)" columns="5" localize="true" />
+        constraints="twocols(location=right;insetsRight=5)" columns="5" localize="true" />
     <Label name="EntitiesLabel" label="entities" index="4"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="EntitiesTF" index="5" data="data.entities.size" readOnly="true"
-        constraints="twocols(location=right)" columns="5" localize="true" />
+        constraints="twocols(location=right;insetsRight=5)" columns="5" localize="true" />
     <Label name="IssuesLabel" label="issues" index="6"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="IssuesTF" index="7" data="data.issues.size" readOnly="true"
-        constraints="twocols(location=right)" columns="5" localize="true" />
+        constraints="twocols(location=right;insetsRight=5)" columns="5" localize="true" />
     <LocalizedDictionary>
         <Localized key="name" lang="English" value="Name" />
         <Localized key="name" lang="French" value="Nom" />

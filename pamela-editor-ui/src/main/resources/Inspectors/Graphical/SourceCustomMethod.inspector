@@ -4,15 +4,15 @@
     <Label name="MethodLabel" label="method" index="0"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="MethodTF" index="1" data="data.signature" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="KindLabel" label="kind" index="2"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="KindTF" index="3" data="data.kind.toString" readOnly="true"
-        constraints="twocols(location=right)" columns="10" localize="true" />
+        constraints="twocols(;insetsRight=5location=right)" columns="10" localize="true" />
     <Label name="EntityLabel" label="entity" index="4"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="EntityTF" index="5" data="data.entity.simpleName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="NoGeometryNote" label="no_geometry_note" index="6"
         constraints="twocols(expandHorizontally=true;location=center)" localize="true" />
     <LocalizedDictionary>

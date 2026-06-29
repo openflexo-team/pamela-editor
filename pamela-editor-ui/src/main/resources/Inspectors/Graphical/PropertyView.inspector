@@ -4,19 +4,19 @@
     <Label name="PropertyLabel" label="property" index="0"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="PropertyTF" index="1" data="data.label" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="KindLabel" label="kind" index="2"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="KindTF" index="3" data="data.kindLabel" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="SourceLabel" label="source" index="4"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="SourceTF" index="5" data="data.sourceQualifiedName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="TargetLabel" label="target" index="6"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="TargetTF" index="7" data="data.targetQualifiedName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="LabelXLabel" label="label_offset_x" index="8"
         constraints="twocols(location=left)" localize="true" />
     <Number name="LabelXField" index="9" minValue="-10000.0" maxValue="10000.0" increment="1.0"

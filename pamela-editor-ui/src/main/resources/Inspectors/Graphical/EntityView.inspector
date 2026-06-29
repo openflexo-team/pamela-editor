@@ -4,7 +4,7 @@
     <Label name="QualifiedNameLabel" label="qualified_name" index="0"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="QualifiedNameTF" index="1" data="data.qualifiedName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="XLabel" label="x" index="2"
         constraints="twocols(location=left)" localize="true" />
     <Number name="XField" index="3" minValue="0.0" maxValue="10000.0" increment="1.0"

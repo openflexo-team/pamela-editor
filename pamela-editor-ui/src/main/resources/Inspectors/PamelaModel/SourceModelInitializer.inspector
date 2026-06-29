@@ -4,11 +4,11 @@
     <Label name="MethodNameLabel" label="method_name" index="0"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="MethodNameTF" index="1" data="data.methodName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="ParametersLabel" label="parameters" index="2"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="ParametersTF" index="3" data="data.parameters.size" readOnly="true"
-        constraints="twocols(location=right)" columns="5" localize="true" />
+        constraints="twocols(location=right;insetsRight=5)" columns="5" localize="true" />
     <LocalizedDictionary>
         <Localized key="method_name" lang="English" value="Method name" />
         <Localized key="method_name" lang="French" value="Nom de méthode" />
