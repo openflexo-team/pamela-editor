@@ -10,8 +10,11 @@
 
   <Label name="propLabel" label="Target property:" localize="false" align="left"
          index="0" constraints="twocols(location=left)" />
-  <DropDown name="propDD" data="data.targetProperty" list="data.candidates"
-         iteratorClassName="org.openflexo.pamela.editor.model.SourceModelProperty"
-         format="object.propertyIdentifier" showReset="false" width="240"
-         index="1" constraints="twocols(expandHorizontally=true;location=right)" />
+  <Custom name="propSelector"
+         componentClassName="org.openflexo.pamela.editor.ui.widget.ModelPropertySelector"
+         data="data.targetProperty" manageDynamicModel="true" width="240"
+         index="1" constraints="twocols(expandHorizontally=true;location=right)">
+    <Assignment variable="component.entity" value="data.entity" />
+    <Assignment variable="component.restrictedValues" value="data.candidates" />
+  </Custom>
 </Panel>

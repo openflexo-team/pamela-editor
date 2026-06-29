@@ -77,7 +77,7 @@ public class DeclareAsInitializerAction extends ParameteredAction {
         }
         // Every parameter must map to at least one property of matching type.
         for (int i = 0; i < pm.getParameterCount(); i++) {
-            if (propertyIdsOfType(pm.getEntity(), pm.getParameterTypeQualifiedName(i)).isEmpty()) {
+            if (propertiesOfType(pm.getEntity(), pm.getParameterTypeQualifiedName(i)).isEmpty()) {
                 return false;
             }
         }
@@ -108,10 +108,10 @@ public class DeclareAsInitializerAction extends ParameteredAction {
         parameterCount = pm.getParameterCount();
         for (int i = 0; i < MAX_PARAMS; i++) {
             if (i < parameterCount) {
-                List<String> candidates = propertyIdsOfType(entity, pm.getParameterTypeQualifiedName(i));
+                List<SourceModelProperty> candidates =
+                        propertiesOfType(entity, pm.getParameterTypeQualifiedName(i));
                 String paramName = pm.getParameterName(i);
-                String def = candidates.contains(paramName) ? paramName
-                        : (candidates.isEmpty() ? null : candidates.get(0));
+                SourceModelProperty def = firstNamedOrFirst(candidates, paramName);
                 params[i].configure(true,
                         paramName + " : " + pm.getParameterTypeSimpleName(i), candidates, def);
             } else {
@@ -138,28 +138,40 @@ public class DeclareAsInitializerAction extends ParameteredAction {
         final String entityQN = entity.getQualifiedName();
         List<String> ids = new ArrayList<>();
         for (int i = 0; i < parameterCount; i++) {
-            ids.add(params[i].getSelected());
+            ids.add(params[i].getSelected().getPropertyIdentifier());
         }
         entity.declareInitializer(methodName, ids);
         return () -> model.getEntity(entityQN);
     }
 
-    /** Property identifiers (declared + inherited) whose type matches {@code typeQN}. */
-    private static List<String> propertyIdsOfType(SourceModelEntity entity, String typeQN) {
-        List<String> result = new ArrayList<>();
+    /** Properties (declared + inherited) whose type matches {@code typeQN}. */
+    private static List<SourceModelProperty> propertiesOfType(SourceModelEntity entity, String typeQN) {
+        List<SourceModelProperty> result = new ArrayList<>();
         if (typeQN == null) {
             return result;
         }
         for (Map.Entry<String, SourceModelProperty> e : entity.getAllProperties().entrySet()) {
             SourceModelProperty p = e.getValue();
             if (p.getType() != null && typeQN.equals(p.getType().getQualifiedName())) {
-                result.add(e.getKey());
+                result.add(p);
             }
         }
         return result;
     }
 
+    private static SourceModelProperty firstNamedOrFirst(List<SourceModelProperty> props, String id) {
+        for (SourceModelProperty p : props) {
+            if (p.getPropertyIdentifier().equals(id)) {
+                return p;
+            }
+        }
+        return props.isEmpty() ? null : props.get(0);
+    }
+
     // --- bound by DeclareInitializerForm.fib --------------------------------
+
+    /** Owning entity — the per-parameter {@code ModelPropertySelector} context. */
+    public SourceModelEntity getEntity() { return entity; }
 
     public ParameterMapping getParam0() { return params[0]; }
     public ParameterMapping getParam1() { return params[1]; }
@@ -175,21 +187,22 @@ public class DeclareAsInitializerAction extends ParameteredAction {
 
         private boolean show;
         private String label = "";
-        private List<String> candidates = Collections.emptyList();
-        private String selected;
+        private List<SourceModelProperty> candidates = Collections.emptyList();
+        private SourceModelProperty selected;
 
-        void configure(boolean show, String label, List<String> candidates, String selected) {
+        void configure(boolean show, String label, List<SourceModelProperty> candidates,
+                SourceModelProperty selected) {
             this.show = show;
             this.label = label;
             this.candidates = candidates;
             this.selected = selected;
         }
 
-        public boolean isShow()             { return show; }
-        public String getLabel()            { return label; }
-        public List<String> getCandidates() { return candidates; }
+        public boolean isShow()                          { return show; }
+        public String getLabel()                         { return label; }
+        public List<SourceModelProperty> getCandidates() { return candidates; }
 
-        public String getSelected()         { return selected; }
-        public void setSelected(String s)   { this.selected = s; fireInputValidChanged(); }
+        public SourceModelProperty getSelected()              { return selected; }
+        public void setSelected(SourceModelProperty s)        { this.selected = s; fireInputValidChanged(); }
     }
 }

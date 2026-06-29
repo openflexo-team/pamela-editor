@@ -53,4 +53,14 @@
                     icon="controller.iconForObject(property)"
                     enabled="data.isAcceptableValue(property)" />
   </Browser>
+
+  <Panel name="buttons" layout="flow" flowAlignment="CENTER" hGap="5" border="empty"
+         index="3" constraints="twocols(expandHorizontally=true;location=center)">
+    <Button name="applyBtn" buttonType="Trigger" label="Apply" localize="false"
+            enable="(data.selectedValue != null)" action="controller.apply()" />
+    <Button name="cancelBtn" buttonType="Trigger" label="Cancel" localize="false"
+            action="controller.cancel()" />
+    <Button name="resetBtn" buttonType="Trigger" label="Reset" localize="false"
+            action="controller.reset()" />
+  </Panel>
 </Panel>

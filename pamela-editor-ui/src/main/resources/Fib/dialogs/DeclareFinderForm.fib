@@ -10,15 +10,23 @@
 
   <Label name="collLabel" label="Collection (list property):" localize="false" align="left"
          index="0" constraints="twocols(location=left)" />
-  <DropDown name="collDD" data="data.collection" list="data.collectionChoices"
-         iteratorClassName="java.lang.String" showReset="false" width="220"
-         index="1" constraints="twocols(expandHorizontally=true;location=right)" />
+  <Custom name="collSelector"
+         componentClassName="org.openflexo.pamela.editor.ui.widget.ModelPropertySelector"
+         data="data.collection" manageDynamicModel="true" width="220"
+         index="1" constraints="twocols(expandHorizontally=true;location=right)">
+    <Assignment variable="component.entity" value="data.entity" />
+    <Assignment variable="component.restrictedValues" value="data.collectionChoices" />
+  </Custom>
 
   <Label name="attrLabel" label="Attribute (search key):" localize="false" align="left"
          index="2" constraints="twocols(location=left)" />
-  <DropDown name="attrDD" data="data.attribute" list="data.attributeChoices"
-         iteratorClassName="java.lang.String" showReset="false" width="220"
-         index="3" constraints="twocols(expandHorizontally=true;location=right)" />
+  <Custom name="attrSelector"
+         componentClassName="org.openflexo.pamela.editor.ui.widget.ModelPropertySelector"
+         data="data.attribute" manageDynamicModel="true" width="220"
+         index="3" constraints="twocols(expandHorizontally=true;location=right)">
+    <Assignment variable="component.entity" value="data.elementEntity" />
+    <Assignment variable="component.restrictedValues" value="data.attributeChoices" />
+  </Custom>
 
   <Label name="cardLabel" label="Result:" localize="false" align="left"
          index="4" constraints="twocols(location=left)" />

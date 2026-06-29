@@ -36,6 +36,7 @@ public abstract class DeclareAccessorAction extends ParameteredAction {
 
     private List<SourceModelProperty> candidates = Collections.emptyList();
     private SourceModelProperty targetProperty;
+    private SourceModelEntity entity;
     private String methodName;
     private int parameterCount;
     private String entityQN;
@@ -87,6 +88,7 @@ public abstract class DeclareAccessorAction extends ParameteredAction {
             return false;
         }
         targetProperty = candidates.get(0);
+        entity = pm.getEntity();
         methodName = pm.getMethodName();
         parameterCount = pm.getParameterCount();
         entityQN = pm.getEntity().getQualifiedName();
@@ -115,6 +117,11 @@ public abstract class DeclareAccessorAction extends ParameteredAction {
 
     public List<SourceModelProperty> getCandidates() {
         return candidates;
+    }
+
+    /** Owning entity — the {@link org.openflexo.pamela.editor.ui.widget.ModelPropertySelector} context. */
+    public SourceModelEntity getEntity() {
+        return entity;
     }
 
     public SourceModelProperty getTargetProperty() {

@@ -5,7 +5,11 @@
 
   <Label name="superLabel" label="Super-entity to remove:" localize="false"
          align="left" index="0" constraints="twocols(location=left)" />
-  <DropDown name="superDD" data="data.selected" list="data.choices"
-         iteratorClassName="java.lang.String" showReset="false" width="260"
-         index="1" constraints="twocols(expandHorizontally=true;location=right)" />
+  <Custom name="superSelector"
+         componentClassName="org.openflexo.pamela.editor.ui.widget.ModelEntitySelector"
+         data="data.selectedEntity" manageDynamicModel="true" width="260"
+         index="1" constraints="twocols(expandHorizontally=true;location=right)">
+    <Assignment variable="component.metaModel" value="data.metaModel" />
+    <Assignment variable="component.restrictedValues" value="data.candidateEntities" />
+  </Custom>
 </Panel>

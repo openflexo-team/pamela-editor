@@ -50,7 +50,7 @@ public class ModelPropertySelector extends AbstractSourceElementSelector<SourceM
 	}
 
 	@Override
-	protected Collection<SourceModelProperty> getAllSelectableValues() {
+	protected Collection<SourceModelProperty> computeAllSelectableValues() {
 		List<SourceModelProperty> result = new ArrayList<>();
 		if (getEntity() != null) {
 			result.addAll(getEntity().getDeclaredProperties().values());

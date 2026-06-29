@@ -54,7 +54,7 @@ public class ModelEntitySelector extends AbstractSourceElementSelector<SourceMod
 	}
 
 	@Override
-	protected Collection<SourceModelEntity> getAllSelectableValues() {
+	protected Collection<SourceModelEntity> computeAllSelectableValues() {
 		if (getSourcePackage() != null) {
 			return new ArrayList<>(getSourcePackage().getEntities());
 		}

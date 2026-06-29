@@ -3,6 +3,7 @@ import org.openflexo.icon.IconMarker;
 import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
 import javax.swing.ImageIcon;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +16,9 @@ import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaProject;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
+
+import spoon.reflect.declaration.CtMethod;
+import spoon.reflect.declaration.CtType;
 
 /**
  * Promotes an existing plain getter of a {@link SourceModelEntity} into a PAMELA
@@ -48,8 +52,9 @@ public class PromoteMethodAction extends ParameteredAction {
     public static final Resource FORM_FIB =
             ResourceLocator.locateResource("Fib/dialogs/PromoteMethodForm.fib");
 
-    private List<String> getterChoices = Collections.emptyList();
-    private String selectedGetter;
+    private SourceModelEntity entity;
+    private List<CtMethod<?>> getterChoices = Collections.emptyList();
+    private CtMethod<?> selectedGetter;
     private String propertyIdentifier = "";
     private boolean includeSetter = true;
     private Set<String> existingIdentifiers = new HashSet<>();
@@ -77,14 +82,14 @@ public class PromoteMethodAction extends ParameteredAction {
 
     @Override
     protected boolean prepareDialog(Object target, PamelaEditorApplication app) {
-        SourceModelEntity entity = (SourceModelEntity) target;
-        getterChoices = entity.getPromotableGetterNames();
+        entity = (SourceModelEntity) target;
+        getterChoices = promotableGetterMethods(entity);
         if (getterChoices.isEmpty()) {
             return false;
         }
         existingIdentifiers = new HashSet<>(entity.getDeclaredProperties().keySet());
         selectedGetter = getterChoices.get(0);
-        propertyIdentifier = derivePropertyName(selectedGetter);
+        propertyIdentifier = derivePropertyName(selectedGetter.getSimpleName());
         includeSetter = true;
         return true;
     }
@@ -101,24 +106,49 @@ public class PromoteMethodAction extends ParameteredAction {
         SourceModelEntity entity = (SourceModelEntity) target;
         SourceMetaModel model = entity.getMetaModel();
         final String entityQN = entity.getQualifiedName();
-        entity.promoteMethodToProperty(selectedGetter, propertyIdentifier.trim(), includeSetter);
+        entity.promoteMethodToProperty(selectedGetter.getSimpleName(), propertyIdentifier.trim(), includeSetter);
         return () -> model.getEntity(entityQN);
+    }
+
+    /** Resolves the entity's promotable getter <em>names</em> (core) to their Spoon {@link CtMethod}s. */
+    private static List<CtMethod<?>> promotableGetterMethods(SourceModelEntity entity) {
+        List<CtMethod<?>> result = new ArrayList<>();
+        Set<String> names = new HashSet<>(entity.getPromotableGetterNames());
+        if (names.isEmpty() || entity.getCompilationUnit() == null) {
+            return result;
+        }
+        for (CtType<?> type : entity.getCompilationUnit().getRootTypes()) {
+            if (!entity.getSimpleName().equals(type.getSimpleName())) {
+                continue;
+            }
+            for (CtMethod<?> m : type.getMethods()) {
+                if (m.getParameters().isEmpty() && names.contains(m.getSimpleName())) {
+                    result.add(m);
+                }
+            }
+        }
+        return result;
     }
 
     // --- bound by PromoteMethodForm.fib -------------------------------------
 
-    public List<String> getGetterChoices() {
+    /** Owning entity — the {@code JavaMethodSelector} context. */
+    public SourceModelEntity getEntity() {
+        return entity;
+    }
+
+    public List<CtMethod<?>> getGetterChoices() {
         return getterChoices;
     }
 
-    public String getSelectedGetter() {
+    public CtMethod<?> getSelectedGetter() {
         return selectedGetter;
     }
 
-    public void setSelectedGetter(String selectedGetter) {
+    public void setSelectedGetter(CtMethod<?> selectedGetter) {
         this.selectedGetter = selectedGetter;
         // Suggest a property name derived from the chosen getter.
-        this.propertyIdentifier = selectedGetter == null ? "" : derivePropertyName(selectedGetter);
+        this.propertyIdentifier = selectedGetter == null ? "" : derivePropertyName(selectedGetter.getSimpleName());
         getPropertyChangeSupport().firePropertyChange("propertyIdentifier", null, propertyIdentifier);
         fireInputValidChanged();
     }

@@ -48,7 +48,7 @@ public class OperationSelector extends AbstractSourceElementSelector<SourceCusto
 	}
 
 	@Override
-	protected Collection<SourceCustomMethod> getAllSelectableValues() {
+	protected Collection<SourceCustomMethod> computeAllSelectableValues() {
 		if (getEntity() != null) {
 			return new ArrayList<>(getEntity().getDeclaredCustomMethods());
 		}

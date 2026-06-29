@@ -24,6 +24,7 @@ import org.openflexo.pamela.editor.SourceMetaModelSerializer;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.rm.Resource;
+import org.openflexo.rm.ResourceLocator;
 
 /**
  * Sanity checks for the selector widget family: each popup FIB loads (well-formed XML, bindings
@@ -106,6 +107,26 @@ public class TestSelectorWidgets {
 		loadFIB(selector.getFIBResource());
 		assertNotNull("Entity type should resolve", selector.getResolvedType());
 		maybeBuildPanel(selector);
+	}
+
+	/**
+	 * Dialog/inspector FIBs that now embed a selector {@code <Custom>} must still load (well-formed
+	 * XML, bindings resolve against the bean class). Extended as selectors are wired into more FIBs.
+	 */
+	@Test
+	public void testFormsEmbeddingSelectorsLoad() {
+		String[] forms = {
+				"Fib/dialogs/AttachAccessorForm.fib",
+				"Fib/dialogs/AddSuperEntityForm.fib",
+				"Fib/dialogs/RemoveSuperEntityForm.fib",
+				"Fib/dialogs/DeclareFinderForm.fib",
+				"Fib/dialogs/DeclareInitializerForm.fib",
+				"Fib/dialogs/PromoteMethodForm.fib",
+				"Fib/dialogs/PromoteGetterForm.fib",
+		};
+		for (String form : forms) {
+			loadFIB(ResourceLocator.locateResource(form));
+		}
 	}
 
 	// Build the popup panel (parses + wires the FIB view) when a display is available.

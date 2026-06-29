@@ -5,9 +5,13 @@
 
   <Label name="methodLabel" label="Getter method:" localize="false" align="left"
          index="0" constraints="twocols(location=left)" />
-  <DropDown name="getterDD" data="data.selectedGetter" list="data.getterChoices"
-         iteratorClassName="java.lang.String" showReset="false" width="240"
-         index="1" constraints="twocols(expandHorizontally=true;location=right)" />
+  <Custom name="getterSelector"
+         componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+         data="data.selectedGetter" manageDynamicModel="true" width="240"
+         index="1" constraints="twocols(expandHorizontally=true;location=right)">
+    <Assignment variable="component.entity" value="data.entity" />
+    <Assignment variable="component.restrictedValues" value="data.getterChoices" />
+  </Custom>
 
   <Label name="idLabel" label="Property name:" localize="false" align="left"
          index="2" constraints="twocols(location=left)" />

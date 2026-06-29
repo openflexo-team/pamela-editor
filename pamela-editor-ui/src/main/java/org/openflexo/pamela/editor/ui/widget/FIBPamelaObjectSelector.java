@@ -74,6 +74,7 @@ public abstract class FIBPamelaObjectSelector<T> extends TextFieldCustomPopup<T>
 	private Object selectedObject;
 	private T selectedValue;
 	private final List<T> matchingValues;
+	private Collection<T> restrictedValues;
 	private boolean isFiltered = false;
 	private boolean showReset = true;
 
@@ -158,11 +159,49 @@ public abstract class FIBPamelaObjectSelector<T> extends TextFieldCustomPopup<T>
 	public abstract Object getRootObject();
 
 	/**
-	 * All values that completion (the filter list) may select. Computed directly from the model
+	 * All values that completion (the filter list) may select, computed directly from the model
 	 * (never by recursively exploring the browser), to avoid the costly per-cell {@code equals()}
 	 * traversal of large Spoon trees. May return {@code null} when no context is set.
+	 *
+	 * <p>Overridden by every concrete selector. Callers must use {@link #getAllSelectableValues()},
+	 * which applies the optional {@link #setRestrictedValues(Collection) candidate restriction}.</p>
 	 */
-	protected abstract Collection<T> getAllSelectableValues();
+	protected abstract Collection<T> computeAllSelectableValues();
+
+	/**
+	 * The effective selectable set: the explicit {@link #setRestrictedValues(Collection) restricted
+	 * candidates} when set, else {@link #computeAllSelectableValues()}.
+	 */
+	protected final Collection<T> getAllSelectableValues() {
+		return restrictedValues != null ? restrictedValues : computeAllSelectableValues();
+	}
+
+	/**
+	 * Optional restriction: when non-null, completion and acceptability are limited to exactly these
+	 * candidates (membership tested by identity). Lets a dialog that already computes a constrained
+	 * list (type-matched, lacking-accessor, cycle-free…) reuse it while gaining search + browse.
+	 * Settable from a FIB via {@code <Assignment variable="component.restrictedValues" value="data.candidates"/>}.
+	 */
+	public void setRestrictedValues(Collection<T> restrictedValues) {
+		this.restrictedValues = restrictedValues;
+		refresh();
+	}
+
+	public Collection<T> getRestrictedValues() {
+		return restrictedValues;
+	}
+
+	private boolean isAmongRestricted(Object o) {
+		if (restrictedValues == null) {
+			return true;
+		}
+		for (T candidate : restrictedValues) {
+			if (candidate == o) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	// -------------------------------------------------------------------------
 	// FIBCustomComponent
@@ -319,7 +358,7 @@ public abstract class FIBPamelaObjectSelector<T> extends TextFieldCustomPopup<T>
 	 * {@link #getRepresentedType()}. Override to express constraints.
 	 */
 	public boolean isAcceptableValue(Object o) {
-		return o != null && getRepresentedType().isAssignableFrom(o.getClass());
+		return o != null && getRepresentedType().isAssignableFrom(o.getClass()) && isAmongRestricted(o);
 	}
 
 	// -------------------------------------------------------------------------

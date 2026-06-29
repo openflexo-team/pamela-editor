@@ -28,8 +28,11 @@
          visible="data.setterOption.show"
          index="5" constraints="twocols(expandHorizontally=true;location=right)">
     <CheckBox name="setterCB" data="data.setterOption.include" />
-    <DropDown name="setterDD" data="data.setterOption.method" list="data.setterOption.candidates"
-           iteratorClassName="java.lang.String" showReset="false" width="200" />
+    <Custom name="setterSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+           data="data.setterOption.method" manageDynamicModel="true" width="200">
+      <Assignment variable="component.entity" value="data.entity" />
+      <Assignment variable="component.restrictedValues" value="data.setterOption.candidates" />
+    </Custom>
   </Panel>
 
   <!-- SINGLE: updater -->
@@ -41,8 +44,11 @@
          visible="data.updaterOption.show"
          index="7" constraints="twocols(expandHorizontally=true;location=right)">
     <CheckBox name="updaterCB" data="data.updaterOption.include" />
-    <DropDown name="updaterDD" data="data.updaterOption.method" list="data.updaterOption.candidates"
-           iteratorClassName="java.lang.String" showReset="false" width="200" />
+    <Custom name="updaterSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+           data="data.updaterOption.method" manageDynamicModel="true" width="200">
+      <Assignment variable="component.entity" value="data.entity" />
+      <Assignment variable="component.restrictedValues" value="data.updaterOption.candidates" />
+    </Custom>
   </Panel>
 
   <!-- LIST: adder -->
@@ -54,8 +60,11 @@
          visible="data.adderOption.show"
          index="9" constraints="twocols(expandHorizontally=true;location=right)">
     <CheckBox name="adderCB" data="data.adderOption.include" />
-    <DropDown name="adderDD" data="data.adderOption.method" list="data.adderOption.candidates"
-           iteratorClassName="java.lang.String" showReset="false" width="200" />
+    <Custom name="adderSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+           data="data.adderOption.method" manageDynamicModel="true" width="200">
+      <Assignment variable="component.entity" value="data.entity" />
+      <Assignment variable="component.restrictedValues" value="data.adderOption.candidates" />
+    </Custom>
   </Panel>
 
   <!-- LIST: remover -->
@@ -67,8 +76,11 @@
          visible="data.removerOption.show"
          index="11" constraints="twocols(expandHorizontally=true;location=right)">
     <CheckBox name="removerCB" data="data.removerOption.include" />
-    <DropDown name="removerDD" data="data.removerOption.method" list="data.removerOption.candidates"
-           iteratorClassName="java.lang.String" showReset="false" width="200" />
+    <Custom name="removerSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+           data="data.removerOption.method" manageDynamicModel="true" width="200">
+      <Assignment variable="component.entity" value="data.entity" />
+      <Assignment variable="component.restrictedValues" value="data.removerOption.candidates" />
+    </Custom>
   </Panel>
 
   <!-- LIST: reindexer -->
@@ -80,7 +92,10 @@
          visible="data.reindexerOption.show"
          index="13" constraints="twocols(expandHorizontally=true;location=right)">
     <CheckBox name="reindexerCB" data="data.reindexerOption.include" />
-    <DropDown name="reindexerDD" data="data.reindexerOption.method" list="data.reindexerOption.candidates"
-           iteratorClassName="java.lang.String" showReset="false" width="200" />
+    <Custom name="reindexerSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+           data="data.reindexerOption.method" manageDynamicModel="true" width="200">
+      <Assignment variable="component.entity" value="data.entity" />
+      <Assignment variable="component.restrictedValues" value="data.reindexerOption.candidates" />
+    </Custom>
   </Panel>
 </Panel>

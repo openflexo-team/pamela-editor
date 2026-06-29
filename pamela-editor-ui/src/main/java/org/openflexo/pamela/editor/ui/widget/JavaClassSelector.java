@@ -85,7 +85,7 @@ public class JavaClassSelector extends FIBPamelaObjectSelector<CtType<?>> {
 	}
 
 	@Override
-	protected Collection<CtType<?>> getAllSelectableValues() {
+	protected Collection<CtType<?>> computeAllSelectableValues() {
 		return allClassesInScope();
 	}
 

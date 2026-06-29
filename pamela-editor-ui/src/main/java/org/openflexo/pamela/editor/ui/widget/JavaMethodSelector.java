@@ -73,7 +73,7 @@ public class JavaMethodSelector extends FIBPamelaObjectSelector<CtMethod<?>> {
 	}
 
 	@Override
-	protected Collection<CtMethod<?>> getAllSelectableValues() {
+	protected Collection<CtMethod<?>> computeAllSelectableValues() {
 		return getDeclaredMethods();
 	}
 

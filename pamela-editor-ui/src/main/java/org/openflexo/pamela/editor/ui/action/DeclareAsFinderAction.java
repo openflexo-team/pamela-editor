@@ -33,13 +33,14 @@ public class DeclareAsFinderAction extends ParameteredAction {
             ResourceLocator.locateResource("Fib/dialogs/DeclareFinderForm.fib");
 
     private SourceModelEntity entity;
+    private SourceModelEntity elementEntity;
     private String methodName;
     private boolean multiValued;
 
-    private List<String> collectionChoices = Collections.emptyList();
-    private String collection;
-    private List<String> attributeChoices = Collections.emptyList();
-    private String attribute;
+    private List<SourceModelProperty> collectionChoices = Collections.emptyList();
+    private SourceModelProperty collection;
+    private List<SourceModelProperty> attributeChoices = Collections.emptyList();
+    private SourceModelProperty attribute;
 
     @Override
     public String getLabel() {
@@ -92,18 +93,18 @@ public class DeclareAsFinderAction extends ParameteredAction {
         entity = pm.getEntity();
         methodName = pm.getMethodName();
         multiValued = pm.returnsList();
-        SourceModelEntity element = elementEntity(pm);
-        if (element == null) {
+        elementEntity = elementEntity(pm);
+        if (elementEntity == null) {
             return false;
         }
-        collectionChoices = collectionsFor(entity, element);
-        attributeChoices = attributesFor(element, pm.getParameterTypeQualifiedName(0));
+        collectionChoices = collectionsFor(entity, elementEntity);
+        attributeChoices = attributesFor(elementEntity, pm.getParameterTypeQualifiedName(0));
         if (collectionChoices.isEmpty() || attributeChoices.isEmpty()) {
             return false;
         }
         collection = collectionChoices.get(0);
         // PAMELA's conventional finder key is "name" — default to it when present.
-        attribute = attributeChoices.contains("name") ? "name" : attributeChoices.get(0);
+        attribute = firstNamed(attributeChoices, "name");
         return true;
     }
 
@@ -117,8 +118,18 @@ public class DeclareAsFinderAction extends ParameteredAction {
             PamelaProject project) throws Exception {
         SourceMetaModel model = entity.getMetaModel();
         final String entityQN = entity.getQualifiedName();
-        entity.declareFinder(methodName, collection, attribute, multiValued);
+        entity.declareFinder(methodName, collection.getPropertyIdentifier(),
+                attribute.getPropertyIdentifier(), multiValued);
         return () -> model.getEntity(entityQN);
+    }
+
+    private static SourceModelProperty firstNamed(List<SourceModelProperty> props, String id) {
+        for (SourceModelProperty p : props) {
+            if (id.equals(p.getPropertyIdentifier())) {
+                return p;
+            }
+        }
+        return props.get(0);
     }
 
     // --- resolution helpers (by signature) ----------------------------------
@@ -135,29 +146,29 @@ public class DeclareAsFinderAction extends ParameteredAction {
     }
 
     /** LIST properties of {@code owner} whose element type is {@code element}. */
-    private static List<String> collectionsFor(SourceModelEntity owner, SourceModelEntity element) {
-        List<String> result = new ArrayList<>();
+    private static List<SourceModelProperty> collectionsFor(SourceModelEntity owner, SourceModelEntity element) {
+        List<SourceModelProperty> result = new ArrayList<>();
         String elementQN = element.getQualifiedName();
         for (Map.Entry<String, SourceModelProperty> e : owner.getDeclaredProperties().entrySet()) {
             SourceModelProperty p = e.getValue();
             if (p.getCardinality() == Cardinality.LIST && p.getType() != null
                     && elementQN.equals(p.getType().getQualifiedName())) {
-                result.add(e.getKey());
+                result.add(p);
             }
         }
         return result;
     }
 
     /** Properties of the element entity (declared + inherited) whose type matches the search key. */
-    private static List<String> attributesFor(SourceModelEntity element, String keyTypeQN) {
-        List<String> result = new ArrayList<>();
+    private static List<SourceModelProperty> attributesFor(SourceModelEntity element, String keyTypeQN) {
+        List<SourceModelProperty> result = new ArrayList<>();
         if (keyTypeQN == null) {
             return result;
         }
         for (Map.Entry<String, SourceModelProperty> e : element.getAllProperties().entrySet()) {
             SourceModelProperty p = e.getValue();
             if (p.getType() != null && keyTypeQN.equals(p.getType().getQualifiedName())) {
-                result.add(e.getKey());
+                result.add(p);
             }
         }
         return result;
@@ -165,13 +176,18 @@ public class DeclareAsFinderAction extends ParameteredAction {
 
     // --- bound by DeclareFinderForm.fib -------------------------------------
 
-    public List<String> getCollectionChoices() { return collectionChoices; }
-    public String getCollection()              { return collection; }
-    public void setCollection(String c)        { this.collection = c; fireInputValidChanged(); }
+    /** Owner entity — the collection {@code ModelPropertySelector} context. */
+    public SourceModelEntity getEntity()                       { return entity; }
+    /** Element entity — the attribute {@code ModelPropertySelector} context. */
+    public SourceModelEntity getElementEntity()               { return elementEntity; }
 
-    public List<String> getAttributeChoices()  { return attributeChoices; }
-    public String getAttribute()               { return attribute; }
-    public void setAttribute(String a)         { this.attribute = a; fireInputValidChanged(); }
+    public List<SourceModelProperty> getCollectionChoices()    { return collectionChoices; }
+    public SourceModelProperty getCollection()                 { return collection; }
+    public void setCollection(SourceModelProperty c)           { this.collection = c; fireInputValidChanged(); }
+
+    public List<SourceModelProperty> getAttributeChoices()     { return attributeChoices; }
+    public SourceModelProperty getAttribute()                  { return attribute; }
+    public void setAttribute(SourceModelProperty a)            { this.attribute = a; fireInputValidChanged(); }
 
     public boolean getMultiValued()            { return multiValued; }
 

@@ -46,7 +46,7 @@ public class InitializerSelector extends AbstractSourceElementSelector<SourceMod
 	}
 
 	@Override
-	protected Collection<SourceModelInitializer> getAllSelectableValues() {
+	protected Collection<SourceModelInitializer> computeAllSelectableValues() {
 		if (getEntity() != null) {
 			return new ArrayList<>(getEntity().getInitializers());
 		}

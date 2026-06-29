@@ -44,8 +44,9 @@ public class AddSuperEntityAction extends ParameteredAction {
     public static final Resource FORM_FIB =
             ResourceLocator.locateResource("Fib/dialogs/AddSuperEntityForm.fib");
 
-    private List<String> choices = Collections.emptyList();
-    private String selected;
+    private List<SourceModelEntity> candidateEntities = Collections.emptyList();
+    private SourceModelEntity selectedEntity;
+    private SourceMetaModel metaModel;
 
     @Override
     public String getLabel() {
@@ -75,16 +76,15 @@ public class AddSuperEntityAction extends ParameteredAction {
         if (candidates.isEmpty()) {
             return false;
         }
-        choices = new ArrayList<>();
-        candidates.stream().map(SourceModelEntity::getQualifiedName).sorted()
-                .forEach(choices::add);
-        selected = choices.get(0);
+        candidateEntities = candidates;
+        metaModel = entity.getMetaModel();
+        selectedEntity = candidates.get(0);
         return true;
     }
 
     @Override
     public boolean isInputValid() {
-        return selected != null && !selected.isEmpty();
+        return selectedEntity != null;
     }
 
     @Override
@@ -92,27 +92,32 @@ public class AddSuperEntityAction extends ParameteredAction {
             PamelaProject project) throws Exception {
         SourceModelEntity entity = (SourceModelEntity) target;
         SourceMetaModel model = entity.getMetaModel();
-        SourceModelEntity superEntity = model.getEntity(selected);
-        if (superEntity == null) {
+        if (selectedEntity == null) {
             return null;
         }
         final String entityQN = entity.getQualifiedName();
-        entity.addSuperEntity(superEntity);
+        entity.addSuperEntity(selectedEntity);
         return () -> model.getEntity(entityQN);
     }
 
     // --- bound by AddSuperEntityForm.fib ------------------------------------
 
-    public List<String> getChoices() {
-        return choices;
+    /** Candidate super-entities — the {@code ModelEntitySelector} restriction. */
+    public List<SourceModelEntity> getCandidateEntities() {
+        return candidateEntities;
     }
 
-    public String getSelected() {
-        return selected;
+    /** Browser scope for the {@code ModelEntitySelector}. */
+    public SourceMetaModel getMetaModel() {
+        return metaModel;
     }
 
-    public void setSelected(String selected) {
-        this.selected = selected;
+    public SourceModelEntity getSelectedEntity() {
+        return selectedEntity;
+    }
+
+    public void setSelectedEntity(SourceModelEntity selectedEntity) {
+        this.selectedEntity = selectedEntity;
         fireInputValidChanged();
     }
 

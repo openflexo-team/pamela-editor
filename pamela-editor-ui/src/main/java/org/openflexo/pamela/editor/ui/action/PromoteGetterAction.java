@@ -18,7 +18,6 @@ import org.openflexo.pamela.annotations.Reindexer;
 import org.openflexo.pamela.annotations.Remover;
 import org.openflexo.pamela.annotations.Setter;
 import org.openflexo.pamela.annotations.Updater;
-import org.openflexo.pamela.editor.model.MethodSignature;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
@@ -26,6 +25,9 @@ import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
 import org.openflexo.pamela.editor.ui.PamelaProject;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
+
+import spoon.reflect.declaration.CtMethod;
+import spoon.reflect.declaration.CtType;
 
 /**
  * Method-level "promote" action: turns a plain no-arg getter into a <em>new</em> PAMELA property
@@ -106,7 +108,7 @@ public class PromoteGetterAction extends ParameteredAction {
         existingIdentifiers = new HashSet<>(entity.getDeclaredProperties().keySet());
         propertyIdentifier = derivePropertyName(methodName);
 
-        List<MethodSignature> candidates = entity.getCandidateAccessorMethods();
+        List<CtMethod<?>> candidates = entityCtMethods(entity);
         String base = capitalisedBase(methodName);
         if (list) {
             // LIST property: adder / remover (1 param = element type), reindexer (element, int).
@@ -141,40 +143,55 @@ public class PromoteGetterAction extends ParameteredAction {
         for (AccessorOption opt : new AccessorOption[] {
                 setterOption, updaterOption, adderOption, removerOption, reindexerOption }) {
             if (opt.isShow() && opt.getInclude() && opt.getMethod() != null) {
-                extras.put(opt.annotationType, opt.getMethod());
+                extras.put(opt.annotationType, opt.getMethod().getSimpleName());
             }
         }
         entity.promoteGetterToProperty(methodName, propertyIdentifier.trim(), list, extras);
         return () -> model.getEntity(entityQN);
     }
 
-    // --- candidate computation (by signature) -------------------------------
+    // --- candidate computation (by signature, over the entity's Spoon methods) -
+
+    /** Methods of the entity's primary interface (the {@code JavaMethodSelector} candidate pool). */
+    private static List<CtMethod<?>> entityCtMethods(SourceModelEntity entity) {
+        List<CtMethod<?>> result = new ArrayList<>();
+        if (entity.getCompilationUnit() == null) {
+            return result;
+        }
+        for (CtType<?> type : entity.getCompilationUnit().getRootTypes()) {
+            if (entity.getSimpleName().equals(type.getSimpleName())) {
+                result.addAll(type.getMethods());
+            }
+        }
+        return result;
+    }
 
     /** Methods with exactly one parameter whose type matches {@code paramTypeQN}. */
-    private static List<String> oneParamCandidates(List<MethodSignature> all, String paramTypeQN) {
-        List<String> result = new ArrayList<>();
+    private static List<CtMethod<?>> oneParamCandidates(List<CtMethod<?>> all, String paramTypeQN) {
+        List<CtMethod<?>> result = new ArrayList<>();
         if (paramTypeQN == null) {
             return result;
         }
-        for (MethodSignature s : all) {
-            if (s.getParameterCount() == 1 && paramTypeQN.equals(s.getParameterTypeQualifiedName(0))) {
-                result.add(s.getMethodName());
+        for (CtMethod<?> m : all) {
+            if (m.getParameters().size() == 1
+                    && paramTypeQN.equals(m.getParameters().get(0).getType().getQualifiedName())) {
+                result.add(m);
             }
         }
         return result;
     }
 
     /** Methods {@code (T, int)} where {@code T} matches {@code elementTypeQN}. */
-    private static List<String> reindexerCandidates(List<MethodSignature> all, String elementTypeQN) {
-        List<String> result = new ArrayList<>();
+    private static List<CtMethod<?>> reindexerCandidates(List<CtMethod<?>> all, String elementTypeQN) {
+        List<CtMethod<?>> result = new ArrayList<>();
         if (elementTypeQN == null) {
             return result;
         }
-        for (MethodSignature s : all) {
-            if (s.getParameterCount() == 2
-                    && elementTypeQN.equals(s.getParameterTypeQualifiedName(0))
-                    && isInt(s.getParameterTypeQualifiedName(1))) {
-                result.add(s.getMethodName());
+        for (CtMethod<?> m : all) {
+            if (m.getParameters().size() == 2
+                    && elementTypeQN.equals(m.getParameters().get(0).getType().getQualifiedName())
+                    && isInt(m.getParameters().get(1).getType().getQualifiedName())) {
+                result.add(m);
             }
         }
         return result;
@@ -199,6 +216,9 @@ public class PromoteGetterAction extends ParameteredAction {
     public String getCardinalityLabel() {
         return list ? "LIST (collection)" : "SINGLE";
     }
+
+    /** Owning entity — the per-role {@code JavaMethodSelector} context. */
+    public SourceModelEntity getEntity()       { return entity; }
 
     public AccessorOption getSetterOption()    { return setterOption; }
     public AccessorOption getUpdaterOption()   { return updaterOption; }
@@ -250,9 +270,9 @@ public class PromoteGetterAction extends ParameteredAction {
         final Class<? extends Annotation> annotationType;
 
         private boolean show;
-        private List<String> candidates = Collections.emptyList();
+        private List<CtMethod<?>> candidates = Collections.emptyList();
         private boolean include;
-        private String method;
+        private CtMethod<?> method;
 
         AccessorOption(String label, Class<? extends Annotation> annotationType) {
             this.label = label;
@@ -260,13 +280,18 @@ public class PromoteGetterAction extends ParameteredAction {
         }
 
         /** Sets up this option from the matching candidates; default-selects/checks by name. */
-        void configure(List<String> candidates, String[] preferredNames) {
+        void configure(List<CtMethod<?>> candidates, String[] preferredNames) {
             this.candidates = candidates;
             this.show = !candidates.isEmpty();
-            String nameMatch = null;
+            CtMethod<?> nameMatch = null;
             for (String preferred : preferredNames) {
-                if (candidates.contains(preferred)) {
-                    nameMatch = preferred;
+                for (CtMethod<?> m : candidates) {
+                    if (m.getSimpleName().equals(preferred)) {
+                        nameMatch = m;
+                        break;
+                    }
+                }
+                if (nameMatch != null) {
                     break;
                 }
             }
@@ -278,12 +303,12 @@ public class PromoteGetterAction extends ParameteredAction {
 
         public String getLabel()          { return label; }
         public boolean isShow()           { return show; }
-        public List<String> getCandidates() { return candidates; }
+        public List<CtMethod<?>> getCandidates() { return candidates; }
 
         public boolean getInclude()       { return include; }
         public void setInclude(boolean b) { this.include = b; }
 
-        public String getMethod()         { return method; }
-        public void setMethod(String m)   { this.method = m; }
+        public CtMethod<?> getMethod()         { return method; }
+        public void setMethod(CtMethod<?> m)   { this.method = m; }
     }
 }
