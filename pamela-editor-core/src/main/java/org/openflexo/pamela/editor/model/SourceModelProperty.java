@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import java.lang.annotation.Annotation;
 
@@ -497,6 +499,90 @@ public class SourceModelProperty implements SourceElement,
     private void requireGetterPosition() {
         if (ctGetter.getPosition() == null || !ctGetter.getPosition().isValidPosition()) {
             throw new IllegalStateException("No source position for getter " + getterMethodName);
+        }
+    }
+
+    /** The editable counterpart of {@link #getInverseProperty()} (bound by the inspector). */
+    public SourceModelProperty getInverse() {
+        return inverseProperty;
+    }
+
+    /**
+     * Sets (or clears, when {@code newInverse} is {@code null}) this property's inverse — the
+     * editable counterpart of the build-time {@link #setInverseProperty}. Writes
+     * {@code @Getter(inverse = …)} on <b>both</b> sides (this getter and the chosen property's
+     * getter) and clears the previous inverse's parameter, then fires {@code "inverse"} so the
+     * application reacts (rebuild — model-editing-design.md §6). Targeted text edits on the
+     * in-memory buffer(s); edits that share a compilation unit (a self-referential entity, e.g.
+     * {@code parent}/{@code children}) are applied in descending source order so offsets stay valid.
+     */
+    public void setInverse(SourceModelProperty newInverse) throws IOException {
+        if (newInverse == inverseProperty) {
+            return;
+        }
+        if (newInverse == this) {
+            throw new IllegalArgumentException("A property cannot be its own inverse");
+        }
+        SourceModelProperty old = inverseProperty;
+
+        List<InverseEdit> edits = new ArrayList<>();
+        edits.add(new InverseEdit(this, newInverse == null ? null : literal(newInverse.propertyIdentifier)));
+        if (newInverse != null) {
+            edits.add(new InverseEdit(newInverse, literal(this.propertyIdentifier)));
+        }
+        if (old != null && old != newInverse) {
+            edits.add(new InverseEdit(old, null));
+        }
+        applyInverseEdits(edits);
+
+        // inversePropertyIdentifier is final (re-derived on the rebuild the event triggers).
+        this.inverseProperty = newInverse;
+        pcSupport.firePropertyChange("inverse", old, newInverse);
+    }
+
+    /**
+     * Fires a UI-intent signal that the user asked to change this property's type. The model does
+     * not open dialogs; the application observes the inspected element and runs the
+     * {@code ChangePropertyType} action in response (model-editing-design.md §6).
+     */
+    public void requestChangeType() {
+        pcSupport.firePropertyChange("changeTypeRequested", null, this);
+    }
+
+    private static String literal(String s) {
+        return "\"" + s + "\"";
+    }
+
+    /** A single {@code @Getter(inverse=…)} parameter edit on one property's getter. */
+    private static final class InverseEdit {
+        final SourceModelProperty property;
+        final String valueExpr; // null = remove the inverse parameter
+
+        InverseEdit(SourceModelProperty property, String valueExpr) {
+            this.property = property;
+            this.valueExpr = valueExpr;
+        }
+    }
+
+    /** Applies the inverse-parameter edits, batching per compilation unit (descending source order). */
+    private static void applyInverseEdits(List<InverseEdit> edits) throws IOException {
+        Map<SourceCompilationUnit, List<InverseEdit>> byCU = new LinkedHashMap<>();
+        for (InverseEdit e : edits) {
+            e.property.requireGetterPosition();
+            byCU.computeIfAbsent(e.property.modelEntity.getCompilationUnit(), k -> new ArrayList<>()).add(e);
+        }
+        for (Map.Entry<SourceCompilationUnit, List<InverseEdit>> entry : byCU.entrySet()) {
+            List<InverseEdit> list = entry.getValue();
+            list.sort((a, b) -> Integer.compare(
+                    b.property.ctGetter.getPosition().getSourceStart(),
+                    a.property.ctGetter.getPosition().getSourceStart()));
+            String src = entry.getKey().getText();
+            for (InverseEdit e : list) {
+                src = SourceAnnotationEditor.setAnnotationParameter(
+                        src, e.property.ctGetter.getPosition().getSourceStart(),
+                        "Getter", "inverse", e.valueExpr);
+            }
+            entry.getKey().setText(src);
         }
     }
 

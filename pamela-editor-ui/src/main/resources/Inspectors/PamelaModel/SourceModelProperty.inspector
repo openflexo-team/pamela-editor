@@ -11,8 +11,13 @@
         constraints="twocols(location=right)" columns="8" localize="true" />
     <Label name="TypeLabel" label="type" index="4"
         constraints="twocols(location=left)" localize="true" />
-    <TextField name="TypeTF" index="5" data="data.type.simpleName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Panel name="TypeRow" layout="flow" flowAlignment="LEFT" hGap="4" border="empty" index="5"
+        constraints="twocols(expandHorizontally=true;location=right)">
+        <TextField name="TypeTF" data="data.type.simpleName" readOnly="true"
+            columns="13" localize="true" />
+        <Button name="ChangeTypeBtn" buttonType="Trigger" label="Change type…" localize="false"
+            action="data.requestChangeType()" />
+    </Panel>
 
     <Label name="DefaultValueLabel" label="default_value" index="6"
         constraints="twocols(location=left)" localize="true" />
@@ -50,8 +55,12 @@
         constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
     <Label name="InverseLabel" label="inverse" index="22"
         constraints="twocols(location=left)" localize="true" />
-    <TextField name="InverseTF" index="23" data="data.inversePropertyIdentifier" readOnly="true"
-        constraints="twocols(expandHorizontally=true;location=right)" columns="15" localize="true" />
+    <Custom name="InverseSelector"
+        componentClassName="org.openflexo.pamela.editor.ui.widget.ModelPropertySelector"
+        data="data.inverse" manageDynamicModel="true" index="23"
+        constraints="twocols(expandHorizontally=true;location=right)">
+        <Assignment variable="component.entity" value="data.type.modelEntity" />
+    </Custom>
     <LocalizedDictionary>
         <Localized key="identifier" lang="English" value="Identifier" />
         <Localized key="identifier" lang="French" value="Identifiant" />

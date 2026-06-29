@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -737,6 +738,52 @@ public class TestMutations {
         SourceModelProperty outEdges = node2.getDeclaredProperties().get("outEdges");
         assertNotNull("inverse must still resolve after rename",
                 outEdges.getInverseProperty());
+    }
+
+    // =========================================================================
+    // Test 13b — setInverse clears + re-establishes the link on both sides
+    // =========================================================================
+
+    /**
+     * {@code Edge.startNode} ↔ {@code AbstractNode.outgoingEdges} are an inverse pair. Clearing the
+     * inverse must drop {@code @Getter(inverse=)} on both sides; re-setting it must restore both.
+     */
+    @Test
+    public void testSetInverse() throws IOException {
+        File workDir = tmp.newFolder("testSetInverse");
+        File srcCopy = copyDir(MODEL2_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model2.FlexoProcess");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelProperty startNode =
+                mm.getEntity("test.model2.Edge").getDeclaredProperties().get("startNode");
+        SourceModelProperty outgoing =
+                mm.getEntity("test.model2.AbstractNode").getDeclaredProperties().get("outgoingEdges");
+        assertNotNull(startNode);
+        assertNotNull(outgoing);
+        assertSame("startNode↔outgoingEdges paired initially", outgoing, startNode.getInverseProperty());
+
+        // --- Clear the inverse (both sides) ---
+        startNode.setInverse(null);
+        mm.flushAll();
+        mm.rebuildMetaModel();
+        SourceModelProperty sn = mm.getEntity("test.model2.Edge").getDeclaredProperties().get("startNode");
+        SourceModelProperty og = mm.getEntity("test.model2.AbstractNode").getDeclaredProperties().get("outgoingEdges");
+        assertNull("startNode inverse cleared", sn.getInverseProperty());
+        assertNull("outgoingEdges inverse cleared", og.getInverseProperty());
+
+        // --- Re-establish the inverse (both sides) ---
+        sn.setInverse(og);
+        mm.flushAll();
+        String edgeSrc = new String(Files.readAllBytes(new File(srcCopy, "Edge.java").toPath()));
+        assertTrue("startNode getter must carry inverse = \"outgoingEdges\"",
+                edgeSrc.contains("\"outgoingEdges\""));
+        mm.rebuildMetaModel();
+        SourceModelProperty sn2 = mm.getEntity("test.model2.Edge").getDeclaredProperties().get("startNode");
+        SourceModelProperty og2 = mm.getEntity("test.model2.AbstractNode").getDeclaredProperties().get("outgoingEdges");
+        assertSame("startNode→outgoingEdges restored", og2, sn2.getInverseProperty());
+        assertSame("outgoingEdges→startNode restored", sn2, og2.getInverseProperty());
     }
 
     // =========================================================================

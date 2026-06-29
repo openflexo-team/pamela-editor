@@ -2361,6 +2361,14 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if (project == null) {
             return;
         }
+        // UI-intent signal (not a mutation): the inspector's "Change type…" button asked to edit
+        // the property type — run the full ChangePropertyType dialog (TypeSelector + custom types)
+        // rather than rebuild here. The action performs its own mutation + rebuild.
+        if ("changeTypeRequested".equals(evt.getPropertyName())
+                && element instanceof SourceModelProperty) {
+            new org.openflexo.pamela.editor.ui.action.ChangePropertyTypeAction().perform(element, this);
+            return;
+        }
         // The Source* instance is replaced by the rebuild; capture how to re-resolve
         // the fresh element (by qualified name / property identifier) afterwards.
         final SourceMetaModel model = project.getMetaModel();

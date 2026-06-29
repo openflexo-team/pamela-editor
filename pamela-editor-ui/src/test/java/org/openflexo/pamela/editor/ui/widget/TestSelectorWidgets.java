@@ -23,6 +23,7 @@ import org.openflexo.gina.model.FIBComponent;
 import org.openflexo.pamela.editor.SourceMetaModelSerializer;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
+import org.openflexo.pamela.editor.model.SourceModelProperty;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
 
@@ -127,6 +128,31 @@ public class TestSelectorWidgets {
 		for (String form : forms) {
 			loadFIB(ResourceLocator.locateResource(form));
 		}
+	}
+
+	/**
+	 * The property inspector now embeds a {@link ModelPropertySelector} (inverse) and a
+	 * "Change type…" button bound to {@code data.requestChangeType()}; building it validates those
+	 * bindings against {@link org.openflexo.pamela.editor.model.SourceModelProperty}. Skipped headless
+	 * (the inspector group still loads + merges at controller construction either way).
+	 */
+	@Test
+	public void testPropertyInspectorBuildsWithSelector() {
+		org.openflexo.pamela.editor.ui.widget.PamelaEditorInspectorController controller =
+				new org.openflexo.pamela.editor.ui.widget.PamelaEditorInspectorController();
+		assertNotNull(controller.getRootPane());
+		if (GraphicsEnvironment.isHeadless()) {
+			return;
+		}
+		SourceModelProperty property = null;
+		for (SourceModelEntity e : metaModel.getEntities().values()) {
+			if (!e.getDeclaredProperties().isEmpty()) {
+				property = e.getDeclaredProperties().values().iterator().next();
+				break;
+			}
+		}
+		assertNotNull("a property to inspect", property);
+		controller.inspectObject(property);
 	}
 
 	// Build the popup panel (parses + wires the FIB view) when a display is available.
