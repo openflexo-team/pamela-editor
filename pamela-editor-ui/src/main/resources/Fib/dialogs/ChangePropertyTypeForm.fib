@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Panel dataClassName="org.openflexo.pamela.editor.ui.action.ChangePropertyTypeAction"
        controllerClassName="org.openflexo.gina.controller.FIBController"
-       layout="twocols" name="ChangePropertyTypeForm" border="empty">
+       layout="twocols" name="ChangePropertyTypeForm" border="empty" width="400" height="100">
 
   <Label name="typeLabel" label="New type:" localize="false" align="left"
          index="0" constraints="twocols(location=left)" />

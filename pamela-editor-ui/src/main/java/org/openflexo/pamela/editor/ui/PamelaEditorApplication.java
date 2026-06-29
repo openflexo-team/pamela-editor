@@ -2369,7 +2369,12 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             new org.openflexo.pamela.editor.ui.action.ChangePropertyTypeAction().perform(element, this);
             return;
         }
-        // The Source* instance is replaced by the rebuild; capture how to re-resolve
+        if ("renameRequested".equals(evt.getPropertyName())
+                && element instanceof SourceModelProperty) {
+            new org.openflexo.pamela.editor.ui.action.RenamePropertyAction().perform(element, this);
+            return;
+        }
+       // The Source* instance is replaced by the rebuild; capture how to re-resolve
         // the fresh element (by qualified name / property identifier) afterwards.
         final SourceMetaModel model = project.getMetaModel();
         final java.util.function.Supplier<Object> resolveFresh;

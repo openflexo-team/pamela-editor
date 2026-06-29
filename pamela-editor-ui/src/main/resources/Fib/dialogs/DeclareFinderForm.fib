@@ -6,7 +6,7 @@
 -->
 <Panel dataClassName="org.openflexo.pamela.editor.ui.action.DeclareAsFinderAction"
        controllerClassName="org.openflexo.gina.controller.FIBController"
-       layout="twocols" name="DeclareFinderForm" border="empty">
+       layout="twocols" name="DeclareFinderForm" border="empty" width="400" height="200">
 
   <Label name="collLabel" label="Collection (list property):" localize="false" align="left"
          index="0" constraints="twocols(location=left)" />

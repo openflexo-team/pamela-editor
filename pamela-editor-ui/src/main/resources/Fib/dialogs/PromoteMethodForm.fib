@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Panel dataClassName="org.openflexo.pamela.editor.ui.action.PromoteMethodAction"
        controllerClassName="org.openflexo.gina.controller.FIBController"
-       layout="twocols" name="PromoteMethodForm" border="empty">
+       layout="twocols" name="PromoteMethodForm" border="empty" width="500" height="300">
 
   <Label name="methodLabel" label="Getter method:" localize="false" align="left"
          index="0" constraints="twocols(location=left)" />

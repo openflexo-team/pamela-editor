@@ -7,7 +7,7 @@
 -->
 <Panel dataClassName="org.openflexo.pamela.editor.ui.action.PromoteGetterAction"
        controllerClassName="org.openflexo.gina.controller.FIBController"
-       layout="twocols" name="PromoteGetterForm" border="empty">
+       layout="twocols" name="PromoteGetterForm" border="empty" width="400" height="200">
 
   <Label name="idLabel" label="Property name:" localize="false" align="left"
          index="0" constraints="twocols(location=left)" />

@@ -7,7 +7,7 @@
 -->
 <Panel dataClassName="org.openflexo.pamela.editor.ui.action.DeclareAsInitializerAction"
        controllerClassName="org.openflexo.gina.controller.FIBController"
-       layout="twocols" name="DeclareInitializerForm" border="empty">
+       layout="twocols" name="DeclareInitializerForm" border="empty" width="400" height="200">
 
   <Label name="hint" label="Map each parameter to a property:" localize="false" align="left"
          index="0" constraints="twocols(location=center)" />

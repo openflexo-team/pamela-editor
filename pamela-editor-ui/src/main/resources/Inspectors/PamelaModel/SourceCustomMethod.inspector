@@ -12,12 +12,8 @@
     <Label name="KindLabel" label="kind" index="4"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="KindTF" index="5" data="data.kind.toString" readOnly="true"
-        constraints="twocols(location=right;insetsRight=5)" columns="10" localize="true" />
-    <Label name="ImplementedLabel" label="implemented" index="6"
-        constraints="twocols(location=left)" localize="true" />
-    <CheckBox name="ImplementedCB" index="7" data="data.implemented" readOnly="true"
-        constraints="twocols(location=right)" />
-    <LocalizedDictionary>
+        constraints="twocols(expandHorizontally=true;location=right;insetsRight=5)" columns="10" localize="true" />
+     <LocalizedDictionary>
         <Localized key="method_name" lang="English" value="Method name" />
         <Localized key="method_name" lang="French" value="Nom de méthode" />
         <Localized key="signature" lang="English" value="Signature" />

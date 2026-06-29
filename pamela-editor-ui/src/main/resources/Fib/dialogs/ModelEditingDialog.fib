@@ -2,8 +2,7 @@
 <Panel dataClassName="org.openflexo.pamela.editor.ui.action.ParameteredAction"
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="border" name="ModelEditingDialog"
-       border="empty" borderTop="10" borderBottom="10" borderLeft="12" borderRight="12"
-       width="420">
+       border="empty" borderTop="10" borderBottom="6" borderLeft="12" borderRight="12">
 
   <!-- Action-specific form fragment, bound to the same data (the action). -->
   <FIBReferencedComponent name="form" dynamicComponentFile="data.formFib" data="data"

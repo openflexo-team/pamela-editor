@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Panel dataClassName="org.openflexo.pamela.editor.ui.action.NewPropertyAction"
        controllerClassName="org.openflexo.gina.controller.FIBController"
-       layout="twocols" name="NewPropertyForm" border="empty">
+       layout="twocols" name="NewPropertyForm" border="empty" width="400" height="200">
 
   <Label name="idLabel" label="Identifier" localize="false" align="left"
          index="0" constraints="twocols(location=left)" />
