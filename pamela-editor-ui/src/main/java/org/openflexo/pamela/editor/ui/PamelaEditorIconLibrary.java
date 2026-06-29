@@ -17,6 +17,10 @@ import org.openflexo.rm.ResourceLocator;
  */
 public class PamelaEditorIconLibrary {
 
+	   public static final ImageIcon APPLICATION_ICON =
+	            buildIcon("Icons/PamelaModel_64x64.png");
+	 
+	
     // -------------------------------------------------------------------------
     // Action icons (pre-existing)
     // -------------------------------------------------------------------------

@@ -39,6 +39,7 @@
 
 package org.openflexo.pamela.editor.ui;
 
+import java.awt.Image;
 import java.util.logging.Level;
 
 import javax.swing.SwingUtilities;
@@ -61,6 +62,8 @@ public class LaunchPamelaEditor {
 			if (ToolBox.isMacOS()) {
 				System.setProperty("apple.laf.useScreenMenuBar", "true");
 				System.setProperty("com.apple.mrj.application.apple.menu.about.name", "PamelaEditor");
+				//ToolBox.updateSystemProperty("apple.awt.application.name", "Prout");
+				//System.setProperty("apple.awt.application.name", "Prout");
 			}
 
 			FlexoLoggingManager.initialize(-1, true, null, Level.INFO, null);
@@ -75,6 +78,33 @@ public class LaunchPamelaEditor {
 			e.printStackTrace();
 		} catch (UnsupportedLookAndFeelException e) {
 			e.printStackTrace();
+		}
+		
+		try {
+			Class<?> eawtApplication = Class.forName("com.apple.eawt.Application");
+			/*Class<?> quitHandler = findHandlerClass("QuitHandler");
+			Class<?> aboutHandler = findHandlerClass("AboutHandler");
+			Class<?> openFilesHandler = findHandlerClass("OpenFilesHandler");
+			Class<?> preferencesHandler = findHandlerClass("PreferencesHandler");
+			Object proxy = Proxy.newProxyInstance(PlatformHookOsx.class.getClassLoader(),
+					new Class<?>[] { quitHandler, aboutHandler, openFilesHandler, preferencesHandler }, this);*/
+			Object appli = eawtApplication.getConstructor((Class[]) null).newInstance((Object[]) null);
+			/*if (ToolBox.getJavaVersion() >= 9) {
+				setHandlers(Desktop.class, quitHandler, aboutHandler, openFilesHandler, preferencesHandler, proxy, Desktop.getDesktop());
+			}
+			else {
+				setHandlers(eawtApplication, quitHandler, aboutHandler, openFilesHandler, preferencesHandler, proxy, appli);
+				// this method has been deprecated, but without replacement. To remove with Java 9 migration
+				eawtApplication.getDeclaredMethod("setEnabledPreferencesMenu", boolean.class).invoke(appli, Boolean.TRUE);
+			}*/
+			// setup the dock icon. It is automatically set with application bundle and Web start but we need
+			// to do it manually if run with `java -jar``
+			eawtApplication.getDeclaredMethod("setDockIconImage", Image.class).invoke(appli, PamelaEditorIconLibrary.APPLICATION_ICON.getImage());
+			// enable full screen
+			//enableOSXFullscreen(FlexoFrame.getActiveFrame());
+		} catch (ReflectiveOperationException | SecurityException | IllegalArgumentException ex) {
+			// We'll just ignore this for now. The user will still be able to close Openflexo by closing all its windows.
+			System.err.println("Failed to register with OSX: " + ex);
 		}
 
 		// StringEncoder.getDefaultInstance()._addConverter(DataBinding.CONVERTER);
