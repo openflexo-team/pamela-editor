@@ -549,7 +549,17 @@ public class SourceModelProperty implements SourceElement,
         pcSupport.firePropertyChange("changeTypeRequested", null, this);
     }
 
-    private static String literal(String s) {
+    /**
+     * Fires a UI-intent signal that the user asked to rename this property identifier. The model does
+     * not open dialogs; the application observes the inspected element and runs the
+     * {@code RenameProperty} action in response .
+     */
+    public void requestRename() {
+    	System.out.println("Hop on rename...");
+        pcSupport.firePropertyChange("renameRequested", null, this);
+    }
+
+  private static String literal(String s) {
         return "\"" + s + "\"";
     }
 
