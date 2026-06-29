@@ -226,7 +226,7 @@ public abstract class FIBPamelaObjectSelector<T> extends TextFieldCustomPopup<T>
 		return restrictedValues;
 	}
 
-	private boolean isAmongRestricted(Object o) {
+	protected boolean isAmongRestricted(Object o) {
 		if (restrictedValues == null) {
 			return true;
 		}

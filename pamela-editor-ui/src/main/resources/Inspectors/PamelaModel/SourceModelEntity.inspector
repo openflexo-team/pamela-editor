@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
     dataClassName="org.openflexo.pamela.editor.model.SourceModelEntity" name="Inspector">
-    <Label name="SimpleNameLabel" label="simple_name" index="0"
+    <Label name="SimpleNameLabel" label="Entity" index="0"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="SimpleNameTF" index="1" data="data.simpleName" readOnly="true"
         constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
@@ -21,10 +21,6 @@
         constraints="twocols(location=left)" localize="true" />
     <TextField name="InitPolicyTF" index="9" data="data.initPolicy.name" readOnly="true"
         constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="10" localize="true" />
-    <Label name="PropertiesLabel" label="properties" index="10"
-        constraints="twocols(location=left)" localize="true" />
-    <TextField name="PropertiesTF" index="11" data="data.declaredProperties.size" readOnly="true"
-        constraints="twocols(location=right;insetsRight=5)" columns="5" localize="true" />
     <Label name="SuperEntitiesLabel" label="super_entities" index="12"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="SuperEntitiesTF" index="13" data="data.directSuperEntities.size" readOnly="true"

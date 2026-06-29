@@ -160,6 +160,6 @@ public class JavaMethodSelector extends FIBPamelaObjectSelector<CtMethod<?>> {
 		if (!(o instanceof CtMethod)) {
 			return false;
 		}
-		return !staticOnly || ((CtMethod<?>) o).isStatic();
+		return (!staticOnly || ((CtMethod<?>) o).isStatic()) && isAmongRestricted(o);
 	}
 }

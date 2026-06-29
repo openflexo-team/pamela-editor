@@ -988,6 +988,91 @@ public class TestMutations {
     }
 
     // =========================================================================
+    // Test 17 — inspector checkbox: uncheck detaches the annotation only (keeps
+    // the method), re-check smart-reattaches the conventional method
+    // =========================================================================
+
+    @Test
+    public void testSetterPresentToggleDetachesAnnotationOnly() throws IOException {
+        File workDir = tmp.newFolder("testSetterToggle");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        File foo1File = new File(srcCopy, "Foo1.java");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        mm.getEntity("test.model1.Foo1").addSingleProperty("label", "java.lang.String");
+        mm.flushAll();
+        mm.rebuildMetaModel();
+
+        // --- Uncheck: the @Setter annotation goes, the setLabel method stays ---
+        mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("label").setSetterPresent(false);
+        mm.flushAll();
+        String afterUncheck = new String(Files.readAllBytes(foo1File.toPath()));
+        assertTrue("setLabel method kept (detach is annotation-only)", afterUncheck.contains("setLabel"));
+        // The label setter lost its @Setter, but only it — the setLabel declaration is now plain.
+        assertTrue("setLabel is now un-annotated",
+                afterUncheck.matches("(?s).*\\n\\s*public void setLabel\\(.*"));
+        mm.rebuildMetaModel();
+        assertNull("no setter role after uncheck", mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("label").getSetterMethodName());
+
+        // --- Re-check: smart-reattach the conventional setLabel(String) ---
+        mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("label").setSetterPresent(true);
+        mm.flushAll();
+        assertTrue("@Setter re-attached", new String(Files.readAllBytes(foo1File.toPath())).contains("@Setter"));
+        mm.rebuildMetaModel();
+        assertEquals("setter is the conventional method again", "setLabel",
+                mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("label").getSetterMethodName());
+    }
+
+    // =========================================================================
+    // Test 18 — inspector selector: retarget moves the annotation to the chosen
+    // (signature-compatible) method
+    // =========================================================================
+
+    @Test
+    public void testRetargetSetterMovesAnnotation() throws IOException {
+        File workDir = tmp.newFolder("testRetargetSetter");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+
+        // Inject a second, plain, signature-compatible method into Foo1.
+        File foo1File = new File(srcCopy, "Foo1.java");
+        String foo1 = new String(Files.readAllBytes(foo1File.toPath()));
+        int lastBrace = foo1.lastIndexOf('}');
+        foo1 = foo1.substring(0, lastBrace)
+                + "\n\tpublic void assignLabel(String value);\n\n"
+                + foo1.substring(lastBrace);
+        Files.write(foo1File.toPath(), foo1.getBytes());
+
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        mm.getEntity("test.model1.Foo1").addSingleProperty("label", "java.lang.String");
+        mm.flushAll();
+        mm.rebuildMetaModel();
+
+        SourceModelProperty label = mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("label");
+        assertEquals("starts on the conventional setter", "setLabel", label.getSetterMethodName());
+
+        // The candidate list offers both setLabel and assignLabel.
+        spoon.reflect.declaration.CtMethod<?> assign = null;
+        for (spoon.reflect.declaration.CtMethod<?> m : label.getSetterCandidates()) {
+            if ("assignLabel".equals(m.getSimpleName())) {
+                assign = m;
+            }
+        }
+        assertNotNull("assignLabel is a signature-compatible candidate", assign);
+
+        // --- Retarget: move @Setter from setLabel to assignLabel ---
+        label.setSetterMethod(assign);
+        mm.flushAll();
+        mm.rebuildMetaModel();
+        assertEquals("setter retargeted to assignLabel", "assignLabel",
+                mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("label").getSetterMethodName());
+    }
+
+    // =========================================================================
     // Method-level promote (signature-based) — model-editing-design.md §3.3
     // =========================================================================
 

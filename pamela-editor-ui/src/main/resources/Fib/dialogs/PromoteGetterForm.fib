@@ -23,13 +23,13 @@
   <Label name="setterLabel" label="Setter:" localize="false" align="left"
          visible="data.setterOption.show"
          index="4" constraints="twocols(location=left)" />
-  <Panel name="setterRow" layout="flow" flowAlignment="LEFT" border="empty"
+  <Panel name="setterRow" layout="border" flowAlignment="LEFT" border="empty"
          borderTop="0" borderBottom="0" borderLeft="0" borderRight="0" hGap="0" vGap="0"
          visible="data.setterOption.show"
          index="5" constraints="twocols(expandHorizontally=true;location=right)">
-    <CheckBox name="setterCB" data="data.setterOption.include" />
+    <CheckBox name="setterCB" data="data.setterOption.include" constraints="border(location=west)"/>
     <Custom name="setterSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
-           data="data.setterOption.method" manageDynamicModel="true" width="200">
+           data="data.setterOption.method" manageDynamicModel="true" width="200" constraints="border(location=center)">
       <Assignment variable="component.entity" value="data.entity" />
       <Assignment variable="component.restrictedValues" value="data.setterOption.candidates" />
     </Custom>
@@ -39,13 +39,13 @@
   <Label name="updaterLabel" label="Updater:" localize="false" align="left"
          visible="data.updaterOption.show"
          index="6" constraints="twocols(location=left)" />
-  <Panel name="updaterRow" layout="flow" flowAlignment="LEFT" border="empty"
+  <Panel name="updaterRow" layout="border" flowAlignment="LEFT" border="empty"
          borderTop="0" borderBottom="0" borderLeft="0" borderRight="0" hGap="0" vGap="0"
          visible="data.updaterOption.show"
          index="7" constraints="twocols(expandHorizontally=true;location=right)">
-    <CheckBox name="updaterCB" data="data.updaterOption.include" />
+    <CheckBox name="updaterCB" data="data.updaterOption.include" constraints="border(location=west)" />
     <Custom name="updaterSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
-           data="data.updaterOption.method" manageDynamicModel="true" width="200">
+           data="data.updaterOption.method" manageDynamicModel="true" width="200" constraints="border(location=center)">
       <Assignment variable="component.entity" value="data.entity" />
       <Assignment variable="component.restrictedValues" value="data.updaterOption.candidates" />
     </Custom>
@@ -55,13 +55,13 @@
   <Label name="adderLabel" label="Adder:" localize="false" align="left"
          visible="data.adderOption.show"
          index="8" constraints="twocols(location=left)" />
-  <Panel name="adderRow" layout="flow" flowAlignment="LEFT" border="empty"
+  <Panel name="adderRow" layout="border" flowAlignment="LEFT" border="empty"
          borderTop="0" borderBottom="0" borderLeft="0" borderRight="0" hGap="0" vGap="0"
          visible="data.adderOption.show"
          index="9" constraints="twocols(expandHorizontally=true;location=right)">
-    <CheckBox name="adderCB" data="data.adderOption.include" />
+    <CheckBox name="adderCB" data="data.adderOption.include" constraints="border(location=west)"/>
     <Custom name="adderSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
-           data="data.adderOption.method" manageDynamicModel="true" width="200">
+           data="data.adderOption.method" manageDynamicModel="true" width="200" constraints="border(location=center)">
       <Assignment variable="component.entity" value="data.entity" />
       <Assignment variable="component.restrictedValues" value="data.adderOption.candidates" />
     </Custom>
@@ -71,13 +71,13 @@
   <Label name="removerLabel" label="Remover:" localize="false" align="left"
          visible="data.removerOption.show"
          index="10" constraints="twocols(location=left)" />
-  <Panel name="removerRow" layout="flow" flowAlignment="LEFT" border="empty"
+  <Panel name="removerRow" layout="border" flowAlignment="LEFT" border="empty"
          borderTop="0" borderBottom="0" borderLeft="0" borderRight="0" hGap="0" vGap="0"
          visible="data.removerOption.show"
          index="11" constraints="twocols(expandHorizontally=true;location=right)">
-    <CheckBox name="removerCB" data="data.removerOption.include" />
+    <CheckBox name="removerCB" data="data.removerOption.include" constraints="border(location=west)"/>
     <Custom name="removerSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
-           data="data.removerOption.method" manageDynamicModel="true" width="200">
+           data="data.removerOption.method" manageDynamicModel="true" width="200" constraints="border(location=center)">
       <Assignment variable="component.entity" value="data.entity" />
       <Assignment variable="component.restrictedValues" value="data.removerOption.candidates" />
     </Custom>
@@ -87,7 +87,7 @@
   <Label name="reindexerLabel" label="Reindexer:" localize="false" align="left"
          visible="data.reindexerOption.show"
          index="12" constraints="twocols(location=left)" />
-  <Panel name="reindexerRow" layout="flow" flowAlignment="LEFT" border="empty"
+  <Panel name="reindexerRow" layout="border" flowAlignment="LEFT" border="empty"
          borderTop="0" borderBottom="0" borderLeft="0" borderRight="0" hGap="0" vGap="0"
          visible="data.reindexerOption.show"
          index="13" constraints="twocols(expandHorizontally=true;location=right)">

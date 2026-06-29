@@ -246,7 +246,7 @@ public class SpoonOutlineController extends PamelaEditorFIBController<SpoonOutli
         if (obj instanceof CtMethod) {
             CtMethod<?> m = (CtMethod<?>) obj;
             return m.getSimpleName() + "(" + shortParams(m.getParameters()) + ")"
-                    + " : " + m.getType().getSimpleName();
+                    /*+ " : " + m.getType().getSimpleName()*/;
         }
         if (obj instanceof CtConstructor) {
             CtConstructor<?> c = (CtConstructor<?>) obj;

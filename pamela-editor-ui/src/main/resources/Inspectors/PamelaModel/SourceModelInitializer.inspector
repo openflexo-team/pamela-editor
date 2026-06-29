@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
     dataClassName="org.openflexo.pamela.editor.model.SourceModelInitializer" name="Inspector">
-    <Label name="MethodNameLabel" label="method_name" index="0"
+    <Label name="MethodNameLabel" label="Initializer" index="0"
         constraints="twocols(location=left)" localize="true" />
     <TextField name="MethodNameTF" index="1" data="data.methodName" readOnly="true"
         constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
     dataClassName="org.openflexo.pamela.editor.model.SourceModelProperty" name="Inspector">
-    <Label name="IdentifierLabel" label="identifier" index="0"
+    <Label name="IdentifierLabel" label="Property" index="0"
         constraints="twocols(location=left)" localize="true" />
 
     <Panel name="IdentifierRow" layout="border" flowAlignment="LEFT" hGap="0" vGap="0" border="empty" index="1"
@@ -29,47 +29,129 @@
             action="data.requestChangeType()" />
     </Panel>
 
+    <!-- Getter — mandatory, no checkbox; the selector shows the getter (read-only). -->
     <Label name="GetterLabel" label="getter" index="6"
         constraints="twocols(location=left)" localize="true" />
-    <TextField name="GetterTF" index="7" data="data.getterMethodName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
-    <Label name="SetterLabel" label="setter" index="8"
+    <Custom name="GetterSelector" index="7"
+        componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+        data="data.getterMethod" manageDynamicModel="true"
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)">
+        <Assignment variable="component.entity" value="data.modelEntity" />
+    </Custom>
+
+    <!-- Setter (SINGLE) — checkbox declares/undeclares; selector picks the method. -->
+    <Label name="SetterLabel" label="setter" index="8" visible="data.singleCardinality"
         constraints="twocols(location=left)" localize="true" />
-    <TextField name="SetterTF" index="9" data="data.setterMethodName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
-    <Label name="InverseLabel" label="inverse" index="10"
+    <Panel name="SetterRow" layout="border" border="empty" hGap="3" vGap="0" index="9"
+        visible="data.singleCardinality"
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)">
+        <CheckBox name="SetterCB" data="data.setterPresent" constraints="border(location=west)" />
+        <Custom name="SetterSelector"
+            componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+            data="data.setterMethod" manageDynamicModel="true" enable="data.setterPresent"
+            constraints="border(location=center)">
+            <Assignment variable="component.entity" value="data.modelEntity" />
+            <Assignment variable="component.restrictedValues" value="data.setterCandidates" />
+        </Custom>
+    </Panel>
+
+    <!-- Updater (SINGLE) -->
+    <Label name="UpdaterLabel" label="updater" index="10" visible="data.singleCardinality"
+        constraints="twocols(location=left)" localize="true" />
+    <Panel name="UpdaterRow" layout="border" border="empty" hGap="3" vGap="0" index="11"
+        visible="data.singleCardinality"
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)">
+        <CheckBox name="UpdaterCB" data="data.updaterPresent" constraints="border(location=west)" />
+        <Custom name="UpdaterSelector"
+            componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+            data="data.updaterMethod" manageDynamicModel="true" enable="data.updaterPresent"
+            constraints="border(location=center)">
+            <Assignment variable="component.entity" value="data.modelEntity" />
+            <Assignment variable="component.restrictedValues" value="data.updaterCandidates" />
+        </Custom>
+    </Panel>
+
+    <!-- Adder (LIST) -->
+    <Label name="AdderLabel" label="adder" index="12" visible="data.listCardinality"
+        constraints="twocols(location=left)" localize="true" />
+    <Panel name="AdderRow" layout="border" border="empty" hGap="3" vGap="0" index="13"
+        visible="data.listCardinality"
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)">
+        <CheckBox name="AdderCB" data="data.adderPresent" constraints="border(location=west)" />
+        <Custom name="AdderSelector"
+            componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+            data="data.adderMethod" manageDynamicModel="true" enable="data.adderPresent"
+            constraints="border(location=center)">
+            <Assignment variable="component.entity" value="data.modelEntity" />
+            <Assignment variable="component.restrictedValues" value="data.adderCandidates" />
+        </Custom>
+    </Panel>
+
+    <!-- Remover (LIST) -->
+    <Label name="RemoverLabel" label="remover" index="14" visible="data.listCardinality"
+        constraints="twocols(location=left)" localize="true" />
+    <Panel name="RemoverRow" layout="border" border="empty" hGap="3" vGap="0" index="15"
+        visible="data.listCardinality"
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)">
+        <CheckBox name="RemoverCB" data="data.removerPresent" constraints="border(location=west)" />
+        <Custom name="RemoverSelector"
+            componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+            data="data.removerMethod" manageDynamicModel="true" enable="data.removerPresent"
+            constraints="border(location=center)">
+            <Assignment variable="component.entity" value="data.modelEntity" />
+            <Assignment variable="component.restrictedValues" value="data.removerCandidates" />
+        </Custom>
+    </Panel>
+
+    <!-- Reindexer (LIST) -->
+    <Label name="ReindexerLabel" label="reindexer" index="16" visible="data.listCardinality"
+        constraints="twocols(location=left)" localize="true" />
+    <Panel name="ReindexerRow" layout="border" border="empty" hGap="3" vGap="0" index="17"
+        visible="data.listCardinality"
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)">
+        <CheckBox name="ReindexerCB" data="data.reindexerPresent" constraints="border(location=west)" />
+        <Custom name="ReindexerSelector"
+            componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+            data="data.reindexerMethod" manageDynamicModel="true" enable="data.reindexerPresent"
+            constraints="border(location=center)">
+            <Assignment variable="component.entity" value="data.modelEntity" />
+            <Assignment variable="component.restrictedValues" value="data.reindexerCandidates" />
+        </Custom>
+    </Panel>
+
+    <Label name="InverseLabel" label="inverse" index="18"
         constraints="twocols(location=left)" localize="true" />
     <Custom name="InverseSelector"
         componentClassName="org.openflexo.pamela.editor.ui.widget.ModelPropertySelector"
-        data="data.inverse" manageDynamicModel="true" index="11"
+        data="data.inverse" manageDynamicModel="true" index="19"
         constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)">
         <Assignment variable="component.entity" value="data.type.modelEntity" />
     </Custom>
 
-    <Label name="DefaultValueLabel" label="default_value" index="12"
+    <Label name="DefaultValueLabel" label="default_value" index="20"
         constraints="twocols(location=left)" localize="true" />
-    <TextField name="DefaultValueTF" index="13" data="data.defaultValue" readOnly="false"
+    <TextField name="DefaultValueTF" index="21" data="data.defaultValue" readOnly="false"
         validateOnReturn="true"
         constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
-    <Label name="DerivedLabel" label="derived" index="14"
+    <Label name="DerivedLabel" label="derived" index="22"
         constraints="twocols(location=left)" localize="true" />
-    <CheckBox name="DerivedCB" index="15" data="data.derived" readOnly="false"
+    <CheckBox name="DerivedCB" index="23" data="data.derived" readOnly="false"
         constraints="twocols(location=right)" localize="true" />
-    <Label name="EmbeddedLabel" label="embedded" index="16"
+    <Label name="EmbeddedLabel" label="embedded" index="24"
         constraints="twocols(location=left)" localize="true" />
-    <CheckBox name="EmbeddedCB" index="17" data="data.embedded" readOnly="false"
+    <CheckBox name="EmbeddedCB" index="25" data="data.embedded" readOnly="false"
         constraints="twocols(location=right)" localize="true" />
-    <Label name="IgnoreTypeLabel" label="ignore_type" index="18"
+    <Label name="IgnoreTypeLabel" label="ignore_type" index="26"
         constraints="twocols(location=left)" localize="true" />
-    <CheckBox name="IgnoreTypeCB" index="19" data="data.ignoreType" readOnly="false"
+    <CheckBox name="IgnoreTypeCB" index="27" data="data.ignoreType" readOnly="false"
         constraints="twocols(location=right)" localize="true" />
-    <Label name="IgnoreEqualityLabel" label="ignore_for_equality" index="20"
+    <Label name="IgnoreEqualityLabel" label="ignore_for_equality" index="28"
         constraints="twocols(location=left)" localize="true" />
-    <CheckBox name="IgnoreEqualityCB" index="21" data="data.ignoreForEquality" readOnly="false"
+    <CheckBox name="IgnoreEqualityCB" index="29" data="data.ignoreForEquality" readOnly="false"
         constraints="twocols(location=right)" localize="true" />
-    <Label name="AllowsMultipleLabel" label="allows_multiple" index="22"
+    <Label name="AllowsMultipleLabel" label="allows_multiple" index="30"
         constraints="twocols(location=left)" localize="true" />
-    <CheckBox name="AllowsMultipleCB" index="23" data="data.allowsMultipleOccurrences" readOnly="false"
+    <CheckBox name="AllowsMultipleCB" index="31" data="data.allowsMultipleOccurrences" readOnly="false"
         constraints="twocols(location=right)" localize="true" />
 
     <LocalizedDictionary>
@@ -95,6 +177,14 @@
         <Localized key="getter" lang="French" value="Getter" />
         <Localized key="setter" lang="English" value="Setter" />
         <Localized key="setter" lang="French" value="Setter" />
+        <Localized key="updater" lang="English" value="Updater" />
+        <Localized key="updater" lang="French" value="Updater" />
+        <Localized key="adder" lang="English" value="Adder" />
+        <Localized key="adder" lang="French" value="Adder" />
+        <Localized key="remover" lang="English" value="Remover" />
+        <Localized key="remover" lang="French" value="Remover" />
+        <Localized key="reindexer" lang="English" value="Reindexer" />
+        <Localized key="reindexer" lang="French" value="Reindexer" />
         <Localized key="inverse" lang="English" value="Inverse" />
         <Localized key="inverse" lang="French" value="Inverse" />
     </LocalizedDictionary>

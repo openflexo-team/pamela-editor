@@ -735,6 +735,320 @@ public class SourceModelProperty implements SourceElement,
         cu.setText(source);
     }
 
+    // =========================================================================
+    // Accessor roles — checkbox + JavaMethodSelector inspector support.
+    //
+    // Each secondary accessor (setter/updater for SINGLE; adder/remover/reindexer
+    // for LIST) is exposed to the inspector as a triple:
+    //   - <role>Present  : boolean checkbox (declared or not)
+    //   - <role>Method   : the CtMethod playing that role (the selector value)
+    //   - <role>Candidates : the signature-compatible methods (selector restriction)
+    //
+    // Semantics (model-editing-design.md §6 — the model mutates the source + fires
+    // an event; the application reacts by rebuilding):
+    //   - check    : smart attach-or-generate — annotate an existing conventional
+    //                method if one exists, else generate a fresh stub;
+    //   - uncheck  : detach (remove the PAMELA annotation only — never delete the
+    //                method, so a hand-written method is preserved and a re-check
+    //                re-attaches it);
+    //   - select   : retarget — move the annotation from the current method to the
+    //                chosen one (signature-compatible candidates only).
+    //
+    // Surfacing CtMethod in the public API is the documented Spoon-encapsulation
+    // exception (the selector inherently manipulates Spoon nodes — see
+    // SourceCompilationUnit.getRootTypes(), ui-design.md §19.3).
+    // =========================================================================
+
+    private enum AccessorRole { SETTER, UPDATER, ADDER, REMOVER, REINDEXER }
+
+    /** The mandatory getter method (read-only — a property always has exactly one getter). */
+    public CtMethod<?> getGetterMethod() {
+        return ctGetter;
+    }
+
+    // --- Setter (SINGLE) -----------------------------------------------------
+    public boolean isSetterPresent() { return ctSetter != null; }
+    public void setSetterPresent(boolean present) throws IOException { setAccessorPresent(AccessorRole.SETTER, present); }
+    public CtMethod<?> getSetterMethod() { return ctSetter; }
+    public void setSetterMethod(CtMethod<?> method) throws IOException { setAccessorMethod(AccessorRole.SETTER, method); }
+    public List<CtMethod<?>> getSetterCandidates() { return candidateMethods(AccessorRole.SETTER); }
+
+    // --- Updater (SINGLE) ----------------------------------------------------
+    public boolean isUpdaterPresent() { return ctUpdater != null; }
+    public void setUpdaterPresent(boolean present) throws IOException { setAccessorPresent(AccessorRole.UPDATER, present); }
+    public CtMethod<?> getUpdaterMethod() { return ctUpdater; }
+    public void setUpdaterMethod(CtMethod<?> method) throws IOException { setAccessorMethod(AccessorRole.UPDATER, method); }
+    public List<CtMethod<?>> getUpdaterCandidates() { return candidateMethods(AccessorRole.UPDATER); }
+
+    // --- Adder (LIST) --------------------------------------------------------
+    public boolean isAdderPresent() { return ctAdder != null; }
+    public void setAdderPresent(boolean present) throws IOException { setAccessorPresent(AccessorRole.ADDER, present); }
+    public CtMethod<?> getAdderMethod() { return ctAdder; }
+    public void setAdderMethod(CtMethod<?> method) throws IOException { setAccessorMethod(AccessorRole.ADDER, method); }
+    public List<CtMethod<?>> getAdderCandidates() { return candidateMethods(AccessorRole.ADDER); }
+
+    // --- Remover (LIST) ------------------------------------------------------
+    public boolean isRemoverPresent() { return ctRemover != null; }
+    public void setRemoverPresent(boolean present) throws IOException { setAccessorPresent(AccessorRole.REMOVER, present); }
+    public CtMethod<?> getRemoverMethod() { return ctRemover; }
+    public void setRemoverMethod(CtMethod<?> method) throws IOException { setAccessorMethod(AccessorRole.REMOVER, method); }
+    public List<CtMethod<?>> getRemoverCandidates() { return candidateMethods(AccessorRole.REMOVER); }
+
+    // --- Reindexer (LIST) ----------------------------------------------------
+    public boolean isReindexerPresent() { return ctReindexer != null; }
+    public void setReindexerPresent(boolean present) throws IOException { setAccessorPresent(AccessorRole.REINDEXER, present); }
+    public CtMethod<?> getReindexerMethod() { return ctReindexer; }
+    public void setReindexerMethod(CtMethod<?> method) throws IOException { setAccessorMethod(AccessorRole.REINDEXER, method); }
+    public List<CtMethod<?>> getReindexerCandidates() { return candidateMethods(AccessorRole.REINDEXER); }
+
+    // --- generic checkbox / selector mutations -------------------------------
+
+    /** Checkbox toggle: smart attach-or-generate when checked, detach when unchecked. */
+    private void setAccessorPresent(AccessorRole role, boolean present) throws IOException {
+        boolean current = currentAccessor(role) != null;
+        if (present == current) {
+            return;
+        }
+        if (present) {
+            CtMethod<?> conventional = findConventional(role);
+            if (conventional != null) {
+                attachExisting(role, conventional);
+            } else {
+                generate(role);
+            }
+        } else {
+            detach(role);
+        }
+        pcSupport.firePropertyChange("accessor:" + role, !present, present);
+    }
+
+    /** Selector commit: retarget the accessor annotation onto the chosen method (null = detach). */
+    private void setAccessorMethod(AccessorRole role, CtMethod<?> chosen) throws IOException {
+        CtMethod<?> current = currentAccessor(role);
+        if (chosen == current) {
+            return;
+        }
+        if (chosen == null) {
+            if (current != null) {
+                detach(role);
+                pcSupport.firePropertyChange("accessor:" + role, true, false);
+            }
+            return;
+        }
+        retarget(role, current, chosen);
+        pcSupport.firePropertyChange("accessor:" + role, null, chosen);
+    }
+
+    // --- role metadata -------------------------------------------------------
+
+    private CtMethod<?> currentAccessor(AccessorRole role) {
+        switch (role) {
+            case SETTER:    return ctSetter;
+            case UPDATER:   return ctUpdater;
+            case ADDER:     return ctAdder;
+            case REMOVER:   return ctRemover;
+            case REINDEXER: return ctReindexer;
+            default:        return null;
+        }
+    }
+
+    private void setCurrentAccessor(AccessorRole role, CtMethod<?> method) {
+        String name = (method == null) ? null : method.getSimpleName();
+        switch (role) {
+            case SETTER:    ctSetter = method;    setterMethodName = name;    break;
+            case UPDATER:   ctUpdater = method;   updaterMethodName = name;   break;
+            case ADDER:     ctAdder = method;     adderMethodName = name;     break;
+            case REMOVER:   ctRemover = method;   removerMethodName = name;   break;
+            case REINDEXER: ctReindexer = method; reindexerMethodName = name; break;
+        }
+    }
+
+    private Class<? extends Annotation> annotationFor(AccessorRole role) {
+        switch (role) {
+            case SETTER:    return Setter.class;
+            case UPDATER:   return Updater.class;
+            case ADDER:     return Adder.class;
+            case REMOVER:   return Remover.class;
+            case REINDEXER: return Reindexer.class;
+            default:        throw new IllegalArgumentException("Unknown role " + role);
+        }
+    }
+
+    /** Conventional method name used when generating a missing accessor. */
+    private String conventionalName(AccessorRole role) {
+        String cap = capitalise(propertyIdentifier);
+        switch (role) {
+            case SETTER:    return "set" + cap;
+            case UPDATER:   return "update" + cap;
+            case ADDER:     return "addTo" + cap;
+            case REMOVER:   return "removeFrom" + cap;
+            case REINDEXER: return "reindex" + cap;
+            default:        throw new IllegalArgumentException("Unknown role " + role);
+        }
+    }
+
+    private int paramCountFor(AccessorRole role) {
+        return role == AccessorRole.REINDEXER ? 2 : 1;
+    }
+
+    /** The value type of the role's first parameter: getter type (SINGLE) or element type (LIST). */
+    private CtTypeReference<?> valueTypeRef() {
+        if (cardinality == Cardinality.LIST) {
+            List<CtTypeReference<?>> args = ctGetter.getType().getActualTypeArguments();
+            return (args == null || args.isEmpty())
+                    ? ctGetter.getFactory().Type().OBJECT
+                    : args.get(0);
+        }
+        return ctGetter.getType();
+    }
+
+    /** Signature-compatible methods of the entity interface for the given role. */
+    private List<CtMethod<?>> candidateMethods(AccessorRole role) {
+        List<CtMethod<?>> result = new ArrayList<>();
+        String valueQN = valueTypeRef().getQualifiedName();
+        int paramCount = paramCountFor(role);
+        for (CtMethod<?> m : modelEntity.getCtType().getMethods()) {
+            if (m.getParameters().size() != paramCount) {
+                continue;
+            }
+            if (!paramTypeMatches(m.getParameters().get(0), valueQN)) {
+                continue;
+            }
+            if (role == AccessorRole.REINDEXER && !isIntParam(m.getParameters().get(1))) {
+                continue;
+            }
+            result.add(m);
+        }
+        CtMethod<?> current = currentAccessor(role);
+        if (current != null && !result.contains(current)) {
+            result.add(0, current);
+        }
+        result.sort(java.util.Comparator.comparing(CtMethod::getSimpleName));
+        return result;
+    }
+
+    /** A signature-compatible candidate whose name matches the convention, or {@code null}. */
+    private CtMethod<?> findConventional(AccessorRole role) {
+        String name = conventionalName(role);
+        for (CtMethod<?> m : candidateMethods(role)) {
+            if (name.equals(m.getSimpleName())) {
+                return m;
+            }
+        }
+        return null;
+    }
+
+    // --- source mutations ----------------------------------------------------
+
+    /** Annotates an existing method as this property's accessor (annotation line + import). */
+    private void attachExisting(AccessorRole role, CtMethod<?> method) throws IOException {
+        requirePosition(method);
+        Class<? extends Annotation> annotation = annotationFor(role);
+        SourceCompilationUnit cu = modelEntity.getCompilationUnit();
+        String source = cu.getText();
+        source = SourceAnnotationEditor.insertAnnotationLine(source,
+                method.getPosition().getSourceStart(), annotationLine(annotation));
+        source = SourceAnnotationEditor.ensureImport(source, annotation.getName());
+        cu.setText(source);
+        setCurrentAccessor(role, method);
+    }
+
+    /** Generates a fresh conventional accessor stub and adds it to the entity interface. */
+    private void generate(AccessorRole role) throws IOException {
+        Factory factory = ctGetter.getFactory();
+        CtMethod<Void> method = (role == AccessorRole.REINDEXER)
+                ? buildReindexer(factory, conventionalName(role), valueTypeRef())
+                : buildVoidAccessor(factory, conventionalName(role), valueTypeRef(), annotationFor(role));
+        modelEntity.getCtType().addMethod(method);
+        modelEntity.getCompilationUnit().regenerateFromAST();
+        setCurrentAccessor(role, method);
+    }
+
+    /** Removes the PAMELA annotation from the current accessor method (keeps the method). */
+    private void detach(AccessorRole role) throws IOException {
+        CtMethod<?> current = currentAccessor(role);
+        if (current == null) {
+            return;
+        }
+        requirePosition(current);
+        SourceCompilationUnit cu = modelEntity.getCompilationUnit();
+        String source = SourceAnnotationEditor.removeAnnotation(cu.getText(),
+                current.getPosition().getSourceStart(), annotationFor(role).getSimpleName());
+        cu.setText(source);
+        setCurrentAccessor(role, null);
+    }
+
+    /**
+     * Moves the accessor annotation from {@code current} (if any) to {@code chosen}. Both edits are
+     * in the entity's own compilation unit; the higher source offset is edited first so the lower
+     * one stays valid.
+     */
+    private void retarget(AccessorRole role, CtMethod<?> current, CtMethod<?> chosen) throws IOException {
+        requirePosition(chosen);
+        Class<? extends Annotation> annotation = annotationFor(role);
+        SourceCompilationUnit cu = modelEntity.getCompilationUnit();
+        String source = cu.getText();
+        int chosenOffset = chosen.getPosition().getSourceStart();
+        Integer currentOffset = (current != null && current.getPosition() != null
+                && current.getPosition().isValidPosition())
+                ? current.getPosition().getSourceStart() : null;
+        if (currentOffset != null && currentOffset > chosenOffset) {
+            source = SourceAnnotationEditor.removeAnnotation(source, currentOffset, annotation.getSimpleName());
+            source = SourceAnnotationEditor.insertAnnotationLine(source, chosenOffset, annotationLine(annotation));
+        } else {
+            source = SourceAnnotationEditor.insertAnnotationLine(source, chosenOffset, annotationLine(annotation));
+            if (currentOffset != null) {
+                source = SourceAnnotationEditor.removeAnnotation(source, currentOffset, annotation.getSimpleName());
+            }
+        }
+        source = SourceAnnotationEditor.ensureImport(source, annotation.getName());
+        cu.setText(source);
+        setCurrentAccessor(role, chosen);
+    }
+
+    private String annotationLine(Class<? extends Annotation> annotation) {
+        return "@" + annotation.getSimpleName() + "(value = \"" + propertyIdentifier + "\")";
+    }
+
+    private static void requirePosition(CtMethod<?> method) {
+        if (method.getPosition() == null || !method.getPosition().isValidPosition()) {
+            throw new IllegalStateException("No source position for method " + method.getSimpleName());
+        }
+    }
+
+    private static boolean paramTypeMatches(CtParameter<?> param, String qualifiedName) {
+        return param.getType() != null && qualifiedName.equals(param.getType().getQualifiedName());
+    }
+
+    private static boolean isIntParam(CtParameter<?> param) {
+        String qn = (param.getType() == null) ? null : param.getType().getQualifiedName();
+        return "int".equals(qn) || "java.lang.Integer".equals(qn);
+    }
+
+    /** Builds {@code public void name(T value, int index)} annotated with {@code @Reindexer}. */
+    private CtMethod<Void> buildReindexer(Factory factory, String name, CtTypeReference<?> elementType) {
+        CtMethod<Void> method = factory.Core().createMethod();
+        method.setSimpleName(name);
+        method.setType((CtTypeReference<Void>) factory.Type().VOID_PRIMITIVE);
+        method.addModifier(ModifierKind.PUBLIC);
+
+        CtParameter<Object> value = factory.Core().createParameter();
+        value.setSimpleName("value");
+        value.setType((CtTypeReference<Object>) elementType.clone());
+        method.addParameter(value);
+
+        CtParameter<Object> index = factory.Core().createParameter();
+        index.setSimpleName("index");
+        index.setType((CtTypeReference) factory.Type().INTEGER_PRIMITIVE);
+        method.addParameter(index);
+
+        CtAnnotation<?> annotation = factory.Core().createAnnotation();
+        annotation.setAnnotationType(factory.Type().createReference(Reindexer.class));
+        annotation.addValue("value", propertyIdentifier);
+        method.addAnnotation(annotation);
+        return method;
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
@@ -821,6 +1135,16 @@ public class SourceModelProperty implements SourceElement,
     /** {@code SINGLE} or {@code LIST}. */
     public Cardinality getCardinality() {
         return cardinality;
+    }
+
+    /** {@code true} for a SINGLE property (drives setter/updater inspector rows). */
+    public boolean isSingleCardinality() {
+        return cardinality == Cardinality.SINGLE;
+    }
+
+    /** {@code true} for a LIST property (drives adder/remover/reindexer inspector rows). */
+    public boolean isListCardinality() {
+        return cardinality == Cardinality.LIST;
     }
 
     /**
