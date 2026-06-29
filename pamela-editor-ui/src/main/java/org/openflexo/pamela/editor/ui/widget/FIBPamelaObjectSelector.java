@@ -17,7 +17,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -71,6 +74,9 @@ public abstract class FIBPamelaObjectSelector<T> extends TextFieldCustomPopup<T>
 	private T _revertValue;
 	protected SelectorDetailsPanel _selectorPanel;
 
+	/** Leading icon (left of the text field) reflecting the currently selected value. */
+	private final JLabel iconLabel = new JLabel();
+
 	private Object selectedObject;
 	private T selectedValue;
 	private final List<T> matchingValues;
@@ -89,6 +95,10 @@ public abstract class FIBPamelaObjectSelector<T> extends TextFieldCustomPopup<T>
 		setRevertValue(editedObject);
 		setFocusable(true);
 		matchingValues = new ArrayList<>();
+		// Show the icon of the selected value at the leading edge of the text field.
+		iconLabel.setBorder(new EmptyBorder(0, 0, 0, 0));
+		getFrontComponent().add(iconLabel, BorderLayout.WEST);
+		updateSelectedIcon();
 		getTextField().setEditable(true);
 		getTextField().getDocument().addDocumentListener(new DocumentListener() {
 			@Override
@@ -146,6 +156,31 @@ public abstract class FIBPamelaObjectSelector<T> extends TextFieldCustomPopup<T>
 				}
 			}
 		});
+	}
+
+	// -------------------------------------------------------------------------
+	// Leading icon reflecting the selected value
+	// -------------------------------------------------------------------------
+
+	@Override
+	public void fireEditedObjectChanged() {
+		super.fireEditedObjectChanged();
+		updateSelectedIcon();
+	}
+
+	/**
+	 * The icon to display for the currently selected value. Default delegates to the shared
+	 * {@link SelectorIcons} resolution (the same icons the popup browser uses). Override to customize.
+	 */
+	protected ImageIcon iconForValue(T value) {
+		return SelectorIcons.iconFor(value);
+	}
+
+	private void updateSelectedIcon() {
+		T value = getEditedObject();
+		ImageIcon icon = value != null ? iconForValue(value) : null;
+		iconLabel.setIcon(icon);
+		iconLabel.setVisible(icon != null);
 	}
 
 	// -------------------------------------------------------------------------
