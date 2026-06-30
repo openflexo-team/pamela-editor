@@ -18,6 +18,7 @@ import org.openflexo.pamela.annotations.Reindexer;
 import org.openflexo.pamela.annotations.Remover;
 import org.openflexo.pamela.annotations.Setter;
 import org.openflexo.pamela.annotations.Updater;
+import org.openflexo.pamela.editor.model.AccessorSpec;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
@@ -71,11 +72,11 @@ public class PromoteGetterAction extends ParameteredAction {
     private Set<String> existingIdentifiers = new HashSet<>();
 
     // One option per candidate accessor role (shown only when relevant + candidates exist).
-    private final AccessorOption setterOption    = new AccessorOption("Setter", Setter.class);
-    private final AccessorOption updaterOption    = new AccessorOption("Updater", Updater.class);
-    private final AccessorOption adderOption       = new AccessorOption("Adder", Adder.class);
-    private final AccessorOption removerOption    = new AccessorOption("Remover", Remover.class);
-    private final AccessorOption reindexerOption = new AccessorOption("Reindexer", Reindexer.class);
+    private final AccessorOption setterOption    = new AccessorOption(AccessorSpec.Role.SETTER, "Setter");
+    private final AccessorOption updaterOption   = new AccessorOption(AccessorSpec.Role.UPDATER, "Updater");
+    private final AccessorOption adderOption      = new AccessorOption(AccessorSpec.Role.ADDER, "Adder");
+    private final AccessorOption removerOption   = new AccessorOption(AccessorSpec.Role.REMOVER, "Remover");
+    private final AccessorOption reindexerOption = new AccessorOption(AccessorSpec.Role.REINDEXER, "Reindexer");
 
     @Override
     public String getLabel() {
@@ -112,25 +113,36 @@ public class PromoteGetterAction extends ParameteredAction {
         String base = capitalisedBase(methodName);
         if (list) {
             // LIST property: adder / remover (1 param = element type), reindexer (element, int).
-            adderOption.configure(oneParamCandidates(candidates, propertyTypeQN),
-                    new String[] { "addTo" + base, "add" + base });
-            removerOption.configure(oneParamCandidates(candidates, propertyTypeQN),
-                    new String[] { "removeFrom" + base, "remove" + base });
-            reindexerOption.configure(reindexerCandidates(candidates, propertyTypeQN),
-                    new String[] { "reindex" + base, "setIndexFor" + base });
+            AccessorOption.configureSibling(adderOption, true,
+                    oneParamCandidates(candidates, propertyTypeQN), "addTo" + base, "add" + base);
+            AccessorOption.configureSibling(removerOption, true,
+                    oneParamCandidates(candidates, propertyTypeQN), "removeFrom" + base, "remove" + base);
+            AccessorOption.configureSibling(reindexerOption, true,
+                    reindexerCandidates(candidates, propertyTypeQN), "reindex" + base, "setIndexFor" + base);
         } else {
             // SINGLE property: setter / updater (1 param = property type).
-            setterOption.configure(oneParamCandidates(candidates, propertyTypeQN),
-                    new String[] { "set" + base });
-            updaterOption.configure(oneParamCandidates(candidates, propertyTypeQN),
-                    new String[] { "update" + base });
+            AccessorOption.configureSibling(setterOption, true,
+                    oneParamCandidates(candidates, propertyTypeQN), "set" + base);
+            AccessorOption.configureSibling(updaterOption, true,
+                    oneParamCandidates(candidates, propertyTypeQN), "update" + base);
+        }
+        for (AccessorOption opt : siblings) {
+            opt.setChangeCallback(this::fireInputValidChanged);
         }
         return true;
     }
 
     @Override
     public boolean isInputValid() {
-        return ModelEditingSupport.isAvailableIdentifier(propertyIdentifier, existingIdentifiers);
+        if (!ModelEditingSupport.isAvailableIdentifier(propertyIdentifier, existingIdentifiers)) {
+            return false;
+        }
+        for (AccessorOption opt : siblings) {
+            if (opt.isShow() && !opt.isComplete()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -139,16 +151,39 @@ public class PromoteGetterAction extends ParameteredAction {
         SourceMetaModel model = entity.getMetaModel();
         final String entityQN = entity.getQualifiedName();
 
-        Map<Class<? extends Annotation>, String> extras = new LinkedHashMap<>();
-        for (AccessorOption opt : new AccessorOption[] {
-                setterOption, updaterOption, adderOption, removerOption, reindexerOption }) {
-            if (opt.isShow() && opt.getInclude() && opt.getMethod() != null) {
-                extras.put(opt.annotationType, opt.getMethod().getSimpleName());
+        List<AccessorSpec> siblingSpecs = new ArrayList<>();
+        boolean anyGenerate = false;
+        for (AccessorOption opt : siblings) {
+            if (!opt.isShow() || !opt.getInclude()) {
+                continue;
             }
+            AccessorSpec spec = opt.toSpec();
+            if (spec == null) {
+                continue;
+            }
+            siblingSpecs.add(spec);
+            anyGenerate |= spec.isGenerate();
         }
-        entity.promoteGetterToProperty(methodName, propertyIdentifier.trim(), list, extras);
+
+        if (anyGenerate) {
+            // A generated sibling adds a new method → go through createProperty (getter is attached).
+            List<AccessorSpec> all = new ArrayList<>();
+            all.add(AccessorSpec.attach(AccessorSpec.Role.GETTER, methodName));
+            all.addAll(siblingSpecs);
+            entity.createProperty(propertyIdentifier.trim(), propertyTypeQN, list, all);
+        } else {
+            // All-attach → minimal-diff text-edit promote.
+            Map<Class<? extends Annotation>, String> extras = new LinkedHashMap<>();
+            for (AccessorSpec spec : siblingSpecs) {
+                extras.put(AccessorOption.annotationFor(spec.getRole()), spec.getMethodName());
+            }
+            entity.promoteGetterToProperty(methodName, propertyIdentifier.trim(), list, extras);
+        }
         return () -> model.getEntity(entityQN);
     }
+
+    private final AccessorOption[] siblings = {
+            setterOption, updaterOption, adderOption, removerOption, reindexerOption };
 
     // --- candidate computation (by signature, over the entity's Spoon methods) -
 
@@ -209,6 +244,7 @@ public class PromoteGetterAction extends ParameteredAction {
 
     public void setPropertyIdentifier(String propertyIdentifier) {
         this.propertyIdentifier = propertyIdentifier;
+        getPropertyChangeSupport().firePropertyChange("promotionSummary", null, getPromotionSummary());
         fireInputValidChanged();
     }
 
@@ -225,6 +261,11 @@ public class PromoteGetterAction extends ParameteredAction {
     public AccessorOption getAdderOption()     { return adderOption; }
     public AccessorOption getRemoverOption()   { return removerOption; }
     public AccessorOption getReindexerOption() { return reindexerOption; }
+
+    /** Read-only summary of the property being created (for the form header). */
+    public String getPromotionSummary() {
+        return "Promote " + methodName + "() → property '" + propertyIdentifier + "'";
+    }
 
     // -------------------------------------------------------------------------
 
@@ -255,60 +296,5 @@ public class PromoteGetterAction extends ParameteredAction {
             return name.substring(2);
         }
         return null;
-    }
-
-    // =========================================================================
-
-    /**
-     * One candidate accessor role in the dialog: a "also promote …" checkbox + a dropdown of the
-     * signature-matching methods. {@link #show} gates the row; {@link #include} + {@link #method}
-     * are read at {@code applyMutation}.
-     */
-    public static final class AccessorOption {
-
-        private final String label;
-        final Class<? extends Annotation> annotationType;
-
-        private boolean show;
-        private List<CtMethod<?>> candidates = Collections.emptyList();
-        private boolean include;
-        private CtMethod<?> method;
-
-        AccessorOption(String label, Class<? extends Annotation> annotationType) {
-            this.label = label;
-            this.annotationType = annotationType;
-        }
-
-        /** Sets up this option from the matching candidates; default-selects/checks by name. */
-        void configure(List<CtMethod<?>> candidates, String[] preferredNames) {
-            this.candidates = candidates;
-            this.show = !candidates.isEmpty();
-            CtMethod<?> nameMatch = null;
-            for (String preferred : preferredNames) {
-                for (CtMethod<?> m : candidates) {
-                    if (m.getSimpleName().equals(preferred)) {
-                        nameMatch = m;
-                        break;
-                    }
-                }
-                if (nameMatch != null) {
-                    break;
-                }
-            }
-            this.method = nameMatch != null ? nameMatch
-                    : (candidates.isEmpty() ? null : candidates.get(0));
-            // Default-check only on a confident (name-based) match — otherwise the user opts in.
-            this.include = nameMatch != null;
-        }
-
-        public String getLabel()          { return label; }
-        public boolean isShow()           { return show; }
-        public List<CtMethod<?>> getCandidates() { return candidates; }
-
-        public boolean getInclude()       { return include; }
-        public void setInclude(boolean b) { this.include = b; }
-
-        public CtMethod<?> getMethod()         { return method; }
-        public void setMethod(CtMethod<?> m)   { this.method = m; }
     }
 }

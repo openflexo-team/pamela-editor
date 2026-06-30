@@ -1,25 +1,147 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PromoteMethodForm.fib — "Promote method to Property" (model-editing-design.md §3.3 / §5bis).
+-->
 <Panel dataClassName="org.openflexo.pamela.editor.ui.action.PromoteMethodAction"
        controllerClassName="org.openflexo.gina.controller.FIBController"
-       layout="twocols" name="PromoteMethodForm" border="empty" width="500" height="300">
+       layout="twocols" name="PromoteMethodForm" border="empty" width="600" height="320">
+
+  <Label name="header" data="data.promotionSummary" localize="false" align="center" font="SansSerif,1,14"
+         index="0" constraints="twocols(expandHorizontally=true;location=center;insetsTop=10;insetsBottom=10)" />
 
   <Label name="methodLabel" label="Getter method:" localize="false" align="left"
-         index="0" constraints="twocols(location=left)" />
+         index="1" constraints="twocols(location=left)" />
   <Custom name="getterSelector"
          componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
          data="data.selectedGetter" manageDynamicModel="true" width="240"
-         index="1" constraints="twocols(expandHorizontally=true;location=right)">
+         index="2" constraints="twocols(expandHorizontally=true;location=right)">
     <Assignment variable="component.entity" value="data.entity" />
     <Assignment variable="component.restrictedValues" value="data.getterChoices" />
   </Custom>
 
   <Label name="idLabel" label="Property name:" localize="false" align="left"
-         index="2" constraints="twocols(location=left)" />
+         index="3" constraints="twocols(location=left)" />
   <TextField name="idTF" data="data.propertyIdentifier" columns="22" validateOnReturn="false"
-         index="3" constraints="twocols(expandHorizontally=true;location=right)" />
+         index="4" constraints="twocols(expandHorizontally=true;location=right)" />
 
-  <Label name="setterLabel" label="Also annotate matching setter" localize="false" align="left"
-         index="4" constraints="twocols(location=left)" />
-  <CheckBox name="setterCB" data="data.includeSetter"
-         index="5" constraints="twocols(location=right)" />
+  <Label name="cardLabel" label="Cardinality:" localize="false" align="left"
+         index="5" constraints="twocols(location=left)" />
+  <TextField name="cardValue" data="data.cardinalityLabel" readOnly="true" columns="22"
+         index="6" constraints="twocols(expandHorizontally=true;location=right)" />
+
+  <Label name="setterLabel" label="Setter:" localize="false" align="left" visible="data.setterOption.show"
+         index="7" constraints="twocols(location=left)" />
+  <Panel name="setterRow" layout="gridbag" border="empty" visible="data.setterOption.show"
+         index="8" constraints="twocols(expandHorizontally=true;location=right)">
+    <CheckBox name="setterCB" data="data.setterOption.include"
+           constraints="gridbag(gridX=0;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <DropDown name="setterMode" data="data.setterOption.mode" list="data.setterOption.availableModes"
+           iteratorClassName="org.openflexo.pamela.editor.ui.action.AccessorOption$Mode"
+           format="object.label" enable="data.setterOption.include"
+           constraints="gridbag(gridX=1;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <TextField name="setterName" data="data.setterOption.generatedName" columns="10" validateOnReturn="false"
+           visible="data.setterOption.generateMode" enable="data.setterOption.include"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)" />
+    <Custom name="setterSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+           data="data.setterOption.method" manageDynamicModel="true"
+           visible="data.setterOption.attachMode" enable="data.setterOption.include"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)">
+      <Assignment variable="component.entity" value="data.entity" />
+      <Assignment variable="component.restrictedValues" value="data.setterOption.candidates" />
+    </Custom>
+    <Label name="setterSummary" data="data.setterOption.summary" localize="false" align="left" font="SansSerif,2,10"
+           constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
+  </Panel>
+  <Label name="updaterLabel" label="Updater:" localize="false" align="left" visible="data.updaterOption.show"
+         index="9" constraints="twocols(location=left)" />
+  <Panel name="updaterRow" layout="gridbag" border="empty" visible="data.updaterOption.show"
+         index="10" constraints="twocols(expandHorizontally=true;location=right)">
+    <CheckBox name="updaterCB" data="data.updaterOption.include"
+           constraints="gridbag(gridX=0;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <DropDown name="updaterMode" data="data.updaterOption.mode" list="data.updaterOption.availableModes"
+           iteratorClassName="org.openflexo.pamela.editor.ui.action.AccessorOption$Mode"
+           format="object.label" enable="data.updaterOption.include"
+           constraints="gridbag(gridX=1;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <TextField name="updaterName" data="data.updaterOption.generatedName" columns="10" validateOnReturn="false"
+           visible="data.updaterOption.generateMode" enable="data.updaterOption.include"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)" />
+    <Custom name="updaterSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+           data="data.updaterOption.method" manageDynamicModel="true"
+           visible="data.updaterOption.attachMode" enable="data.updaterOption.include"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)">
+      <Assignment variable="component.entity" value="data.entity" />
+      <Assignment variable="component.restrictedValues" value="data.updaterOption.candidates" />
+    </Custom>
+    <Label name="updaterSummary" data="data.updaterOption.summary" localize="false" align="left" font="SansSerif,2,10"
+           constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
+  </Panel>
+  <Label name="adderLabel" label="Adder:" localize="false" align="left" visible="data.adderOption.show"
+         index="11" constraints="twocols(location=left)" />
+  <Panel name="adderRow" layout="gridbag" border="empty" visible="data.adderOption.show"
+         index="12" constraints="twocols(expandHorizontally=true;location=right)">
+    <CheckBox name="adderCB" data="data.adderOption.include"
+           constraints="gridbag(gridX=0;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <DropDown name="adderMode" data="data.adderOption.mode" list="data.adderOption.availableModes"
+           iteratorClassName="org.openflexo.pamela.editor.ui.action.AccessorOption$Mode"
+           format="object.label" enable="data.adderOption.include"
+           constraints="gridbag(gridX=1;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <TextField name="adderName" data="data.adderOption.generatedName" columns="10" validateOnReturn="false"
+           visible="data.adderOption.generateMode" enable="data.adderOption.include"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)" />
+    <Custom name="adderSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+           data="data.adderOption.method" manageDynamicModel="true"
+           visible="data.adderOption.attachMode" enable="data.adderOption.include"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)">
+      <Assignment variable="component.entity" value="data.entity" />
+      <Assignment variable="component.restrictedValues" value="data.adderOption.candidates" />
+    </Custom>
+    <Label name="adderSummary" data="data.adderOption.summary" localize="false" align="left" font="SansSerif,2,10"
+           constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
+  </Panel>
+  <Label name="removerLabel" label="Remover:" localize="false" align="left" visible="data.removerOption.show"
+         index="13" constraints="twocols(location=left)" />
+  <Panel name="removerRow" layout="gridbag" border="empty" visible="data.removerOption.show"
+         index="14" constraints="twocols(expandHorizontally=true;location=right)">
+    <CheckBox name="removerCB" data="data.removerOption.include"
+           constraints="gridbag(gridX=0;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <DropDown name="removerMode" data="data.removerOption.mode" list="data.removerOption.availableModes"
+           iteratorClassName="org.openflexo.pamela.editor.ui.action.AccessorOption$Mode"
+           format="object.label" enable="data.removerOption.include"
+           constraints="gridbag(gridX=1;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <TextField name="removerName" data="data.removerOption.generatedName" columns="10" validateOnReturn="false"
+           visible="data.removerOption.generateMode" enable="data.removerOption.include"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)" />
+    <Custom name="removerSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+           data="data.removerOption.method" manageDynamicModel="true"
+           visible="data.removerOption.attachMode" enable="data.removerOption.include"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)">
+      <Assignment variable="component.entity" value="data.entity" />
+      <Assignment variable="component.restrictedValues" value="data.removerOption.candidates" />
+    </Custom>
+    <Label name="removerSummary" data="data.removerOption.summary" localize="false" align="left" font="SansSerif,2,10"
+           constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
+  </Panel>
+  <Label name="reindexerLabel" label="Reindexer:" localize="false" align="left" visible="data.reindexerOption.show"
+         index="15" constraints="twocols(location=left)" />
+  <Panel name="reindexerRow" layout="gridbag" border="empty" visible="data.reindexerOption.show"
+         index="16" constraints="twocols(expandHorizontally=true;location=right)">
+    <CheckBox name="reindexerCB" data="data.reindexerOption.include"
+           constraints="gridbag(gridX=0;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <DropDown name="reindexerMode" data="data.reindexerOption.mode" list="data.reindexerOption.availableModes"
+           iteratorClassName="org.openflexo.pamela.editor.ui.action.AccessorOption$Mode"
+           format="object.label" enable="data.reindexerOption.include"
+           constraints="gridbag(gridX=1;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <TextField name="reindexerName" data="data.reindexerOption.generatedName" columns="10" validateOnReturn="false"
+           visible="data.reindexerOption.generateMode" enable="data.reindexerOption.include"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)" />
+    <Custom name="reindexerSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+           data="data.reindexerOption.method" manageDynamicModel="true"
+           visible="data.reindexerOption.attachMode" enable="data.reindexerOption.include"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)">
+      <Assignment variable="component.entity" value="data.entity" />
+      <Assignment variable="component.restrictedValues" value="data.reindexerOption.candidates" />
+    </Custom>
+    <Label name="reindexerSummary" data="data.reindexerOption.summary" localize="false" align="left" font="SansSerif,2,10"
+           constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
+  </Panel>
 </Panel>

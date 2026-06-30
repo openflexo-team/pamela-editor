@@ -1108,6 +1108,45 @@ public class TestMutations {
     }
 
     // =========================================================================
+    // Test 20 — createProperty: generate the getter, attach an existing setter
+    // =========================================================================
+
+    @Test
+    public void testCreatePropertyGenerateAndAttach() throws IOException {
+        File workDir = tmp.newFolder("testCreateProperty");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+
+        // Inject a plain, signature-compatible setter into Foo1 (no @Setter yet).
+        File foo1File = new File(srcCopy, "Foo1.java");
+        String foo1 = new String(Files.readAllBytes(foo1File.toPath()));
+        int lastBrace = foo1.lastIndexOf('}');
+        foo1 = foo1.substring(0, lastBrace)
+                + "\n\tpublic void assignLabel(String value);\n\n"
+                + foo1.substring(lastBrace);
+        Files.write(foo1File.toPath(), foo1.getBytes());
+
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+
+        // Generate getLabel(), attach the existing assignLabel() as the @Setter.
+        mm.getEntity("test.model1.Foo1").createProperty("label", "java.lang.String", false,
+                java.util.Arrays.asList(
+                        AccessorSpec.generate(AccessorSpec.Role.GETTER, "getLabel"),
+                        AccessorSpec.attach(AccessorSpec.Role.SETTER, "assignLabel")));
+        mm.flushAll();
+        String src = new String(Files.readAllBytes(foo1File.toPath()));
+        assertTrue("generated getter present", src.contains("getLabel"));
+        assertTrue("existing setter kept", src.contains("assignLabel"));
+
+        mm.rebuildMetaModel();
+        SourceModelProperty label = mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("label");
+        assertNotNull("property created", label);
+        assertEquals("getter is the generated method", "getLabel", label.getGetterMethodName());
+        assertEquals("setter is the attached existing method", "assignLabel", label.getSetterMethodName());
+    }
+
+    // =========================================================================
     // Method-level promote (signature-based) — model-editing-design.md §3.3
     // =========================================================================
 

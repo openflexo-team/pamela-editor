@@ -324,54 +324,182 @@ public class SourceModelEntity implements SourceElement,
      * @throws IOException if the file write fails
      */
     public SourceModelProperty addSingleProperty(String identifier, String qualifiedTypeName) throws IOException {
+        String cap = capitalise(identifier);
+        return createProperty(identifier, qualifiedTypeName, false, java.util.Arrays.asList(
+                AccessorSpec.generate(AccessorSpec.Role.GETTER, "get" + cap),
+                AccessorSpec.generate(AccessorSpec.Role.SETTER, "set" + cap)));
+    }
+
+    /**
+     * Creates a property (SINGLE or LIST) materialising the given accessors, each either
+     * <b>generated</b> (a fresh conventional method) or <b>attached</b> (the PAMELA annotation
+     * added to an existing developer-written method) — see {@link AccessorSpec}. This is the
+     * unified primitive behind {@link #addSingleProperty}/{@link #addListProperty} and the
+     * "New property" / "Promote" dialogs, so the user can explicitly choose, per role, which
+     * methods are used and how (model-editing-design.md §3.3).
+     *
+     * <p>The {@code GETTER} spec is mandatory. For a SINGLE property the value type is the getter
+     * return type and feeds the setter/updater parameter; for a LIST property it is the element
+     * type ({@code List<T>}) and feeds the adder/remover/reindexer parameter. Written back through
+     * the AST pretty-printer (like {@link #addSingleProperty}); a brand-new property restructures
+     * the file anyway, and attaching annotates the existing method in place.</p>
+     *
+     * @param identifier        the property key
+     * @param qualifiedTypeName the (element) type qualified name
+     * @param list              {@code true} for a LIST property
+     * @param accessors         the accessors to materialise (must contain exactly one GETTER)
+     */
+    public SourceModelProperty createProperty(String identifier, String qualifiedTypeName,
+            boolean list, List<AccessorSpec> accessors) throws IOException {
         Factory factory = ctType.getFactory();
-        String capitalised = capitalise(identifier);
-        String getterName = "get" + capitalised;
-        String setterName = "set" + capitalised;
+        CtTypeReference<?> valueType = factory.Type().createReference(qualifiedTypeName);
 
-        // Create the type reference
-        CtTypeReference<?> typeRef = factory.Type().createReference(qualifiedTypeName);
+        CtMethod<?> getter = null;
+        CtMethod<?> setter = null, updater = null, adder = null, remover = null, reindexer = null;
 
-        // --- Build getter ---
-        CtMethod<Object> getter = factory.Core().createMethod();
-        getter.setSimpleName(getterName);
-        getter.setType((CtTypeReference<Object>) typeRef.clone());
-        getter.addModifier(ModifierKind.PUBLIC);
+        for (AccessorSpec spec : accessors) {
+            switch (spec.getRole()) {
+                case GETTER:
+                    getter = realiseGetter(factory, spec, identifier, valueType, list);
+                    break;
+                case SETTER:
+                    setter = realiseAccessor(factory, spec, identifier, valueType, Setter.class);
+                    break;
+                case UPDATER:
+                    updater = realiseAccessor(factory, spec, identifier, valueType, Updater.class);
+                    break;
+                case ADDER:
+                    adder = realiseAccessor(factory, spec, identifier, valueType, Adder.class);
+                    break;
+                case REMOVER:
+                    remover = realiseAccessor(factory, spec, identifier, valueType, Remover.class);
+                    break;
+                case REINDEXER:
+                    reindexer = realiseReindexer(factory, spec, identifier, valueType);
+                    break;
+            }
+        }
+        if (getter == null) {
+            throw new IllegalArgumentException("createProperty requires a GETTER accessor");
+        }
 
-        CtAnnotation<?> getterAnnotation = factory.Core().createAnnotation();
-        getterAnnotation.setAnnotationType(factory.Type().createReference(Getter.class));
-        getterAnnotation.addValue("value", identifier);
-        getter.addAnnotation(getterAnnotation);
-
-        ctType.addMethod(getter);
-
-        // --- Build setter ---
-        CtMethod<Void> setter = factory.Core().createMethod();
-        setter.setSimpleName(setterName);
-        setter.setType((CtTypeReference<Void>) factory.Type().VOID_PRIMITIVE);
-        setter.addModifier(ModifierKind.PUBLIC);
-
-        CtParameter<Object> setterParam = factory.Core().createParameter();
-        setterParam.setSimpleName("value");
-        setterParam.setType((CtTypeReference<Object>) typeRef.clone());
-        setter.addParameter(setterParam);
-
-        CtAnnotation<?> setterAnnotation = factory.Core().createAnnotation();
-        setterAnnotation.setAnnotationType(factory.Type().createReference(Setter.class));
-        setterAnnotation.addValue("value", identifier);
-        setter.addAnnotation(setterAnnotation);
-
-        ctType.addMethod(setter);
-
-        // --- Build SourceModelProperty ---
         SourceModelProperty prop = new SourceModelProperty(getter, this);
-        prop.registerSetter(setter);
+        if (setter != null) {
+            prop.registerSetter(setter);
+        }
+        if (updater != null) {
+            prop.registerUpdater(updater);
+        }
+        if (adder != null) {
+            prop.registerAdder(adder);
+        }
+        if (remover != null) {
+            prop.registerRemover(remover);
+        }
+        if (reindexer != null) {
+            prop.registerReindexer(reindexer);
+        }
         addDeclaredProperty(prop);
 
-        // --- Write back ---
         compilationUnit.regenerateFromAST();
-
         return prop;
+    }
+
+    /** Generates or annotates the getter ({@code T getX()} / {@code List<T> getX()}). */
+    private CtMethod<?> realiseGetter(Factory factory, AccessorSpec spec, String identifier,
+            CtTypeReference<?> valueType, boolean list) {
+        CtTypeReference<?> returnType;
+        if (list) {
+            CtTypeReference<Object> listRef =
+                    (CtTypeReference<Object>) factory.Type().createReference("java.util.List");
+            listRef.addActualTypeArgument(valueType.clone());
+            returnType = listRef;
+        } else {
+            returnType = valueType.clone();
+        }
+        CtMethod<?> method;
+        if (spec.isGenerate()) {
+            CtMethod<Object> m = factory.Core().createMethod();
+            m.setSimpleName(spec.getMethodName());
+            m.setType((CtTypeReference<Object>) returnType);
+            m.addModifier(ModifierKind.PUBLIC);
+            ctType.addMethod(m);
+            method = m;
+        } else {
+            method = requireDeclaredMethod(spec.getMethodName(), 0);
+        }
+        CtAnnotation<?> ann = factory.Core().createAnnotation();
+        ann.setAnnotationType(factory.Type().createReference(Getter.class));
+        ann.addValue("value", identifier);
+        if (list) {
+            ann.addValue("cardinality", Cardinality.LIST);
+        }
+        method.addAnnotation(ann);
+        return method;
+    }
+
+    /** Generates or annotates a single-parameter accessor ({@code void name(T value)}). */
+    private CtMethod<?> realiseAccessor(Factory factory, AccessorSpec spec, String identifier,
+            CtTypeReference<?> paramType, Class<? extends java.lang.annotation.Annotation> annotationType) {
+        CtMethod<?> method;
+        if (spec.isGenerate()) {
+            CtMethod<Void> m = factory.Core().createMethod();
+            m.setSimpleName(spec.getMethodName());
+            m.setType((CtTypeReference<Void>) factory.Type().VOID_PRIMITIVE);
+            m.addModifier(ModifierKind.PUBLIC);
+            CtParameter<Object> p = factory.Core().createParameter();
+            p.setSimpleName("value");
+            p.setType((CtTypeReference<Object>) paramType.clone());
+            m.addParameter(p);
+            ctType.addMethod(m);
+            method = m;
+        } else {
+            method = requireDeclaredMethod(spec.getMethodName(), 1);
+        }
+        CtAnnotation<?> ann = factory.Core().createAnnotation();
+        ann.setAnnotationType(factory.Type().createReference(annotationType));
+        ann.addValue("value", identifier);
+        method.addAnnotation(ann);
+        return method;
+    }
+
+    /** Generates or annotates a reindexer ({@code void name(T value, int index)}). */
+    private CtMethod<?> realiseReindexer(Factory factory, AccessorSpec spec, String identifier,
+            CtTypeReference<?> elementType) {
+        CtMethod<?> method;
+        if (spec.isGenerate()) {
+            CtMethod<Void> m = factory.Core().createMethod();
+            m.setSimpleName(spec.getMethodName());
+            m.setType((CtTypeReference<Void>) factory.Type().VOID_PRIMITIVE);
+            m.addModifier(ModifierKind.PUBLIC);
+            CtParameter<Object> value = factory.Core().createParameter();
+            value.setSimpleName("value");
+            value.setType((CtTypeReference<Object>) elementType.clone());
+            m.addParameter(value);
+            CtParameter<Object> index = factory.Core().createParameter();
+            index.setSimpleName("index");
+            index.setType((CtTypeReference) factory.Type().INTEGER_PRIMITIVE);
+            m.addParameter(index);
+            ctType.addMethod(m);
+            method = m;
+        } else {
+            method = requireDeclaredMethod(spec.getMethodName(), 2);
+        }
+        CtAnnotation<?> ann = factory.Core().createAnnotation();
+        ann.setAnnotationType(factory.Type().createReference(Reindexer.class));
+        ann.addValue("value", identifier);
+        method.addAnnotation(ann);
+        return method;
+    }
+
+    /** Finds an already-declared method by name + parameter count (for the attach mode). */
+    private CtMethod<?> requireDeclaredMethod(String name, int paramCount) {
+        CtMethod<?> m = findDeclaredMethod(name, paramCount);
+        if (m == null) {
+            throw new IllegalStateException("No method " + name + " with " + paramCount
+                    + " parameter(s) on " + qualifiedName + " to attach");
+        }
+        return m;
     }
 
     /**
@@ -389,80 +517,11 @@ public class SourceModelEntity implements SourceElement,
      */
     public SourceModelProperty addListProperty(String identifier, String qualifiedElementTypeName)
             throws IOException {
-        Factory factory = ctType.getFactory();
-        String capitalised = capitalise(identifier);
-        String getterName = "get" + capitalised;
-        String adderName = "addTo" + capitalised;
-        String removerName = "removeFrom" + capitalised;
-
-        // Create element type reference
-        CtTypeReference<?> elementTypeRef = factory.Type().createReference(qualifiedElementTypeName);
-
-        // Create List<ElementType> reference
-        CtTypeReference<Object> listRef = (CtTypeReference<Object>) factory.Type()
-                .createReference("java.util.List");
-        listRef.addActualTypeArgument(elementTypeRef.clone());
-
-        // --- Build getter: List<T> getXxx() ---
-        CtMethod<Object> getter = factory.Core().createMethod();
-        getter.setSimpleName(getterName);
-        getter.setType(listRef.clone());
-        getter.addModifier(ModifierKind.PUBLIC);
-
-        CtAnnotation<?> getterAnnotation = factory.Core().createAnnotation();
-        getterAnnotation.setAnnotationType(factory.Type().createReference(Getter.class));
-        getterAnnotation.addValue("value", identifier);
-        getterAnnotation.addValue("cardinality", Cardinality.LIST);
-        getter.addAnnotation(getterAnnotation);
-
-        ctType.addMethod(getter);
-
-        // --- Build adder: void addToXxx(T element) ---
-        CtMethod<Void> adder = factory.Core().createMethod();
-        adder.setSimpleName(adderName);
-        adder.setType((CtTypeReference<Void>) factory.Type().VOID_PRIMITIVE);
-        adder.addModifier(ModifierKind.PUBLIC);
-
-        CtParameter<Object> adderParam = factory.Core().createParameter();
-        adderParam.setSimpleName("element");
-        adderParam.setType((CtTypeReference<Object>) elementTypeRef.clone());
-        adder.addParameter(adderParam);
-
-        CtAnnotation<?> adderAnnotation = factory.Core().createAnnotation();
-        adderAnnotation.setAnnotationType(factory.Type().createReference(Adder.class));
-        adderAnnotation.addValue("value", identifier);
-        adder.addAnnotation(adderAnnotation);
-
-        ctType.addMethod(adder);
-
-        // --- Build remover: void removeFromXxx(T element) ---
-        CtMethod<Void> remover = factory.Core().createMethod();
-        remover.setSimpleName(removerName);
-        remover.setType((CtTypeReference<Void>) factory.Type().VOID_PRIMITIVE);
-        remover.addModifier(ModifierKind.PUBLIC);
-
-        CtParameter<Object> removerParam = factory.Core().createParameter();
-        removerParam.setSimpleName("element");
-        removerParam.setType((CtTypeReference<Object>) elementTypeRef.clone());
-        remover.addParameter(removerParam);
-
-        CtAnnotation<?> removerAnnotation = factory.Core().createAnnotation();
-        removerAnnotation.setAnnotationType(factory.Type().createReference(Remover.class));
-        removerAnnotation.addValue("value", identifier);
-        remover.addAnnotation(removerAnnotation);
-
-        ctType.addMethod(remover);
-
-        // --- Build SourceModelProperty ---
-        SourceModelProperty prop = new SourceModelProperty(getter, this);
-        prop.registerAdder(adder);
-        prop.registerRemover(remover);
-        addDeclaredProperty(prop);
-
-        // --- Write back ---
-        compilationUnit.regenerateFromAST();
-
-        return prop;
+        String cap = capitalise(identifier);
+        return createProperty(identifier, qualifiedElementTypeName, true, java.util.Arrays.asList(
+                AccessorSpec.generate(AccessorSpec.Role.GETTER, "get" + cap),
+                AccessorSpec.generate(AccessorSpec.Role.ADDER, "addTo" + cap),
+                AccessorSpec.generate(AccessorSpec.Role.REMOVER, "removeFrom" + cap)));
     }
 
     /**
