@@ -611,7 +611,7 @@ public class SourceModelProperty implements SourceElement,
         Factory factory = ctGetter.getFactory();
         CtMethod<Void> setter = buildVoidAccessor(factory, "set" + capitalise(propertyIdentifier),
                 ctGetter.getType(), Setter.class);
-        modelEntity.getCtType().addMethod(setter);
+        modelEntity.addGeneratedAccessor(setter, propertyIdentifier);
         modelEntity.getCompilationUnit().regenerateFromAST();
     }
 
@@ -640,13 +640,13 @@ public class SourceModelProperty implements SourceElement,
         String cap = capitalise(propertyIdentifier);
         boolean changed = false;
         if (ctAdder == null) {
-            modelEntity.getCtType().addMethod(
-                    buildVoidAccessor(factory, "addTo" + cap, elementType, Adder.class));
+            modelEntity.addGeneratedAccessor(
+                    buildVoidAccessor(factory, "addTo" + cap, elementType, Adder.class), propertyIdentifier);
             changed = true;
         }
         if (ctRemover == null) {
-            modelEntity.getCtType().addMethod(
-                    buildVoidAccessor(factory, "removeFrom" + cap, elementType, Remover.class));
+            modelEntity.addGeneratedAccessor(
+                    buildVoidAccessor(factory, "removeFrom" + cap, elementType, Remover.class), propertyIdentifier);
             changed = true;
         }
         if (changed) {
@@ -959,7 +959,7 @@ public class SourceModelProperty implements SourceElement,
         CtMethod<Void> method = (role == AccessorRole.REINDEXER)
                 ? buildReindexer(factory, conventionalName(role), valueTypeRef())
                 : buildVoidAccessor(factory, conventionalName(role), valueTypeRef(), annotationFor(role));
-        modelEntity.getCtType().addMethod(method);
+        modelEntity.addGeneratedAccessor(method, propertyIdentifier);
         modelEntity.getCompilationUnit().regenerateFromAST();
         setCurrentAccessor(role, method);
     }

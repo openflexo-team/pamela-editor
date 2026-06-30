@@ -30,6 +30,7 @@ import spoon.reflect.declaration.CtInterface;
 import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtParameter;
 import spoon.reflect.declaration.CtType;
+import spoon.reflect.declaration.CtTypeMember;
 import spoon.reflect.declaration.ModifierKind;
 import spoon.reflect.factory.Factory;
 import spoon.reflect.reference.CtTypeReference;
@@ -423,7 +424,7 @@ public class SourceModelEntity implements SourceElement,
             m.setSimpleName(spec.getMethodName());
             m.setType((CtTypeReference<Object>) returnType);
             m.addModifier(ModifierKind.PUBLIC);
-            ctType.addMethod(m);
+            addGeneratedAccessor(m, identifier);
             method = m;
         } else {
             method = requireDeclaredMethod(spec.getMethodName(), 0);
@@ -451,7 +452,7 @@ public class SourceModelEntity implements SourceElement,
             p.setSimpleName("value");
             p.setType((CtTypeReference<Object>) paramType.clone());
             m.addParameter(p);
-            ctType.addMethod(m);
+            addGeneratedAccessor(m, identifier);
             method = m;
         } else {
             method = requireDeclaredMethod(spec.getMethodName(), 1);
@@ -480,7 +481,7 @@ public class SourceModelEntity implements SourceElement,
             index.setSimpleName("index");
             index.setType((CtTypeReference) factory.Type().INTEGER_PRIMITIVE);
             m.addParameter(index);
-            ctType.addMethod(m);
+            addGeneratedAccessor(m, identifier);
             method = m;
         } else {
             method = requireDeclaredMethod(spec.getMethodName(), 2);
@@ -500,6 +501,66 @@ public class SourceModelEntity implements SourceElement,
                     + " parameter(s) on " + qualifiedName + " to attach");
         }
         return m;
+    }
+
+    /**
+     * Adds a freshly generated accessor {@code method} to this entity's interface at a
+     * <em>smart</em> position: right after the last existing type member that already concerns
+     * property {@code propertyId} (so all the methods backing one property stay grouped). Falls
+     * back to appending at the end of the type when the property has no other accessor yet.
+     *
+     * <p>This is the single insertion point for every generated accessor. The default
+     * {@link CtType#addMethod} appends at the end of the class, which scatters a property's
+     * methods; this keeps them contiguous.</p>
+     */
+    void addGeneratedAccessor(CtMethod<?> method, String propertyId) {
+        List<CtTypeMember> members = ctType.getTypeMembers();
+        int insertAfter = -1;
+        for (int i = 0; i < members.size(); i++) {
+            CtTypeMember member = members.get(i);
+            if (member instanceof CtMethod
+                    && propertyId.equals(accessorPropertyId((CtMethod<?>) member))) {
+                insertAfter = i;
+            }
+        }
+        if (insertAfter >= 0) {
+            ctType.addTypeMemberAt(insertAfter + 1, method);
+        } else {
+            ctType.addMethod(method);
+        }
+    }
+
+    /**
+     * The property identifier a method backs (the {@code value} of its
+     * {@code @Getter}/{@code @Setter}/{@code @Adder}/{@code @Remover}/{@code @Reindexer}/
+     * {@code @Updater} annotation), or {@code null} if the method is not a property accessor.
+     */
+    private static String accessorPropertyId(CtMethod<?> method) {
+        Getter getter = method.getAnnotation(Getter.class);
+        if (getter != null) {
+            return getter.value();
+        }
+        Setter setter = method.getAnnotation(Setter.class);
+        if (setter != null) {
+            return setter.value();
+        }
+        Adder adder = method.getAnnotation(Adder.class);
+        if (adder != null) {
+            return adder.value();
+        }
+        Remover remover = method.getAnnotation(Remover.class);
+        if (remover != null) {
+            return remover.value();
+        }
+        Reindexer reindexer = method.getAnnotation(Reindexer.class);
+        if (reindexer != null) {
+            return reindexer.value();
+        }
+        Updater updater = method.getAnnotation(Updater.class);
+        if (updater != null) {
+            return updater.value();
+        }
+        return null;
     }
 
     /**
