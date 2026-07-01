@@ -588,10 +588,13 @@ public class TestMutations {
         // --- File assertions ---
         mm.flushAll(); // deferred-save: persist the buffer before reading from disk
         String content = new String(Files.readAllBytes(foo1File.toPath()));
-        assertTrue("@Getter(value = \"name\") must be inserted",
-                content.contains("@Getter(value = \"name\")"));
-        assertTrue("@Setter(value = \"name\") must be inserted",
-                content.contains("@Setter(value = \"name\")"));
+        // Foo1 is CONSTANT-style → promote references a (newly declared) constant, not a literal.
+        assertTrue("@Getter(value = NAME) must be inserted",
+                content.contains("@Getter(value = NAME)"));
+        assertTrue("@Setter(value = NAME) must be inserted",
+                content.contains("@Setter(value = NAME)"));
+        assertTrue("NAME constant must be declared",
+                content.contains("static final String NAME = \"name\""));
         assertTrue("original getFoo2 property must be preserved",
                 content.contains("getFoo2"));
 
@@ -1177,8 +1180,11 @@ public class TestMutations {
         // --- File assertions ---
         mm.flushAll(); // deferred-save: persist the buffer before reading from disk
         String content = new String(Files.readAllBytes(foo1File.toPath()));
+        // Foo1 is CONSTANT-style → the LIST getter references a newly declared constant.
         assertTrue("LIST @Getter must be inserted",
-                content.contains("@Getter(value = \"tags\", cardinality = Getter.Cardinality.LIST)"));
+                content.contains("@Getter(value = TAGS, cardinality = Getter.Cardinality.LIST)"));
+        assertTrue("TAGS constant must be declared",
+                content.contains("static final String TAGS = \"tags\""));
 
         // --- Rebuild ---
         mm.rebuildMetaModel();
@@ -1302,8 +1308,13 @@ public class TestMutations {
 
         mm.flushAll(); // deferred-save: persist the buffer before reading from disk
         String content = new String(Files.readAllBytes(foo1File.toPath()));
-        assertTrue("@Getter inserted", content.contains("@Getter(value = \"description\")"));
-        assertTrue("@Setter inserted on the sibling", content.contains("@Setter(value = \"description\")"));
+        // Foo1 is CONSTANT-style → getter + pulled-in setter share a newly declared constant.
+        assertTrue("@Getter inserted", content.contains("@Getter(value = DESCRIPTION)"));
+        assertTrue("@Setter inserted on the sibling", content.contains("@Setter(value = DESCRIPTION)"));
+        assertTrue("DESCRIPTION constant must be declared once",
+                content.contains("static final String DESCRIPTION = \"description\""));
+        assertEquals("exactly one DESCRIPTION constant", content.indexOf("String DESCRIPTION"),
+                content.lastIndexOf("String DESCRIPTION"));
 
         mm.rebuildMetaModel();
         SourceModelProperty desc = mm.getEntity("test.model1.Foo1")
@@ -1590,5 +1601,158 @@ public class TestMutations {
                 edgeFileBefore.getCanonicalPath(), f.getCanonicalPath());
         assertTrue("getText() must return the dirty buffer (what the editor shows)",
                 cu.getText().contains("getNote"));
+    }
+
+    // =========================================================================
+    // Convention-aware generation (property-identifier-constant-design.md, Lot 1b)
+    // =========================================================================
+
+    private static final File MODEL3_SRC = new File(
+            System.getProperty("user.dir") + "/src/test/java/test/model3");
+
+    /**
+     * Generating a property on a CONSTANT-style entity (Foo1 uses {@code FOO2}) declares a
+     * {@code static final String} constant and references it (unqualified) in every accessor,
+     * instead of a string literal. The getter creates the constant; the setter reuses it by value.
+     */
+    @Test
+    public void testGeneratePropertyEmitsConstantOnConstantEntity() throws IOException {
+        File workDir = tmp.newFolder("genConstant");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+
+        SourceModelEntity foo1 = mm.getEntity("test.model1.Foo1");
+        assertEquals(PropertyIdentifierStyle.CONSTANT, foo1.getIdentifierStyle());
+
+        foo1.addSingleProperty("label", "java.lang.String");
+        mm.flushAll();
+
+        String content = new String(Files.readAllBytes(new File(srcCopy, "Foo1.java").toPath()));
+        assertTrue("constant field must be declared",
+                content.contains("static final String LABEL = \"label\""));
+        // The printer collapses single-element annotations to the shorthand form, like the model.
+        assertTrue("getter must reference the constant", content.contains("@Getter(LABEL)"));
+        assertTrue("setter must reference the constant", content.contains("@Setter(LABEL)"));
+        assertFalse("getter must not use a literal identifier", content.contains("@Getter(\"label\")"));
+        assertFalse("constant must be referenced unqualified", content.contains("Foo1.LABEL"));
+        // Reuse-by-value: a single LABEL declaration shared by getter + setter.
+        assertEquals("exactly one LABEL constant declared", content.indexOf("String LABEL"),
+                content.lastIndexOf("String LABEL"));
+
+        mm.rebuildMetaModel();
+        SourceModelProperty label = mm.getEntity("test.model1.Foo1")
+                .getDeclaredProperties().get("label");
+        assertEquals(PropertyIdentifierStyle.CONSTANT, label.getIdentifierStyle());
+        assertEquals("LABEL", label.getReferencedConstantName());
+    }
+
+    /**
+     * Generating a property on a LITERAL-style entity (model3 {@code LiteralEntity}) keeps the
+     * string-literal idiom — no constant is declared.
+     */
+    @Test
+    public void testGeneratePropertyEmitsLiteralOnLiteralEntity() throws IOException {
+        File workDir = tmp.newFolder("genLiteral");
+        File srcCopy = copyDir(MODEL3_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model3.LiteralEntity");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+
+        SourceModelEntity literal = mm.getEntity("test.model3.LiteralEntity");
+        assertEquals(PropertyIdentifierStyle.LITERAL, literal.getIdentifierStyle());
+
+        literal.addSingleProperty("title", "java.lang.String");
+        mm.flushAll();
+
+        String content = new String(Files.readAllBytes(new File(srcCopy, "LiteralEntity.java").toPath()));
+        assertTrue("getter must use a string literal", content.contains("@Getter(\"title\")"));
+        assertFalse("no constant must be declared", content.contains("TITLE"));
+    }
+
+    /**
+     * Adding a setter to an existing CONSTANT property reuses the property's own constant
+     * (cloning the getter's reference), not a fresh literal.
+     */
+    @Test
+    public void testAddSetterReusesPropertyConstant() throws IOException {
+        File workDir = tmp.newFolder("addSetterConstant");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+
+        // Create a getter-only constant property, then add the setter.
+        SourceModelEntity foo1 = mm.getEntity("test.model1.Foo1");
+        foo1.createProperty("label", "java.lang.String", false, java.util.Arrays.asList(
+                AccessorSpec.generate(AccessorSpec.Role.GETTER, "getLabel")));
+        mm.rebuildMetaModel();
+        mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("label").addSetter();
+        mm.flushAll();
+
+        String content = new String(Files.readAllBytes(new File(srcCopy, "Foo1.java").toPath()));
+        assertTrue("setter must reuse the constant", content.contains("@Setter(LABEL)"));
+        assertFalse("setter must not use a literal", content.contains("@Setter(\"label\")"));
+    }
+
+    /**
+     * Promoting on a LITERAL-style entity (model3 {@code LiteralEntity}) keeps the string-literal
+     * idiom in the text-edit path — no constant declared.
+     */
+    @Test
+    public void testPromoteOnLiteralEntityStaysLiteral() throws IOException {
+        File workDir = tmp.newFolder("promoteLiteral");
+        File srcCopy = copyDir(MODEL3_SRC, workDir);
+
+        File file = new File(srcCopy, "LiteralEntity.java");
+        String src = new String(Files.readAllBytes(file.toPath()));
+        int lastBrace = src.lastIndexOf('}');
+        src = src.substring(0, lastBrace) + "\n\tpublic String getCount();\n\n" + src.substring(lastBrace);
+        Files.write(file.toPath(), src.getBytes());
+
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model3.LiteralEntity");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+
+        mm.getEntity("test.model3.LiteralEntity").promoteMethodToProperty("getCount", "count", false);
+        mm.flushAll();
+
+        String content = new String(Files.readAllBytes(file.toPath()));
+        assertTrue("getter must use a string literal", content.contains("@Getter(value = \"count\")"));
+        assertFalse("no constant must be declared", content.contains("COUNT"));
+    }
+
+    /**
+     * Attaching a setter to an existing CONSTANT property (the text-edit path) reuses the property's
+     * own constant token, cloned from the getter's reference — not a literal.
+     */
+    @Test
+    public void testAttachSetterReusesConstantTextPath() throws IOException {
+        File workDir = tmp.newFolder("attachReuse");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+
+        // A plain getter + sibling setter; promote only the getter → declares NOTE + @Getter(NOTE).
+        File foo1File = new File(srcCopy, "Foo1.java");
+        String foo1 = new String(Files.readAllBytes(foo1File.toPath()));
+        int lastBrace = foo1.lastIndexOf('}');
+        foo1 = foo1.substring(0, lastBrace)
+                + "\n\tpublic String getNote();\n\n\tpublic void setNote(String value);\n\n"
+                + foo1.substring(lastBrace);
+        Files.write(foo1File.toPath(), foo1.getBytes());
+
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        mm.getEntity("test.model1.Foo1").promoteGetterToProperty("getNote", "note", false);
+        mm.rebuildMetaModel();
+
+        // Attach the sibling setter to the now-constant property.
+        mm.getEntity("test.model1.Foo1").getDeclaredProperties().get("note").attachSetter("setNote");
+        mm.flushAll();
+
+        String content = new String(Files.readAllBytes(foo1File.toPath()));
+        assertTrue("setter must reference the property constant", content.contains("@Setter(value = NOTE)"));
+        assertFalse("setter must not use a literal", content.contains("@Setter(value = \"note\")"));
     }
 }

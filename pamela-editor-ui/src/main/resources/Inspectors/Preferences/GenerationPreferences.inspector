@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.ui.preferences.GenerationPreferences" name="Inspector">
+    <Label name="IdentifierStyleLabel" label="default_identifier_style" index="10"
+        constraints="twocols(location=left)" localize="true" />
+    <DropDown name="IdentifierStyleDD" index="11" data="data.defaultPropertyIdentifierStyle"
+        list="data.identifierStyleChoices"
+        iteratorClassName="org.openflexo.pamela.editor.model.PropertyIdentifierStyle"
+        format="object.name" width="200"
+        constraints="twocols(expandHorizontally=true;location=right)" />
+    <LocalizedDictionary>
+        <Localized key="default_identifier_style" lang="English" value="Default identifier style" />
+        <Localized key="default_identifier_style" lang="French" value="Style d&apos;identifiant par défaut" />
+        <Localized key="default_identifier_style" lang="Dutch" value="Standaard-identifierstijl" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Generation" />
+</Inspector>

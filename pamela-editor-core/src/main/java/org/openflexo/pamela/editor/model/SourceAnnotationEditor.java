@@ -372,4 +372,35 @@ public final class SourceAnnotationEditor {
         // No package statement: prepend the import.
         return importStatement + "\n\n" + source;
     }
+
+    /**
+     * Inserts {@code public static final String <constantName> = "<value>";} at the top of the body
+     * of the type whose declaration starts at {@code typeDeclarationStart}, if a constant of that
+     * name is not already declared. Idempotent (safe to call once per generated accessor when
+     * several reference the same constant). Targeted text edit — no AST re-print. See
+     * {@code property-identifier-constant-design.md §6}.
+     *
+     * @return the edited source, or the original if the constant is already declared or the body
+     *         brace cannot be located
+     */
+    public static String ensureConstantField(String source, int typeDeclarationStart,
+            String constantName, String value) {
+        if (source == null || typeDeclarationStart < 0 || typeDeclarationStart > source.length()) {
+            throw new IllegalArgumentException("Invalid declaration offset");
+        }
+        // Already declared? (a "String <name>" field — accept any modifier ordering).
+        java.util.regex.Matcher existing = java.util.regex.Pattern
+                .compile("\\bString\\s+" + java.util.regex.Pattern.quote(constantName) + "\\b")
+                .matcher(source);
+        if (existing.find()) {
+            return source;
+        }
+        int brace = source.indexOf('{', typeDeclarationStart);
+        if (brace < 0) {
+            return source;
+        }
+        int insertAt = brace + 1;
+        String field = "\n\tpublic static final String " + constantName + " = \"" + value + "\";\n";
+        return source.substring(0, insertAt) + field + source.substring(insertAt);
+    }
 }

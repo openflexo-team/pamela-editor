@@ -783,6 +783,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                         };
                 SourceMetaModel metaModel =
                         SourceMetaModelSerializer.load(pamelaFile, pl, currentCustomMethodFilter());
+                // The default-identifier-style preference only affects generation (not detection),
+                // so it is set on the built model rather than passed to the serializer.
+                metaModel.setDefaultPropertyIdentifierStyle(currentDefaultPropertyIdentifierStyle());
                 logger.info(metaModel.prettyPrint());
 
                 // 2. Create project (lightweight)
@@ -1122,6 +1125,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                         };
                 metaModel.setProgressListener(pl);
                 metaModel.setCustomMethodFilter(currentCustomMethodFilter());
+                metaModel.setDefaultPropertyIdentifierStyle(currentDefaultPropertyIdentifierStyle());
                 try {
                     metaModel.rebuildMetaModel();
                 } finally {
@@ -1502,6 +1506,24 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             // preferences not available — fall back to default
         }
         return org.openflexo.pamela.editor.model.CustomMethodFilter.DEFAULT;
+    }
+
+    /**
+     * The default property-identifier style to use when generating on an entity with no decisive
+     * style, read from the Analysis preference (falls back to
+     * {@link org.openflexo.pamela.editor.model.PropertyIdentifierStyle#DEFAULT} if unavailable).
+     */
+    private org.openflexo.pamela.editor.model.PropertyIdentifierStyle currentDefaultPropertyIdentifierStyle() {
+        try {
+            org.openflexo.pamela.editor.ui.preferences.GenerationPreferences generation =
+                    org.openflexo.pamela.editor.ui.preferences.PreferencesManager.getInstance().generation();
+            if (generation != null && generation.getDefaultPropertyIdentifierStyle() != null) {
+                return generation.getDefaultPropertyIdentifierStyle();
+            }
+        } catch (Exception ignored) {
+            // preferences not available — fall back to default
+        }
+        return org.openflexo.pamela.editor.model.PropertyIdentifierStyle.DEFAULT;
     }
 
     private Object getDetailedBrowserElement(Object element) {

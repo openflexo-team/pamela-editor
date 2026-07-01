@@ -70,6 +70,11 @@ public class SourceModelProperty implements SourceElement,
     private final String propertyIdentifier;
     private final SourceModelEntity modelEntity;
 
+    // Identifier source style (literal vs static-final-String constant) — derived from the
+    // raw @Getter.value AST. See property-identifier-constant-design.md.
+    private final PropertyIdentifierStyle identifierStyle;
+    private final String referencedConstantName; // constant simple name when CONSTANT, else null
+
     // Cardinality
     private final Cardinality cardinality;
 
@@ -134,6 +139,22 @@ public class SourceModelProperty implements SourceElement,
         this.allowsMultipleOccurrences = getterAnnotation.allowsMultipleOccurences();
         this.stringConvertable = getterAnnotation.isStringConvertable();
         this.inversePropertyIdentifier = getterAnnotation.inverse();
+
+        // Detect the identifier style from the raw @Getter.value AST (not the proxy, which
+        // resolves the constant to its value). A CtFieldRead is a constant reference; a
+        // CtLiteral is a string literal. See property-identifier-constant-design.md §2/§4.
+        PropertyIdentifierStyle style = PropertyIdentifierStyle.LITERAL;
+        String constantName = null;
+        CtAnnotation<?> rawGetter = ctGetter.getAnnotation(
+                ctGetter.getFactory().Type().createReference(Getter.class));
+        if (rawGetter != null
+                && rawGetter.getValue("value") instanceof spoon.reflect.code.CtFieldRead<?>) {
+            style = PropertyIdentifierStyle.CONSTANT;
+            constantName = ((spoon.reflect.code.CtFieldRead<?>) rawGetter.getValue("value"))
+                    .getVariable().getSimpleName();
+        }
+        this.identifierStyle = style;
+        this.referencedConstantName = constantName;
 
         this.getterMethodName = ctGetter.getSimpleName();
 
@@ -272,6 +293,40 @@ public class SourceModelProperty implements SourceElement,
                         + "' has a @Remover but no @Adder"));
             }
         }
+    }
+
+    /**
+     * Checks that the secondary accessors ({@code @Setter}/{@code @Adder}/{@code @Remover}/
+     * {@code @Reindexer}/{@code @Updater}) write their identifier in the same style as the getter
+     * (the getter is authoritative — {@code property-identifier-constant-design.md §4}). Fires a
+     * single {@link Warning} on the first mismatch; does <b>not</b> change the retained style.
+     * Must be called after all accessors have been registered (end of Phase 2).
+     */
+    void validateIdentifierStyleConsistency() {
+        if (rawStyleDiffers(ctSetter, Setter.class)
+                || rawStyleDiffers(ctAdder, Adder.class)
+                || rawStyleDiffers(ctRemover, Remover.class)
+                || rawStyleDiffers(ctReindexer, Reindexer.class)
+                || rawStyleDiffers(ctUpdater, Updater.class)) {
+            addIssue(new Warning("Property '" + propertyIdentifier
+                    + "' mixes constant and literal identifiers across its accessors"));
+        }
+    }
+
+    /** {@code true} if the accessor is present and writes its identifier in a different style. */
+    private boolean rawStyleDiffers(CtMethod<?> method, Class<? extends Annotation> annotationType) {
+        if (method == null) {
+            return false;
+        }
+        CtAnnotation<?> ann = method.getAnnotation(
+                method.getFactory().Type().createReference(annotationType));
+        if (ann == null) {
+            return false;
+        }
+        PropertyIdentifierStyle style =
+                (ann.getValue("value") instanceof spoon.reflect.code.CtFieldRead<?>)
+                        ? PropertyIdentifierStyle.CONSTANT : PropertyIdentifierStyle.LITERAL;
+        return style != identifierStyle;
     }
 
     /**
@@ -730,9 +785,28 @@ public class SourceModelProperty implements SourceElement,
         String source = cu.getText();
         source = SourceAnnotationEditor.insertAnnotationLine(source,
                 method.getPosition().getSourceStart(),
-                "@" + annotationType.getSimpleName() + "(value = \"" + propertyIdentifier + "\")");
+                "@" + annotationType.getSimpleName() + "(value = " + identifierValueText() + ")");
         source = SourceAnnotationEditor.ensureImport(source, annotationType.getName());
         cu.setText(source);
+    }
+
+    /**
+     * The annotation {@code value} <em>text</em> for an accessor attached to this existing property,
+     * honouring its identifier style: in {@code CONSTANT} mode it reproduces the getter's own
+     * {@code @Getter.value} reference verbatim (preserving local vs qualified, e.g.
+     * {@code Edge.START_NODE}); otherwise a string literal. Text counterpart of
+     * {@link #identifierValueExpr(Factory)}, used by the targeted-text-edit paths.
+     */
+    private String identifierValueText() {
+        if (identifierStyle == PropertyIdentifierStyle.CONSTANT) {
+            CtAnnotation<?> rawGetter =
+                    ctGetter.getAnnotation(ctGetter.getFactory().Type().createReference(Getter.class));
+            if (rawGetter != null
+                    && rawGetter.getValue("value") instanceof spoon.reflect.code.CtFieldRead<?>) {
+                return rawGetter.getValue("value").toString();
+            }
+        }
+        return "\"" + propertyIdentifier + "\"";
     }
 
     // =========================================================================
@@ -1007,7 +1081,7 @@ public class SourceModelProperty implements SourceElement,
     }
 
     private String annotationLine(Class<? extends Annotation> annotation) {
-        return "@" + annotation.getSimpleName() + "(value = \"" + propertyIdentifier + "\")";
+        return "@" + annotation.getSimpleName() + "(value = " + identifierValueText() + ")";
     }
 
     private static void requirePosition(CtMethod<?> method) {
@@ -1044,7 +1118,7 @@ public class SourceModelProperty implements SourceElement,
 
         CtAnnotation<?> annotation = factory.Core().createAnnotation();
         annotation.setAnnotationType(factory.Type().createReference(Reindexer.class));
-        annotation.addValue("value", propertyIdentifier);
+        annotation.addValue("value", identifierValueExpr(factory));
         method.addAnnotation(annotation);
         return method;
     }
@@ -1052,6 +1126,25 @@ public class SourceModelProperty implements SourceElement,
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * The annotation {@code value} expression for a generated accessor of this property, honouring
+     * the property's existing identifier style: in {@code CONSTANT} mode it <b>clones the getter's
+     * own {@code @Getter.value} reference</b> (preserving local vs qualified, e.g.
+     * {@code Edge.START_NODE}); otherwise a string literal. See
+     * {@code property-identifier-constant-design.md §6}.
+     */
+    private spoon.reflect.code.CtExpression<?> identifierValueExpr(Factory factory) {
+        if (identifierStyle == PropertyIdentifierStyle.CONSTANT) {
+            CtAnnotation<?> rawGetter =
+                    ctGetter.getAnnotation(factory.Type().createReference(Getter.class));
+            if (rawGetter != null
+                    && rawGetter.getValue("value") instanceof spoon.reflect.code.CtFieldRead<?>) {
+                return rawGetter.getValue("value").clone();
+            }
+        }
+        return factory.createLiteral(propertyIdentifier);
+    }
 
     /** Builds a {@code public void name(paramType value)} method annotated with the PAMELA key. */
     private CtMethod<Void> buildVoidAccessor(Factory factory, String name,
@@ -1068,7 +1161,7 @@ public class SourceModelProperty implements SourceElement,
 
         CtAnnotation<?> annotation = factory.Core().createAnnotation();
         annotation.setAnnotationType(factory.Type().createReference(annotationType));
-        annotation.addValue("value", propertyIdentifier);
+        annotation.addValue("value", identifierValueExpr(factory));
         method.addAnnotation(annotation);
         return method;
     }
@@ -1135,6 +1228,23 @@ public class SourceModelProperty implements SourceElement,
     /** {@code SINGLE} or {@code LIST}. */
     public Cardinality getCardinality() {
         return cardinality;
+    }
+
+    /**
+     * How this property's identifier is written in source: {@link PropertyIdentifierStyle#CONSTANT}
+     * (a {@code static final String} reference) or {@link PropertyIdentifierStyle#LITERAL}.
+     */
+    public PropertyIdentifierStyle getIdentifierStyle() {
+        return identifierStyle;
+    }
+
+    /**
+     * The simple name of the {@code static final String} constant referenced by this property's
+     * {@code @Getter.value} (e.g. {@code "OUTGOING_EDGES"}), or {@code null} when the identifier is
+     * a string literal.
+     */
+    public String getReferencedConstantName() {
+        return referencedConstantName;
     }
 
     /** {@code true} for a SINGLE property (drives setter/updater inspector rows). */

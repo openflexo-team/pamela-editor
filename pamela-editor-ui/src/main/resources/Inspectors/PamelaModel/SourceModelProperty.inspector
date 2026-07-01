@@ -153,6 +153,16 @@
         constraints="twocols(location=left)" localize="true" />
     <CheckBox name="AllowsMultipleCB" index="31" data="data.allowsMultipleOccurrences" readOnly="false"
         constraints="twocols(location=right)" localize="true" />
+    <Label name="IdStyleLabel" label="identifier_style" index="32"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="IdStyleTF" index="33" data="data.identifierStyle.name" readOnly="true"
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="12" localize="true" />
+    <Label name="ConstantNameLabel" label="constant_name" index="34"
+        visible="data.referencedConstantName != null"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="ConstantNameTF" index="35" data="data.referencedConstantName" readOnly="true"
+        visible="data.referencedConstantName != null"
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="12" localize="true" />
 
     <LocalizedDictionary>
         <Localized key="identifier" lang="English" value="Identifier" />
@@ -187,6 +197,10 @@
         <Localized key="reindexer" lang="French" value="Reindexer" />
         <Localized key="inverse" lang="English" value="Inverse" />
         <Localized key="inverse" lang="French" value="Inverse" />
+        <Localized key="identifier_style" lang="English" value="Identifier style" />
+        <Localized key="identifier_style" lang="French" value="Style d&apos;identifiant" />
+        <Localized key="constant_name" lang="English" value="Constant" />
+        <Localized key="constant_name" lang="French" value="Constante" />
     </LocalizedDictionary>
     <Parameter name="title" value="Property" />
 </Inspector>

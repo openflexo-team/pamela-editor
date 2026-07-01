@@ -58,6 +58,8 @@ public final class PreferencesRegistry {
                 "preferences_connectors", "connector", null));
         register(new PreferencesContribution(AnalysisPreferences.class, "/", "analysis", 2,
                 "preferences_analysis", "analysis", null));
+        register(new PreferencesContribution(GenerationPreferences.class, "/", "generation", 3,
+                "preferences_generation", "generation", null));
     }
 
     public static synchronized List<PreferencesContribution> contributions() {

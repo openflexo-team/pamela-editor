@@ -25,7 +25,10 @@ import org.openflexo.pamela.annotations.Setter;
 import org.openflexo.pamela.annotations.Updater;
 import org.openflexo.pamela.annotations.XMLElement;
 
+import spoon.reflect.code.CtExpression;
+import spoon.reflect.code.CtFieldRead;
 import spoon.reflect.declaration.CtAnnotation;
+import spoon.reflect.declaration.CtField;
 import spoon.reflect.declaration.CtInterface;
 import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtParameter;
@@ -33,6 +36,7 @@ import spoon.reflect.declaration.CtType;
 import spoon.reflect.declaration.CtTypeMember;
 import spoon.reflect.declaration.ModifierKind;
 import spoon.reflect.factory.Factory;
+import spoon.reflect.reference.CtFieldReference;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.TypeFilter;
 
@@ -81,6 +85,10 @@ public class SourceModelEntity implements SourceElement,
 
     // Properties declared on this type only
     private final Map<String, SourceModelProperty> declaredProperties;
+
+    // Aggregate identifier style (literal vs constant), computed from the declared properties at
+    // the end of Phase 2. Derived data, never serialized. See property-identifier-constant-design.md.
+    private PropertyIdentifierStyle identifierStyle = PropertyIdentifierStyle.UNDETERMINED;
 
     // Hierarchy — direct parents only (no transitive closure stored)
     private final List<SourceModelEntity> directSuperEntities;
@@ -431,7 +439,7 @@ public class SourceModelEntity implements SourceElement,
         }
         CtAnnotation<?> ann = factory.Core().createAnnotation();
         ann.setAnnotationType(factory.Type().createReference(Getter.class));
-        ann.addValue("value", identifier);
+        ann.addValue("value", identifierValueExpr(factory, identifier));
         if (list) {
             ann.addValue("cardinality", Cardinality.LIST);
         }
@@ -459,7 +467,7 @@ public class SourceModelEntity implements SourceElement,
         }
         CtAnnotation<?> ann = factory.Core().createAnnotation();
         ann.setAnnotationType(factory.Type().createReference(annotationType));
-        ann.addValue("value", identifier);
+        ann.addValue("value", identifierValueExpr(factory, identifier));
         method.addAnnotation(ann);
         return method;
     }
@@ -488,7 +496,7 @@ public class SourceModelEntity implements SourceElement,
         }
         CtAnnotation<?> ann = factory.Core().createAnnotation();
         ann.setAnnotationType(factory.Type().createReference(Reindexer.class));
-        ann.addValue("value", identifier);
+        ann.addValue("value", identifierValueExpr(factory, identifier));
         method.addAnnotation(ann);
         return method;
     }
@@ -528,6 +536,159 @@ public class SourceModelEntity implements SourceElement,
         } else {
             ctType.addMethod(method);
         }
+    }
+
+    // =========================================================================
+    // Convention-aware identifier value (literal vs static-final-String constant)
+    // property-identifier-constant-design.md §6
+    // =========================================================================
+
+    /**
+     * The annotation {@code value} expression to emit for {@code propertyId}, honouring this
+     * entity's {@link #effectiveIdentifierStyle()}: a string literal in {@code LITERAL} mode, or a
+     * reference to a {@code static final String} constant (declared if absent — {@link
+     * #ensureConstant}) in {@code CONSTANT} mode.
+     */
+    private CtExpression<?> identifierValueExpr(Factory factory, String propertyId) {
+        if (effectiveIdentifierStyle() == PropertyIdentifierStyle.CONSTANT) {
+            return buildConstantRead(factory, ensureConstant(factory, propertyId));
+        }
+        return factory.createLiteral(propertyId);
+    }
+
+    /**
+     * Returns the simple name of a {@code static final String} constant holding {@code propertyId},
+     * reusing a visible one (declared here, then inherited) of the same value (Q3) or declaring a
+     * new local one ({@code SCREAMING_SNAKE_CASE}, collision-suffixed — Q5) inserted after the last
+     * existing field.
+     */
+    private String ensureConstant(Factory factory, String propertyId) {
+        String existing = findVisibleConstantName(propertyId);
+        if (existing != null) {
+            return existing;
+        }
+        String name = uniqueConstantName(screamingSnake(propertyId));
+
+        CtField<String> field = factory.Core().createField();
+        field.setSimpleName(name);
+        // Print "String", not "java.lang.String", to match the source idiom.
+        CtTypeReference<String> stringType = factory.Type().createReference(String.class);
+        stringType.setSimplyQualified(true);
+        field.setType(stringType);
+        field.addModifier(ModifierKind.PUBLIC);
+        field.addModifier(ModifierKind.STATIC);
+        field.addModifier(ModifierKind.FINAL);
+        field.setDefaultExpression(factory.createLiteral(propertyId));
+
+        List<CtTypeMember> members = ctType.getTypeMembers();
+        int insertAfter = -1;
+        for (int i = 0; i < members.size(); i++) {
+            if (members.get(i) instanceof CtField) {
+                insertAfter = i;
+            }
+        }
+        ctType.addTypeMemberAt(insertAfter + 1, field);
+        return name;
+    }
+
+    /**
+     * The constant name to use for {@code propertyId} <em>without</em> mutating anything: a visible
+     * existing one of the same value, else a fresh unique {@code SCREAMING_SNAKE_CASE} name. Used by
+     * the text-edit generation paths (which add the field via
+     * {@link SourceAnnotationEditor#ensureConstantField}, not the AST).
+     */
+    String resolveConstantName(String propertyId) {
+        String existing = findVisibleConstantName(propertyId);
+        return existing != null ? existing : uniqueConstantName(screamingSnake(propertyId));
+    }
+
+    /** {@code true} if generating {@code propertyId} in CONSTANT mode needs a new constant declared. */
+    boolean isConstantGenerationMode() {
+        return effectiveIdentifierStyle() == PropertyIdentifierStyle.CONSTANT;
+    }
+
+    /** {@code true} if no {@code static final String} of {@code propertyId}'s value is visible yet. */
+    boolean constantIsUndeclared(String propertyId) {
+        return findVisibleConstantName(propertyId) == null;
+    }
+
+    /** A {@code static final String} field on this type or a super-entity whose value equals {@code propertyId}. */
+    private String findVisibleConstantName(String propertyId) {
+        for (CtField<?> f : ctType.getFields()) {
+            if (isStringConstantWithValue(f, propertyId)) {
+                return f.getSimpleName();
+            }
+        }
+        for (SourceModelEntity superEntity : directSuperEntities) {
+            String inherited = superEntity.findVisibleConstantName(propertyId);
+            if (inherited != null) {
+                return inherited;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isStringConstantWithValue(CtField<?> f, String value) {
+        if (!f.getModifiers().contains(ModifierKind.STATIC)
+                || !f.getModifiers().contains(ModifierKind.FINAL)
+                || f.getType() == null
+                || !"java.lang.String".equals(f.getType().getQualifiedName())) {
+            return false;
+        }
+        return f.getDefaultExpression() instanceof spoon.reflect.code.CtLiteral<?>
+                && value.equals(((spoon.reflect.code.CtLiteral<?>) f.getDefaultExpression()).getValue());
+    }
+
+    /** Makes {@code base} unique among the field names visible from this type. */
+    private String uniqueConstantName(String base) {
+        Set<String> taken = new HashSet<>();
+        collectFieldNames(taken);
+        if (!taken.contains(base)) {
+            return base;
+        }
+        for (int i = 2; ; i++) {
+            String candidate = base + "_" + i;
+            if (!taken.contains(candidate)) {
+                return candidate;
+            }
+        }
+    }
+
+    private void collectFieldNames(Set<String> into) {
+        for (CtField<?> f : ctType.getFields()) {
+            into.add(f.getSimpleName());
+        }
+        for (SourceModelEntity superEntity : directSuperEntities) {
+            superEntity.collectFieldNames(into);
+        }
+    }
+
+    /** Builds an unqualified read of a {@code static final String} constant declared on this type. */
+    private CtExpression<?> buildConstantRead(Factory factory, String constantName) {
+        CtFieldReference<String> ref = factory.Field()
+                .createReference(ctType.getReference(), factory.Type().STRING, constantName);
+        ref.setStatic(true);
+        ref.setFinal(true);
+        CtFieldRead<String> read = factory.Core().createFieldRead();
+        read.setVariable(ref);
+        // Implicit type access → the constant is printed unqualified (NAME, not Entity.NAME).
+        read.setTarget(factory.Code().createTypeAccess(ctType.getReference(), true));
+        return read;
+    }
+
+    /** {@code "startNode"} → {@code "START_NODE"} (insert {@code _} before each upper that follows a lower/digit). */
+    private static String screamingSnake(String identifier) {
+        StringBuilder sb = new StringBuilder(identifier.length() + 4);
+        for (int i = 0; i < identifier.length(); i++) {
+            char c = identifier.charAt(i);
+            if (i > 0 && Character.isUpperCase(c)
+                    && (Character.isLowerCase(identifier.charAt(i - 1))
+                            || Character.isDigit(identifier.charAt(i - 1)))) {
+                sb.append('_');
+            }
+            sb.append(Character.toUpperCase(c));
+        }
+        return sb.toString();
     }
 
     /**
@@ -634,11 +795,18 @@ public class SourceModelEntity implements SourceElement,
 
         String source = compilationUnit.getText();
 
+        // Honour the entity's identifier convention (property-identifier-constant-design.md §6):
+        // a constant reference in CONSTANT mode (declaring the constant if absent), else a literal.
+        boolean constMode = isConstantGenerationMode();
+        String valueExpr = constMode ? resolveConstantName(propertyIdentifier)
+                : "\"" + propertyIdentifier + "\"";
+        boolean declareConstant = constMode && constantIsUndeclared(propertyIdentifier);
+
         // Collect insertions; apply by DESCENDING offset so earlier offsets stay valid.
         List<int[]> offsets = new ArrayList<>();   // [offset] paired with texts below
         List<String> texts = new ArrayList<>();
         offsets.add(new int[] { getter.getPosition().getSourceStart() });
-        texts.add("@Getter(value = \"" + propertyIdentifier + "\")");
+        texts.add("@Getter(value = " + valueExpr + ")");
 
         CtMethod<?> setter = null;
         if (includeSetter) {
@@ -646,7 +814,7 @@ public class SourceModelEntity implements SourceElement,
             if (setter != null && setter.getPosition() != null
                     && setter.getPosition().isValidPosition()) {
                 offsets.add(new int[] { setter.getPosition().getSourceStart() });
-                texts.add("@Setter(value = \"" + propertyIdentifier + "\")");
+                texts.add("@Setter(value = " + valueExpr + ")");
             } else {
                 setter = null;
             }
@@ -666,6 +834,10 @@ public class SourceModelEntity implements SourceElement,
         source = SourceAnnotationEditor.ensureImport(source, Getter.class.getName());
         if (setter != null) {
             source = SourceAnnotationEditor.ensureImport(source, Setter.class.getName());
+        }
+        if (declareConstant) {
+            source = SourceAnnotationEditor.ensureConstantField(source,
+                    ctType.getPosition().getSourceStart(), valueExpr, propertyIdentifier);
         }
 
         compilationUnit.setText(source);
@@ -740,6 +912,12 @@ public class SourceModelEntity implements SourceElement,
             throw new IllegalStateException("No source position for method " + getterName);
         }
 
+        // Honour the entity's identifier convention (property-identifier-constant-design.md §6).
+        boolean constMode = isConstantGenerationMode();
+        String valueExpr = constMode ? resolveConstantName(propertyIdentifier)
+                : "\"" + propertyIdentifier + "\"";
+        boolean declareConstant = constMode && constantIsUndeclared(propertyIdentifier);
+
         // Collect (offset, annotation-text) insertions; apply by DESCENDING offset.
         List<Integer> offsets = new ArrayList<>();
         List<String> texts = new ArrayList<>();
@@ -747,8 +925,8 @@ public class SourceModelEntity implements SourceElement,
 
         offsets.add(getter.getPosition().getSourceStart());
         texts.add(list
-                ? "@Getter(value = \"" + propertyIdentifier + "\", cardinality = Getter.Cardinality.LIST)"
-                : "@Getter(value = \"" + propertyIdentifier + "\")");
+                ? "@Getter(value = " + valueExpr + ", cardinality = Getter.Cardinality.LIST)"
+                : "@Getter(value = " + valueExpr + ")");
         imports.add(Getter.class.getName());
 
         for (java.util.Map.Entry<Class<? extends java.lang.annotation.Annotation>, String> e
@@ -765,7 +943,7 @@ public class SourceModelEntity implements SourceElement,
                 continue;
             }
             offsets.add(accessor.getPosition().getSourceStart());
-            texts.add("@" + annClass.getSimpleName() + "(value = \"" + propertyIdentifier + "\")");
+            texts.add("@" + annClass.getSimpleName() + "(value = " + valueExpr + ")");
             imports.add(annClass.getName());
         }
 
@@ -781,6 +959,10 @@ public class SourceModelEntity implements SourceElement,
         }
         for (String imp : imports) {
             source = SourceAnnotationEditor.ensureImport(source, imp);
+        }
+        if (declareConstant) {
+            source = SourceAnnotationEditor.ensureConstantField(source,
+                    ctType.getPosition().getSourceStart(), valueExpr, propertyIdentifier);
         }
         compilationUnit.setText(source);
     }
@@ -1156,6 +1338,84 @@ public class SourceModelEntity implements SourceElement,
      */
     public Map<String, SourceModelProperty> getDeclaredProperties() {
         return Collections.unmodifiableMap(declaredProperties);
+    }
+
+    // =========================================================================
+    // Property-identifier style (literal vs static-final-String constant)
+    // property-identifier-constant-design.md
+    // =========================================================================
+
+    /**
+     * Aggregates the identifier style over the <em>declared</em> properties (Q1/Q4):
+     * all-constant → {@link PropertyIdentifierStyle#CONSTANT}, all-literal →
+     * {@link PropertyIdentifierStyle#LITERAL}, both → {@link PropertyIdentifierStyle#MIXED},
+     * none → {@link PropertyIdentifierStyle#UNDETERMINED}. Called at the end of Phase 2.
+     */
+    void computeIdentifierStyle() {
+        int constants = 0;
+        int literals = 0;
+        for (SourceModelProperty p : declaredProperties.values()) {
+            if (p.getIdentifierStyle() == PropertyIdentifierStyle.CONSTANT) {
+                constants++;
+            } else {
+                literals++;
+            }
+        }
+        if (constants == 0 && literals == 0) {
+            identifierStyle = PropertyIdentifierStyle.UNDETERMINED;
+        } else if (literals == 0) {
+            identifierStyle = PropertyIdentifierStyle.CONSTANT;
+        } else if (constants == 0) {
+            identifierStyle = PropertyIdentifierStyle.LITERAL;
+        } else {
+            identifierStyle = PropertyIdentifierStyle.MIXED;
+        }
+    }
+
+    /**
+     * The detected aggregate identifier style of this entity (may be {@code MIXED} or
+     * {@code UNDETERMINED}). For the style to actually <em>use</em> when generating, see
+     * {@link #effectiveIdentifierStyle()}.
+     */
+    public PropertyIdentifierStyle getIdentifierStyle() {
+        return identifierStyle;
+    }
+
+    /**
+     * The identifier style to use when generating a new property/accessor on this entity (Q2/Q5):
+     * <ul>
+     *   <li>{@code CONSTANT}/{@code LITERAL} → that style;</li>
+     *   <li>{@code MIXED} → the entity's dominant style (most-local wins; tie → {@code CONSTANT});</li>
+     *   <li>{@code UNDETERMINED} → the meta-model's configured default
+     *       ({@link SourceMetaModel#getDefaultPropertyIdentifierStyle()}).</li>
+     * </ul>
+     * Always returns {@code CONSTANT} or {@code LITERAL}.
+     */
+    public PropertyIdentifierStyle effectiveIdentifierStyle() {
+        switch (identifierStyle) {
+            case CONSTANT:
+            case LITERAL:
+                return identifierStyle;
+            case MIXED:
+                return dominantIdentifierStyle();
+            case UNDETERMINED:
+            default:
+                return metaModel.getDefaultPropertyIdentifierStyle();
+        }
+    }
+
+    /** Majority style over the declared properties; ties resolve to {@code CONSTANT}. */
+    private PropertyIdentifierStyle dominantIdentifierStyle() {
+        int constants = 0;
+        int literals = 0;
+        for (SourceModelProperty p : declaredProperties.values()) {
+            if (p.getIdentifierStyle() == PropertyIdentifierStyle.CONSTANT) {
+                constants++;
+            } else {
+                literals++;
+            }
+        }
+        return literals > constants ? PropertyIdentifierStyle.LITERAL : PropertyIdentifierStyle.CONSTANT;
     }
 
     /**

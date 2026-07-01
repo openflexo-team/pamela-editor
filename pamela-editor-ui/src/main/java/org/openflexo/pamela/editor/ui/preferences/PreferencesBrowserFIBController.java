@@ -42,6 +42,8 @@ public class PreferencesBrowserFIBController extends PamelaEditorFIBController<P
                         return PamelaEditorIconLibrary.CONNECTOR_ICON;
                     case "analysis":
                         return PamelaEditorIconLibrary.INSPECT_ICON;
+                    case "generation":
+                        return PamelaEditorIconLibrary.PROPERTY_ICON;
                     default:
                         break;
                 }

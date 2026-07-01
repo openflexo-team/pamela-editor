@@ -78,6 +78,7 @@ pamela_files=PAMELA project files
 paste=Paste
 preferences=Preferences
 preferences_analysis=Analysis
+preferences_generation=Generation
 preferences_class_diagram_design=Class Diagram Design
 preferences_connectors=Connectors
 preferences_diagram=Diagram

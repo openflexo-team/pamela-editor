@@ -1,0 +1,5 @@
+{
+  "name" : "test-model3",
+  "sourceDirectories" : [ "model3" ],
+  "rootTypes" : [ "test.model3.LiteralEntity", "test.model3.MixedEntity", "test.model3.EmptyEntity", "test.model3.InconsistentEntity" ]
+}

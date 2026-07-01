@@ -23,6 +23,10 @@
         constraints="twocols(location=left)" localize="true" />
     <TextField name="InitPolicyTF" index="9" data="data.initPolicy.name" readOnly="true"
         constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="10" localize="true" />
+    <Label name="IdStyleLabel" label="identifier_style" index="10"
+        constraints="twocols(location=left)" localize="true" />
+    <TextField name="IdStyleTF" index="11" data="data.identifierStyle.name" readOnly="true"
+        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="12" localize="true" />
     <Label name="SuperEntitiesLabel" label="super_entities" index="12"
         constraints="twocols(expandHorizontally=false;expandVertically=false;location=left)" localize="true" />
     <Table name="SuperEntitiesTable" iteratorClassName="org.openflexo.pamela.editor.model.SourceModelEntity"
@@ -49,6 +53,8 @@
         <Localized key="abstract" lang="French" value="Abstrait" />
         <Localized key="init_policy" lang="English" value="Init policy" />
         <Localized key="init_policy" lang="French" value="Politique d&apos;initialisation" />
+        <Localized key="identifier_style" lang="English" value="Identifier style" />
+        <Localized key="identifier_style" lang="French" value="Style d&apos;identifiant" />
         <Localized key="properties" lang="English" value="Properties" />
         <Localized key="properties" lang="French" value="Propriétés" />
         <Localized key="super_entities" lang="English" value="Super entities" />

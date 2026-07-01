@@ -149,6 +149,10 @@ public final class PreferencesManager {
         return (AnalysisPreferences) PreferencesRegistry.resolve(model, "/analysis");
     }
 
+    public GenerationPreferences generation() {
+        return (GenerationPreferences) PreferencesRegistry.resolve(model, "/generation");
+    }
+
     // ----------------------------------------------------------------- listeners
 
     public void addPreferenceChangeListener(PreferenceChangeListener l) {

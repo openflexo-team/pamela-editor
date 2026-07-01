@@ -119,6 +119,10 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
     // Which interface methods are surfaced as SourceCustomMethods (custom-method-design.md).
     private CustomMethodFilter customMethodFilter = CustomMethodFilter.DEFAULT;
 
+    // Style used when generating identifiers on an entity with no decisive style
+    // (property-identifier-constant-design.md §5). Populated from the Analysis preference by the UI.
+    private PropertyIdentifierStyle defaultPropertyIdentifierStyle = PropertyIdentifierStyle.DEFAULT;
+
     // Public model
     private String name;
     private final Map<String, SourcePackage> packages;            // key = qualified package name
@@ -435,6 +439,23 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         return customMethodFilter;
     }
 
+    /**
+     * Sets the identifier style used when generating on an entity with no decisive style
+     * ({@link PropertyIdentifierStyle#UNDETERMINED}). A {@code null} value, or {@code MIXED}/
+     * {@code UNDETERMINED}, resets to {@link PropertyIdentifierStyle#DEFAULT}. Populated from the
+     * Analysis preference by the UI. See {@code property-identifier-constant-design.md §5}.
+     */
+    public void setDefaultPropertyIdentifierStyle(PropertyIdentifierStyle style) {
+        this.defaultPropertyIdentifierStyle =
+                (style == PropertyIdentifierStyle.CONSTANT || style == PropertyIdentifierStyle.LITERAL)
+                        ? style : PropertyIdentifierStyle.DEFAULT;
+    }
+
+    /** The default identifier style for generation (always {@code CONSTANT} or {@code LITERAL}). */
+    public PropertyIdentifierStyle getDefaultPropertyIdentifierStyle() {
+        return defaultPropertyIdentifierStyle;
+    }
+
     /** The build-cache sidecar file, or {@code null} if caching is disabled. */
     public File getBuildCacheFile() {
         return buildCacheFile;
@@ -736,10 +757,14 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
             }
         }
 
-        // Validate adder/remover consistency per property
+        // Validate adder/remover and identifier-style consistency per property
         for (SourceModelProperty prop : entity.getDeclaredProperties().values()) {
             prop.validateAdderRemoverConsistency();
+            prop.validateIdentifierStyleConsistency();
         }
+
+        // Aggregate the entity's identifier style (literal vs constant) from its properties.
+        entity.computeIdentifierStyle();
     }
 
     /**
