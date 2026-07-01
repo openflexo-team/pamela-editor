@@ -1370,7 +1370,16 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     // 1a. Normal path: rebind the detailed browser to the "described" element.
                     //     For child elements (property, initializer, impl class) this is the
                     //     parent entity, so the browser stays populated.
-                    detailedBrowser.setEditedObject(getDetailedBrowserElement(element));
+                    //     Exception: a PamelaProject / SourceMetaModel / SourceFolder / SourcePackage
+                    //     selection does NOT rebind — its content would just repeat, one panel over,
+                    //     the same nested list already visible under that very node in the
+                    //     MetaModelBrowser tree (deepExploration mode). Leaving the DetailedBrowser
+                    //     bound to whatever it last showed avoids that redundant, distracting
+                    //     mirror (see ui-design.md §4.2).
+                    Object described = getDetailedBrowserElement(element);
+                    if (!isRedundantWithMainBrowserTree(described)) {
+                        detailedBrowser.setEditedObject(described);
+                    }
                 } else {
                     // 1b. Soft-selection (diagram canvas click): keep the diagram as the
                     //     browser root but update which EntityView node is highlighted.
@@ -1547,6 +1556,20 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             return owner != null ? owner : element;
         }
         return element;
+    }
+
+    /**
+     * Types for which rebinding the {@link DetailedBrowser}'s root object is pure
+     * redundancy: their content is exactly the same nested children already shown
+     * directly under that node in the {@link MetaModelBrowser} tree (both browsers use
+     * {@code deepExploration}, so the whole sub-tree is already visible there). Selecting
+     * one of these leaves the DetailedBrowser bound to whatever it was showing before.
+     */
+    private boolean isRedundantWithMainBrowserTree(Object element) {
+        return element instanceof SourceMetaModel
+                || element instanceof SourceFolder
+                || element instanceof SourcePackage
+                || element instanceof PamelaProject;
     }
 
     /**
