@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import java.beans.PropertyChangeSupport;
+
 import org.openflexo.diana.swing.control.SwingToolFactory;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagramFactory;
@@ -16,6 +18,7 @@ import org.openflexo.pamela.editor.diagram.PamelaClassDiagramSerializer;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.exceptions.ModelDefinitionException;
 import org.openflexo.pamela.factory.EditingContextImpl;
+import org.openflexo.toolbox.HasPropertyChangeSupport;
 
 /**
  * UI-level wrapper for an open PAMELA project.
@@ -33,10 +36,22 @@ import org.openflexo.pamela.factory.EditingContextImpl;
  * </ul>
  * </p>
  */
-public class PamelaProject {
+public class PamelaProject implements HasPropertyChangeSupport {
 
     private static final Logger logger =
             Logger.getLogger(PamelaProject.class.getPackage().getName());
+
+    private final PropertyChangeSupport pcSupport = new PropertyChangeSupport(this);
+
+    @Override
+    public PropertyChangeSupport getPropertyChangeSupport() {
+        return pcSupport;
+    }
+
+    @Override
+    public String getDeletedProperty() {
+        return null;
+    }
 
     private final File pamelaFile;
     private final SourceMetaModel metaModel;
@@ -108,10 +123,18 @@ public class PamelaProject {
 
     public void addDiagram(PamelaClassDiagram diagram) {
         diagrams.add(diagram);
+        // Fire on this object (not just "projects" on the application) so the browser's
+        // per-cell children-binding listener — attached to this PamelaProject instance via
+        // the "project.diagrams" binding path — is notified even when the project node was
+        // already expanded/loaded (see gina-analysis.md §18.5 and FIBBrowserModel.updateSync:
+        // an already-loaded cell relies on its own binding listener, not on a force-recurse
+        // from an ancestor). Old value passed as null to bypass the equals() guard.
+        pcSupport.firePropertyChange("diagrams", null, getDiagrams());
     }
 
     public void removeDiagram(PamelaClassDiagram diagram) {
         diagrams.remove(diagram);
+        pcSupport.firePropertyChange("diagrams", null, getDiagrams());
     }
 
     /**

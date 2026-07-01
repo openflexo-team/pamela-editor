@@ -2091,13 +2091,10 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         diagram.setId(project.generateDiagramId(name.trim()));
         project.addDiagram(diagram);
         markProjectDirty(project);
-        // Force the MetaModelBrowser to rebuild so the new diagram node appears under
-        // the project. The projects list content is unchanged (only a project's internal
-        // diagrams list grew), so we pass null as old value to bypass the equals() guard
-        // in PropertyChangeSupport and guarantee the event fires.
-        pcSupport.firePropertyChange("projects", null,
-                Collections.unmodifiableList(projects));
-        // Navigate to the diagram editor immediately
+        // project.addDiagram() fires "diagrams" on the project itself, which is what the
+        // MetaModelBrowser's "project.diagrams" children binding actually observes
+        // (see PamelaProject.addDiagram()) — so the new node appears without further help here.
+        // Navigate to the diagram editor immediately.
         openOrSwitchCentralView(diagram);
         return diagram;
     }
@@ -2123,9 +2120,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }
         diagram.setName(newName);
         markProjectDirty(project);
-        // Refresh the browser node label and the central title if this diagram is shown.
-        pcSupport.firePropertyChange("projects", null,
-                Collections.unmodifiableList(projects));
+        // diagram.setName(...) is a PAMELA-managed setter: it already fires its own "name"
+        // PropertyChangeEvent on the diagram object, which the browser's label binding
+        // (diagram.name) observes directly — no extra event needed here.
         if (currentHistoryElement == diagram) {
             centralTitleLabel.setText(titleFor(diagram));
         }
@@ -2154,8 +2151,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         diagramEditors.remove(diagram);
         project.removeDiagram(diagram);
         markProjectDirty(project);
-        pcSupport.firePropertyChange("projects", null,
-                Collections.unmodifiableList(projects));
+        // project.removeDiagram() fires "diagrams" on the project itself (see
+        // PamelaProject.removeDiagram()) — the browser drops the node without further help here.
     }
 
     // =========================================================================
