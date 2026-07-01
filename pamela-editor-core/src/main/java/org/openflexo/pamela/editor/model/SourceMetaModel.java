@@ -102,6 +102,11 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
     private final List<File> sourceDirectories;
     private final List<String> rootTypeNames;
 
+    // One stable SourceFolder wrapper per registered source directory (browser node,
+    // see ui-design.md §4.1). Kept in sync with sourceDirectories in addSourceDirectory /
+    // removeSourceDirectory.
+    private final Map<File, SourceFolder> sourceFolders;
+
     // Build cache (approach B, see source-metamodel-design.md §18). When a cache
     // file is set, buildMetaModel() restricts the Spoon parse to the reachable
     // entity files recorded by a previous full build, as long as the directory
@@ -151,6 +156,7 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
 
     public SourceMetaModel() {
         this.sourceDirectories = new ArrayList<>();
+        this.sourceFolders = new LinkedHashMap<>();
         this.rootTypeNames = new ArrayList<>();
         this.packages = new LinkedHashMap<>();
         this.compilationUnits = new LinkedHashMap<>();
@@ -174,9 +180,11 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         }
         List<File> old = new ArrayList<>(sourceDirectories);
         sourceDirectories.add(directory);
+        sourceFolders.put(directory, new SourceFolder(directory, this));
         scanForPackages(directory);
         pcSupport.firePropertyChange("sourceDirectories", old, Collections.unmodifiableList(sourceDirectories));
         pcSupport.firePropertyChange("allPackages", null, new ArrayList<>(packages.values()));
+        pcSupport.firePropertyChange("sourceFolders", null, getSourceFolders());
     }
 
     /**
@@ -188,9 +196,11 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         if (!sourceDirectories.remove(directory)) {
             return;
         }
+        sourceFolders.remove(directory);
         rescanPackages();
         pcSupport.firePropertyChange("sourceDirectories", old, Collections.unmodifiableList(sourceDirectories));
         pcSupport.firePropertyChange("allPackages", null, new ArrayList<>(packages.values()));
+        pcSupport.firePropertyChange("sourceFolders", null, getSourceFolders());
     }
 
     /**
@@ -1445,6 +1455,43 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
      */
     public List<File> getSourceDirectories() {
         return Collections.unmodifiableList(sourceDirectories);
+    }
+
+    /**
+     * The registered source directories, each wrapped as a browsable
+     * {@link SourceFolder} (ui-design.md §4.1), in registration order.
+     *
+     * @return an unmodifiable list
+     */
+    public List<SourceFolder> getSourceFolders() {
+        List<SourceFolder> result = new ArrayList<>(sourceDirectories.size());
+        for (File dir : sourceDirectories) {
+            SourceFolder folder = sourceFolders.get(dir);
+            if (folder != null) {
+                result.add(folder);
+            }
+        }
+        return Collections.unmodifiableList(result);
+    }
+
+    /**
+     * Packages containing at least one {@code .java} file scanned from
+     * {@code directory}, in the same order as {@link #getAllPackages()}.
+     *
+     * @param directory one of the registered {@link #getSourceDirectories()}
+     * @return an unmodifiable list (possibly empty)
+     */
+    public List<SourcePackage> getPackagesForSourceDirectory(File directory) {
+        List<SourcePackage> result = new ArrayList<>();
+        for (SourcePackage pkg : packages.values()) {
+            for (SourceJavaFile file : pkg.getJavaFiles()) {
+                if (file.getSourceDirectory().equals(directory)) {
+                    result.add(pkg);
+                    break;
+                }
+            }
+        }
+        return Collections.unmodifiableList(result);
     }
 
     /**

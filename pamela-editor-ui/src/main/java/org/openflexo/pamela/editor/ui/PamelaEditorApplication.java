@@ -55,6 +55,7 @@ import org.openflexo.pamela.editor.diagram.EntityView;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagramSerializer;
 import org.openflexo.pamela.editor.model.SourceCustomMethod;
+import org.openflexo.pamela.editor.model.SourceFolder;
 import org.openflexo.pamela.editor.model.SourceImplementationClass;
 import org.openflexo.pamela.editor.model.SourceJavaFile;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
@@ -723,6 +724,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         SourceMetaModel mm = project.getMetaModel();
         if (mm == null) return false;
         if (element == mm) return true;
+        if (element instanceof SourceFolder) {
+            return mm.getSourceFolders().contains(element);
+        }
         if (element instanceof SourcePackage) {
             return mm.getAllPackages().contains(element);
         }
@@ -1175,6 +1179,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                 java.beans.PropertyChangeSupport pcs = metaModel.getPropertyChangeSupport();
                 pcs.firePropertyChange("allPackages", null,
                         new ArrayList<>(metaModel.getAllPackages()));
+                pcs.firePropertyChange("sourceFolders", null,
+                        new ArrayList<>(metaModel.getSourceFolders()));
                 pcs.firePropertyChange("entitiesCount", -1, metaModel.getEntitiesCount());
                 pcs.firePropertyChange("packagesCount", -1, metaModel.getPackagesCount());
                 pcs.firePropertyChange("totalPropertiesCount", -1, metaModel.getTotalPropertiesCount());
@@ -1959,6 +1965,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if (element instanceof PamelaProject) {
             SourceMetaModel mm = ((PamelaProject) element).getMetaModel();
             return mm != null ? mm.getName() : "Project";
+        }
+        if (element instanceof SourceFolder) {
+            return ((SourceFolder) element).getName();
         }
         if (element instanceof SourcePackage) {
             return ((SourcePackage) element).getQualifiedName();

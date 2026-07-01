@@ -5,6 +5,7 @@ import javax.swing.ImageIcon;
 import org.openflexo.gina.model.FIBComponent;
 import org.openflexo.pamela.editor.diagram.EntityView;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
+import org.openflexo.pamela.editor.model.SourceFolder;
 import org.openflexo.pamela.editor.model.SourceImplementationClass;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.ui.PamelaProject;
@@ -175,6 +176,9 @@ public class DetailedBrowserFIBController extends PamelaEditorFIBController<Obje
         }
         if (object instanceof SourceImplementationClass) {
             return PamelaEditorIconLibrary.IMPL_CLASS_ICON;
+        }
+        if (object instanceof SourceFolder) {
+            return PamelaEditorIconLibrary.SOURCE_FOLDER_ICON;
         }
         if (object instanceof SourcePackage) {
             return PamelaEditorIconLibrary.PACKAGE_ICON;

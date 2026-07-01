@@ -12,9 +12,10 @@
         root; its children are displayed as the top-level nodes.
 
         - SourceModelEntity  → shows its properties and initializers
+        - SourceFolder        → shows its packages
         - SourcePackage       → shows its entities
         - PamelaClassDiagram  → shows its entity views
-        - PamelaProject → shows packages + diagrams
+        - PamelaProject → shows source folders + diagrams
         - null / other        → shows nothing (no matching BrowserElement)
     -->
     <Browser id="1" deepExploration="true" showFooter="false" rowHeight="18"
@@ -37,7 +38,7 @@
             dataClassName="org.openflexo.pamela.editor.model.SourceMetaModel"
             name="metaModel"
             isEditable="false">
-            <Children id="57" name="packages" data="metaModel.allPackages" />
+            <Children id="57" name="sourceFolders" data="metaModel.sourceFolders" />
         </BrowserElement>
 
         <BrowserElement id="10"
@@ -49,7 +50,18 @@
             name="project"
             isEditable="false">
             <!-- Diagrams appear only in the MetaModelBrowser, not in the DetailedBrowser. -->
-            <Children id="51" name="packages" data="project.metaModel.allPackages" />
+            <Children id="51" name="sourceFolders" data="project.metaModel.sourceFolders" />
+        </BrowserElement>
+
+        <BrowserElement id="15"
+            icon="controller.iconForObject(folder)"
+            filtered="false"
+            label="folder.name"
+            defaultVisible="true"
+            dataClassName="org.openflexo.pamela.editor.model.SourceFolder"
+            name="folder"
+            isEditable="false">
+            <Children id="58" name="packages" data="folder.packages" />
         </BrowserElement>
 
         <BrowserElement id="20"

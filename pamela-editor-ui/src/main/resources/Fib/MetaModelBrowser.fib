@@ -36,7 +36,7 @@
             name="project"
             isEditable="false">
             <Children id="10" name="diagrams" data="project.diagrams" />
-            <Children id="11" name="packages" data="project.metaModel.allPackages" />
+            <Children id="13" name="sourceFolders" data="project.metaModel.sourceFolders" />
         </BrowserElement>
 
         <BrowserElement id="4"
@@ -47,6 +47,17 @@
             dataClassName="org.openflexo.pamela.editor.diagram.PamelaClassDiagram"
             name="diagram"
             isEditable="false">
+        </BrowserElement>
+
+        <BrowserElement id="8"
+            icon="controller.iconForObject(folder)"
+            filtered="false"
+            label="folder.name"
+            defaultVisible="true"
+            dataClassName="org.openflexo.pamela.editor.model.SourceFolder"
+            name="folder"
+            isEditable="false">
+            <Children id="14" name="packages" data="folder.packages" />
         </BrowserElement>
 
         <BrowserElement id="5"
