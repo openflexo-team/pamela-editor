@@ -14,9 +14,12 @@ import java.awt.dnd.DragSourceDropEvent;
 import java.awt.dnd.DragSourceEvent;
 import java.awt.dnd.DragSourceListener;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javax.swing.JTree;
+import javax.swing.tree.TreePath;
 
 import org.openflexo.gina.ApplicationFIBLibrary.ApplicationFIBLibraryImpl;
 import org.openflexo.gina.swing.utils.FIBJPanel;
@@ -135,6 +138,79 @@ public class MetaModelBrowser extends FIBJPanel<PamelaEditorApplication> {
                 application.onBrowserMouseReleased();
             }
         }, AWTEvent.MOUSE_EVENT_MASK);
+    }
+
+    /**
+     * Target and hard-cap row counts for {@link #autoExpandToFillView()} (roughly a
+     * screenful without overflowing it).
+     */
+    private static final int AUTO_EXPAND_TARGET_ROWS = 20;
+    private static final int AUTO_EXPAND_MAX_ROWS = 30;
+
+    /**
+     * Auto-expands the tree, one level of the whole forest at a time, so the browser opens
+     * showing substantially more than just the top level — without turning into an
+     * overwhelming wall of rows.
+     *
+     * <p>Algorithm: while fewer than {@value #AUTO_EXPAND_TARGET_ROWS} rows are visible,
+     * expand <em>every</em> currently visible, collapsed, non-leaf row at once (this is "the
+     * next available level" — different branches may be at different depths, e.g. once a
+     * shallow leaf stops growing while a deeper branch keeps going, but each pass always
+     * expands whatever is currently at the collapsed frontier). If that expansion would push
+     * the total past {@value #AUTO_EXPAND_MAX_ROWS} rows, undo it and stop; otherwise keep it
+     * and try the next level. Also stops as soon as there is nothing left to expand.</p>
+     *
+     * <p>Safe to call whenever new top-level content just appeared in the tree (e.g. right
+     * after a project is opened/created) — a JTree row is only actually populated with its
+     * real children the first time it is expanded (Gina's lazy-loading, see
+     * {@code gina/CLAUDE.md}), so this both measures and (provisionally) performs each level's
+     * expansion in the same pass, relying on the fact that expanding/collapsing a row here
+     * runs synchronously on the EDT (no repaint happens in between, so a reverted, over-budget
+     * expansion is never actually seen).</p>
+     */
+    public void autoExpandToFillView() {
+        JTree tree = findJTree(this);
+        if (tree != null) {
+            expandToFillView(tree);
+        }
+    }
+
+    /**
+     * The actual algorithm behind {@link #autoExpandToFillView()}, factored out (and taking a
+     * plain {@link JTree}) so it can be exercised directly against a hand-built tree in tests,
+     * independently of the Gina/Spoon machinery that backs the real browser.
+     */
+    static void expandToFillView(JTree tree) {
+        while (tree.getRowCount() < AUTO_EXPAND_TARGET_ROWS) {
+            List<TreePath> frontier = collapsedExpandableRows(tree);
+            if (frontier.isEmpty()) {
+                break; // fully expanded already, even if under the target
+            }
+            for (TreePath path : frontier) {
+                tree.expandPath(path);
+            }
+            if (tree.getRowCount() > AUTO_EXPAND_MAX_ROWS) {
+                for (TreePath path : frontier) {
+                    tree.collapsePath(path);
+                }
+                break; // this level alone would overshoot the budget — stop here
+            }
+        }
+    }
+
+    /** Every currently visible row that is collapsed and has at least one child. */
+    private static List<TreePath> collapsedExpandableRows(JTree tree) {
+        List<TreePath> result = new ArrayList<>();
+        for (int row = 0; row < tree.getRowCount(); row++) {
+            TreePath path = tree.getPathForRow(row);
+            if (path == null || tree.isExpanded(path)) {
+                continue;
+            }
+            if (!tree.getModel().isLeaf(path.getLastPathComponent())) {
+                result.add(path);
+            }
+        }
+        return result;
     }
 
     /** Depth-first search for the first {@link JTree} in a component hierarchy. */

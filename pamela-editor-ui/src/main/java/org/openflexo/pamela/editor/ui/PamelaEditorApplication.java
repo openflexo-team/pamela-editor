@@ -853,6 +853,10 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     pcSupport.firePropertyChange("projects",
                             Collections.unmodifiableList(oldProjects),
                             Collections.unmodifiableList(projects));
+                    // Open the newly-visible tree content up to a comfortable, bounded number
+                    // of rows (see MetaModelBrowser.autoExpandToFillView). Deferred so Gina has
+                    // finished (re)building the tree for the new project first.
+                    javax.swing.SwingUtilities.invokeLater(metaModelBrowser::autoExpandToFillView);
 
                 } catch (Exception e) {
                     Throwable cause = (e.getCause() != null) ? e.getCause() : e;
@@ -926,6 +930,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     pcSupport.firePropertyChange("projects",
                             Collections.unmodifiableList(oldProjects),
                             Collections.unmodifiableList(projects));
+                    javax.swing.SwingUtilities.invokeLater(metaModelBrowser::autoExpandToFillView);
 
                     // Select the new project in the browser
                     setCurrentSelectedElement(project);
