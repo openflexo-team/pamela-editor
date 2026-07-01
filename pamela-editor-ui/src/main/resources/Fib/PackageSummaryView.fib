@@ -5,13 +5,16 @@
 
   Layout (top → bottom):
     1. Header   — package icon 64×64 + qualified name, centred
-    2. Entities — FlatDesign table with icon + entity name
+    2. Entities — FlatDesign table: icon, name, implementation class,
+                  properties/initializers/operations counts
+    3. Spacer   — absorbs remaining vertical space so content stays top-aligned
 
   Statistics have moved to PackageStatisticsContextView.fib (ContextPanel, §19.2).
 -->
-<Panel id="0" darkLevel="0" useScrollBar="true" layout="twocols"
+<Panel id="0" font="SansSerif,0,11" darkLevel="0" useScrollBar="true" layout="twocols"
     height="600" name="PackageSummaryView"
     dataClassName="org.openflexo.pamela.editor.model.SourcePackage"
+    controllerClassName="org.openflexo.pamela.editor.ui.widget.PackageSummaryViewFIBController"
     trackViewPortWidth="true" width="500"
     borderTop="0" borderLeft="0" borderBottom="0" borderRight="0" border="empty">
 
@@ -38,17 +41,12 @@
         constraints="twocols(expandHorizontally=true;expandVertically=false;location=center)"
         name="EntitiesPanel">
 
-        <Label id="41" label="entities" align="left" localize="true"
-            font="SansSerif,1,12"
-            constraints="twocols(expandHorizontally=true;expandVertically=false;location=center;insetsBottom=3)"
-            name="EntitiesLabel" />
-
         <Table id="42"
             lookAndFeel="FlatDesign"
             data="data.entities"
             iteratorClassName="org.openflexo.pamela.editor.model.SourceModelEntity"
             visibleRowCount="8"
-            rowHeight="22"
+            rowHeight="18"
             showHeader="true"
             showFooter="false"
             selectionMode="SingleSelection"
@@ -66,23 +64,40 @@
             <TextFieldColumn id="44" data="iterator.simpleName"
                 title="name" displayTitle="true" resizable="true" columnWidth="200"
                 showIcon="false" readOnly="true" name="EntityName" />
-            <CheckBoxColumn id="45" data="iterator.abstract"
-                title="abstract" displayTitle="true" columnWidth="60"
-                readOnly="true" name="EntityAbstract" />
+            <TextFieldColumn id="57" data="(iterator.implementationClass != null ? iterator.implementationClass.simpleName : &quot;&quot;)"
+                title="implementation_class" displayTitle="true" resizable="true" columnWidth="150"
+                showIcon="false" readOnly="true" name="EntityImplementationClass" />
             <TextFieldColumn id="46" data="iterator.declaredProperties.size.toString"
                 title="properties" displayTitle="true" resizable="false" columnWidth="70"
                 showIcon="false" readOnly="true" name="EntityPropertiesCount" />
+            <TextFieldColumn id="55" data="iterator.initializers.size.toString"
+                title="initializers" displayTitle="true" resizable="false" columnWidth="70"
+                showIcon="false" readOnly="true" name="EntityInitializersCount" />
+            <TextFieldColumn id="56" data="iterator.declaredCustomMethods.size.toString"
+                title="operations" displayTitle="true" resizable="false" columnWidth="70"
+                showIcon="false" readOnly="true" name="EntityOperationsCount" />
         </Table>
 
     </Panel>
 
+    <!-- ================================================================ -->
+    <!-- 3. SPACER: absorbs remaining vertical space so content stays top -->
+    <!-- ================================================================ -->
+    <Spacer id="60"
+        constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)"
+        name="BottomSpacer" />
+
     <LocalizedDictionary id="90">
-        <Localized id="91" lang="English" value="Entities"  key="entities" />
-        <Localized id="92" lang="French"  value="Entités"   key="entities" />
         <Localized id="97" lang="English" value="Name"      key="name" />
         <Localized id="98" lang="French"  value="Nom"       key="name" />
-        <Localized id="99" lang="English" value="Abstract"  key="abstract" />
-        <Localized id="100" lang="French" value="Abstraite" key="abstract" />
+        <Localized id="101" lang="English" value="Properties"          key="properties" />
+        <Localized id="102" lang="French"  value="Propriétés"          key="properties" />
+        <Localized id="103" lang="English" value="Initializers"        key="initializers" />
+        <Localized id="104" lang="French"  value="Initialiseurs"       key="initializers" />
+        <Localized id="105" lang="English" value="Operations"          key="operations" />
+        <Localized id="106" lang="French"  value="Opérations"          key="operations" />
+        <Localized id="107" lang="English" value="Implementation class" key="implementation_class" />
+        <Localized id="108" lang="French"  value="Classe d'implémentation" key="implementation_class" />
     </LocalizedDictionary>
 
 </Panel>

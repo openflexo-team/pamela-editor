@@ -9,7 +9,7 @@
 
   Statistics have moved to MetaModelStatisticsContextView.fib (ContextPanel, §19.2).
 -->
-<Panel id="0" darkLevel="0" useScrollBar="true" layout="twocols"
+<Panel id="0" font="SansSerif,0,11" darkLevel="0" useScrollBar="true" layout="twocols"
     height="600" name="MetaModelSummaryView"
     dataClassName="org.openflexo.pamela.editor.model.SourceMetaModel"
     controllerClassName="org.openflexo.pamela.editor.ui.widget.MetaModelSummaryViewFIBController"
