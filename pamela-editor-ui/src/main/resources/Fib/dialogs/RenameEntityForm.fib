@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Panel dataClassName="org.openflexo.pamela.editor.ui.action.RenameEntityAction"
        controllerClassName="org.openflexo.gina.controller.FIBController"
-       layout="twocols" name="RenameEntityForm" border="empty" width="400" height="200">
+       layout="twocols" name="RenameEntityForm" border="empty" width="400" height="60">
 
   <Label name="nameLabel" label="New entity name:" localize="false"
          align="left" index="0" constraints="twocols(location=left)" />
