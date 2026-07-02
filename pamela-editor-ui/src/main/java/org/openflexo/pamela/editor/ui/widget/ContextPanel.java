@@ -10,6 +10,7 @@ import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.diagram.PropertyView;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
 import org.openflexo.pamela.editor.model.SourceCustomMethod;
+import org.openflexo.pamela.editor.model.SourceFolder;
 import org.openflexo.pamela.editor.model.SourceJavaFile;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
@@ -26,7 +27,7 @@ import org.openflexo.pamela.editor.ui.PamelaProject;
  * <p>Three visible modes (plus an empty fallback):</p>
  * <ul>
  *   <li><strong>Statistics</strong> — when the active central view is
- *       {@link SourceMetaModel} or {@link SourcePackage}</li>
+ *       {@link SourceMetaModel}, {@link SourceFolder} or {@link SourcePackage}</li>
  *   <li><strong>Spoon Outline</strong> — when the active central view is
  *       {@link SourceModelEntity} or {@link SourceJavaFile}</li>
  *   <li><strong>Diagram inspector</strong> — when the active central view is
@@ -92,6 +93,10 @@ public class ContextPanel extends JPanel {
 
         } else if (element instanceof SourceMetaModel) {
             statisticsView.showFor((SourceMetaModel) element);
+            cards.show(this, CARD_STATISTICS);
+
+        } else if (element instanceof SourceFolder) {
+            statisticsView.showFor((SourceFolder) element);
             cards.show(this, CARD_STATISTICS);
 
         } else if (element instanceof SourcePackage) {

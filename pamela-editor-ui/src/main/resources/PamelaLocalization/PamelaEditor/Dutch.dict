@@ -42,6 +42,7 @@ enable_multiple_layouts=Enable multiple layouts
 end=End
 end_location=End location
 end_orientation=End orientation
+entities=Entities
 error=Fout
 error_creating_project=Aanmaken van project mislukt
 error_location_required=Kies een locatie voor het .pamela bestand.

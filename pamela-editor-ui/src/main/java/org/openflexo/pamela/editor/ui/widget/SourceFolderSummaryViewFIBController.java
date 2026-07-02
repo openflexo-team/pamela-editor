@@ -3,30 +3,25 @@ package org.openflexo.pamela.editor.ui.widget;
 import javax.swing.ImageIcon;
 
 import org.openflexo.gina.model.FIBComponent;
+import org.openflexo.pamela.editor.model.SourceFolder;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
-import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
 import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
 
 /**
- * FIB controller for {@link PackageSummaryView}.
+ * FIB controller for {@link SourceFolderSummaryView}.
  *
  * <p>Provides icon resolution for the entities table (without it, the FIB falls back to the
  * base {@link org.openflexo.gina.controller.FIBController}, which has no {@code iconForObject}
- * method and the icon column stays empty).</p>
- *
- * <p>Also synchronizes the entities table selection with the application: clicking a row
- * soft-selects the corresponding {@link SourceModelEntity} (updates the inspector and the
- * detailed browser without leaving this view — mirrors the diagram soft-selection,
- * ui-design.md §18.2) and right-clicking it opens the same contextual menu as the browsers
- * and the diagram (ui-design.md §18.4). See {@link EntityTableSupport}.</p>
+ * method and the icon column stays empty), and synchronizes the table's selection with the
+ * application (see {@link EntityTableSupport}), mirroring {@link PackageSummaryViewFIBController}.</p>
  */
-public class PackageSummaryViewFIBController extends PamelaEditorFIBController<SourcePackage> {
+public class SourceFolderSummaryViewFIBController extends PamelaEditorFIBController<SourceFolder> {
 
     private PamelaEditorApplication application;
 
-    public PackageSummaryViewFIBController(FIBComponent rootComponent) {
+    public SourceFolderSummaryViewFIBController(FIBComponent rootComponent) {
         super(rootComponent);
     }
 

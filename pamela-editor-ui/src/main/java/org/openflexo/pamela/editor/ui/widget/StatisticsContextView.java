@@ -6,6 +6,7 @@ import javax.swing.JPanel;
 
 import org.openflexo.gina.ApplicationFIBLibrary.ApplicationFIBLibraryImpl;
 import org.openflexo.gina.swing.utils.FIBJPanel;
+import org.openflexo.pamela.editor.model.SourceFolder;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
@@ -14,9 +15,9 @@ import org.openflexo.rm.ResourceLocator;
 
 /**
  * ContextPanel sub-view that shows statistical counters for a
- * {@link SourceMetaModel} or a {@link SourcePackage} (ui-design.md §19.2).
+ * {@link SourceMetaModel}, a {@link SourceFolder}, or a {@link SourcePackage} (ui-design.md §19.2).
  *
- * <p>Uses a {@link CardLayout} to switch between the two FIB panels without
+ * <p>Uses a {@link CardLayout} to switch between the FIB panels without
  * rebuilding them on each selection change.</p>
  */
 @SuppressWarnings("serial")
@@ -24,15 +25,19 @@ public class StatisticsContextView extends JPanel {
 
     private static final String CARD_EMPTY    = "empty";
     private static final String CARD_METAMODEL = "metamodel";
+    private static final String CARD_FOLDER    = "folder";
     private static final String CARD_PACKAGE   = "package";
 
     private static final Resource METAMODEL_FIB =
             ResourceLocator.locateResource("Fib/MetaModelStatisticsContextView.fib");
+    private static final Resource FOLDER_FIB =
+            ResourceLocator.locateResource("Fib/SourceFolderStatisticsContextView.fib");
     private static final Resource PACKAGE_FIB =
             ResourceLocator.locateResource("Fib/PackageStatisticsContextView.fib");
 
     private final CardLayout cards = new CardLayout();
     private final FIBJPanel<SourceMetaModel>  metaModelPanel;
+    private final FIBJPanel<SourceFolder>     folderPanel;
     private final FIBJPanel<SourcePackage>    packagePanel;
 
     public StatisticsContextView() {
@@ -47,6 +52,14 @@ public class StatisticsContextView extends JPanel {
             @Override public void delete() {}
         };
         add(metaModelPanel, CARD_METAMODEL);
+
+        folderPanel = new FIBJPanel<SourceFolder>(FOLDER_FIB, null,
+                ApplicationFIBLibraryImpl.instance(),
+                PamelaEditorFIBController.EDITOR_LOCALIZATION) {
+            @Override public Class<SourceFolder> getRepresentedType() { return SourceFolder.class; }
+            @Override public void delete() {}
+        };
+        add(folderPanel, CARD_FOLDER);
 
         packagePanel = new FIBJPanel<SourcePackage>(PACKAGE_FIB, null,
                 ApplicationFIBLibraryImpl.instance(),
@@ -63,6 +76,12 @@ public class StatisticsContextView extends JPanel {
     public void showFor(SourceMetaModel metaModel) {
         metaModelPanel.setEditedObject(metaModel);
         cards.show(this, CARD_METAMODEL);
+    }
+
+    /** Switch to the SourceFolder statistics card. */
+    public void showFor(SourceFolder folder) {
+        folderPanel.setEditedObject(folder);
+        cards.show(this, CARD_FOLDER);
     }
 
     /** Switch to the SourcePackage statistics card. */

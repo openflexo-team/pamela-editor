@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.logging.Logger;
 
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -12,6 +13,8 @@ import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
 
 import org.openflexo.gina.model.FIBComponent;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
+import org.openflexo.pamela.editor.model.SourceModelEntity;
+import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
 import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
 
@@ -21,6 +24,9 @@ import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
  * <p>Provides add/remove actions for the source directories and root type names
  * tables.  Both lists are mutable inputs that define what Spoon will analyse
  * when the project is (re)built.</p>
+ *
+ * <p>Also drives the "all entities" table (icon resolution + click/right-click, see
+ * {@link EntityTableSupport}), mirroring {@link PackageSummaryViewFIBController}.</p>
  */
 public class MetaModelSummaryViewFIBController extends PamelaEditorFIBController<SourceMetaModel> {
 
@@ -30,8 +36,14 @@ public class MetaModelSummaryViewFIBController extends PamelaEditorFIBController
     /** Directory of the .pamela file — used as starting directory for the file chooser. */
     private File projectDirectory;
 
+    private PamelaEditorApplication application;
+
     public void setProjectDirectory(File projectDirectory) {
         this.projectDirectory = projectDirectory;
+    }
+
+    public void setApplication(PamelaEditorApplication application) {
+        this.application = application;
     }
 
     public Icon getSourceFolderIcon(File dir) {
@@ -44,6 +56,27 @@ public class MetaModelSummaryViewFIBController extends PamelaEditorFIBController
 
     public MetaModelSummaryViewFIBController(FIBComponent rootComponent) {
         super(rootComponent);
+    }
+
+    @Override
+    protected ImageIcon retrieveIconForObject(Object object) {
+        if (object instanceof SourceModelEntity) {
+            SourceModelEntity entity = (SourceModelEntity) object;
+            return entity.isAbstract()
+                    ? PamelaEditorIconLibrary.ABSTRACT_ENTITY_ICON
+                    : PamelaEditorIconLibrary.ENTITY_ICON;
+        }
+        return super.retrieveIconForObject(object);
+    }
+
+    /** Called when the user clicks a row in the entities table (FIB {@code clickAction}). */
+    public void selectEntity(Object selected) {
+        EntityTableSupport.selectEntity(application, selected);
+    }
+
+    /** Called when the user right-clicks a row in the entities table (FIB {@code rightClickAction}). */
+    public void rightClick(Object selected, Object event) {
+        EntityTableSupport.rightClick(application, selected, event);
     }
 
     // -------------------------------------------------------------------------

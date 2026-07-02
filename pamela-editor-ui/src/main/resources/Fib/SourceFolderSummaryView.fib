@@ -1,36 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  PackageSummaryView.fib
-  Central view shown when a SourcePackage is selected.
+  SourceFolderSummaryView.fib
+  Central view shown when a SourceFolder is selected.
 
   Layout (top → bottom):
-    1. Header   — package icon 64×64 + qualified name, centred
+    1. Header   — folder icon + name/path, centred
     2. Entities — FlatDesign table: icon, name, implementation class,
-                  properties/initializers/operations counts
+                  properties/initializers/operations counts (all entities across every
+                  package contributed by this source directory)
     3. Spacer   — absorbs remaining vertical space so content stays top-aligned
-
-  Statistics have moved to PackageStatisticsContextView.fib (ContextPanel, §19.2).
 -->
 <Panel id="0" font="SansSerif,0,11" darkLevel="0" useScrollBar="true" layout="twocols"
-    height="600" name="PackageSummaryView"
-    dataClassName="org.openflexo.pamela.editor.model.SourcePackage"
-    controllerClassName="org.openflexo.pamela.editor.ui.widget.PackageSummaryViewFIBController"
+    height="600" name="SourceFolderSummaryView"
+    dataClassName="org.openflexo.pamela.editor.model.SourceFolder"
+    controllerClassName="org.openflexo.pamela.editor.ui.widget.SourceFolderSummaryViewFIBController"
     trackViewPortWidth="true" width="500"
     borderTop="0" borderLeft="0" borderBottom="0" borderRight="0" border="empty">
 
     <!-- ================================================================ -->
-    <!-- 1. HEADER: package icon + qualified name, centred                -->
+    <!-- 1. HEADER: folder icon + name/path, centred                      -->
     <!-- ================================================================ -->
     <Panel id="10" layout="flow" flowAlignment="CENTER" hGap="12" vGap="10"
         border="empty" borderTop="5" borderLeft="10" borderBottom="5" borderRight="10"
         constraints="twocols(expandHorizontally=true;expandVertically=false;location=center)"
         name="HeaderPanel">
-        <Image id="11" imageWidth="64" imageHeight="64" sizeAdjustment="OriginalSize"
-            imageFile="../Icons/SourcePackage_32x32.png" align="center"
-            constraints="flow()" name="PackageIcon" />
-        <Label id="12" data="data.qualifiedName"
+        <Image id="11" imageWidth="32" imageHeight="32" sizeAdjustment="OriginalSize"
+            imageFile="../Icons/SourceFolder_32x32.png" align="center"
+            constraints="flow()" name="FolderIcon" />
+        <Label id="12" data="data.name"
             font="SansSerif,1,18" align="left"
-            constraints="flow()" name="PackageNameLabel" />
+            constraints="flow()" name="FolderNameLabel" />
+        <Label id="13" data="data.path"
+            font="SansSerif,2,11" align="left"
+            constraints="flow()" name="FolderPathLabel" />
     </Panel>
 
     <!-- ================================================================ -->
@@ -64,19 +66,19 @@
             <IconColumn id="43" data="controller.iconForObject(iterator)"
                 title="" displayTitle="false" columnWidth="20" resizable="false" name="EntityIcon" />
             <TextFieldColumn id="44" data="iterator.simpleName"
-                title="entities" displayTitle="true" resizable="true" columnWidth="140"
+                title="entities" displayTitle="true" resizable="true" columnWidth="200"
                 showIcon="false" readOnly="true" name="EntityName" />
             <TextFieldColumn id="57" data="(iterator.implementationClass != null ? iterator.implementationClass.simpleName : &quot;&quot;)"
-                title="implementation_class" displayTitle="true" resizable="true" columnWidth="140"
+                title="implementation_class" displayTitle="true" resizable="true" columnWidth="150"
                 showIcon="false" readOnly="true" name="EntityImplementationClass" />
-            <TextFieldColumn id="55" data="iterator.initializers.size.toString"
-                title="#init" displayTitle="true" resizable="false" columnWidth="35"
-                showIcon="false" readOnly="true" alignment="center" name="EntityInitializersCount" />
-             <TextFieldColumn id="46" data="iterator.declaredProperties.size.toString"
-                title="#props" displayTitle="true" resizable="false" columnWidth="50"
+            <TextFieldColumn id="46" data="iterator.declaredProperties.size.toString"
+                title="properties" displayTitle="true" resizable="false" columnWidth="70"
                 showIcon="false" readOnly="true" alignment="center" name="EntityPropertiesCount" />
-           <TextFieldColumn id="56" data="iterator.declaredCustomMethods.size.toString"
-                title="#ops" displayTitle="true" resizable="false" columnWidth="35"
+            <TextFieldColumn id="55" data="iterator.initializers.size.toString"
+                title="initializers" displayTitle="true" resizable="false" columnWidth="70"
+                showIcon="false" readOnly="true" alignment="center" name="EntityInitializersCount" />
+            <TextFieldColumn id="56" data="iterator.declaredCustomMethods.size.toString"
+                title="operations" displayTitle="true" resizable="false" columnWidth="70"
                 showIcon="false" readOnly="true" alignment="center" name="EntityOperationsCount" />
         </Table>
 
@@ -90,8 +92,6 @@
         name="BottomSpacer" />
 
     <LocalizedDictionary id="90">
-        <Localized id="97" lang="English" value="Entities"  key="entities" />
-        <Localized id="98" lang="French"  value="Entités"   key="entities" />
         <Localized id="101" lang="English" value="Properties"          key="properties" />
         <Localized id="102" lang="French"  value="Propriétés"          key="properties" />
         <Localized id="103" lang="English" value="Initializers"        key="initializers" />

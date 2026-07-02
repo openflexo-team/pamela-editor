@@ -2,25 +2,26 @@ package org.openflexo.pamela.editor.ui.widget;
 
 import org.openflexo.gina.ApplicationFIBLibrary.ApplicationFIBLibraryImpl;
 import org.openflexo.gina.swing.utils.FIBJPanel;
-import org.openflexo.pamela.editor.model.SourcePackage;
+import org.openflexo.pamela.editor.model.SourceFolder;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
 
 /**
- * Central tab view that displays a summary of a {@link SourcePackage}.
+ * Central tab view that displays a summary of a {@link SourceFolder}.
  *
- * <p>Shows the package name and the list of its entities with basic stats.</p>
+ * <p>Shows the source directory name/path and the list of all entities discovered across
+ * every package it contributes to, with basic stats. Mirrors {@link PackageSummaryView}.</p>
  */
 @SuppressWarnings("serial")
-public class PackageSummaryView extends FIBJPanel<SourcePackage> {
+public class SourceFolderSummaryView extends FIBJPanel<SourceFolder> {
 
     public static final Resource FIB_FILE =
-            ResourceLocator.locateResource("Fib/PackageSummaryView.fib");
+            ResourceLocator.locateResource("Fib/SourceFolderSummaryView.fib");
 
-    public PackageSummaryView(SourcePackage pkg) {
-        super(FIB_FILE, pkg,
+    public SourceFolderSummaryView(SourceFolder folder) {
+        super(FIB_FILE, folder,
               ApplicationFIBLibraryImpl.instance(),
               PamelaEditorFIBController.EDITOR_LOCALIZATION);
     }
@@ -31,16 +32,16 @@ public class PackageSummaryView extends FIBJPanel<SourcePackage> {
      * (ui-design.md §18.2/§18.4). Call this right after construction.
      */
     public void setApplication(PamelaEditorApplication application) {
-        PackageSummaryViewFIBController ctrl =
-                (PackageSummaryViewFIBController) getController();
+        SourceFolderSummaryViewFIBController ctrl =
+                (SourceFolderSummaryViewFIBController) getController();
         if (ctrl != null) {
             ctrl.setApplication(application);
         }
     }
 
     @Override
-    public Class<SourcePackage> getRepresentedType() {
-        return SourcePackage.class;
+    public Class<SourceFolder> getRepresentedType() {
+        return SourceFolder.class;
     }
 
     @Override

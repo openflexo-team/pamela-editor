@@ -110,6 +110,7 @@ import org.openflexo.pamela.editor.ui.widget.PackageSummaryView;
 import org.openflexo.pamela.editor.ui.widget.PamelaEditorInspectorController;
 import org.openflexo.pamela.editor.ui.widget.JavaFileView;
 import org.openflexo.pamela.editor.ui.widget.SourceCodeView;
+import org.openflexo.pamela.editor.ui.widget.SourceFolderSummaryView;
 import org.openflexo.rm.FileSystemResourceLocatorImpl;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
@@ -1942,19 +1943,29 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
      */
     private JComponent createViewFor(Object element) {
         if (element instanceof SourceMetaModel) {
-            return new MetaModelSummaryView((SourceMetaModel) element);
+            MetaModelSummaryView view = new MetaModelSummaryView((SourceMetaModel) element);
+            view.setApplication(this);
+            return view;
         }
         if (element instanceof PamelaProject) {
             PamelaProject project = (PamelaProject) element;
             MetaModelSummaryView view = new MetaModelSummaryView(project.getMetaModel());
+            view.setApplication(this);
             File pamelaFile = project.getPamelaFile();
             if (pamelaFile != null && pamelaFile.getParentFile() != null) {
                 view.setProjectDirectory(pamelaFile.getParentFile());
             }
             return view;
         }
+        if (element instanceof SourceFolder) {
+            SourceFolderSummaryView view = new SourceFolderSummaryView((SourceFolder) element);
+            view.setApplication(this);
+            return view;
+        }
         if (element instanceof SourcePackage) {
-            return new PackageSummaryView((SourcePackage) element);
+            PackageSummaryView view = new PackageSummaryView((SourcePackage) element);
+            view.setApplication(this);
+            return view;
         }
         if (element instanceof SourceModelEntity) {
             return new SourceCodeView((SourceModelEntity) element, this);

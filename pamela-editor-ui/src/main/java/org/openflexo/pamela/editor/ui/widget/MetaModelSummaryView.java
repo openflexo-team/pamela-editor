@@ -5,6 +5,7 @@ import java.io.File;
 import org.openflexo.gina.ApplicationFIBLibrary.ApplicationFIBLibraryImpl;
 import org.openflexo.gina.swing.utils.FIBJPanel;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
+import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.widget.MetaModelSummaryViewFIBController;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
@@ -38,6 +39,19 @@ public class MetaModelSummaryView extends FIBJPanel<SourceMetaModel> {
                 (MetaModelSummaryViewFIBController) getController();
         if (ctrl != null) {
             ctrl.setProjectDirectory(projectDirectory);
+        }
+    }
+
+    /**
+     * Wires the application so that clicking/right-clicking a row in the entities table
+     * can soft-select the entity and open the shared contextual menu (ui-design.md
+     * §18.2/§18.4). Call this right after construction.
+     */
+    public void setApplication(PamelaEditorApplication application) {
+        MetaModelSummaryViewFIBController ctrl =
+                (MetaModelSummaryViewFIBController) getController();
+        if (ctrl != null) {
+            ctrl.setApplication(application);
         }
     }
 

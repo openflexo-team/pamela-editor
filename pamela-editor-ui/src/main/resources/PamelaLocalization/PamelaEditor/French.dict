@@ -42,6 +42,7 @@ enable_multiple_layouts=enable_multiple_layouts
 end=end
 end_location=end_location
 end_orientation=end_orientation
+entities=entities
 error=Erreur
 error_creating_project=\u00C3\u0089chec de la cr\u00C3\u00A9ation du projet
 error_location_required=Veuillez choisir l'emplacement du fichier .pamela.

@@ -42,6 +42,7 @@ enable_multiple_layouts=Enable multiple layouts
 end=End
 end_location=End location
 end_orientation=End orientation
+entities=Entities
 error=Error
 error_creating_project=Failed to create project
 error_location_required=Please choose a location for the .pamela file.

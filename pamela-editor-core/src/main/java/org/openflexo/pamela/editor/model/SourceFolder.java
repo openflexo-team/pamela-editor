@@ -1,6 +1,7 @@
 package org.openflexo.pamela.editor.model;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -63,6 +64,42 @@ public class SourceFolder implements SourceElement {
      */
     public List<SourcePackage> getPackages() {
         return metaModel.getPackagesForSourceDirectory(directory);
+    }
+
+    /**
+     * All {@code @ModelEntity} types discovered across every {@linkplain #getPackages() package}
+     * contributing to this source directory, in package order then per-package discovery order.
+     * Computed lazily on every call — no separate state is maintained.
+     */
+    public List<SourceModelEntity> getEntities() {
+        List<SourceModelEntity> result = new ArrayList<>();
+        for (SourcePackage pkg : getPackages()) {
+            result.addAll(pkg.getEntities());
+        }
+        return result;
+    }
+
+    /** Number of {@code @ModelEntity} types across every package of this source directory. */
+    public int getEntitiesCount() {
+        return getEntities().size();
+    }
+
+    /** Number of abstract entities across every package of this source directory. */
+    public int getAbstractEntitiesCount() {
+        int count = 0;
+        for (SourceModelEntity e : getEntities()) {
+            if (e.isAbstract()) count++;
+        }
+        return count;
+    }
+
+    /** Total number of declared properties across every entity of this source directory. */
+    public int getTotalPropertiesCount() {
+        int count = 0;
+        for (SourceModelEntity e : getEntities()) {
+            count += e.getDeclaredProperties().size();
+        }
+        return count;
     }
 
     @Override
