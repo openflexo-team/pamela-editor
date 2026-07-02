@@ -1,4 +1,7 @@
 \ ;=\ ;
+\#init=\#init
+\#ops=\#ops
+\#props=\#props
 Bounds\ adjustability=Bounds adjustability
 Dutch=Dutch
 English=English
@@ -6,6 +9,7 @@ Entity=Entity
 French=French
 Initializer=Initializer
 Line\ connector=Line connector
+Method=Method
 Panel=Panel
 Property=Property
 Rect\ polylin\ connector=Rect polylin connector
