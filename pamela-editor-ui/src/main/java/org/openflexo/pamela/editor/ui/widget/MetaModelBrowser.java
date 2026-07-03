@@ -15,18 +15,22 @@ import java.awt.dnd.DragSourceEvent;
 import java.awt.dnd.DragSourceListener;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
 import javax.swing.tree.TreePath;
 
 import org.openflexo.gina.ApplicationFIBLibrary.ApplicationFIBLibraryImpl;
 import org.openflexo.gina.swing.utils.FIBJPanel;
 import org.openflexo.gina.swing.view.widget.DnDJTree;
+import org.openflexo.gina.swing.view.widget.JFIBBrowserWidget;
 import org.openflexo.gina.view.widget.browser.impl.FIBBrowserModel.BrowserCell;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
+import org.openflexo.pamela.editor.ui.PamelaProject;
 import org.openflexo.pamela.editor.ui.diagram.PamelaClassDiagramEditor;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
@@ -176,13 +180,62 @@ public class MetaModelBrowser extends FIBJPanel<PamelaEditorApplication> {
     }
 
     /**
+     * Called right after {@code newProject} is added to {@link PamelaEditorApplication#getProjects()}:
+     * collapses every <em>other</em> already-open project's top-level node, then re-runs the
+     * exact same {@link #expandToFillView(JTree)} algorithm used for the very first project
+     * (§4.1) — which now naturally fills the view with (only) the new project's content, since
+     * every other project contributes just its own one collapsed row. Degrades gracefully to
+     * plain {@link #autoExpandToFillView()} behaviour when {@code newProject} is the only one
+     * open (nothing to collapse).
+     *
+     * <p>Deferred one EDT turn, for the same reason as {@link #autoExpandToFillView()}: Gina
+     * needs to finish (re)building the tree model for the new project first.</p>
+     */
+    public void focusNewlyOpenedProject(PamelaProject newProject) {
+        SwingUtilities.invokeLater(() -> {
+            JTree tree = findJTree(this);
+            if (!(tree instanceof DnDJTree)) {
+                return;
+            }
+            JFIBBrowserWidget<?> widget = ((DnDJTree) tree).getWidget();
+            java.util.Set<TreePath> keepCollapsed = new java.util.HashSet<>();
+            for (PamelaProject project : getEditedObject().getProjects()) {
+                if (project == newProject) {
+                    continue;
+                }
+                Collection<BrowserCell> cells = widget.getBrowserModel().getBrowserCell(project);
+                if (cells != null) {
+                    for (BrowserCell cell : cells) {
+                        TreePath path = cell.getTreePath();
+                        tree.collapsePath(path);
+                        keepCollapsed.add(path);
+                    }
+                }
+            }
+            expandToFillView(tree, keepCollapsed);
+        });
+    }
+
+    /**
      * The actual algorithm behind {@link #autoExpandToFillView()}, factored out (and taking a
      * plain {@link JTree}) so it can be exercised directly against a hand-built tree in tests,
      * independently of the Gina/Spoon machinery that backs the real browser.
      */
     static void expandToFillView(JTree tree) {
+        expandToFillView(tree, java.util.Collections.emptySet());
+    }
+
+    /**
+     * Same algorithm as {@link #expandToFillView(JTree)}, but {@code neverExpand} rows are never
+     * offered to the expansion frontier — needed by {@link #focusNewlyOpenedProject(PamelaProject)},
+     * which deliberately collapses one or more rows (the other open projects) just before calling
+     * this: without the exclusion, the very next pass would immediately re-expand them right back,
+     * since a freshly-collapsed, visible, non-leaf row is indistinguishable from any other
+     * collapsed row to the plain frontier search.
+     */
+    static void expandToFillView(JTree tree, java.util.Set<TreePath> neverExpand) {
         while (tree.getRowCount() < AUTO_EXPAND_TARGET_ROWS) {
-            List<TreePath> frontier = collapsedExpandableRows(tree);
+            List<TreePath> frontier = collapsedExpandableRows(tree, neverExpand);
             if (frontier.isEmpty()) {
                 break; // fully expanded already, even if under the target
             }
@@ -198,12 +251,18 @@ public class MetaModelBrowser extends FIBJPanel<PamelaEditorApplication> {
         }
     }
 
-    /** Every currently visible row that is collapsed and has at least one child. */
-    private static List<TreePath> collapsedExpandableRows(JTree tree) {
+    /**
+     * Every currently visible row that is collapsed and has at least one child — excluding
+     * {@code neverExpand} (rows deliberately kept collapsed by the caller).
+     */
+    private static List<TreePath> collapsedExpandableRows(JTree tree, java.util.Set<TreePath> neverExpand) {
         List<TreePath> result = new ArrayList<>();
         for (int row = 0; row < tree.getRowCount(); row++) {
             TreePath path = tree.getPathForRow(row);
             if (path == null || tree.isExpanded(path)) {
+                continue;
+            }
+            if (neverExpand.contains(path)) {
                 continue;
             }
             if (!tree.getModel().isLeaf(path.getLastPathComponent())) {

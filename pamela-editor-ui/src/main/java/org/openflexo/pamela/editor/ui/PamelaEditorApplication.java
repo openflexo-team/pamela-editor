@@ -939,10 +939,13 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     pcSupport.firePropertyChange("projects",
                             Collections.unmodifiableList(oldProjects),
                             Collections.unmodifiableList(projects));
-                    // Open the newly-visible tree content up to a comfortable, bounded number
-                    // of rows (see MetaModelBrowser.autoExpandToFillView). Deferred so Gina has
-                    // finished (re)building the tree for the new project first.
-                    javax.swing.SwingUtilities.invokeLater(metaModelBrowser::autoExpandToFillView);
+                    // Collapse the other already-open projects' nodes and auto-expand the
+                    // newly-opened one to fill the view (see MetaModelBrowser.focusNewlyOpenedProject).
+                    metaModelBrowser.focusNewlyOpenedProject(project);
+
+                    // Select the project so the central view switches to MetaModelSummaryView
+                    // (matches newProject()'s behaviour, which already did this).
+                    setCurrentSelectedElement(project);
 
                 } catch (Exception e) {
                     Throwable cause = (e.getCause() != null) ? e.getCause() : e;
@@ -1017,7 +1020,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     pcSupport.firePropertyChange("projects",
                             Collections.unmodifiableList(oldProjects),
                             Collections.unmodifiableList(projects));
-                    javax.swing.SwingUtilities.invokeLater(metaModelBrowser::autoExpandToFillView);
+                    // Collapse the other already-open projects' nodes and auto-expand the
+                    // newly-created one to fill the view (see MetaModelBrowser.focusNewlyOpenedProject).
+                    metaModelBrowser.focusNewlyOpenedProject(project);
 
                     // Select the new project in the browser
                     setCurrentSelectedElement(project);

@@ -170,6 +170,30 @@ public class TestMetaModelBrowserAutoExpand {
         assertEquals(rowsBefore, tree.getRowCount());
     }
 
+    @Test
+    public void testNeverExpandRowStaysCollapsedAcrossEveryPass() {
+        // Regression for MetaModelBrowser.focusNewlyOpenedProject (ui-design.md §4.1): a row
+        // passed in neverExpand must never be re-expanded, even though a freshly-collapsed,
+        // visible, non-leaf row is otherwise an entirely ordinary candidate for the very next
+        // pass — this is exactly what silently undid the "collapse the other open project"
+        // step when the plain (unscoped) expandToFillView(tree) was called right after.
+        JTree tree = chainForest(2, 10); // top0 = "other project" (kept collapsed), top1 = "new project"
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) tree.getModel().getRoot();
+        DefaultMutableTreeNode top0 = (DefaultMutableTreeNode) root.getChildAt(0);
+        DefaultMutableTreeNode top1 = (DefaultMutableTreeNode) root.getChildAt(1);
+        TreePath top0Path = new TreePath(new Object[] { root, top0 });
+        TreePath top1Path = new TreePath(new Object[] { root, top1 });
+
+        MetaModelBrowser.expandToFillView(tree, java.util.Collections.singleton(top0Path));
+
+        assertFalse("the excluded row must stay collapsed after every pass", tree.isExpanded(top0Path));
+        assertTrue("the other row is free to expand and use the freed budget", tree.isExpanded(top1Path));
+        // top1's whole 10-deep single-child chain has nowhere else to go (never overshoots the
+        // 30 cap since it grows by exactly 1 row per level), so it fully unfolds: top0 (1) +
+        // top1 + its 10 descendants (11) = 12 total visible rows.
+        assertEquals(12, tree.getRowCount());
+    }
+
     private static TreePath pathToRow(JTree tree, int row) {
         TreePath path = tree.getPathForRow(row);
         assertTrue("row " + row + " should resolve to a path", path != null);
