@@ -1,36 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ValidationPanel.fib
-  Bottom-of-center-column validation strip (validation-log-panel-design.md).
+  The collapsible bottom pane of the center column's JSplitPane (validation-log-panel-design.md).
 
-  Shows the active project's SourceMetaModel issues (errors / warnings / infos) as a table,
-  with a per-severity summary label and a Revalidate hyperlink — mirroring FIBEditor's
-  ValidationPanel (gina-swing-editor), rebuilt against pamela-editor's own Issue/Error/
-  Warning/Information model instead of PAMELA's ValidationReport.
-
-  This whole panel is the bottom pane of a JSplitPane (PamelaEditorApplication.centerSplit,
-  oneTouchExpandable="true") — expand/collapse is driven by the divider's native one-touch
-  arrows (or the View > Validation panel menu item), not from inside this FIB.
+  Shows the active project's SourceMetaModel issues (errors / warnings / infos) as a table.
+  The always-visible summary label + Revalidate link live separately, in
+  ValidationHeaderView.fib (PamelaEditorApplication.centerColumn's SOUTH, below the split) —
+  so they stay visible even while this table is collapsed.
 -->
 <Panel id="0" font="SansSerif,0,11" darkLevel="0" useScrollBar="false" layout="border" name="ValidationPanel"
     dataClassName="org.openflexo.pamela.editor.model.SourceMetaModel"
     controllerClassName="org.openflexo.pamela.editor.ui.widget.ValidationFIBController"
     trackViewPortWidth="true" trackViewPortHeight="true"
     borderTop="0" borderLeft="0" borderBottom="0" borderRight="0" border="empty">
-
-    <Panel id="10" layout="flow" flowAlignment="LEFT" hGap="14" vGap="2"
-        border="empty" borderTop="3" borderLeft="8" borderBottom="3" borderRight="8"
-        constraints="border(location=north)" name="HeaderPanel">
-
-        <Label id="11"
-            data="((((((&quot;&quot; + data.errorsCount) + &quot; errors, &quot;) + data.warningsCount) + &quot; warnings, &quot;) + data.informationCount) + &quot; infos&quot;)"
-            align="left" font="SansSerif,2,10" constraints="flow()" name="SummaryLabel" />
-
-        <Label id="17" label="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;"
-            localize="true" clickAction="controller.revalidate()"
-            font="SansSerif,0,10" constraints="flow(insetsLeft=10)" name="RevalidateLink" />
-
-    </Panel>
 
     <!-- FlatDesign tables always wrap their JTable in their own JScrollPane (JFDTablePanel),
          so the issues list scrolls on its own once it overflows the strip's allocated height —
@@ -61,14 +43,5 @@
             title="message" displayTitle="false" resizable="true" columnWidth="600"
             showIcon="false" readOnly="true" name="IssueMessage" />
     </Table>
-
-    <LocalizedDictionary id="90">
-        <Localized id="97" lang="English"
-            value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Revalidate&lt;/a&gt;&lt;/html&gt;"
-            key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;" />
-        <Localized id="98" lang="French"
-            value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Revalider&lt;/a&gt;&lt;/html&gt;"
-            key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;" />
-    </LocalizedDictionary>
 
 </Panel>

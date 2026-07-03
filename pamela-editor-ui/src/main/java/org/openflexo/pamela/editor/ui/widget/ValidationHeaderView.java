@@ -8,27 +8,26 @@ import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
 
 /**
- * Collapsible bottom-pane of the center column's {@code JSplitPane}, showing the active
- * project's validation issues as a table (validation-log-panel-design.md §6.6). Bound to a
- * {@link SourceMetaModel}; rebound whenever the central view switches to an element of a
- * different project. The always-visible summary + Revalidate link live separately in
- * {@link ValidationHeaderView}.
+ * Always-visible strip at the very bottom of the center column, below the
+ * {@code JSplitPane} holding the collapsible {@link ValidationPanel} issues table
+ * (validation-log-panel-design.md §6.6). Shows the per-severity issue summary and a
+ * Revalidate hyperlink regardless of whether the table is collapsed or expanded.
  */
 @SuppressWarnings("serial")
-public class ValidationPanel extends FIBJPanel<SourceMetaModel> {
+public class ValidationHeaderView extends FIBJPanel<SourceMetaModel> {
 
     public static final Resource FIB_FILE =
-            ResourceLocator.locateResource("Fib/ValidationPanel.fib");
+            ResourceLocator.locateResource("Fib/ValidationHeaderView.fib");
 
-    public ValidationPanel(SourceMetaModel metaModel) {
+    public ValidationHeaderView(SourceMetaModel metaModel) {
         super(FIB_FILE, metaModel,
               ApplicationFIBLibraryImpl.instance(),
               ValidationFIBController.EDITOR_LOCALIZATION);
     }
 
     /**
-     * Wires the application so the issues table can navigate to an issue's source element.
-     * Call this right after construction.
+     * Wires the application so the Revalidate link can act on the owning project (and expand
+     * the issues table to show the fresh results). Call this right after construction.
      */
     public void setApplication(PamelaEditorApplication application) {
         ValidationFIBController ctrl = (ValidationFIBController) getController();

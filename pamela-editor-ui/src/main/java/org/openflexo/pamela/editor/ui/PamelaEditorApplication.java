@@ -112,6 +112,7 @@ import org.openflexo.pamela.editor.ui.widget.PamelaEditorInspectorController;
 import org.openflexo.pamela.editor.ui.widget.JavaFileView;
 import org.openflexo.pamela.editor.ui.widget.SourceCodeView;
 import org.openflexo.pamela.editor.ui.widget.SourceFolderSummaryView;
+import org.openflexo.pamela.editor.ui.widget.ValidationHeaderView;
 import org.openflexo.pamela.editor.ui.widget.ValidationPanel;
 import org.openflexo.rm.FileSystemResourceLocatorImpl;
 import org.openflexo.rm.Resource;
@@ -247,25 +248,33 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
 
     /**
      * The center column's own container. Its {@code CENTER} slot is swapped between
-     * {@link #centralViewPanel} alone (no project open) and {@link #centerSplit} (validation
-     * strip present) — see {@link #applyValidationPanelLayout()}.
+     * {@link #centralViewPanel} alone (no project open, or nothing shown yet) and
+     * {@link #centerSplit}; {@link #validationHeaderView} is added/removed at its {@code SOUTH}
+     * in lockstep — see {@link #applyValidationPanelLayout()}.
      */
     private final JPanel centerColumn;
 
     /**
-     * Bottom-of-center-column validation strip (validation-log-panel-design.md).
-     * Shows the active project's issues.
+     * Collapsible issues table (validation-log-panel-design.md §6.6). Shows the active
+     * project's issues; the bottom pane of {@link #centerSplit}, closed by default.
      */
     private final ValidationPanel validationPanel;
 
     /**
+     * Always-visible strip at the very bottom of {@link #centerColumn} (below
+     * {@link #centerSplit}) — per-severity summary + Revalidate link, never hidden by
+     * collapsing the issues table.
+     */
+    private final ValidationHeaderView validationHeaderView;
+
+    /**
      * Vertical split holding {@link #centralViewPanel} (top) and {@link #validationPanel}
-     * (bottom), {@code oneTouchExpandable} so the divider carries the native Swing
-     * collapse/expand arrows.
+     * (bottom, the issues table only), {@code oneTouchExpandable} so the divider carries the
+     * native Swing collapse/expand arrows.
      */
     private final JSplitPane centerSplit;
 
-    /** Default fraction of the center column's height given to the validation strip. */
+    /** Default fraction of the center column's height given to the expanded issues table. */
     private static final double VALIDATION_PANEL_DIVIDER_FRACTION = 0.75;
 
     /** Below this bottom-pane height (px), the divider is considered "collapsed". */
@@ -604,12 +613,15 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         // --- Central column: swappable content area ---
         centralViewPanel = new JPanel(new BorderLayout());
 
-        // --- Central column: bottom validation strip (validation-log-panel-design.md) ---
+        // --- Central column: bottom validation strip (validation-log-panel-design.md §6.6) ---
         validationPanel = new ValidationPanel(null);
         validationPanel.setApplication(this);
         // Allows the one-touch arrow to collapse the strip fully to 0 height (otherwise it
         // would stop at the FIB's own layout-computed minimum).
         validationPanel.setMinimumSize(new java.awt.Dimension(0, 0));
+
+        validationHeaderView = new ValidationHeaderView(null);
+        validationHeaderView.setApplication(this);
 
         centerSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, centralViewPanel, validationPanel);
         centerSplit.setResizeWeight(1.0); // extra height on resize goes to the central view
@@ -2057,10 +2069,10 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     }
 
     /**
-     * Rebinds {@link #validationPanel} to the {@link SourceMetaModel} of the project owning
-     * {@code element}, if different from what it currently shows. A no-op when the element does
-     * not resolve to a project (e.g. nothing selected yet) — the panel keeps showing whatever it
-     * last had.
+     * Rebinds {@link #validationPanel} and {@link #validationHeaderView} to the
+     * {@link SourceMetaModel} of the project owning {@code element}, if different from what
+     * they currently show. A no-op when the element does not resolve to a project (e.g.
+     * nothing selected yet) — both keep showing whatever they last had.
      */
     private void rebindValidationPanel(Object element) {
         PamelaProject project = getProjectForElement(element);
@@ -2069,6 +2081,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }
         if (validationPanel.getController().getDataObject() != project.getMetaModel()) {
             validationPanel.setEditedObject(project.getMetaModel());
+        }
+        if (validationHeaderView.getController().getDataObject() != project.getMetaModel()) {
+            validationHeaderView.setEditedObject(project.getMetaModel());
         }
     }
 
@@ -2118,13 +2133,20 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     }
 
     /**
-     * Adds or removes {@link #centerSplit} (in place of {@link #centralViewPanel} alone) from
-     * {@link #centerColumn}'s {@code CENTER} slot depending on whether any project is open
-     * <em>and</em> the central column is actually showing a view — the strip must not show at
-     * all otherwise (e.g. right after opening a project, before anything has been selected).
-     * Called after every change to {@link #projects} and every time the central view changes
-     * (see {@link #showViewForElement(Object)}). Its own expanded/collapsed state (divider
-     * position) is untouched.
+     * Adds or removes {@link #centerSplit} (in place of {@link #centralViewPanel} alone) at
+     * {@link #centerColumn}'s {@code CENTER}, together with {@link #validationHeaderView} at its
+     * {@code SOUTH}, depending on whether any project is open <em>and</em> the central column is
+     * actually showing a view — the whole validation strip must not show at all otherwise (e.g.
+     * right after opening a project, before anything has been selected). Called after every
+     * change to {@link #projects} and every time the central view changes (see
+     * {@link #showViewForElement(Object)}).
+     *
+     * <p>Every time the strip transitions from absent to present, the issues table starts
+     * <strong>collapsed</strong> — "closed by default" (validation-log-panel-design.md §6.6):
+     * the always-visible {@link #validationHeaderView} already shows whether there is anything
+     * to look at, and the table itself is opened on demand (one-touch arrow, the View menu, or
+     * automatically by {@code Revalidate}). While the strip stays present, the user's own
+     * expand/collapse choice is left untouched across selection changes.</p>
      */
     private void applyValidationPanelLayout() {
         boolean shouldBePresent = !projects.isEmpty() && currentHistoryElement != null;
@@ -2139,11 +2161,18 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             centerSplit.setTopComponent(centralViewPanel);
             centerSplit.setBottomComponent(validationPanel);
             centerColumn.add(centerSplit, BorderLayout.CENTER);
-            centerSplit.setDividerLocation(lastValidationDividerLocation > 0
-                    ? lastValidationDividerLocation
-                    : (int) (centerColumn.getHeight() * VALIDATION_PANEL_DIVIDER_FRACTION));
+            centerColumn.add(validationHeaderView, BorderLayout.SOUTH);
+            // Closed by default on every (re)appearance. NOTE: setDividerLocation(double) would
+            // compute from centerSplit.getHeight(), which is still 0 right after being added
+            // (no layout pass yet) — that resolves to a negative pixel location, clamped to 0,
+            // i.e. the divider pinned at the TOP (table takes over everything — the opposite of
+            // collapsed). centerColumn is already realized (opening a project is always
+            // user-triggered after the frame is visible), so drive the pixel location from its
+            // real height instead, mirroring setValidationPanelVisible's own expand computation.
+            centerSplit.setDividerLocation(centerColumn.getHeight());
         } else {
             centerColumn.add(centralViewPanel, BorderLayout.CENTER);
+            centerColumn.remove(validationHeaderView);
         }
         centerColumn.revalidate();
         centerColumn.repaint();

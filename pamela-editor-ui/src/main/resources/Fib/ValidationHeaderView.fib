@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ValidationHeaderView.fib
+  Always-visible strip at the very bottom of the center column (validation-log-panel-design.md
+  §6.6), below the JSplitPane holding the collapsible issues table (ValidationPanel.fib).
+
+  Shows the per-severity summary ("N errors, M warnings, P infos") and a Revalidate hyperlink,
+  regardless of whether the issues table is collapsed or expanded.
+-->
+<Panel id="0" font="SansSerif,0,11" darkLevel="0" useScrollBar="false" layout="border"
+    name="ValidationHeaderView"
+    dataClassName="org.openflexo.pamela.editor.model.SourceMetaModel"
+    controllerClassName="org.openflexo.pamela.editor.ui.widget.ValidationFIBController"
+    trackViewPortWidth="true"
+    borderTop="3" borderLeft="8" borderBottom="3" borderRight="8" border="empty">
+
+    <Label id="11"
+        data="((((((&quot;&quot; + data.errorsCount) + &quot; errors, &quot;) + data.warningsCount) + &quot; warnings, &quot;) + data.informationCount) + &quot; infos&quot;)"
+        align="left" font="SansSerif,2,10" constraints="border(location=west)" name="SummaryLabel" />
+
+    <Panel id="15" layout="flow" flowAlignment="RIGHT" hGap="0" vGap="0"
+        border="empty" borderTop="0" borderLeft="0" borderBottom="0" borderRight="0"
+        constraints="border(location=east)" name="LinksPanel">
+
+        <Label id="17" label="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;"
+            localize="true" clickAction="controller.revalidate()"
+            font="SansSerif,0,10" constraints="flow()" name="RevalidateLink" />
+
+        <Label id="19" label="&lt;html&gt;&lt;a href=&quot;&quot;&gt;show_table&lt;/a&gt;&lt;/html&gt;"
+            localize="true" clickAction="controller.toggleTableVisibility()"
+            visible="(!(controller.tableVisible))"
+            font="SansSerif,0,10" constraints="flow()" name="ShowTableLink" />
+
+        <Label id="20" label="&lt;html&gt;&lt;a href=&quot;&quot;&gt;hide_table&lt;/a&gt;&lt;/html&gt;"
+            localize="true" clickAction="controller.toggleTableVisibility()"
+            visible="controller.tableVisible"
+            font="SansSerif,0,10" constraints="flow()" name="HideTableLink" />
+
+    </Panel>
+
+    <LocalizedDictionary id="90">
+        <Localized id="97" lang="English"
+            value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Revalidate&lt;/a&gt;&lt;/html&gt;"
+            key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;" />
+        <Localized id="98" lang="French"
+            value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Revalider&lt;/a&gt;&lt;/html&gt;"
+            key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;" />
+        <Localized id="99" lang="English"
+            value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Show&lt;/a&gt;&lt;/html&gt;"
+            key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;show_table&lt;/a&gt;&lt;/html&gt;" />
+        <Localized id="100" lang="French"
+            value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Afficher&lt;/a&gt;&lt;/html&gt;"
+            key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;show_table&lt;/a&gt;&lt;/html&gt;" />
+        <Localized id="101" lang="English"
+            value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Hide&lt;/a&gt;&lt;/html&gt;"
+            key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;hide_table&lt;/a&gt;&lt;/html&gt;" />
+        <Localized id="102" lang="French"
+            value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Masquer&lt;/a&gt;&lt;/html&gt;"
+            key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;hide_table&lt;/a&gt;&lt;/html&gt;" />
+    </LocalizedDictionary>
+
+</Panel>

@@ -55,6 +55,14 @@ public class TestValidationPanel {
     }
 
     @Test
+    public void testHeaderFibLoads() {
+        Resource resource = ValidationHeaderView.FIB_FILE;
+        assertNotNull("FIB resource not located", resource);
+        FIBComponent component = ApplicationFIBLibraryImpl.instance().retrieveFIBComponent(resource);
+        assertNotNull("FIB did not load: " + resource, component);
+    }
+
+    @Test
     public void testSeverityCountsPartitionIssuesCount() {
         assertEquals(metaModel.getIssuesCount(),
                 metaModel.getErrorsCount() + metaModel.getWarningsCount() + metaModel.getInformationCount());
@@ -77,5 +85,15 @@ public class TestValidationPanel {
         ValidationPanel panel = new ValidationPanel(metaModel);
         assertNotNull(panel.getController());
         assertTrue(panel.getController() instanceof ValidationFIBController);
+    }
+
+    @Test
+    public void testHeaderViewBuildsWithDisplay() {
+        if (GraphicsEnvironment.isHeadless()) {
+            return;
+        }
+        ValidationHeaderView header = new ValidationHeaderView(metaModel);
+        assertNotNull(header.getController());
+        assertTrue(header.getController() instanceof ValidationFIBController);
     }
 }
