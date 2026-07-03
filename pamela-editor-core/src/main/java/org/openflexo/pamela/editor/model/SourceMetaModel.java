@@ -315,6 +315,10 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
      * @param qualifiedName fully qualified name, e.g. {@code "org.example.Person"}
      */
     public void addRootTypeName(String qualifiedName) {
+        if (rootTypeNames.contains(qualifiedName)) {
+            // Same entity cannot be declared as a root type more than once.
+            return;
+        }
         List<String> old = new ArrayList<>(rootTypeNames);
         rootTypeNames.add(qualifiedName);
         pcSupport.firePropertyChange("rootTypeNames", old, Collections.unmodifiableList(rootTypeNames));

@@ -1,6 +1,8 @@
 package org.openflexo.pamela.editor.ui.widget;
 
 import java.io.File;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import javax.swing.Icon;
@@ -12,21 +14,25 @@ import javax.swing.SwingUtilities;
 import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
 
 import org.openflexo.gina.model.FIBComponent;
+import org.openflexo.pamela.editor.model.SourceJavaFile;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
+import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
+import org.openflexo.pamela.editor.ui.action.AddAsRootTypeAction;
 import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
 
 /**
  * FIB controller for {@link MetaModelSummaryView}.
  *
- * <p>Provides add/remove actions for the source directories and root type names
- * tables.  Both lists are mutable inputs that define what Spoon will analyse
- * when the project is (re)built.</p>
+ * <p>Provides add/remove actions for the source directories table. That list is a
+ * mutable input that defines what Spoon will analyse when the project is (re)built.</p>
  *
- * <p>Also drives the "all entities" table (icon resolution + click/right-click, see
- * {@link EntityTableSupport}), mirroring {@link PackageSummaryViewFIBController}.</p>
+ * <p>Also drives the "all entities" table — icon resolution + click/right-click (see
+ * {@link EntityTableSupport}), mirroring {@link PackageSummaryViewFIBController} — plus
+ * the read-only "root" checkbox column and the "+" footer action that registers an
+ * eligible {@link SourceJavaFile} as a root type, via {@link AddAsRootTypeAction}.</p>
  */
 public class MetaModelSummaryViewFIBController extends PamelaEditorFIBController<SourceMetaModel> {
 
@@ -48,10 +54,6 @@ public class MetaModelSummaryViewFIBController extends PamelaEditorFIBController
 
     public Icon getSourceFolderIcon(File dir) {
         return PamelaEditorIconLibrary.SOURCE_FOLDER_ICON;
-    }
-
-    public Icon getRootTypeIcon(String typeName) {
-        return PamelaEditorIconLibrary.ENTITY_ICON;
     }
 
     public MetaModelSummaryViewFIBController(FIBComponent rootComponent) {
@@ -104,38 +106,57 @@ public class MetaModelSummaryViewFIBController extends PamelaEditorFIBController
     }
 
     // -------------------------------------------------------------------------
-    // Root type name actions
+    // Root type status (entities table)
     // -------------------------------------------------------------------------
 
     /**
-     * Opens an input dialog asking for a fully qualified class name and adds it
-     * to the metamodel's root type list.
+     * Whether {@code entity} is currently registered as a root type of its metamodel
+     * (bound as the read-only "root" checkbox column of the entities table).
      */
-    public void addRootTypeName() {
-        SourceMetaModel model = getDataObject();
-        if (model == null) {
-            return;
+    public boolean isRootType(SourceModelEntity entity) {
+        if (entity == null || entity.getMetaModel() == null) {
+            return false;
         }
-        JFrame parent = getParentFrame();
-        String name = (String) JOptionPane.showInputDialog(
-                parent,
-                "Enter the fully qualified class name:",
-                "Add root type",
-                JOptionPane.PLAIN_MESSAGE,
-                null, null, "org.example.MyEntity");
-        if (name != null && !name.trim().isEmpty() && !model.getRootTypeNames().contains(name.trim())) {
-            model.addRootTypeName(name.trim());
-        }
+        return entity.getMetaModel().getRootTypeNames().contains(entity.getQualifiedName());
     }
 
     /**
-     * Removes {@code typeName} from the metamodel's root type list.
-     * Called from the table's remove action with the currently selected row.
+     * Footer "+" action of the entities table. Lets the user pick, among the Java
+     * files that contain an {@code @ModelEntity} annotation and are not already a
+     * root type, the one to register — delegating the actual mutation to
+     * {@link AddAsRootTypeAction} so it goes through the same rebuild/reselect
+     * machinery as the browser/diagram contextual menu entry.
      */
-    public void removeRootTypeName(String typeName) {
+    public void addRootType() {
         SourceMetaModel model = getDataObject();
-        if (model != null && typeName != null) {
-            model.removeRootTypeName(typeName);
+        if (model == null || application == null) {
+            return;
+        }
+        Map<String, SourceJavaFile> candidatesByName = new TreeMap<>();
+        for (SourcePackage pkg : model.getAllPackages()) {
+            for (SourceJavaFile file : pkg.getJavaFiles()) {
+                if (file.isPotentialModelEntity()
+                        && !model.getRootTypeNames().contains(file.getQualifiedName())) {
+                    candidatesByName.put(file.getQualifiedName(), file);
+                }
+            }
+        }
+        JFrame parent = getParentFrame();
+        if (candidatesByName.isEmpty()) {
+            JOptionPane.showMessageDialog(parent,
+                    "No eligible Java file found (must declare @ModelEntity and not already be a root type).",
+                    "Add root type", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        String[] names = candidatesByName.keySet().toArray(new String[0]);
+        String chosen = (String) JOptionPane.showInputDialog(
+                parent,
+                "Select the Java type to add as a root type:",
+                "Add root type",
+                JOptionPane.PLAIN_MESSAGE,
+                null, names, names[0]);
+        if (chosen != null) {
+            new AddAsRootTypeAction().perform(candidatesByName.get(chosen), application);
         }
     }
 

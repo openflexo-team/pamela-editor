@@ -5,9 +5,13 @@
 
   Layout (top → bottom):
     1. Header     — icon 64×64 + model name, centred
-    2. Definition — source directories table + root types table (no decoration)
-    3. Entities   — FlatDesign table: icon, name, implementation class,
-                    properties/initializers/operations counts (all entities of the metamodel)
+    2. Definition — source directories table (no decoration)
+    3. Entities   — FlatDesign table: icon, name, root (read-only checkbox),
+                    implementation class, properties/initializers/operations counts
+                    (all entities of the metamodel). The "+" footer action merges in
+                    the former "Root types" block: it registers an eligible Java file
+                    (one with @ModelEntity, not already a root type) as a root type,
+                    via AddAsRootTypeAction.
     4. Spacer     — absorbs remaining vertical space so content stays top-aligned
 
   Statistics have moved to MetaModelStatisticsContextView.fib (ContextPanel, §19.2).
@@ -35,7 +39,7 @@
     </Panel>
 
     <!-- ================================================================ -->
-    <!-- 2. MODEL DEFINITION: source dirs + root types (no decoration)    -->
+    <!-- 2. MODEL DEFINITION: source directories (no decoration)          -->
     <!-- ================================================================ -->
     <Panel id="40" layout="twocols"
         border="empty" borderTop="0" borderLeft="10" borderBottom="4" borderRight="10"
@@ -80,48 +84,13 @@
                 name="remove_source_dir" />
         </Table>
 
-        <!-- Root types sub-title -->
-        <Label id="47" label="root_types" align="left" localize="true"
-            font="SansSerif,1,12"
-            constraints="twocols(expandHorizontally=true;expandVertically=false;location=center;insetsTop=10;insetsBottom=3)"
-            name="RootTypesLabel" />
-
-        <!-- Root types table (FlatDesign, editable) -->
-        <Table id="48"
-            lookAndFeel="FlatDesign"
-            data="data.rootTypeNames"
-            iteratorClassName="java.lang.String"
-            visibleRowCount="5"
-            rowHeight="22"
-            showHeader="true"
-            showFooter="true"
-            selectionMode="SingleSelection"
-            backgroundSelectionColor="9,80,208"
-            backgroundNonSelectionColor="255,255,255"
-            backgroundSecondarySelectionColor="178,215,255"
-            textSelectionColor="255,255,255"
-            textNonSelectionColor="0,0,0"
-            textSecondarySelectionColor="0,0,0"
-            manageDynamicModel="true"
-            constraints="twocols(expandHorizontally=true;expandVertically=false;location=center)"
-            name="RootTypesTable">
-            <IconColumn id="54" data="controller.getRootTypeIcon(iterator)"
-                title="" displayTitle="false" columnWidth="20" name="RootTypeIcon" resizable="false"/>
-            <TextFieldColumn id="49" data="iterator"
-                title="qualified_name" displayTitle="true" resizable="true" columnWidth="300"
-                showIcon="false" readOnly="true" name="RootTypeName" />
-            <AddAction id="50" method="controller.addRootTypeName()"
-                name="add_root_type" />
-            <RemoveAction id="51"
-                method="controller.removeRootTypeName(selected)"
-                isAvailable="selected != null"
-                name="remove_root_type" />
-        </Table>
-
     </Panel>
 
     <!-- ================================================================ -->
-    <!-- 3. ENTITIES table (FlatDesign, read-only) — all metamodel entities -->
+    <!-- 3. ENTITIES table (FlatDesign) — all metamodel entities, with a   -->
+    <!--    read-only "root" checkbox column and a "+" footer action that  -->
+    <!--    registers an eligible Java file as a root type (merges the     -->
+    <!--    former "Root types" block into this one).                      -->
     <!-- ================================================================ -->
     <Panel id="140" layout="twocols"
         border="empty" borderTop="0" borderLeft="10" borderBottom="4" borderRight="10"
@@ -140,7 +109,7 @@
             visibleRowCount="10"
             rowHeight="18"
             showHeader="true"
-            showFooter="false"
+            showFooter="true"
             selectionMode="SingleSelection"
             backgroundSelectionColor="9,80,208"
             backgroundNonSelectionColor="255,255,255"
@@ -158,6 +127,9 @@
             <TextFieldColumn id="144" data="iterator.simpleName"
                 title="name" displayTitle="true" resizable="true" columnWidth="200"
                 showIcon="false" readOnly="true" name="EntityName" />
+            <CheckBoxColumn id="150" data="controller.isRootType(iterator)"
+                title="root" displayTitle="true" resizable="false" columnWidth="40"
+                showIcon="false" readOnly="true" name="EntityIsRoot" />
             <TextFieldColumn id="145" data="(iterator.implementationClass != null ? iterator.implementationClass.simpleName : &quot;&quot;)"
                 title="implementation_class" displayTitle="true" resizable="true" columnWidth="150"
                 showIcon="false" readOnly="true" name="EntityImplementationClass" />
@@ -170,6 +142,8 @@
             <TextFieldColumn id="148" data="iterator.declaredCustomMethods.size.toString"
                 title="operations" displayTitle="true" resizable="false" columnWidth="70"
                 showIcon="false" readOnly="true" alignment="center" name="EntityOperationsCount" />
+            <AddAction id="151" method="controller.addRootType()"
+                name="add_root_type" />
         </Table>
 
     </Panel>
@@ -184,12 +158,10 @@
     <LocalizedDictionary id="90">
         <Localized id="107" lang="English" value="Source directories"  key="source_directories" />
         <Localized id="108" lang="French"  value="Répertoires sources" key="source_directories" />
-        <Localized id="109" lang="English" value="Root types"          key="root_types" />
-        <Localized id="110" lang="French"  value="Types racines"       key="root_types" />
         <Localized id="111" lang="English" value="Path"                key="path" />
         <Localized id="112" lang="French"  value="Chemin"              key="path" />
-        <Localized id="113" lang="English" value="Qualified name"      key="qualified_name" />
-        <Localized id="114" lang="French"  value="Nom qualifié"        key="qualified_name" />
+        <Localized id="127" lang="English" value="Root"                key="root" />
+        <Localized id="128" lang="French"  value="Racine"              key="root" />
         <Localized id="115" lang="English" value="Entities"            key="entities" />
         <Localized id="116" lang="French"  value="Entités"             key="entities" />
         <Localized id="117" lang="English" value="Name"                key="name" />
