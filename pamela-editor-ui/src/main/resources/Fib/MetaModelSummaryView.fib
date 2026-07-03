@@ -9,9 +9,9 @@
     3. Entities   — FlatDesign table: icon, name, root (read-only checkbox),
                     implementation class, properties/initializers/operations counts
                     (all entities of the metamodel). The "+" footer action merges in
-                    the former "Root types" block: it registers an eligible Java file
-                    (one with @ModelEntity, not already a root type) as a root type,
-                    via AddAsRootTypeAction.
+                    the former "Root types" block: it opens AddAsRootTypeAction's own
+                    dialog (a project-wide JavaClassSelector) to register an eligible
+                    type (one with @ModelEntity, not already a root type) as a root type.
     4. Spacer     — absorbs remaining vertical space so content stays top-aligned
 
   Statistics have moved to MetaModelStatisticsContextView.fib (ContextPanel, §19.2).

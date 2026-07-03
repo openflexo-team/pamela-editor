@@ -17,6 +17,7 @@ import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourceModelInitializer;
 import org.openflexo.pamela.editor.model.SourceModelProperty;
 import org.openflexo.pamela.editor.model.SourceCustomMethod;
+import org.openflexo.pamela.editor.model.SourceFolder;
 import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
 
@@ -36,6 +37,9 @@ final class SelectorIcons {
 	static ImageIcon iconFor(Object object) {
 		if (object instanceof SourceMetaModel) {
 			return PamelaEditorIconLibrary.METAMODEL_ICON;
+		}
+		if (object instanceof SourceFolder) {
+			return PamelaEditorIconLibrary.SOURCE_FOLDER_ICON;
 		}
 		if (object instanceof SourcePackage) {
 			return PamelaEditorIconLibrary.PACKAGE_ICON;

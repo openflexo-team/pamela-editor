@@ -17,6 +17,7 @@ import java.util.Set;
 
 import org.openflexo.gina.model.widget.FIBCustom.FIBCustomComponent.CustomComponentParameter;
 import org.openflexo.pamela.editor.model.SourceCompilationUnit;
+import org.openflexo.pamela.editor.model.SourceFolder;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.rm.Resource;
@@ -35,7 +36,10 @@ import spoon.reflect.reference.CtTypeReference;
  *
  * <p>Two presentation modes (the {@code hierarchical} flag, also bound from the FIB):</p>
  * <ul>
- * <li><b>structural</b> (default): classes grouped by package;</li>
+ * <li><b>structural</b> (default): when scoped to a whole metamodel, every registered
+ * {@link SourceFolder} (source directory) at the root, each with its packages nested underneath
+ * (mirroring the {@code MetaModelBrowser} tree, ui-design.md §4.1); when scoped to a single
+ * package, that package directly at the root;</li>
  * <li><b>hierarchical</b>: top-level types (no in-scope super-type) with their sub-types as children,
  * computed from Spoon's {@code getSuperclass()} / {@code getSuperInterfaces()}.</li>
  * </ul>
@@ -161,6 +165,9 @@ public class JavaClassSelector extends FIBPamelaObjectSelector<CtType<?>> {
 		if (!(o instanceof CtType)) {
 			return false;
 		}
+		if (!isAmongRestricted(o)) {
+			return false;
+		}
 		switch (classKind) {
 			case CLASS:
 				return o instanceof CtClass;
@@ -173,15 +180,21 @@ public class JavaClassSelector extends FIBPamelaObjectSelector<CtType<?>> {
 
 	// --- tree exposed to the FIB browser ------------------------------------
 
-	/** Structural mode: the packages shown at top level. */
+	/** Structural mode: the source folders shown at top level (whole-project scope only). */
+	public List<SourceFolder> getSourceFoldersInScope() {
+		if (sourcePackage != null) {
+			return new ArrayList<>();
+		}
+		SourceMetaModel mm = getMetaModel();
+		return mm != null ? new ArrayList<>(mm.getSourceFolders()) : new ArrayList<>();
+	}
+
+	/** Structural mode: the single package shown at top level when scoped to one package. */
 	public List<SourcePackage> getPackagesInScope() {
 		if (sourcePackage != null) {
 			List<SourcePackage> single = new ArrayList<>();
 			single.add(sourcePackage);
 			return single;
-		}
-		if (getMetaModel() != null) {
-			return new ArrayList<>(getMetaModel().getAllPackages());
 		}
 		return new ArrayList<>();
 	}

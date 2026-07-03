@@ -1,8 +1,6 @@
 package org.openflexo.pamela.editor.ui.widget;
 
 import java.io.File;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import javax.swing.Icon;
@@ -14,10 +12,8 @@ import javax.swing.SwingUtilities;
 import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
 
 import org.openflexo.gina.model.FIBComponent;
-import org.openflexo.pamela.editor.model.SourceJavaFile;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
-import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
 import org.openflexo.pamela.editor.ui.action.AddAsRootTypeAction;
@@ -31,8 +27,8 @@ import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
  *
  * <p>Also drives the "all entities" table — icon resolution + click/right-click (see
  * {@link EntityTableSupport}), mirroring {@link PackageSummaryViewFIBController} — plus
- * the read-only "root" checkbox column and the "+" footer action that registers an
- * eligible {@link SourceJavaFile} as a root type, via {@link AddAsRootTypeAction}.</p>
+ * the read-only "root" checkbox column and the "+" footer action that opens
+ * {@link AddAsRootTypeAction}'s own dialog to register a {@code @ModelEntity} type as a root type.</p>
  */
 public class MetaModelSummaryViewFIBController extends PamelaEditorFIBController<SourceMetaModel> {
 
@@ -121,43 +117,24 @@ public class MetaModelSummaryViewFIBController extends PamelaEditorFIBController
     }
 
     /**
-     * Footer "+" action of the entities table. Lets the user pick, among the Java
-     * files that contain an {@code @ModelEntity} annotation and are not already a
-     * root type, the one to register — delegating the actual mutation to
-     * {@link AddAsRootTypeAction} so it goes through the same rebuild/reselect
-     * machinery as the browser/diagram contextual menu entry.
+     * Footer "+" action of the entities table. Delegates straight to
+     * {@link AddAsRootTypeAction}, targeting the metamodel itself (there is no specific file in
+     * this context) — its own dialog offers a project-wide {@code JavaClassSelector} over every
+     * {@code @ModelEntity} candidate not already a root type, and goes through the same
+     * rebuild/reselect machinery as the browser/diagram contextual menu entry.
      */
     public void addRootType() {
         SourceMetaModel model = getDataObject();
         if (model == null || application == null) {
             return;
         }
-        Map<String, SourceJavaFile> candidatesByName = new TreeMap<>();
-        for (SourcePackage pkg : model.getAllPackages()) {
-            for (SourceJavaFile file : pkg.getJavaFiles()) {
-                if (file.isPotentialModelEntity()
-                        && !model.getRootTypeNames().contains(file.getQualifiedName())) {
-                    candidatesByName.put(file.getQualifiedName(), file);
-                }
-            }
-        }
-        JFrame parent = getParentFrame();
-        if (candidatesByName.isEmpty()) {
-            JOptionPane.showMessageDialog(parent,
-                    "No eligible Java file found (must declare @ModelEntity and not already be a root type).",
+        if (AddAsRootTypeAction.candidateTypes(model).isEmpty()) {
+            JOptionPane.showMessageDialog(getParentFrame(),
+                    "No eligible Java type found (must declare @ModelEntity and not already be a root type).",
                     "Add root type", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        String[] names = candidatesByName.keySet().toArray(new String[0]);
-        String chosen = (String) JOptionPane.showInputDialog(
-                parent,
-                "Select the Java type to add as a root type:",
-                "Add root type",
-                JOptionPane.PLAIN_MESSAGE,
-                null, names, names[0]);
-        if (chosen != null) {
-            new AddAsRootTypeAction().perform(candidatesByName.get(chosen), application);
-        }
+        new AddAsRootTypeAction().perform(model, application);
     }
 
     // -------------------------------------------------------------------------

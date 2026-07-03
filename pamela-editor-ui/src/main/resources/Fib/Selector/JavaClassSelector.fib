@@ -39,8 +39,14 @@
 
     <BrowserElement dataClassName="org.openflexo.pamela.editor.ui.widget.JavaClassSelector"
                     name="selector" label="&quot;classes&quot;" icon="null">
+      <Children name="sourceFolders" data="selector.sourceFoldersInScope" visible="(data.hierarchical == false)" />
       <Children name="packages" data="selector.packagesInScope" visible="(data.hierarchical == false)" />
       <Children name="rootClasses" data="selector.rootClasses" visible="data.hierarchical" />
+    </BrowserElement>
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.model.SourceFolder"
+                    name="folder" label="folder.name" icon="controller.iconForObject(folder)">
+      <Children name="folderPackages" data="folder.packages" />
     </BrowserElement>
 
     <BrowserElement dataClassName="org.openflexo.pamela.editor.model.SourcePackage"
