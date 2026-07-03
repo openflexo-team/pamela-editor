@@ -35,6 +35,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JSplitPane;
 import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -111,6 +112,7 @@ import org.openflexo.pamela.editor.ui.widget.PamelaEditorInspectorController;
 import org.openflexo.pamela.editor.ui.widget.JavaFileView;
 import org.openflexo.pamela.editor.ui.widget.SourceCodeView;
 import org.openflexo.pamela.editor.ui.widget.SourceFolderSummaryView;
+import org.openflexo.pamela.editor.ui.widget.ValidationPanel;
 import org.openflexo.rm.FileSystemResourceLocatorImpl;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
@@ -242,6 +244,43 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
 
     /** The swappable content area: holds the currently displayed view. */
     private final JPanel centralViewPanel;
+
+    /**
+     * The center column's own container. Its {@code CENTER} slot is swapped between
+     * {@link #centralViewPanel} alone (no project open) and {@link #centerSplit} (validation
+     * strip present) — see {@link #applyValidationPanelLayout()}.
+     */
+    private final JPanel centerColumn;
+
+    /**
+     * Bottom-of-center-column validation strip (validation-log-panel-design.md).
+     * Shows the active project's issues.
+     */
+    private final ValidationPanel validationPanel;
+
+    /**
+     * Vertical split holding {@link #centralViewPanel} (top) and {@link #validationPanel}
+     * (bottom), {@code oneTouchExpandable} so the divider carries the native Swing
+     * collapse/expand arrows.
+     */
+    private final JSplitPane centerSplit;
+
+    /** Default fraction of the center column's height given to the validation strip. */
+    private static final double VALIDATION_PANEL_DIVIDER_FRACTION = 0.75;
+
+    /** Below this bottom-pane height (px), the divider is considered "collapsed". */
+    private static final int VALIDATION_PANEL_COLLAPSE_THRESHOLD = 4;
+
+    /**
+     * Whether the validation strip is currently expanded. Kept in sync with
+     * {@link #centerSplit}'s divider position by a {@code DIVIDER_LOCATION_PROPERTY} listener
+     * (installed in the constructor), so it reflects a one-touch-arrow click, a manual drag,
+     * or {@link #setValidationPanelVisible(boolean)} uniformly.
+     */
+    private boolean validationPanelVisible = true;
+
+    /** Remembers the divider position across a collapse/expand cycle; -1 = not yet set. */
+    private int lastValidationDividerLocation = -1;
 
     /** Navigation bar: Back button, title label, Forward button. */
     private final JButton backButton;
@@ -565,9 +604,42 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         // --- Central column: swappable content area ---
         centralViewPanel = new JPanel(new BorderLayout());
 
-        JPanel centerColumn = new JPanel(new BorderLayout());
-        centerColumn.add(topBarPanel,      BorderLayout.NORTH);
+        // --- Central column: bottom validation strip (validation-log-panel-design.md) ---
+        validationPanel = new ValidationPanel(null);
+        validationPanel.setApplication(this);
+        // Allows the one-touch arrow to collapse the strip fully to 0 height (otherwise it
+        // would stop at the FIB's own layout-computed minimum).
+        validationPanel.setMinimumSize(new java.awt.Dimension(0, 0));
+
+        centerSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, centralViewPanel, validationPanel);
+        centerSplit.setResizeWeight(1.0); // extra height on resize goes to the central view
+        centerSplit.setContinuousLayout(true);
+        centerSplit.setOneTouchExpandable(true);
+        centerSplit.setBorder(null);
+        // Tracks validationPanelVisible from ANY divider move — one-touch arrow, manual drag,
+        // or setValidationPanelVisible(...) itself — as a single source of truth.
+        centerSplit.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, evt -> {
+            int newLocation = (Integer) evt.getNewValue();
+            boolean newVisible = !isValidationDividerCollapsed(newLocation);
+            if (newVisible != validationPanelVisible) {
+                if (!newVisible && evt.getOldValue() instanceof Integer) {
+                    // Collapsing: remember the position we're collapsing FROM, so a later
+                    // expand (menu, or the other one-touch arrow) restores it.
+                    int oldLocation = (Integer) evt.getOldValue();
+                    if (!isValidationDividerCollapsed(oldLocation)) {
+                        lastValidationDividerLocation = oldLocation;
+                    }
+                }
+                boolean oldVisible = validationPanelVisible;
+                validationPanelVisible = newVisible;
+                pcSupport.firePropertyChange("validationPanelVisible", oldVisible, newVisible);
+            }
+        });
+
+        centerColumn = new JPanel(new BorderLayout());
+        centerColumn.add(topBarPanel, BorderLayout.NORTH);
         centerColumn.add(centralViewPanel, BorderLayout.CENTER);
+        // No project is open yet — the strip starts absent (applyValidationPanelLayout below).
 
         // --- Left column: MetaModelBrowser (top) ---
         metaModelBrowser = new MetaModelBrowser(this);
@@ -849,6 +921,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     List<PamelaProject> oldProjects = new ArrayList<>(projects);
                     projects.add(project);
                     PamelaEditorPreferences.setLastFile(pamelaFile);
+                    applyValidationPanelLayout();
 
                     // Notify Gina bindings that the projects list has changed
                     pcSupport.firePropertyChange("projects",
@@ -927,6 +1000,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     List<PamelaProject> oldProjects = new ArrayList<>(projects);
                     projects.add(project);
                     PamelaEditorPreferences.setLastFile(pamelaFile);
+                    applyValidationPanelLayout();
 
                     pcSupport.firePropertyChange("projects",
                             Collections.unmodifiableList(oldProjects),
@@ -1193,6 +1267,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                 pcs.firePropertyChange("abstractEntitiesCount", -1, metaModel.getAbstractEntitiesCount());
                 pcs.firePropertyChange("totalInitializersCount", -1, metaModel.getTotalInitializersCount());
                 pcs.firePropertyChange("issuesCount", -1, metaModel.getIssuesCount());
+                pcs.firePropertyChange("issues", null, new ArrayList<>(metaModel.getIssues()));
 
                 // A model-editing mutation leaves the meta-model dirty (deferred save).
                 // Refresh the window title so the unsaved-changes marker (*) appears.
@@ -1305,6 +1380,19 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }
     }
 
+    /**
+     * Closes the project owning the current selection (falling back to the most recently
+     * opened one), mirroring {@link #saveActiveProject()}/{@link #refreshActiveProject()}.
+     * Entry point for {@code File → Close}, which was previously unwired.
+     */
+    public void closeActiveProject() {
+        PamelaProject project = getProjectForElement(currentSelectedElement);
+        if (project == null && !projects.isEmpty()) {
+            project = projects.get(projects.size() - 1);
+        }
+        closeProject(project);
+    }
+
     public void closeProject(PamelaProject project) {
         if (project == null) {
             return;
@@ -1317,11 +1405,45 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             invalidateCachedView(diagram);
             diagramEditors.remove(diagram);
         }
+        boolean selectionBelongsToClosedProject =
+                getProjectForElement(currentSelectedElement) == project;
+        boolean centralViewBelongsToClosedProject =
+                getProjectForElement(currentHistoryElement) == project;
         List<PamelaProject> oldProjects = new ArrayList<>(projects);
         projects.remove(project);
+        if (centralViewBelongsToClosedProject) {
+            // Reset the central view rather than leave it showing the closed project's stale
+            // content (openOrSwitchCentralView(null) is otherwise a no-op) — also keeps
+            // currentHistoryElement correctly null so a freshly (re)opened project's validation
+            // strip stays hidden until something is actually selected in it.
+            clearCentralView();
+        }
+        applyValidationPanelLayout();
         pcSupport.firePropertyChange("projects",
                 Collections.unmodifiableList(oldProjects),
                 Collections.unmodifiableList(projects));
+        if (selectionBelongsToClosedProject) {
+            // Clears the detailed browser and inspector (ui-design.md, see the "genuine
+            // programmatic clear" note on onBrowserSelectionChanged).
+            setCurrentSelectedElement(null);
+        }
+    }
+
+    /**
+     * Resets the central view to empty: clears {@link #centralViewPanel}, the navigation
+     * history and title, and detaches any Diana toolbar. Called when the project owning the
+     * currently displayed view is closed (validation-log-panel-design.md).
+     */
+    private void clearCentralView() {
+        currentHistoryElement = null;
+        backHistory.clear();
+        forwardHistory.clear();
+        centralViewPanel.removeAll();
+        centralViewPanel.revalidate();
+        centralViewPanel.repaint();
+        centralTitleLabel.setText("");
+        detachDianaTools();
+        updateNavButtons();
     }
 
     // =========================================================================
@@ -1926,6 +2048,105 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
 
         // Update the context panel (ui-design.md §19)
         contextPanel.showFor(element);
+
+        // Rebind the validation strip to the owning project, and (re)evaluate whether it
+        // should be shown now that the central view actually displays something
+        // (validation-log-panel-design.md).
+        rebindValidationPanel(element);
+        applyValidationPanelLayout();
+    }
+
+    /**
+     * Rebinds {@link #validationPanel} to the {@link SourceMetaModel} of the project owning
+     * {@code element}, if different from what it currently shows. A no-op when the element does
+     * not resolve to a project (e.g. nothing selected yet) — the panel keeps showing whatever it
+     * last had.
+     */
+    private void rebindValidationPanel(Object element) {
+        PamelaProject project = getProjectForElement(element);
+        if (project == null || project.getMetaModel() == null) {
+            return;
+        }
+        if (validationPanel.getController().getDataObject() != project.getMetaModel()) {
+            validationPanel.setEditedObject(project.getMetaModel());
+        }
+    }
+
+    /**
+     * Whether the bottom validation strip is currently expanded. Kept fresh by the
+     * {@code DIVIDER_LOCATION_PROPERTY} listener installed on {@link #centerSplit} in the
+     * constructor — stays meaningful even while the strip is actually absent because no
+     * project is open (validation-log-panel-design.md).
+     */
+    public boolean isValidationPanelVisible() {
+        return validationPanelVisible;
+    }
+
+    /**
+     * Expands or collapses the bottom validation strip by moving {@link #centerSplit}'s
+     * divider — equivalent to clicking its native one-touch-expandable arrow. Has no effect on
+     * whether the strip is present at all — see {@link #applyValidationPanelLayout()} for that.
+     * A no-op if already in the requested state.
+     */
+    public void setValidationPanelVisible(boolean visible) {
+        if (visible == validationPanelVisible) {
+            return;
+        }
+        if (visible) {
+            centerSplit.setDividerLocation(lastValidationDividerLocation > 0
+                    ? lastValidationDividerLocation
+                    : (int) (centerColumn.getHeight() * VALIDATION_PANEL_DIVIDER_FRACTION));
+        } else {
+            centerSplit.setDividerLocation(1.0); // push the divider to the bottom = collapse
+        }
+        // validationPanelVisible + the "validationPanelVisible" firing are handled by the
+        // DIVIDER_LOCATION_PROPERTY listener reacting to the location change above.
+    }
+
+    /**
+     * Whether a {@code centerSplit} divider at {@code dividerLocation} leaves
+     * {@link #validationPanel} (the bottom pane) at, or below,
+     * {@link #VALIDATION_PANEL_COLLAPSE_THRESHOLD} pixels tall.
+     */
+    private boolean isValidationDividerCollapsed(int dividerLocation) {
+        int totalHeight = centerSplit.getHeight();
+        if (totalHeight <= 0) {
+            return false; // not yet realized — treat as expanded (matches the default)
+        }
+        int bottomHeight = totalHeight - dividerLocation - centerSplit.getDividerSize();
+        return bottomHeight <= VALIDATION_PANEL_COLLAPSE_THRESHOLD;
+    }
+
+    /**
+     * Adds or removes {@link #centerSplit} (in place of {@link #centralViewPanel} alone) from
+     * {@link #centerColumn}'s {@code CENTER} slot depending on whether any project is open
+     * <em>and</em> the central column is actually showing a view — the strip must not show at
+     * all otherwise (e.g. right after opening a project, before anything has been selected).
+     * Called after every change to {@link #projects} and every time the central view changes
+     * (see {@link #showViewForElement(Object)}). Its own expanded/collapsed state (divider
+     * position) is untouched.
+     */
+    private void applyValidationPanelLayout() {
+        boolean shouldBePresent = !projects.isEmpty() && currentHistoryElement != null;
+        java.awt.Component current =
+                ((BorderLayout) centerColumn.getLayout()).getLayoutComponent(BorderLayout.CENTER);
+        boolean isPresent = (current == centerSplit);
+        if (shouldBePresent == isPresent) {
+            return;
+        }
+        centerColumn.remove(current);
+        if (shouldBePresent) {
+            centerSplit.setTopComponent(centralViewPanel);
+            centerSplit.setBottomComponent(validationPanel);
+            centerColumn.add(centerSplit, BorderLayout.CENTER);
+            centerSplit.setDividerLocation(lastValidationDividerLocation > 0
+                    ? lastValidationDividerLocation
+                    : (int) (centerColumn.getHeight() * VALIDATION_PANEL_DIVIDER_FRACTION));
+        } else {
+            centerColumn.add(centralViewPanel, BorderLayout.CENTER);
+        }
+        centerColumn.revalidate();
+        centerColumn.repaint();
     }
 
     /**

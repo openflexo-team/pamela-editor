@@ -238,6 +238,10 @@ public class PamelaEditorIconLibrary {
             buildIcon("Icons/Validation/FixableWarning.gif");
     public static final ImageIcon UNFIXABLE_WARNING_ICON =
             buildIcon("Icons/Validation/UnfixableWarning.gif");
+    public static final ImageIcon INFO_ICON =
+            buildIcon("Icons/Validation/Info.gif");
+    public static final ImageIcon FIX_PROPOSAL_ICON =
+            buildIcon("Icons/Validation/FixProposal.gif");
 
     // -------------------------------------------------------------------------
     // Helpers

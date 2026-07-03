@@ -200,11 +200,16 @@ public class SourcePackage implements SourceElement, HasPropertyChangeSupport {
     void addEntity(SourceModelEntity entity) {
         if (!entities.contains(entity)) {
             entities.add(entity);
+            pcSupport.firePropertyChange("entities", null, Collections.unmodifiableList(entities));
+            pcSupport.firePropertyChange("members", null, null);
         }
     }
 
     void removeEntity(SourceModelEntity entity) {
-        entities.remove(entity);
+        if (entities.remove(entity)) {
+            pcSupport.firePropertyChange("entities", null, Collections.unmodifiableList(entities));
+            pcSupport.firePropertyChange("members", null, null);
+        }
     }
 
     void addJavaFile(SourceJavaFile file) {

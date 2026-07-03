@@ -1,94 +1,74 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Panel id="0" darkLevel="0" useScrollBar="false" protectContent="false"
-	name="main" layout="twocols"
-	controllerClassName="org.openflexo.gina.swing.editor.validation.ValidationFIBController"
-	border="empty" trackViewPortWidth="true"
-	dataClassName="org.openflexo.gina.model.FIBComponent" titleFont="SansSerif,0,13"
-	trackViewPortHeight="true">
-	<Panel id="83" align="right" borderTop="0" borderLeft="0"
-		trackViewPortHeight="true" trackViewPortWidth="true" borderBottom="0"
-		border="empty" sizeAdjustment="OriginalSize" titleFont="SansSerif,0,12"
-		layout="gridbag" borderRight="0"
-		constraints="twocols(expandHorizontally=true;expandVertically=false;insetsBottom=0;insetsLeft=0;insetsRight=0;insetsTop=0;location=right)"
-		name="ValidationPanel" visible="data != null">
-	    <FIBVariable type="org.openflexo.gina.model.FIBModelObject" name="focusedValidable" value="controller.editorController.selectedObject != null ? controller.editorController.selectedObject : data" />
-		<Label id="84" label="label" align="left"
-			data="((((&quot;&quot; + controller.getValidationReport(data).errorIssuesRegarding(data).size) + &quot; errors, &quot;) + controller.getValidationReport(data).warningIssuesRegarding(data).size) + &quot; warnings&quot;)"
-			constraints="gridbag(anchor=west;fill=horizontal;gridHeight=1;gridWidth=1;gridX=-1;gridY=-1;insetsBottom=0;insetsLeft=0;insetsRight=0;insetsTop=0;padX=0;padY=0;weightX=1.0;weightY=0.0)"
-			font="SansSerif,2,11" name="Label" />
-		<Label id="85"
-			label="&lt;html&gt;&lt;a href=&quot;&quot;&gt;show_errors_warnings&lt;/a&gt;&lt;/html&gt;"
-			align="left" localize="true" clickAction="controller.setShowErrorsWarnings(true)"
-			visible="(!(controller.showErrorsWarnings))"
-			constraints="gridbag(anchor=center;fill=none;gridHeight=1;gridWidth=1;gridX=-1;gridY=-1;insetsBottom=0;insetsLeft=0;insetsRight=0;insetsTop=0;padX=0;padY=0;weightX=0.0;weightY=0.0)"
-			font="SansSerif,0,10" name="Label3" />
-		<Label id="86"
-			label="&lt;html&gt;&lt;a href=&quot;&quot;&gt;hide_errors_warnings&lt;/a&gt;&lt;/html&gt;"
-			align="left" localize="true" clickAction="controller.setShowErrorsWarnings(false)"
-			visible="controller.showErrorsWarnings"
-			constraints="gridbag(anchor=center;fill=none;gridHeight=1;gridWidth=1;gridX=-1;gridY=-1;insetsBottom=0;insetsLeft=0;insetsRight=0;insetsTop=0;padX=0;padY=0;weightX=0.0;weightY=0.0)"
-			font="SansSerif,0,10" name="Label4" />
-		<Label id="87"
-			label="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;"
-			align="left" localize="true"
-			clickAction="controller.revalidate(data)"
-			constraints="gridbag(anchor=center;fill=none;gridHeight=1;gridWidth=1;gridX=-1;gridY=-1;insetsBottom=0;insetsLeft=0;insetsRight=0;insetsTop=0;padX=0;padY=0;weightX=0.0;weightY=0.0)"
-			font="SansSerif,0,10" name="Label5" />
-	</Panel>
-	<Table id="88" visibleRowCount="5" backgroundNonSelectionColor="255,255,255"
-		iteratorClassName="org.openflexo.pamela.validation.ValidationIssue"
-		backgroundSecondarySelectionColor="178,215,255" showFooter="false"
-		lookAndFeel="Classic" selectionMode="MultipleIntervalSelection"
-		rowHeight="18" manageDynamicModel="true"
-		doubleClickAction="controller.fixIssue(issuesTable.selected)"
-		data="controller.getValidationReport(data).issuesRegarding(data)"
-		clickAction="controller.showIssue(issuesTable.selected)" visible="controller.showErrorsWarnings"
-		constraints="twocols(expandHorizontally=true;expandVertically=false;insetsBottom=5;insetsLeft=0;insetsRight=5;insetsTop=0;location=right)"
-		name="issuesTable">
-		<IconColumn id="89" data="controller.iconForObject(iterator)"
-			resizable="false" title="icon" displayTitle="false" columnWidth="20"
-			showIcon="false" name="icon" />
-		<LabelColumn id="90"
-			data="controller.getValidationModel(data).localizedIssueMessage(iterator)"
-			resizable="true" title="errors/warnings" displayTitle="true"
-			columnWidth="250" showIcon="false" name="label" />
-	</Table>
-	<LocalizedDictionary id="92">
-		<Localized id="150" lang="English"
-			value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Show errors/warnings&lt;/a&gt;&lt;/html&gt;"
-			key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;show_errors_warnings&lt;/a&gt;&lt;/html&gt;" />
-		<Localized id="151" lang="Dutch"
-			value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Voir les erreurs&lt;/a&gt;&lt;/html&gt;"
-			key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;show_errors_warnings&lt;/a&gt;&lt;/html&gt;" />
-		<Localized id="152" lang="French"
-			value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Show errors/warnings&lt;/a&gt;&lt;/html&gt;"
-			key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;show_errors_warnings&lt;/a&gt;&lt;/html&gt;" />
-		<Localized id="153" lang="English"
-			value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Hide errors/warnings&lt;/a&gt;&lt;/html&gt;"
-			key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;hide_errors_warnings&lt;/a&gt;&lt;/html&gt;" />
-		<Localized id="154" lang="Dutch"
-			value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Hide errors/warnings&lt;/a&gt;&lt;/html&gt;"
-			key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;hide_errors_warnings&lt;/a&gt;&lt;/html&gt;" />
-		<Localized id="155" lang="French"
-			value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Cacher les erreurs&lt;/a&gt;&lt;/html&gt;"
-			key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;hide_errors_warnings&lt;/a&gt;&lt;/html&gt;" />
-		<Localized id="156" lang="English"
-			value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Revalidate&lt;/a&gt;&lt;/html&gt;"
-			key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;" />
-		<Localized id="157" lang="Dutch"
-			value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Revalidate&lt;/a&gt;&lt;/html&gt;"
-			key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;" />
-		<Localized id="158" lang="French"
-			value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Revalider&lt;/a&gt;&lt;/html&gt;"
-			key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;" />
-		<Localized id="159" lang="English" value="Icon" key="icon" />
-		<Localized id="160" lang="Dutch" value="Icon" key="icon" />
-		<Localized id="161" lang="French" value="icon" key="icon" />
-		<Localized id="162" lang="English" value="Errors/warnings"
-			key="errors/warnings" />
-		<Localized id="163" lang="Dutch" value="Errors/warnings"
-			key="errors/warnings" />
-		<Localized id="164" lang="French" value="errors/warnings"
-			key="errors/warnings" />
-	</LocalizedDictionary>
+<!--
+  ValidationPanel.fib
+  Bottom-of-center-column validation strip (validation-log-panel-design.md).
+
+  Shows the active project's SourceMetaModel issues (errors / warnings / infos) as a table,
+  with a per-severity summary label and a Revalidate hyperlink — mirroring FIBEditor's
+  ValidationPanel (gina-swing-editor), rebuilt against pamela-editor's own Issue/Error/
+  Warning/Information model instead of PAMELA's ValidationReport.
+
+  This whole panel is the bottom pane of a JSplitPane (PamelaEditorApplication.centerSplit,
+  oneTouchExpandable="true") — expand/collapse is driven by the divider's native one-touch
+  arrows (or the View > Validation panel menu item), not from inside this FIB.
+-->
+<Panel id="0" font="SansSerif,0,11" darkLevel="0" useScrollBar="false" layout="border" name="ValidationPanel"
+    dataClassName="org.openflexo.pamela.editor.model.SourceMetaModel"
+    controllerClassName="org.openflexo.pamela.editor.ui.widget.ValidationFIBController"
+    trackViewPortWidth="true" trackViewPortHeight="true"
+    borderTop="0" borderLeft="0" borderBottom="0" borderRight="0" border="empty">
+
+    <Panel id="10" layout="flow" flowAlignment="LEFT" hGap="14" vGap="2"
+        border="empty" borderTop="3" borderLeft="8" borderBottom="3" borderRight="8"
+        constraints="border(location=north)" name="HeaderPanel">
+
+        <Label id="11"
+            data="((((((&quot;&quot; + data.errorsCount) + &quot; errors, &quot;) + data.warningsCount) + &quot; warnings, &quot;) + data.informationCount) + &quot; infos&quot;)"
+            align="left" font="SansSerif,2,10" constraints="flow()" name="SummaryLabel" />
+
+        <Label id="17" label="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;"
+            localize="true" clickAction="controller.revalidate()"
+            font="SansSerif,0,10" constraints="flow(insetsLeft=10)" name="RevalidateLink" />
+
+    </Panel>
+
+    <!-- FlatDesign tables always wrap their JTable in their own JScrollPane (JFDTablePanel),
+         so the issues list scrolls on its own once it overflows the strip's allocated height —
+         no outer useScrollBar is needed (and would double up with this one). visibleRowCount
+         is a sizing hint only. -->
+    <Table id="20"
+        lookAndFeel="FlatDesign"
+        data="data.issues"
+        iteratorClassName="org.openflexo.pamela.editor.model.Issue"
+        rowHeight="18"
+        visibleRowCount="8"
+        showHeader="false"
+        showFooter="false"
+        selectionMode="SingleSelection"
+        backgroundSelectionColor="9,80,208"
+        backgroundNonSelectionColor="255,255,255"
+        backgroundSecondarySelectionColor="178,215,255"
+        textSelectionColor="255,255,255"
+        textNonSelectionColor="0,0,0"
+        textSecondarySelectionColor="0,0,0"
+        manageDynamicModel="true"
+        clickAction="controller.selectIssue(issuesTable.selected)"
+        constraints="border(location=center)"
+        name="issuesTable">
+        <IconColumn id="21" data="controller.iconForObject(iterator)"
+            title="" displayTitle="false" columnWidth="20" resizable="false" name="IssueIcon" />
+        <TextFieldColumn id="22" data="iterator.message"
+            title="message" displayTitle="false" resizable="true" columnWidth="600"
+            showIcon="false" readOnly="true" name="IssueMessage" />
+    </Table>
+
+    <LocalizedDictionary id="90">
+        <Localized id="97" lang="English"
+            value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Revalidate&lt;/a&gt;&lt;/html&gt;"
+            key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;" />
+        <Localized id="98" lang="French"
+            value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Revalider&lt;/a&gt;&lt;/html&gt;"
+            key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;" />
+    </LocalizedDictionary>
+
 </Panel>

@@ -172,7 +172,7 @@ public class SourceModelProperty implements SourceElement,
                 // Raw List — use the list type itself, record a warning
                 elementTypeRef = getterReturnType;
                 addIssue(new Warning("Property '" + propertyIdentifier
-                        + "' has a raw List return type — no element type argument found"));
+                        + "' has a raw List return type — no element type argument found", this));
             }
         } else {
             elementTypeRef = getterReturnType;
@@ -218,7 +218,7 @@ public class SourceModelProperty implements SourceElement,
         // Validate isDerived without @ReturnedValue
         if (derived && ctGetter.getAnnotation(ReturnedValue.class) == null) {
             addIssue(new Warning("Property '" + propertyIdentifier
-                    + "' is declared isDerived=true but has no @ReturnedValue annotation"));
+                    + "' is declared isDerived=true but has no @ReturnedValue annotation", this));
         }
     }
 
@@ -233,7 +233,7 @@ public class SourceModelProperty implements SourceElement,
     void registerSetter(CtMethod<?> method) {
         if (cardinality == Cardinality.LIST) {
             addIssue(new Error("@Setter '" + method.getSimpleName()
-                    + "' is not allowed on LIST property '" + propertyIdentifier + "'"));
+                    + "' is not allowed on LIST property '" + propertyIdentifier + "'", this));
         }
         this.ctSetter = method;
         this.setterMethodName = method.getSimpleName();
@@ -246,7 +246,7 @@ public class SourceModelProperty implements SourceElement,
     void registerAdder(CtMethod<?> method) {
         if (cardinality == Cardinality.SINGLE) {
             addIssue(new Error("@Adder '" + method.getSimpleName()
-                    + "' is not allowed on SINGLE property '" + propertyIdentifier + "'"));
+                    + "' is not allowed on SINGLE property '" + propertyIdentifier + "'", this));
         }
         this.ctAdder = method;
         this.adderMethodName = method.getSimpleName();
@@ -259,7 +259,7 @@ public class SourceModelProperty implements SourceElement,
     void registerRemover(CtMethod<?> method) {
         if (cardinality == Cardinality.SINGLE) {
             addIssue(new Error("@Remover '" + method.getSimpleName()
-                    + "' is not allowed on SINGLE property '" + propertyIdentifier + "'"));
+                    + "' is not allowed on SINGLE property '" + propertyIdentifier + "'", this));
         }
         this.ctRemover = method;
         this.removerMethodName = method.getSimpleName();
@@ -286,11 +286,11 @@ public class SourceModelProperty implements SourceElement,
         if (cardinality == Cardinality.LIST) {
             if (ctAdder != null && ctRemover == null) {
                 addIssue(new Warning("Property '" + propertyIdentifier
-                        + "' has an @Adder but no @Remover"));
+                        + "' has an @Adder but no @Remover", this));
             }
             if (ctAdder == null && ctRemover != null) {
                 addIssue(new Warning("Property '" + propertyIdentifier
-                        + "' has a @Remover but no @Adder"));
+                        + "' has a @Remover but no @Adder", this));
             }
         }
     }
@@ -309,7 +309,7 @@ public class SourceModelProperty implements SourceElement,
                 || rawStyleDiffers(ctReindexer, Reindexer.class)
                 || rawStyleDiffers(ctUpdater, Updater.class)) {
             addIssue(new Warning("Property '" + propertyIdentifier
-                    + "' mixes constant and literal identifiers across its accessors"));
+                    + "' mixes constant and literal identifiers across its accessors", this));
         }
     }
 

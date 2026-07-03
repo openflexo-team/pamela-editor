@@ -1,8 +1,11 @@
 package org.openflexo.pamela.editor.model;
 
+import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.openflexo.toolbox.HasPropertyChangeSupport;
 
 /**
  * Represents one source directory registered on a {@link SourceMetaModel}
@@ -19,8 +22,29 @@ import java.util.List;
  * of the {@link SourceMetaModel} (see {@link SourceMetaModel#addSourceDirectory}
  * / {@link SourceMetaModel#removeSourceDirectory}), so identity is stable across
  * calls to {@link SourceMetaModel#getSourceFolders()}.</p>
+ *
+ * <p>Because a rebuild ({@link SourceMetaModel#buildMetaModel()}) discards and
+ * recreates every {@link SourcePackage}, an already-expanded browser node bound to
+ * {@code folder.packages} would otherwise keep showing the stale, pre-rebuild
+ * package objects (its own binding listener is on <em>this</em> object, not on the
+ * metamodel — see {@code gina-analysis.md §18.5}). {@code SourceFolder} therefore
+ * implements {@link HasPropertyChangeSupport} and {@code buildMetaModel()} fires a
+ * {@code "packages"} event on every folder after each (re)build, so the browser
+ * re-fetches the fresh package list.</p>
  */
-public class SourceFolder implements SourceElement {
+public class SourceFolder implements SourceElement, HasPropertyChangeSupport {
+
+    private final PropertyChangeSupport pcSupport = new PropertyChangeSupport(this);
+
+    @Override
+    public PropertyChangeSupport getPropertyChangeSupport() {
+        return pcSupport;
+    }
+
+    @Override
+    public String getDeletedProperty() {
+        return null;
+    }
 
     private final File directory;
     private final SourceMetaModel metaModel;

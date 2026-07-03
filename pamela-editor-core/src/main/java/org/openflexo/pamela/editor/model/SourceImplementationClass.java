@@ -50,7 +50,7 @@ public class SourceImplementationClass implements SourceElement {
         // Validation: warn if impl class is not abstract
         if (!abstractClass) {
             entity.getMetaModel().fireIssue(new Warning(
-                    "Implementation class " + qualifiedName + " should be declared abstract"));
+                    "Implementation class " + qualifiedName + " should be declared abstract", this));
         }
 
         // Validation: check that the impl class implements the @ModelEntity interface
@@ -60,7 +60,7 @@ public class SourceImplementationClass implements SourceElement {
         if (!implementsEntity) {
             entity.getMetaModel().fireIssue(new Error(
                     "Implementation class " + qualifiedName
-                    + " does not implement @ModelEntity interface " + entity.getQualifiedName()));
+                    + " does not implement @ModelEntity interface " + entity.getQualifiedName(), this));
         }
     }
 

@@ -115,9 +115,7 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
         refreshItem.addActionListener(e -> application.refreshActiveProject());
 
         closeItem = new JMenuItem(loc("close"));
-        closeItem.addActionListener(e -> {
-            // Close the session that contains the currently selected element
-        });
+        closeItem.addActionListener(e -> application.closeActiveProject());
 
         quitItem = new JMenuItem(loc("quit"));
         quitItem.setAccelerator(KeyStroke.getKeyStroke(
@@ -150,6 +148,8 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
 
         viewMenu.add(backItem);
         viewMenu.add(forwardItem);
+        viewMenu.addSeparator();
+        viewMenu.add(makeValidationPanelItem());
         viewMenu.addSeparator();
         addInspectorItems(viewMenu);
 
@@ -301,6 +301,30 @@ public class PamelaEditorMenuBar extends JMenuBar implements PreferenceChangeLis
         add(viewMenu);
         add(toolsMenu);
         add(helpMenu);
+    }
+
+    // =========================================================================
+    // Validation panel (View menu)
+    // =========================================================================
+
+    /**
+     * Builds the "Validation panel" checkbox item — the embedded-panel counterpart of
+     * {@link WindowMenuItem} (which only toggles a {@link Window}): it mirrors
+     * {@link PamelaEditorApplication#isValidationPanelVisible()} and toggles it via
+     * {@link PamelaEditorApplication#setValidationPanelVisible(boolean)} (which moves the
+     * enclosing {@code JSplitPane}'s divider). Stays in sync with the divider's own native
+     * one-touch-expandable arrows and manual drags (validation-log-panel-design.md §6.3)
+     * through the {@code "validationPanelVisible"} property change.
+     */
+    private JCheckBoxMenuItem makeValidationPanelItem() {
+        JCheckBoxMenuItem item = new JCheckBoxMenuItem(
+                loc("validation_panel"), application.isValidationPanelVisible());
+        item.addActionListener(e ->
+                application.setValidationPanelVisible(item.isSelected()));
+        application.getPropertyChangeSupport().addPropertyChangeListener(
+                "validationPanelVisible",
+                evt -> item.setSelected((Boolean) evt.getNewValue()));
+        return item;
     }
 
     // =========================================================================

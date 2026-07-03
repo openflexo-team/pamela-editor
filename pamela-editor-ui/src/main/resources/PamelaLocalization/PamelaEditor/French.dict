@@ -127,5 +127,6 @@ type_variable=type_variable
 undo=undo
 untitled=untitled
 validation_error=Erreur de validation
+validation_panel=Panneau de validation
 value=value
 view=view

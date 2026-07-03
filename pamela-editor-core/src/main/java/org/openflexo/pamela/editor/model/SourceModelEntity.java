@@ -130,7 +130,7 @@ public class SourceModelEntity implements SourceElement,
 
         // Validation: @ModelEntity on a class
         if (!(ctType instanceof CtInterface)) {
-            addIssue(new Error("@ModelEntity " + qualifiedName + " must be an interface, not a class"));
+            addIssue(new Error("@ModelEntity " + qualifiedName + " must be an interface, not a class", this));
         }
 
         // @XMLElement on the type itself

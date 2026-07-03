@@ -66,19 +66,19 @@
             <IconColumn id="43" data="controller.iconForObject(iterator)"
                 title="" displayTitle="false" columnWidth="20" resizable="false" name="EntityIcon" />
             <TextFieldColumn id="44" data="iterator.simpleName"
-                title="entities" displayTitle="true" resizable="true" columnWidth="200"
+                title="entities" displayTitle="true" resizable="true" columnWidth="140"
                 showIcon="false" readOnly="true" name="EntityName" />
             <TextFieldColumn id="57" data="(iterator.implementationClass != null ? iterator.implementationClass.simpleName : &quot;&quot;)"
-                title="implementation_class" displayTitle="true" resizable="true" columnWidth="150"
+                title="implementation_class" displayTitle="true" resizable="true" columnWidth="140"
                 showIcon="false" readOnly="true" name="EntityImplementationClass" />
-            <TextFieldColumn id="46" data="iterator.declaredProperties.size.toString"
-                title="properties" displayTitle="true" resizable="false" columnWidth="70"
-                showIcon="false" readOnly="true" alignment="center" name="EntityPropertiesCount" />
             <TextFieldColumn id="55" data="iterator.initializers.size.toString"
-                title="initializers" displayTitle="true" resizable="false" columnWidth="70"
+                title="#init" displayTitle="true" resizable="false" columnWidth="35"
                 showIcon="false" readOnly="true" alignment="center" name="EntityInitializersCount" />
+            <TextFieldColumn id="46" data="iterator.declaredProperties.size.toString"
+                title="#props" displayTitle="true" resizable="false" columnWidth="50"
+                showIcon="false" readOnly="true" alignment="center" name="EntityPropertiesCount" />
             <TextFieldColumn id="56" data="iterator.declaredCustomMethods.size.toString"
-                title="operations" displayTitle="true" resizable="false" columnWidth="70"
+                title="#ops" displayTitle="true" resizable="false" columnWidth="35"
                 showIcon="false" readOnly="true" alignment="center" name="EntityOperationsCount" />
         </Table>
 

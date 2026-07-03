@@ -405,6 +405,14 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
 
         pcSupport.firePropertyChange("entities", null, Collections.unmodifiableMap(entities));
         pcSupport.firePropertyChange("allPackages", null, new ArrayList<>(packages.values()));
+
+        // A rebuild discards and recreates every SourcePackage; an already-expanded browser
+        // node bound to "folder.packages" listens on the SourceFolder itself (stable identity
+        // across rebuilds), not on this meta-model, so it must be notified directly here or it
+        // keeps showing the stale, pre-rebuild package objects (gina-analysis.md §18.5).
+        for (SourceFolder folder : sourceFolders.values()) {
+            folder.getPropertyChangeSupport().firePropertyChange("packages", null, folder.getPackages());
+        }
     }
 
     /**
@@ -551,13 +559,13 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
 
             CtType<?> ctType = findType(typeName);
             if (ctType == null) {
-                fireIssue(new Warning("Root type '" + typeName + "' not found in Spoon model — skipped"));
+                fireIssue(new Warning("Root type '" + typeName + "' not found in Spoon model — skipped", this));
                 continue;
             }
 
             ModelEntity modelEntityAnnotation = ctType.getAnnotation(ModelEntity.class);
             if (modelEntityAnnotation == null) {
-                fireIssue(new Warning("Type '" + typeName + "' is not annotated @ModelEntity — skipped"));
+                fireIssue(new Warning("Type '" + typeName + "' is not annotated @ModelEntity — skipped", this));
                 continue;
             }
 
@@ -686,7 +694,7 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                     && entity.getInitializers().isEmpty()
                     && entity.getInitPolicy() == ModelEntity.InitPolicy.REQUIRED) {
                 fireIssue(new Warning("Non-abstract entity '" + entity.getQualifiedName()
-                        + "' declares initPolicy=REQUIRED but has no @Initializer method"));
+                        + "' declares initPolicy=REQUIRED but has no @Initializer method", entity));
             }
         }
     }
@@ -714,7 +722,7 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                 } else {
                     fireIssue(new Error("@Setter '" + method.getSimpleName()
                             + "' on entity '" + entity.getQualifiedName()
-                            + "' has no corresponding @Getter for property '" + setter.value() + "'"));
+                            + "' has no corresponding @Getter for property '" + setter.value() + "'", entity));
                 }
             }
 
@@ -726,7 +734,7 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                 } else {
                     fireIssue(new Error("@Adder '" + method.getSimpleName()
                             + "' on entity '" + entity.getQualifiedName()
-                            + "' has no corresponding @Getter for property '" + adder.value() + "'"));
+                            + "' has no corresponding @Getter for property '" + adder.value() + "'", entity));
                 }
             }
 
@@ -738,7 +746,7 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                 } else {
                     fireIssue(new Error("@Remover '" + method.getSimpleName()
                             + "' on entity '" + entity.getQualifiedName()
-                            + "' has no corresponding @Getter for property '" + remover.value() + "'"));
+                            + "' has no corresponding @Getter for property '" + remover.value() + "'", entity));
                 }
             }
 
@@ -750,7 +758,7 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                 } else {
                     fireIssue(new Error("@Reindexer '" + method.getSimpleName()
                             + "' on entity '" + entity.getQualifiedName()
-                            + "' has no corresponding @Getter for property '" + reindexer.value() + "'"));
+                            + "' has no corresponding @Getter for property '" + reindexer.value() + "'", entity));
                 }
             }
 
@@ -762,7 +770,7 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                 } else {
                     fireIssue(new Error("@Updater '" + method.getSimpleName()
                             + "' on entity '" + entity.getQualifiedName()
-                            + "' has no corresponding @Getter for property '" + updater.value() + "'"));
+                            + "' has no corresponding @Getter for property '" + updater.value() + "'", entity));
                 }
             }
         }
@@ -860,11 +868,11 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         if (implType == null) {
             fireIssue(new Warning("Implementation class '" + implClassName
                     + "' referenced by @ImplementationClass on '" + entity.getQualifiedName()
-                    + "' was not found in the Spoon model — skipped"));
+                    + "' was not found in the Spoon model — skipped", entity));
             return;
         }
         if (!(implType instanceof CtClass)) {
-            fireIssue(new Error("@ImplementationClass value '" + implClassName + "' is not a class"));
+            fireIssue(new Error("@ImplementationClass value '" + implClassName + "' is not a class", entity));
             return;
         }
         CtClass<?> implClass = (CtClass<?>) implType;
@@ -921,7 +929,7 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                     fireIssue(new Error("Property '" + prop.getPropertyIdentifier()
                             + "' on '" + entity.getQualifiedName()
                             + "' declares inverse='" + inverseId
-                            + "' but the property type is not a known entity"));
+                            + "' but the property type is not a known entity", prop));
                     continue;
                 }
                 // Look for the inverse property in all properties of the target entity
@@ -931,7 +939,7 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                     fireIssue(new Error("Property '" + prop.getPropertyIdentifier()
                             + "' on '" + entity.getQualifiedName()
                             + "' declares inverse='" + inverseId
-                            + "' but no such property found on '" + typeEntity.getQualifiedName() + "'"));
+                            + "' but no such property found on '" + typeEntity.getQualifiedName() + "'", prop));
                 } else {
                     prop.setInverseProperty(inverseProperty);
                 }
@@ -1591,6 +1599,21 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
     /** Returns the number of issues in this metamodel. */
     public int getIssuesCount() {
         return issues.size();
+    }
+
+    /** Returns the number of {@link Error} issues in this metamodel. */
+    public int getErrorsCount() {
+        return (int) issues.stream().filter(i -> i instanceof Error).count();
+    }
+
+    /** Returns the number of {@link Warning} issues in this metamodel. */
+    public int getWarningsCount() {
+        return (int) issues.stream().filter(i -> i instanceof Warning).count();
+    }
+
+    /** Returns the number of {@link Information} issues in this metamodel. */
+    public int getInformationCount() {
+        return (int) issues.stream().filter(i -> i instanceof Information).count();
     }
 
     /**

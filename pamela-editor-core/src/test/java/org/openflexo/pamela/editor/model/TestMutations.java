@@ -1568,6 +1568,81 @@ public class TestMutations {
     }
 
     /**
+     * Repro of NewEntityAction's UI flow — createEntity + addRootTypeName, then rebuild
+     * WITHOUT flushing (exactly what {@code SourceEditingAction.doPerform} does). The new
+     * entity must materialise in the model (already covered by {@link #testCreateEntity}
+     * via flush) AND the meta-model must fire {@code "packages"} on every stable
+     * {@link SourceFolder}, since a browser node already expanded on {@code folder.packages}
+     * listens on the folder itself (not on the meta-model) and would otherwise keep
+     * displaying the stale, pre-rebuild {@link SourcePackage} — see
+     * {@code gina-analysis.md §18.5} for the analogous bug this mirrors (previously fixed
+     * for {@code PamelaProject.diagrams}).
+     */
+    @Test
+    public void testCreateEntityThenRebuildWithoutFlushNotifiesSourceFolder() throws IOException {
+        File workDir = tmp.newFolder("testCreateEntityNoFlush");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourcePackage pkg = mm.getPackage("test.model1");
+        assertNotNull(pkg);
+        SourceFolder folder = mm.getSourceFolders().get(0);
+        assertNotNull(folder);
+
+        final java.util.concurrent.atomic.AtomicBoolean folderNotified =
+                new java.util.concurrent.atomic.AtomicBoolean(false);
+        folder.getPropertyChangeSupport().addPropertyChangeListener("packages",
+                evt -> folderNotified.set(true));
+
+        SourceModelEntity foo3 = mm.createEntity("Foo3", pkg);
+        mm.addRootTypeName("test.model1.Foo3");
+        assertNotNull("immediately after createEntity, in-memory entity exists", foo3);
+        assertTrue("model must be dirty (no flush yet)", mm.isDirty());
+
+        // Rebuild WITHOUT flushing, exactly like SourceEditingAction.doPerform -> rebuildProject
+        mm.rebuildMetaModel();
+
+        assertNotNull("Foo3 must survive the buffer-only rebuild triggered right after creation",
+                mm.getEntity("test.model1.Foo3"));
+        assertTrue("SourceFolder must fire \"packages\" so an already-expanded browser node "
+                + "re-fetches the fresh (post-rebuild) SourcePackage instances", folderNotified.get());
+
+        // The (new, post-rebuild) SourcePackage instance itself must expose the new entity.
+        SourcePackage pkgAfter = mm.getPackage("test.model1");
+        assertNotNull(pkgAfter);
+        assertTrue("the rebuilt package must list the new entity",
+                pkgAfter.getEntities().contains(mm.getEntity("test.model1.Foo3")));
+    }
+
+    /**
+     * {@link SourcePackage#addEntity} must notify listeners directly (not only via a full
+     * meta-model rebuild), so a live view bound to {@code pkg.members}/{@code pkg.entities}
+     * on an existing, still-referenced {@code SourcePackage} instance refreshes too.
+     */
+    @Test
+    public void testSourcePackageAddEntityFiresMembersChange() throws IOException {
+        File workDir = tmp.newFolder("testPackageAddEntityNotifies");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourcePackage pkg = mm.getPackage("test.model1");
+        assertNotNull(pkg);
+
+        final java.util.concurrent.atomic.AtomicBoolean membersNotified =
+                new java.util.concurrent.atomic.AtomicBoolean(false);
+        pkg.getPropertyChangeSupport().addPropertyChangeListener("members",
+                evt -> membersNotified.set(true));
+
+        mm.createEntity("Foo3", pkg);
+
+        assertTrue("SourcePackage.addEntity must fire \"members\"", membersNotified.get());
+    }
+
+    /**
      * After a buffer-only rebuild, a dirty unit's compilation unit must still report its
      * REAL, existing {@code .java} file (a {@code VirtualFile}-parsed unit reports a bogus
      * virtual path otherwise) — so the source view shows it and a later flush writes the

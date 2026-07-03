@@ -10,4 +10,8 @@ public class Warning extends Issue {
     public Warning(String message) {
         super(message);
     }
+
+    public Warning(String message, SourceElement source) {
+        super(message, source);
+    }
 }
