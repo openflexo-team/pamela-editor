@@ -1337,8 +1337,20 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         }
         newInterface.addAnnotation(modelEntityAnnotation);
 
-        // Place the interface in the correct package
-        sourcePackage.getCtPackage().addType(newInterface);
+        // Place the interface in the correct package. sourcePackage.getCtPackage() may still be
+        // null here: a SourcePackage only gets Spoon-linked once it has at least one entity (see
+        // the package-wiring loop in buildProperties), so a brand-new, still-empty package
+        // (e.g. just created via createPackage, with only a package-info.java) has no CtPackage
+        // yet. Resolve/create it via the factory instead of assuming it is already set, and keep
+        // the SourcePackage linked for good so later calls don't hit the same gap.
+        CtPackage ctPackage = sourcePackage.getCtPackage();
+        if (ctPackage == null) {
+            ctPackage = (pkgName == null || pkgName.isEmpty())
+                    ? factory.Package().getRootPackage()
+                    : factory.Package().getOrCreate(pkgName);
+            sourcePackage.setCtPackage(ctPackage);
+        }
+        ctPackage.addType(newInterface);
 
         // Create the compilation unit wrapper
         SourceCompilationUnit scu = SourceCompilationUnit.forNewEntity(newInterface, newFile, this);
@@ -1514,7 +1526,14 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
             }
         }
         File baseDir = bestAncestorDir != null ? bestAncestorDir : sourceFolder.getDirectory();
-        String remaining = bestAncestor.isEmpty() ? qualifiedName : qualifiedName.substring(bestAncestor.length() + 1);
+        String remaining;
+        if (qualifiedName.equals(bestAncestor)) {
+            remaining = ""; // exact match: qualifiedName IS the ancestor package itself
+        } else if (bestAncestor.isEmpty()) {
+            remaining = qualifiedName;
+        } else {
+            remaining = qualifiedName.substring(bestAncestor.length() + 1); // skip the separating dot
+        }
         return remaining.isEmpty() ? baseDir : new File(baseDir, remaining.replace('.', File.separatorChar));
     }
 
@@ -1576,45 +1595,23 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
      * explicitly chosen {@link SourceFolder} (e.g. when a package spans several
      * source directories and the user picked a specific one). Falls back to the
      * folder-agnostic heuristic when {@code sourceFolder} is {@code null}.
+     *
+     * <p>Delegates to {@link #resolvePackageDirectory}, which resolves
+     * {@code sourcePackage}'s own physical directory within the folder from any of
+     * its known files (entity or not — including a still-empty package's own
+     * {@code package-info.java}), not just its entities. An earlier version only
+     * looked at existing entities and fell back to a naive
+     * {@code folder + qualifiedName-as-path} otherwise, which reintroduced the
+     * same ambient-prefix doubling bug fixed for {@link #createPackage} (§ its
+     * javadoc) whenever the target package had zero entities yet — e.g. right
+     * after creating a brand-new package and then immediately adding its first
+     * entity.</p>
      */
     private File resolveTargetDirectory(SourcePackage sourcePackage, SourceFolder sourceFolder) {
         if (sourceFolder == null) {
             return resolveTargetDirectory(sourcePackage);
         }
-        File folderDir = sourceFolder.getDirectory();
-
-        // Strategy 1: reuse an existing entity's directory, but only if it is
-        // actually under the chosen folder (a package may span several folders).
-        // Canonicalize both sides before comparing: Spoon reports canonical file
-        // paths (e.g. /private/var/… on macOS) while the registered source
-        // directory may be a symlink form (/var/…) — see source-metamodel-design.md §18.6.
-        String folderPrefix = canonicalPath(folderDir) + File.separator;
-        for (SourceModelEntity existing : sourcePackage.getEntities()) {
-            SourceCompilationUnit cu = existing.getCompilationUnit();
-            if (cu != null && cu.getFile() != null) {
-                File parent = cu.getFile().getParentFile();
-                if (parent != null && (canonicalPath(parent) + File.separator).startsWith(folderPrefix)) {
-                    return parent;
-                }
-            }
-        }
-
-        // Strategy 2: derive from the chosen folder + package path
-        String pkgName = sourcePackage.getQualifiedName();
-        if (pkgName != null && !pkgName.isEmpty()) {
-            String pkgPath = pkgName.replace('.', File.separatorChar);
-            return new File(folderDir, pkgPath);
-        }
-        return folderDir;
-    }
-
-    /** Canonical path, falling back to the absolute path if canonicalization fails. */
-    private static String canonicalPath(File file) {
-        try {
-            return file.getCanonicalPath();
-        } catch (IOException e) {
-            return file.getAbsolutePath();
-        }
+        return resolvePackageDirectory(sourcePackage.getQualifiedName(), sourceFolder);
     }
 
     // =========================================================================

@@ -483,6 +483,48 @@ public class TestMutations {
         assertFalse("must NOT double the ambient 'test/model2' prefix", wronglyNestedDir.exists());
     }
 
+    /**
+     * Regression for a real bug report: creating a package via {@link SourceMetaModel#createPackage}
+     * and then immediately creating an entity inside that brand-new, still-empty package (the exact
+     * "New Package then New Entity in it" flow) failed with a {@code NullPointerException} ("Operation
+     * failed: null" in the UI). Root cause: a {@link SourcePackage} only gets its Spoon
+     * {@code CtPackage} wired up once it has at least one {@link SourceModelEntity} (see the
+     * package-wiring loop in {@code buildProperties}) — a freshly created, still-empty package
+     * (holding only a {@code package-info.java}) has {@code getCtPackage() == null}, and
+     * {@code createEntity} unconditionally called {@code sourcePackage.getCtPackage().addType(...)}.
+     * Fixed by resolving/creating the {@code CtPackage} via the Spoon factory
+     * ({@code Package().getOrCreate(...)}) instead of assuming it is already set.
+     */
+    @Test
+    public void testCreateEntityInFreshlyCreatedEmptyPackage() throws IOException {
+        // --- Setup ---
+        File workDir = tmp.newFolder("testCreateEntityInFreshPackage");
+        File srcCopy = copyDir(MODEL2_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model2.FlexoProcess");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceFolder folder = mm.getSourceFolders().get(0);
+
+        // --- Mutate: create a brand-new, empty package, then immediately create an entity in it ---
+        SourcePackage pkg = mm.createPackage("test.model2.foo", folder);
+        assertTrue("Sanity: the freshly created package must still be empty", pkg.getEntities().isEmpty());
+        assertNull("Sanity: an empty package has no Spoon CtPackage yet — this is the actual trigger",
+                pkg.getCtPackage());
+        SourceModelEntity entity = mm.createEntity("Foo", pkg, folder, false);
+        mm.addRootTypeName(entity.getQualifiedName());
+
+        // --- Assertions ---
+        assertNotNull(entity);
+        assertEquals("test.model2.foo.Foo", entity.getQualifiedName());
+        assertEquals(pkg, entity.getSourcePackage());
+        File entityFile = new File(srcCopy, "foo" + File.separator + "Foo.java");
+        // File content is buffered (deferred save); flush to verify it lands on disk correctly.
+        mm.flushAll();
+        assertTrue("Foo.java must land directly under the package's own directory",
+                entityFile.exists());
+    }
+
     // =========================================================================
     // Test 6 — deleteEntity
     // =========================================================================
