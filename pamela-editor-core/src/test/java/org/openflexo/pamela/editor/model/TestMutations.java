@@ -345,6 +345,57 @@ public class TestMutations {
         assertNotNull("Foo3 must be discoverable after reload", mm2.getEntity("test.model1.Foo3"));
     }
 
+    /**
+     * The 4-arg {@link SourceMetaModel#createEntity(String, SourcePackage, SourceFolder, boolean)}
+     * overload (used by {@code NewEntityAction}'s richer dialog): the file lands under the chosen
+     * {@link SourceFolder}, {@code isAbstract} is baked into the {@code @ModelEntity} annotation at
+     * AST-creation time (no source-position dependency), and a super-entity can be added right after
+     * creation in the same synchronous call — all three must round-trip through a reload.
+     */
+    @Test
+    public void testCreateEntityWithFolderAbstractAndSuperEntity() throws IOException {
+        // --- Setup ---
+        File workDir = tmp.newFolder("testCreateAbstractFolder");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourcePackage pkg = mm.getPackage("test.model1");
+        assertNotNull(pkg);
+        SourceModelEntity foo1 = mm.getEntity("test.model1.Foo1");
+        assertNotNull(foo1);
+        assertEquals(1, mm.getSourceFolders().size());
+        SourceFolder folder = mm.getSourceFolders().get(0);
+
+        // --- Mutate: create an abstract entity in the explicit folder, then add a super-entity ---
+        // Named "Foo9" (not "Foo3") — model1 already has a Foo3.java fixture (a plain, not-yet-entity
+        // interface used by the declare-as-entity tests) that a colliding name would shadow.
+        SourceModelEntity foo9 = mm.createEntity("Foo9", pkg, folder, true);
+        foo9.addSuperEntity(foo1);
+        mm.flushAll();
+
+        // --- In-memory assertions ---
+        assertTrue("Newly created entity must be abstract", foo9.isAbstract());
+        assertTrue("Super-entity must be recorded", foo9.getDirectSuperEntities().contains(foo1));
+
+        // File must exist directly under the chosen folder (not nested under a spurious
+        // "test/model1" subdirectory — the folder-scoped placement heuristic must not
+        // double-append the package path when it can reuse a sibling entity's directory).
+        File foo9File = new File(srcCopy, "Foo9.java");
+        assertTrue("Foo9.java must exist directly under the chosen source folder", foo9File.exists());
+
+        // --- Reload: isAbstract and the super-interface must round-trip through the printed source ---
+        File pamelaFile2 = new File(workDir, "test2.pamela");
+        writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1", "test.model1.Foo9");
+        SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
+        SourceModelEntity foo9Reloaded = mm2.getEntity("test.model1.Foo9");
+        assertNotNull(foo9Reloaded);
+        assertTrue("isAbstract must survive round-trip", foo9Reloaded.isAbstract());
+        assertTrue("super-entity must survive round-trip",
+                foo9Reloaded.getDirectSuperEntities().contains(mm2.getEntity("test.model1.Foo1")));
+    }
+
     // =========================================================================
     // Test 6 — deleteEntity
     // =========================================================================

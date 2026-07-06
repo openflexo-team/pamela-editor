@@ -102,6 +102,32 @@ public class TestSelectorWidgets {
 	}
 
 	@Test
+	public void testSourceFolderSelector() {
+		SourceFolderSelector selector = new SourceFolderSelector(null);
+		selector.setMetaModel(metaModel);
+		loadFIB(selector.getFIBResource());
+		assertFalse("Source folders should be selectable", selector.getAllSelectableValues().isEmpty());
+		maybeBuildPanel(selector);
+	}
+
+	@Test
+	public void testSourcePackageSelector() {
+		SourcePackageSelector selector = new SourcePackageSelector(null);
+		selector.setMetaModel(metaModel);
+		loadFIB(selector.getFIBResource());
+		assertFalse("Packages should be selectable", selector.getAllSelectableValues().isEmpty());
+		maybeBuildPanel(selector);
+
+		// Scoping to a single source folder restricts the selectable packages to that folder's own.
+		if (!metaModel.getSourceFolders().isEmpty()) {
+			SourcePackageSelector scoped = new SourcePackageSelector(null);
+			scoped.setSourceFolder(metaModel.getSourceFolders().get(0));
+			assertNotNull(scoped.getAllSelectableValues());
+			maybeBuildPanel(scoped);
+		}
+	}
+
+	@Test
 	public void testJavaMethodSelector() {
 		JavaMethodSelector selector = new JavaMethodSelector(null);
 		selector.setEntity(anEntity);
@@ -124,6 +150,7 @@ public class TestSelectorWidgets {
 				"Fib/dialogs/DeclareInitializerForm.fib",
 				"Fib/dialogs/PromoteMethodForm.fib",
 				"Fib/dialogs/PromoteGetterForm.fib",
+				"Fib/dialogs/NewEntityForm.fib",
 		};
 		for (String form : forms) {
 			loadFIB(ResourceLocator.locateResource(form));

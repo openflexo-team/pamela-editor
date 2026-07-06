@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel layout="twocols" darkLevel="0"
+       dataClassName="org.openflexo.pamela.editor.ui.widget.SourcePackageSelector"
+       controllerClassName="org.openflexo.pamela.editor.ui.widget.FIBPamelaObjectSelector$SelectorFIBController"
+       width="320" height="320" border="empty" name="SourcePackageSelector">
+
+  <List name="PotentialMatches" list="data.matchingValues"
+        iteratorClassName="org.openflexo.pamela.editor.model.SourcePackage"
+        visibleRowCount="4" rowHeight="18" createNewRowOnClick="false"
+        selectionMode="SingleListSelection" selected="data.selectedValue"
+        layoutOrientation="vertical" index="0"
+        constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)"
+        visible="(data.matchingValues.size &gt; 1)" useScrollBar="true"
+        format="object.qualifiedName" icon="controller.iconForObject(object)"
+        localize="true" manageDynamicModel="true" showIcon="true"
+        clickAction="controller.selectedObjectChanged()"
+        doubleClickAction="controller.apply()"
+        enterPressedAction="controller.apply()" autoSelectFirstRow="true" />
+
+  <Label name="MatchesLabel" align="right" index="1"
+         data="((&quot;Found &quot; + data.matchingValues.size) + &quot; matches&quot;)"
+         constraints="twocols(expandHorizontally=true;location=center)"
+         visible="((data.matchingValues.size != 1) &amp;&amp; data.isFiltered)"
+         localize="false" />
+
+  <Browser name="packageBrowser" root="data"
+           iteratorClassName="java.lang.Object" deepExploration="false"
+           visibleRowCount="7" rowHeight="18" selectionMode="SingleTreeSelection"
+           selected="data.selectedValue" showFooter="false" rootVisible="false"
+           showRootsHandle="true" manageDynamicModel="true" readOnly="false"
+           clickAction="controller.selectedObjectChanged()"
+           doubleClickAction="controller.apply()"
+           index="2"
+           constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)">
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.ui.widget.SourcePackageSelector"
+                    name="selector" label="&quot;packages&quot;" icon="null">
+      <Children name="sourceFolders" data="selector.sourceFoldersInScope" />
+      <Children name="packages" data="selector.packagesInScope" />
+    </BrowserElement>
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.model.SourceFolder"
+                    name="folder" label="folder.name" icon="controller.iconForObject(folder)">
+      <Children name="folderPackages" data="folder.packages" />
+    </BrowserElement>
+
+    <BrowserElement dataClassName="org.openflexo.pamela.editor.model.SourcePackage"
+                    name="pkg" label="pkg.qualifiedName"
+                    icon="controller.iconForObject(pkg)"
+                    enabled="data.isAcceptableValue(pkg)" />
+  </Browser>
+
+  <Panel name="buttons" layout="flow" flowAlignment="CENTER" hGap="5" border="empty"
+         index="3" constraints="twocols(expandHorizontally=true;location=center)">
+    <Button name="applyBtn" buttonType="Trigger" label="Apply" localize="false"
+            enable="(data.selectedValue != null)" action="controller.apply()" />
+    <Button name="cancelBtn" buttonType="Trigger" label="Cancel" localize="false"
+            action="controller.cancel()" />
+    <Button name="resetBtn" buttonType="Trigger" label="Reset" localize="false"
+            action="controller.reset()" />
+  </Panel>
+</Panel>

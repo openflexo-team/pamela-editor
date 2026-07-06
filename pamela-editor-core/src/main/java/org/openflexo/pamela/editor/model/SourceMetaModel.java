@@ -1282,13 +1282,38 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
      * @throws IOException if the file cannot be written
      */
     public SourceModelEntity createEntity(String simpleName, SourcePackage sourcePackage) throws IOException {
+        return createEntity(simpleName, sourcePackage, null, false);
+    }
+
+    /**
+     * Creates a new {@code @ModelEntity} interface in the given package and
+     * registers it in this meta-model, with explicit placement and abstractness.
+     *
+     * <p>{@code isAbstract} is baked directly into the {@code @ModelEntity}
+     * annotation's AST at construction time (not applied afterwards via
+     * {@link SourceModelEntity#setAbstract(boolean)}, which requires a resolved
+     * source position that a freshly-created, never-parsed interface does not
+     * have yet).</p>
+     *
+     * @param simpleName    the simple name for the new interface
+     * @param sourcePackage the package in which to place the new entity
+     * @param sourceFolder  the source directory to place the file under, or
+     *                      {@code null} to use the same heuristic as the two-arg
+     *                      overload (reuse an existing entity's directory, else
+     *                      the first registered source directory)
+     * @param isAbstract    whether the new entity is declared abstract
+     * @return the newly created {@link SourceModelEntity}
+     * @throws IOException if the file cannot be written
+     */
+    public SourceModelEntity createEntity(String simpleName, SourcePackage sourcePackage,
+            SourceFolder sourceFolder, boolean isAbstract) throws IOException {
         String pkgName = sourcePackage.getQualifiedName();
         String qualifiedName = (pkgName == null || pkgName.isEmpty())
                 ? simpleName
                 : pkgName + "." + simpleName;
 
         // Determine the target directory
-        File targetDir = resolveTargetDirectory(sourcePackage);
+        File targetDir = resolveTargetDirectory(sourcePackage, sourceFolder);
         targetDir.mkdirs();
         File newFile = new File(targetDir, simpleName + ".java");
 
@@ -1305,6 +1330,9 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         CtAnnotation<?> modelEntityAnnotation = factory.Core().createAnnotation();
         modelEntityAnnotation.setAnnotationType(
                 factory.Type().createReference(ModelEntity.class));
+        if (isAbstract) {
+            modelEntityAnnotation.addValue("isAbstract", true);
+        }
         newInterface.addAnnotation(modelEntityAnnotation);
 
         // Place the interface in the correct package
@@ -1430,6 +1458,52 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
             return new File(baseDir, pkgPath);
         }
         return baseDir;
+    }
+
+    /**
+     * Like {@link #resolveTargetDirectory(SourcePackage)}, but anchored to an
+     * explicitly chosen {@link SourceFolder} (e.g. when a package spans several
+     * source directories and the user picked a specific one). Falls back to the
+     * folder-agnostic heuristic when {@code sourceFolder} is {@code null}.
+     */
+    private File resolveTargetDirectory(SourcePackage sourcePackage, SourceFolder sourceFolder) {
+        if (sourceFolder == null) {
+            return resolveTargetDirectory(sourcePackage);
+        }
+        File folderDir = sourceFolder.getDirectory();
+
+        // Strategy 1: reuse an existing entity's directory, but only if it is
+        // actually under the chosen folder (a package may span several folders).
+        // Canonicalize both sides before comparing: Spoon reports canonical file
+        // paths (e.g. /private/var/… on macOS) while the registered source
+        // directory may be a symlink form (/var/…) — see source-metamodel-design.md §18.6.
+        String folderPrefix = canonicalPath(folderDir) + File.separator;
+        for (SourceModelEntity existing : sourcePackage.getEntities()) {
+            SourceCompilationUnit cu = existing.getCompilationUnit();
+            if (cu != null && cu.getFile() != null) {
+                File parent = cu.getFile().getParentFile();
+                if (parent != null && (canonicalPath(parent) + File.separator).startsWith(folderPrefix)) {
+                    return parent;
+                }
+            }
+        }
+
+        // Strategy 2: derive from the chosen folder + package path
+        String pkgName = sourcePackage.getQualifiedName();
+        if (pkgName != null && !pkgName.isEmpty()) {
+            String pkgPath = pkgName.replace('.', File.separatorChar);
+            return new File(folderDir, pkgPath);
+        }
+        return folderDir;
+    }
+
+    /** Canonical path, falling back to the absolute path if canonicalization fails. */
+    private static String canonicalPath(File file) {
+        try {
+            return file.getCanonicalPath();
+        } catch (IOException e) {
+            return file.getAbsolutePath();
+        }
     }
 
     // =========================================================================

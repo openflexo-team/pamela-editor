@@ -1,10 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Panel dataClassName="org.openflexo.pamela.editor.ui.action.NewEntityAction"
        controllerClassName="org.openflexo.gina.controller.FIBController"
-       layout="twocols" name="NewEntityForm" border="empty" width="400" height="200">
+       layout="twocols" name="NewEntityForm" border="empty" width="420" height="180">
 
   <Label name="nameLabel" label="Entity name:" localize="false"
-         align="left" index="0" constraints="twocols(location=left)" />
+         align="left" index="4" constraints="twocols(location=left)" />
   <TextField name="nameTF" data="data.name" columns="22" validateOnReturn="false"
-         index="1" constraints="twocols(expandHorizontally=true;location=right)" />
+         index="5" constraints="twocols(expandHorizontally=true;location=right)" />
+
+  <Label name="sourceFolderLabel" label="Source folder:" localize="false"
+         align="left" index="0" constraints="twocols(location=left)" />
+  <Custom name="sourceFolderSelector"
+         componentClassName="org.openflexo.pamela.editor.ui.widget.SourceFolderSelector"
+         data="data.sourceFolder" manageDynamicModel="true" width="260"
+         index="1" constraints="twocols(expandHorizontally=true;location=right)">
+    <Assignment variable="component.metaModel" value="data.metaModel" />
+  </Custom>
+
+  <Label name="packageLabel" label="Package:" localize="false"
+         align="left" index="2" constraints="twocols(location=left)" />
+  <Custom name="packageSelector"
+         componentClassName="org.openflexo.pamela.editor.ui.widget.SourcePackageSelector"
+         data="data.sourcePackage" manageDynamicModel="true" width="260"
+         index="3" constraints="twocols(expandHorizontally=true;location=right)">
+    <Assignment variable="component.metaModel" value="data.metaModel" />
+    <Assignment variable="component.sourceFolder" value="data.sourceFolder" />
+  </Custom>
+
+  <Label name="abstractLabel" label="Abstract:" localize="false"
+         align="left" index="6" constraints="twocols(location=left)" />
+  <CheckBox name="abstractCB" data="data.abstractEntity" readOnly="false"
+         index="7" constraints="twocols(location=right)" />
+
+  <Label name="superEntityLabel" label="Parent entity (optional):" localize="false"
+         align="left" index="8" constraints="twocols(location=left)" />
+  <Custom name="superEntitySelector"
+         componentClassName="org.openflexo.pamela.editor.ui.widget.ModelEntitySelector"
+         data="data.superEntity" manageDynamicModel="true" width="260"
+         index="9" constraints="twocols(expandHorizontally=true;location=right)">
+    <Assignment variable="component.metaModel" value="data.metaModel" />
+  </Custom>
 </Panel>
