@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel dataClassName="org.openflexo.pamela.editor.ui.action.NewPackageAction"
+       controllerClassName="org.openflexo.gina.controller.FIBController"
+       layout="twocols" name="NewPackageForm" border="empty" width="420" height="90">
+
+  <Label name="nameLabel" label="Package name:" localize="false"
+         align="left" index="0" constraints="twocols(location=left)" />
+  <TextField name="nameTF" data="data.name" columns="22" validateOnReturn="false"
+         index="1" constraints="twocols(expandHorizontally=true;location=right)" />
+
+  <Label name="sourceFolderLabel" label="Source folder:" localize="false"
+         align="left" index="2" constraints="twocols(location=left)" />
+  <Custom name="sourceFolderSelector"
+         componentClassName="org.openflexo.pamela.editor.ui.widget.SourceFolderSelector"
+         data="data.sourceFolder" manageDynamicModel="true" width="260"
+         index="3" constraints="twocols(expandHorizontally=true;location=right)">
+    <Assignment variable="component.metaModel" value="data.metaModel" />
+  </Custom>
+</Panel>

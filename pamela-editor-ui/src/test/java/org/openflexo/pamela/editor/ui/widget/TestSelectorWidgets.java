@@ -151,6 +151,7 @@ public class TestSelectorWidgets {
 				"Fib/dialogs/PromoteMethodForm.fib",
 				"Fib/dialogs/PromoteGetterForm.fib",
 				"Fib/dialogs/NewEntityForm.fib",
+				"Fib/dialogs/NewPackageForm.fib",
 		};
 		for (String form : forms) {
 			loadFIB(ResourceLocator.locateResource(form));

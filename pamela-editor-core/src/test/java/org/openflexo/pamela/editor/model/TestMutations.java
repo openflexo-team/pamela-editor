@@ -396,6 +396,93 @@ public class TestMutations {
                 foo9Reloaded.getDirectSuperEntities().contains(mm2.getEntity("test.model1.Foo1")));
     }
 
+    /**
+     * {@link SourceMetaModel#createPackage(String, SourceFolder)} (used by {@code NewPackageAction}):
+     * a brand-new, empty package must be immediately visible in memory, materialise on disk right
+     * away (directory + a {@code package-info.java} stub — not deferred, since an empty directory
+     * alone would vanish on the very next rebuild), and survive a full reload just like any other
+     * package discovered by the ordinary filesystem scan.
+     *
+     * <p>Uses a single-segment, unrelated name ({@code "newpkg"}, no dotted prefix in common with
+     * the folder's own ambient package "test.model1") so it lands directly under the folder root —
+     * the ambient-prefix-aware placement itself is covered separately by
+     * {@link #testCreatePackageDoesNotDoubleTheAmbientFolderPrefix()}.</p>
+     */
+    @Test
+    public void testCreatePackage() throws IOException {
+        // --- Setup ---
+        File workDir = tmp.newFolder("testCreatePackage");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        assertEquals(1, mm.getSourceFolders().size());
+        SourceFolder folder = mm.getSourceFolders().get(0);
+        assertNull("Package must not exist yet", mm.getPackage("newpkg"));
+
+        // --- Mutate: create a brand-new, empty package ---
+        SourcePackage created = mm.createPackage("newpkg", folder);
+
+        // --- In-memory assertions ---
+        assertNotNull(created);
+        assertEquals("newpkg", created.getQualifiedName());
+        assertSame("Same instance registered in the meta-model", created, mm.getPackage("newpkg"));
+        assertTrue("The new package must be listed among the chosen folder's packages",
+                folder.getPackages().contains(created));
+
+        // --- File assertions: package-info.java is written immediately (not deferred) ---
+        File packageInfoFile = new File(srcCopy, "newpkg" + File.separator + "package-info.java");
+        assertTrue("package-info.java must exist immediately on disk", packageInfoFile.exists());
+        String content = new String(Files.readAllBytes(packageInfoFile.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+        assertTrue("package-info.java must declare the new package", content.contains("package newpkg;"));
+
+        // --- Reload: the package must be re-discovered like any other package (no root type needed) ---
+        File pamelaFile2 = new File(workDir, "test2.pamela");
+        writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
+        assertNotNull("The package must survive a reload (package-info.java keeps it alive)",
+                mm2.getPackage("newpkg"));
+    }
+
+    /**
+     * Regression for a real bug report: {@code model2}'s registered source folder is a
+     * deliberately non-conventional layout — the folder is literally named {@code model2}, but the
+     * files inside declare {@code package test.model2;} (a two-segment ambient package with no
+     * matching directory nesting). Naively computing
+     * {@code folder.getDirectory() + qualifiedName.replace('.', separator)} for a new package named
+     * with the <em>full</em> qualified name (as a user typing a Java package name would naturally
+     * do, e.g. {@code "test.model2.sub"}) doubled the ambient prefix, landing at
+     * {@code model2/test/model2/sub} instead of {@code model2/sub}. {@code createPackage} must
+     * recognise {@code test.model2} as the folder's own already-known ancestor package and nest
+     * only the remaining segment under the folder itself.
+     */
+    @Test
+    public void testCreatePackageDoesNotDoubleTheAmbientFolderPrefix() throws IOException {
+        // --- Setup ---
+        File workDir = tmp.newFolder("testCreatePackageAmbient");
+        File srcCopy = copyDir(MODEL2_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model2.FlexoProcess");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        assertEquals(1, mm.getSourceFolders().size());
+        SourceFolder folder = mm.getSourceFolders().get(0);
+        assertTrue("The folder's own ambient package must already be test.model2",
+                folder.getPackages().stream().anyMatch(p -> "test.model2".equals(p.getQualifiedName())));
+
+        // --- Mutate: type the FULL qualified name, matching the folder's own ambient package ---
+        SourcePackage created = mm.createPackage("test.model2.sub", folder);
+
+        // --- Assertions: must land directly under the folder, not double-nested ---
+        assertEquals("test.model2.sub", created.getQualifiedName());
+        File expectedDir = new File(srcCopy, "sub");
+        File wronglyNestedDir = new File(srcCopy, "test" + File.separator + "model2" + File.separator + "sub");
+        assertTrue("package-info.java must land directly under the source folder",
+                new File(expectedDir, "package-info.java").exists());
+        assertFalse("must NOT double the ambient 'test/model2' prefix", wronglyNestedDir.exists());
+    }
+
     // =========================================================================
     // Test 6 — deleteEntity
     // =========================================================================

@@ -79,6 +79,7 @@ import org.openflexo.pamela.editor.ui.action.PromotableMethod;
 import org.openflexo.pamela.editor.ui.action.PromoteGetterAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsPamelaEntityAction;
 import org.openflexo.pamela.editor.ui.action.NewEntityAction;
+import org.openflexo.pamela.editor.ui.action.NewPackageAction;
 import org.openflexo.pamela.editor.ui.action.RenameEntityAction;
 import org.openflexo.pamela.editor.ui.action.DeleteEntityAction;
 import org.openflexo.pamela.editor.ui.action.AddSuperEntityAction;
@@ -737,6 +738,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         registerAction(new DeclareAsPamelaEntityAction());
         // --- Model-editing actions (entities) — model-editing-design.md Lot 1 ---
         registerAction(new NewEntityAction());
+        registerAction(new NewPackageAction());
         registerAction(new RenameEntityAction());
         registerAction(new DeleteEntityAction());
         registerAction(new AddSuperEntityAction());

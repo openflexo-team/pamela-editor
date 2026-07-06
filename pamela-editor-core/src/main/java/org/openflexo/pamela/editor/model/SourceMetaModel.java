@@ -3,6 +3,8 @@ package org.openflexo.pamela.editor.model;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1423,6 +1425,115 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
             addRootTypeName(qualifiedName);
         }
         file.invalidateContent();
+    }
+
+    /**
+     * Creates a new, initially empty package under the given {@link SourceFolder} and registers
+     * it in this meta-model.
+     *
+     * <p>A directory is only recognised as a package once it contains at least one {@code .java}
+     * file (see {@link #scanForPackages}) — an empty directory would vanish on the very next
+     * rebuild, which always follows a model-editing action. A minimal {@code package-info.java}
+     * stub (just the {@code package} declaration) is therefore written <b>immediately</b> — not
+     * deferred like entity content — so the package survives. This mirrors {@code mkdirs()}
+     * already being an immediate, non-buffered side effect in {@link #createEntity}.</p>
+     *
+     * <p>If the same qualified package name already exists (e.g. under a different source
+     * folder — a package may legitimately span several source directories), the existing
+     * {@link SourcePackage} is reused and simply gains this new directory's {@code package-info.java}
+     * as one more of its {@linkplain SourcePackage#getJavaFiles() java files}.</p>
+     *
+     * <p><b>Placement is anchored on the longest already-known ancestor package, not naively
+     * derived from the folder's own root.</b> A registered source folder does not necessarily
+     * correspond to the empty/default package: it may already be positioned at a non-trivial
+     * ambient package (e.g. a folder literally named {@code model2} whose files declare
+     * {@code package test.model2;} — a deliberately non-conventional layout used by this
+     * project's own test fixtures, but the same reasoning applies to any folder registered below
+     * a project's true source root). Naively computing
+     * {@code folder.getDirectory() + qualifiedName.replace('.', separator)} would then double up
+     * the ambient prefix (creating {@code test.model2.foo} under a folder that is *already*
+     * {@code test/model2} would land at {@code model2/test/model2/foo} instead of
+     * {@code model2/foo}). Instead, {@link #resolvePackageDirectory} finds the longest package
+     * already known to this folder whose qualified name is a dotted prefix of the new one, and
+     * nests only the remaining segments under that package's own (already resolved) directory —
+     * mirroring {@link #resolveTargetDirectory(SourcePackage)}'s "reuse a sibling's real directory
+     * rather than assume a path convention" strategy for entities.</p>
+     *
+     * @param qualifiedName the new package's qualified name, e.g. {@code "org.example.sub"}
+     * @param sourceFolder  the source directory to create the package under
+     * @return the (possibly pre-existing) {@link SourcePackage}
+     * @throws IOException if the directory or the {@code package-info.java} file cannot be written
+     */
+    public SourcePackage createPackage(String qualifiedName, SourceFolder sourceFolder) throws IOException {
+        File targetDir = resolvePackageDirectory(qualifiedName, sourceFolder);
+        targetDir.mkdirs();
+
+        File packageInfoFile = new File(targetDir, "package-info.java");
+        if (!packageInfoFile.exists()) {
+            Files.write(packageInfoFile.toPath(),
+                    ("package " + qualifiedName + ";\n").getBytes(StandardCharsets.UTF_8));
+        }
+
+        SourcePackage pkg = packages.get(qualifiedName);
+        if (pkg == null) {
+            pkg = new SourcePackage(qualifiedName, this);
+            packages.put(qualifiedName, pkg);
+        }
+        final SourcePackage finalPkg = pkg;
+        boolean alreadyPresent = finalPkg.getJavaFiles().stream()
+                .anyMatch(f -> f.getFile().equals(packageInfoFile));
+        if (!alreadyPresent) {
+            pkg.addJavaFile(new SourceJavaFile(packageInfoFile, sourceFolder.getDirectory(), this));
+        }
+        return pkg;
+    }
+
+    /**
+     * Determines the file-system directory for a new package {@code qualifiedName} under
+     * {@code sourceFolder} — see {@link #createPackage}'s javadoc for the rationale.
+     *
+     * <p>Finds the longest package already known to {@code sourceFolder} (i.e. one of
+     * {@link SourceFolder#getPackages()}) whose qualified name is a dotted prefix of
+     * {@code qualifiedName}, resolves that package's own directory <em>within this folder</em>
+     * (from one of its existing java files), and nests only the remaining dotted segments under
+     * it. Falls back to {@code sourceFolder.getDirectory() + qualifiedName-as-path} when no
+     * ancestor package is found (a genuinely new, unrelated top-level hierarchy).</p>
+     */
+    private File resolvePackageDirectory(String qualifiedName, SourceFolder sourceFolder) {
+        String bestAncestor = "";
+        File bestAncestorDir = null;
+        for (SourcePackage candidate : sourceFolder.getPackages()) {
+            String candidateName = candidate.getQualifiedName();
+            if (!isPackagePrefixOf(candidateName, qualifiedName) || candidateName.length() <= bestAncestor.length()) {
+                continue;
+            }
+            File dir = directoryOfPackageInFolder(candidate, sourceFolder);
+            if (dir != null) {
+                bestAncestor = candidateName;
+                bestAncestorDir = dir;
+            }
+        }
+        File baseDir = bestAncestorDir != null ? bestAncestorDir : sourceFolder.getDirectory();
+        String remaining = bestAncestor.isEmpty() ? qualifiedName : qualifiedName.substring(bestAncestor.length() + 1);
+        return remaining.isEmpty() ? baseDir : new File(baseDir, remaining.replace('.', File.separatorChar));
+    }
+
+    /** {@code true} if {@code prefix} is a non-empty package that {@code full} equals or nests under. */
+    private static boolean isPackagePrefixOf(String prefix, String full) {
+        return !prefix.isEmpty() && (full.equals(prefix) || full.startsWith(prefix + "."));
+    }
+
+    /** The directory of {@code pkg}'s own files within {@code folder}, or {@code null} if none found. */
+    private static File directoryOfPackageInFolder(SourcePackage pkg, SourceFolder folder) {
+        for (SourceJavaFile jf : pkg.getJavaFiles()) {
+            if (jf.getSourceDirectory().equals(folder.getDirectory())) {
+                File parent = jf.getFile().getParentFile();
+                if (parent != null) {
+                    return parent;
+                }
+            }
+        }
+        return null;
     }
 
     /**
