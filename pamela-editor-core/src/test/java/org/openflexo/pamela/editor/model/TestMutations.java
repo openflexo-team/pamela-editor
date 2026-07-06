@@ -346,6 +346,93 @@ public class TestMutations {
     }
 
     /**
+     * A freshly created entity's source must not be a single squashed line: the
+     * {@code @ModelEntity} annotation must be resolved via an import (not printed
+     * fully qualified), and the file must have the conventional blank-line spacing
+     * around the package statement / imports, plus a non-collapsed empty body.
+     */
+    @Test
+    public void testCreateEntitySourceIsWellFormatted() throws IOException {
+        File workDir = tmp.newFolder("testCreateFormatted");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourcePackage pkg = mm.getPackage("test.model1");
+        mm.createEntity("Foo3", pkg);
+        mm.flushAll();
+
+        File foo3File = new File(srcCopy, "Foo3.java");
+        String content = new String(Files.readAllBytes(foo3File.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+        assertEquals("package test.model1;\n"
+                + "\n"
+                + "import org.openflexo.pamela.annotations.ModelEntity;\n"
+                + "\n"
+                + "@ModelEntity\n"
+                + "public interface Foo3 {\n"
+                + "\n"
+                + "}\n", content);
+    }
+
+    /**
+     * Every one of the five source-style toggles (source-style-preferences-design.md) is
+     * independently switchable and defaults to producing the well-formatted layout asserted by
+     * {@link #testCreateEntitySourceIsWellFormatted}. Disabling all three spacing toggles must
+     * fall back to Spoon's own compact printing (no blank lines, collapsed empty body).
+     */
+    @Test
+    public void testCreateEntitySourceSpacingTogglesAreIndependent() throws IOException {
+        File workDir = tmp.newFolder("testCreateSpacingOff");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        mm.setBlankLineAfterPackage(false);
+        mm.setBlankLineAfterImports(false);
+        mm.setExpandEmptyBody(false);
+        SourcePackage pkg = mm.getPackage("test.model1");
+        mm.createEntity("Foo3", pkg);
+        mm.flushAll();
+
+        File foo3File = new File(srcCopy, "Foo3.java");
+        String content = new String(Files.readAllBytes(foo3File.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+        assertEquals("package test.model1;\n"
+                + "import org.openflexo.pamela.annotations.ModelEntity;\n"
+                + "@ModelEntity\n"
+                + "public interface Foo3 {}\n", content);
+    }
+
+    /**
+     * {@code useTabulations} / {@code tabulationSize} configure the shared Spoon environment
+     * used by every AST pretty-print (not just new-entity creation): disabling tabs must switch
+     * a regenerated member body over to the configured number of spaces.
+     */
+    @Test
+    public void testTabulationPreferenceAppliesToGeneratedMembers() throws IOException {
+        File workDir = tmp.newFolder("testTabPref");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        // useTabulations/tabulationSize configure the Launcher environment only at
+        // buildMetaModel() time, so they must be set before the (re)build they should affect.
+        mm.setUseTabulations(false);
+        mm.setTabulationSize(2);
+        mm.rebuildMetaModel();
+        SourceModelEntity foo1 = mm.getEntity("test.model1.Foo1");
+        foo1.addSingleProperty("age", "int");
+        mm.flushAll();
+
+        File foo1File = new File(srcCopy, "Foo1.java");
+        String content = new String(Files.readAllBytes(foo1File.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+        assertTrue("Expected 2-space indentation, got:\n" + content, content.contains("\n  @Getter"));
+        assertFalse("Must not contain tab-indented members", content.contains("\t@Getter"));
+    }
+
+    /**
      * The 4-arg {@link SourceMetaModel#createEntity(String, SourcePackage, SourceFolder, boolean)}
      * overload (used by {@code NewEntityAction}'s richer dialog): the file lands under the chosen
      * {@link SourceFolder}, {@code isAbstract} is baked into the {@code @ModelEntity} annotation at

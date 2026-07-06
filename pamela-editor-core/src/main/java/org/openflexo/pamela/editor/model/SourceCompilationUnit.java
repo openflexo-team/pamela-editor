@@ -8,11 +8,12 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import spoon.reflect.cu.CompilationUnit;
 import spoon.reflect.declaration.CtInterface;
 import spoon.reflect.declaration.CtType;
-import spoon.reflect.visitor.DefaultJavaPrettyPrinter;
 
 /**
  * Represents a single {@code .java} file in the source tree.
@@ -264,7 +265,14 @@ public class SourceCompilationUnit implements SourceElement {
      * Marks the unit dirty; does <b>not</b> write to disk.
      *
      * <p>Two print strategies, as before: the compilation-unit printer for a
-     * loaded file, {@link DefaultJavaPrettyPrinter} for a brand-new entity.</p>
+     * loaded file, {@code env.createPrettyPrinter().printTypes(...)} for a
+     * brand-new entity — both go through {@link spoon.Environment#createPrettyPrinter()}
+     * so the auto-import preprocessors ({@code ImportCleaner}/{@code ImportConflictDetector})
+     * run in both cases. Instantiating {@link spoon.reflect.visitor.DefaultJavaPrettyPrinter}
+     * directly (as this used to do for the new-entity path) skips those preprocessors
+     * entirely, since they are only wired up by {@code createPrettyPrinter()} — the symptom
+     * was a fully-qualified annotation reference and no import statement on a freshly
+     * created entity.</p>
      */
     public void regenerateFromAST() {
         setText(printFromAst());
@@ -282,11 +290,60 @@ public class SourceCompilationUnit implements SourceElement {
                     .createPrettyPrinter()
                     .printCompilationUnit(ctCompilationUnit);
         }
-        // New-entity path: use DefaultJavaPrettyPrinter directly on the interface
-        DefaultJavaPrettyPrinter printer = new DefaultJavaPrettyPrinter(
-                ctInterface.getFactory().getEnvironment());
-        printer.calculate(null, Collections.singletonList(ctInterface));
-        return printer.getResult();
+        // New-entity path: same entry point (env.createPrettyPrinter()), so imports are
+        // computed and simple names are used, matching the normal path's formatting.
+        String printed = ctInterface.getFactory().getEnvironment()
+                .createPrettyPrinter()
+                .printTypes(ctInterface);
+        // Spoon's default printer packs the package statement, the imports and the type
+        // declaration with no blank line in between, and collapses an empty body to "{}"
+        // on one line. This is fine as a diff-minimal reprint of an *existing* file, but
+        // this is a brand-new file with no prior formatting to preserve, so give it the
+        // conventional layout (blank line after the package statement and after the last
+        // import, an empty body on its own lines) instead — each toggle governed by the
+        // Generation > Style preference (source-style-preferences-design.md).
+        return formatFreshInterfaceSource(printed,
+                metaModel.isBlankLineAfterPackage(),
+                metaModel.isBlankLineAfterImports(),
+                metaModel.isExpandEmptyBody());
+    }
+
+    private static final Pattern IMPORT_LINE = Pattern.compile("(?m)^import\\s[^;]+;\\r?\\n");
+
+    /**
+     * Adds the blank-line spacing a hand-written file would have around the package
+     * statement and the imports, and expands a collapsed empty body ({@code "{}"}) onto
+     * its own lines, each independently toggleable. Purely cosmetic; safe to run on any
+     * freshly generated interface source (idempotent, no-op if the spacing/body shape is
+     * already as expected). See {@code source-style-preferences-design.md}.
+     */
+    static String formatFreshInterfaceSource(String printed,
+            boolean blankLineAfterPackage, boolean blankLineAfterImports, boolean expandEmptyBody) {
+        if (blankLineAfterPackage) {
+            // Blank line right after "package ...;".
+            printed = printed.replaceFirst("(?m)\\A(package\\s[^;]+;)\\r?\\n(?!\\r?\\n)", "$1\n\n");
+        }
+
+        if (blankLineAfterImports) {
+            // Blank line right after the last import statement.
+            Matcher m = IMPORT_LINE.matcher(printed);
+            int lastImportEnd = -1;
+            while (m.find()) {
+                lastImportEnd = m.end();
+            }
+            if (lastImportEnd >= 0 && !printed.startsWith("\n", lastImportEnd)) {
+                printed = printed.substring(0, lastImportEnd) + "\n" + printed.substring(lastImportEnd);
+            }
+        }
+
+        if (expandEmptyBody) {
+            // An empty body ("{}" or "{ }") gets its own blank line rather than staying collapsed.
+            printed = printed.replaceFirst("\\{\\s*\\}\\s*\\z", "{\n\n}\n");
+        }
+        if (!printed.endsWith("\n")) {
+            printed += "\n";
+        }
+        return printed;
     }
 
     /**

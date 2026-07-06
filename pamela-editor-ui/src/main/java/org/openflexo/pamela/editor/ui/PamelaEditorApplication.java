@@ -20,9 +20,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.swing.JButton;
@@ -219,6 +221,16 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     private javax.swing.JProgressBar progressBar;
     private javax.swing.JLabel statusLabel;
     private int activeBuilds; // ref-count so concurrent loads don't hide the bar early
+
+    // Projects with a rebuild currently running in the background. Guards against two hazards:
+    // (1) a model-editing action's applyMutation (EDT) directly mutating a SourceMetaModel's
+    //     collections (entities, packages…) while a background rebuild for the SAME project is
+    //     still iterating/rewriting them — a genuine ConcurrentModificationException risk, since
+    //     nothing previously prevented the EDT from staying responsive and accepting a new action
+    //     while a slow (multi-second) Spoon rebuild was still in flight;
+    // (2) two overlapping rebuildProject calls for the same project racing each other.
+    // See model-editing-design.md (NewPackageAction section) for the concrete crash this fixes.
+    private final Set<PamelaProject> rebuildingProjects = new HashSet<>();
 
     private final SwingToolFactory toolFactory;
     private final FlexoFileChooser fileChooser;
@@ -872,11 +884,19 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                             setProgress(Math.max(0, Math.min(100, (int) Math.round(fraction * 100))));
                             publish(message);
                         };
+                // useTabulations/tabulationSize configure the Spoon environment at build time,
+                // so — like customMethodFilter — they must be passed to the serializer rather
+                // than set on the model afterwards (source-style-preferences-design.md).
                 SourceMetaModel metaModel =
-                        SourceMetaModelSerializer.load(pamelaFile, pl, currentCustomMethodFilter());
-                // The default-identifier-style preference only affects generation (not detection),
-                // so it is set on the built model rather than passed to the serializer.
+                        SourceMetaModelSerializer.load(pamelaFile, pl, currentCustomMethodFilter(),
+                                currentUseTabulations(), currentTabulationSize());
+                // The default-identifier-style preference and the remaining source-style toggles
+                // only affect generation (not detection/parsing), so they are set on the built
+                // model rather than passed to the serializer.
                 metaModel.setDefaultPropertyIdentifierStyle(currentDefaultPropertyIdentifierStyle());
+                metaModel.setBlankLineAfterPackage(currentBlankLineAfterPackage());
+                metaModel.setBlankLineAfterImports(currentBlankLineAfterImports());
+                metaModel.setExpandEmptyBody(currentExpandEmptyBody());
                 logger.info(metaModel.prettyPrint());
 
                 // 2. Create project (lightweight)
@@ -1215,6 +1235,16 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if (project == null) {
             return;
         }
+        if (rebuildingProjects.contains(project)) {
+            // Another rebuild is already running for this project: starting a second one would
+            // run two SwingWorkers concurrently mutating the same SourceMetaModel collections.
+            // The in-flight rebuild already reflects the current model state, so this redundant
+            // request is simply skipped rather than racing it.
+            logger.fine("rebuildProject skipped: a rebuild is already in progress for "
+                    + project.getMetaModel().getName());
+            return;
+        }
+        rebuildingProjects.add(project);
         SourceMetaModel metaModel = project.getMetaModel();
 
         buildStarted("Rebuilding " + metaModel.getName() + "…");
@@ -1229,6 +1259,11 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                 metaModel.setProgressListener(pl);
                 metaModel.setCustomMethodFilter(currentCustomMethodFilter());
                 metaModel.setDefaultPropertyIdentifierStyle(currentDefaultPropertyIdentifierStyle());
+                metaModel.setUseTabulations(currentUseTabulations());
+                metaModel.setTabulationSize(currentTabulationSize());
+                metaModel.setBlankLineAfterPackage(currentBlankLineAfterPackage());
+                metaModel.setBlankLineAfterImports(currentBlankLineAfterImports());
+                metaModel.setExpandEmptyBody(currentExpandEmptyBody());
                 try {
                     metaModel.rebuildMetaModel();
                 } finally {
@@ -1297,10 +1332,22 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                         afterRebuild.run();
                     }
                 } finally {
+                    rebuildingProjects.remove(project);
                     buildFinished();
                 }
             }
         }.execute();
+    }
+
+    /**
+     * Whether a background rebuild is currently running for {@code project}. Model-editing
+     * actions must not mutate the meta-model while its own rebuild is in flight — the mutation
+     * (on the EDT) would race the background thread's iteration/rewrite of the same collections
+     * (entities, packages…) and can throw {@code ConcurrentModificationException}. See
+     * {@link org.openflexo.pamela.editor.ui.action.SourceEditingAction#doPerform}.
+     */
+    public boolean isRebuilding(PamelaProject project) {
+        return project != null && rebuildingProjects.contains(project);
     }
 
     /**
@@ -1686,6 +1733,56 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             // preferences not available — fall back to default
         }
         return org.openflexo.pamela.editor.model.PropertyIdentifierStyle.DEFAULT;
+    }
+
+    /**
+     * The Generation &gt; Style preference node, or {@code null} if preferences are unavailable
+     * or the node hasn't been built. See {@code source-style-preferences-design.md}.
+     */
+    private org.openflexo.pamela.editor.ui.preferences.SourceStylePreferences currentSourceStylePreferences() {
+        try {
+            org.openflexo.pamela.editor.ui.preferences.GenerationPreferences generation =
+                    org.openflexo.pamela.editor.ui.preferences.PreferencesManager.getInstance().generation();
+            if (generation != null) {
+                org.openflexo.pamela.editor.ui.preferences.PreferencesNode style = generation.getChild("style");
+                if (style instanceof org.openflexo.pamela.editor.ui.preferences.SourceStylePreferences) {
+                    return (org.openflexo.pamela.editor.ui.preferences.SourceStylePreferences) style;
+                }
+            }
+        } catch (Exception ignored) {
+            // preferences not available — fall back to defaults
+        }
+        return null;
+    }
+
+    /** Indent with tabs (as opposed to spaces); configures the Spoon environment at build time. */
+    private boolean currentUseTabulations() {
+        org.openflexo.pamela.editor.ui.preferences.SourceStylePreferences style = currentSourceStylePreferences();
+        return style != null ? style.getUseTabulations() : true;
+    }
+
+    /** Indentation width in spaces, used only when {@link #currentUseTabulations()} is {@code false}. */
+    private int currentTabulationSize() {
+        org.openflexo.pamela.editor.ui.preferences.SourceStylePreferences style = currentSourceStylePreferences();
+        return style != null ? style.getTabulationSize() : 4;
+    }
+
+    /** Blank line after the {@code package} statement of a brand-new entity. */
+    private boolean currentBlankLineAfterPackage() {
+        org.openflexo.pamela.editor.ui.preferences.SourceStylePreferences style = currentSourceStylePreferences();
+        return style != null ? style.getBlankLineAfterPackage() : true;
+    }
+
+    /** Blank line after the last import of a brand-new entity. */
+    private boolean currentBlankLineAfterImports() {
+        org.openflexo.pamela.editor.ui.preferences.SourceStylePreferences style = currentSourceStylePreferences();
+        return style != null ? style.getBlankLineAfterImports() : true;
+    }
+
+    /** Expand a brand-new, member-less entity's body onto its own lines instead of {@code "{}"}. */
+    private boolean currentExpandEmptyBody() {
+        org.openflexo.pamela.editor.ui.preferences.SourceStylePreferences style = currentSourceStylePreferences();
+        return style != null ? style.getExpandEmptyBody() : true;
     }
 
     private Object getDetailedBrowserElement(Object element) {

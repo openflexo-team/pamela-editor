@@ -25,6 +25,16 @@ public abstract class SourceEditingAction extends ContextualAction {
         if (project == null) {
             return;
         }
+        if (app.isRebuilding(project)) {
+            // A background rebuild is already iterating/rewriting this project's SourceMetaModel
+            // collections (entities, packages…). Running applyMutation now would race it on the
+            // EDT and can throw ConcurrentModificationException — refuse and let the user retry
+            // once the in-flight rebuild has finished.
+            ModelEditingSupport.error(app, getLabel(),
+                    "A rebuild is already in progress for this project.\n"
+                            + "Please wait for it to finish, then try again.");
+            return;
+        }
         Supplier<Object> reselect;
         try {
             reselect = applyMutation(target, app, project);
