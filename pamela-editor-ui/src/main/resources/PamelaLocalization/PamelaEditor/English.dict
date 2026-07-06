@@ -91,6 +91,7 @@ preferences_entities=Entities
 preferences_general=General
 preferences_generation=Generation
 preferences_recent=Recent files
+preferences_style=Style
 preferences_window=Windows
 project_location=Location
 project_name=Project name

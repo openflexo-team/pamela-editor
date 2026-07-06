@@ -60,6 +60,8 @@ public final class PreferencesRegistry {
                 "preferences_analysis", "analysis", null));
         register(new PreferencesContribution(GenerationPreferences.class, "/", "generation", 3,
                 "preferences_generation", "generation", null));
+        register(new PreferencesContribution(SourceStylePreferences.class, "/generation", "style", 0,
+                "preferences_style", "style", null));
     }
 
     public static synchronized List<PreferencesContribution> contributions() {

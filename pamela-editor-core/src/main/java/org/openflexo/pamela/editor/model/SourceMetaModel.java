@@ -130,6 +130,14 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
     // (property-identifier-constant-design.md §5). Populated from the Analysis preference by the UI.
     private PropertyIdentifierStyle defaultPropertyIdentifierStyle = PropertyIdentifierStyle.DEFAULT;
 
+    // Source style / templating preferences (source-style-preferences-design.md). Populated
+    // from the Generation > Style preference by the UI; take effect on the next buildMetaModel().
+    private boolean useTabulations = true;
+    private int tabulationSize = 4;
+    private boolean blankLineAfterPackage = true;
+    private boolean blankLineAfterImports = true;
+    private boolean expandEmptyBody = true;
+
     // Public model
     private String name;
     private final Map<String, SourcePackage> packages;            // key = qualified package name
@@ -372,6 +380,10 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         Launcher launcher = new Launcher();
         launcher.getEnvironment().setNoClasspath(true);
         launcher.getEnvironment().setAutoImports(true);
+        // Source style / templating preferences (source-style-preferences-design.md): applies to
+        // every AST pretty-print through this environment, not only new-entity creation.
+        launcher.getEnvironment().useTabulations(useTabulations);
+        launcher.getEnvironment().setTabulationSize(tabulationSize);
         if (progressListener != null) {
             launcher.getEnvironment().setSpoonProgress(new SpoonProgressAdapter(progressListener));
         }
@@ -478,6 +490,65 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
     /** The default identifier style for generation (always {@code CONSTANT} or {@code LITERAL}). */
     public PropertyIdentifierStyle getDefaultPropertyIdentifierStyle() {
         return defaultPropertyIdentifierStyle;
+    }
+
+    /**
+     * Whether {@link #buildMetaModel()} configures the shared Spoon environment to indent with
+     * tabs (as opposed to spaces). Applies to <b>every</b> AST pretty-print (rename, add
+     * property, new entity…), not only new files. Populated from the Generation &gt; Style
+     * preference by the UI; takes effect on the next {@link #buildMetaModel()}. See
+     * {@code source-style-preferences-design.md}.
+     */
+    public void setUseTabulations(boolean useTabulations) {
+        this.useTabulations = useTabulations;
+    }
+
+    public boolean isUseTabulations() {
+        return useTabulations;
+    }
+
+    /** Indentation width in spaces, used only when {@link #isUseTabulations()} is {@code false}. */
+    public void setTabulationSize(int tabulationSize) {
+        this.tabulationSize = tabulationSize;
+    }
+
+    public int getTabulationSize() {
+        return tabulationSize;
+    }
+
+    /**
+     * Whether a brand-new entity's source gets a blank line after the {@code package}
+     * statement. Only affects the new-entity print path
+     * ({@link SourceCompilationUnit#printFromAst()}), never a re-printed existing file. See
+     * {@code source-style-preferences-design.md}.
+     */
+    public void setBlankLineAfterPackage(boolean blankLineAfterPackage) {
+        this.blankLineAfterPackage = blankLineAfterPackage;
+    }
+
+    public boolean isBlankLineAfterPackage() {
+        return blankLineAfterPackage;
+    }
+
+    /** Whether a brand-new entity's source gets a blank line after the last import. */
+    public void setBlankLineAfterImports(boolean blankLineAfterImports) {
+        this.blankLineAfterImports = blankLineAfterImports;
+    }
+
+    public boolean isBlankLineAfterImports() {
+        return blankLineAfterImports;
+    }
+
+    /**
+     * Whether a brand-new entity with no members gets its empty body expanded onto its own
+     * lines ({@code "{\n\n}"}) instead of the printer's collapsed {@code "{}"}.
+     */
+    public void setExpandEmptyBody(boolean expandEmptyBody) {
+        this.expandEmptyBody = expandEmptyBody;
+    }
+
+    public boolean isExpandEmptyBody() {
+        return expandEmptyBody;
     }
 
     /** The build-cache sidecar file, or {@code null} if caching is disabled. */

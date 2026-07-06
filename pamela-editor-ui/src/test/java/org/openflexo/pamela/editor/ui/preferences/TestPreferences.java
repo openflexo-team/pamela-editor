@@ -53,6 +53,11 @@ public class TestPreferences {
         assertTrue(design.getChild("entities") instanceof EntityStylePreferences);
         assertEquals("/classDiagramDesign/entities", design.getChild("entities").getPath());
         assertTrue(root.getChild("analysis") instanceof AnalysisPreferences);
+
+        PreferencesNode generation = root.getChild("generation");
+        assertTrue(generation instanceof GenerationPreferences);
+        assertTrue(generation.getChild("style") instanceof SourceStylePreferences);
+        assertEquals("/generation/style", generation.getChild("style").getPath());
     }
 
     @Test
@@ -68,6 +73,13 @@ public class TestPreferences {
 
         AnalysisPreferences analysis = (AnalysisPreferences) root.getChild("analysis");
         assertTrue(analysis.getBuildCacheEnabled());
+
+        SourceStylePreferences style = (SourceStylePreferences) root.getChild("generation").getChild("style");
+        assertTrue(style.getUseTabulations());
+        assertEquals(4, style.getTabulationSize());
+        assertTrue(style.getBlankLineAfterPackage());
+        assertTrue(style.getBlankLineAfterImports());
+        assertTrue(style.getExpandEmptyBody());
     }
 
     @Test
@@ -119,6 +131,34 @@ public class TestPreferences {
                 reloaded.getChild("classDiagramDesign").getChild("entities");
         assertEquals(new java.awt.Color(12, 34, 56), entities2.getHeaderBackgroundColor());
         assertEquals(new java.awt.Font("Serif", java.awt.Font.BOLD, 14), entities2.getTitleFont());
+    }
+
+    @Test
+    public void testSourceStylePreferencesRoundTrip() throws Exception {
+        PamelaEditorPreferencesModel root = buildTree();
+        SourceStylePreferences style = (SourceStylePreferences) root.getChild("generation").getChild("style");
+
+        style.setUseTabulations(false);
+        style.setTabulationSize(2);
+        style.setBlankLineAfterPackage(false);
+        style.setBlankLineAfterImports(false);
+        style.setExpandEmptyBody(false);
+
+        File tmp = File.createTempFile("prefs-style", ".json");
+        tmp.deleteOnExit();
+        PreferencesSerializer serializer = new PreferencesSerializer(factory);
+        serializer.save(root, tmp);
+
+        PamelaEditorPreferencesModel reloaded = buildTree();
+        serializer.applyJson(reloaded, tmp);
+        SourceStylePreferences style2 =
+                (SourceStylePreferences) reloaded.getChild("generation").getChild("style");
+
+        assertFalse(style2.getUseTabulations());
+        assertEquals(2, style2.getTabulationSize());
+        assertFalse(style2.getBlankLineAfterPackage());
+        assertFalse(style2.getBlankLineAfterImports());
+        assertFalse(style2.getExpandEmptyBody());
     }
 
     @Test

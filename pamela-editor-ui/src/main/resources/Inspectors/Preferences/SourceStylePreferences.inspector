@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+    dataClassName="org.openflexo.pamela.editor.ui.preferences.SourceStylePreferences" name="Inspector">
+    <Label name="UseTabulationsLabel" label="use_tabulations" index="10"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="UseTabulationsCB" index="11" data="data.useTabulations"
+        constraints="twocols(location=right)" />
+    <Label name="TabulationSizeLabel" label="tabulation_size" index="12"
+        constraints="twocols(location=left)" localize="true" />
+    <Number name="TabulationSizeNB" index="13" data="data.tabulationSize" numberType="IntegerType"
+        minValue="1" maxValue="8" columns="4"
+        constraints="twocols(location=right)" />
+    <Label name="BlankLineAfterPackageLabel" label="blank_line_after_package" index="14"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="BlankLineAfterPackageCB" index="15" data="data.blankLineAfterPackage"
+        constraints="twocols(location=right)" />
+    <Label name="BlankLineAfterImportsLabel" label="blank_line_after_imports" index="16"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="BlankLineAfterImportsCB" index="17" data="data.blankLineAfterImports"
+        constraints="twocols(location=right)" />
+    <Label name="ExpandEmptyBodyLabel" label="expand_empty_body" index="18"
+        constraints="twocols(location=left)" localize="true" />
+    <CheckBox name="ExpandEmptyBodyCB" index="19" data="data.expandEmptyBody"
+        constraints="twocols(location=right)" />
+    <LocalizedDictionary>
+        <Localized key="use_tabulations" lang="English" value="Indent with tabs" />
+        <Localized key="use_tabulations" lang="French" value="Indenter avec des tabulations" />
+        <Localized key="use_tabulations" lang="Dutch" value="Inspringen met tabs" />
+        <Localized key="tabulation_size" lang="English" value="Indent width (spaces)" />
+        <Localized key="tabulation_size" lang="French" value="Largeur d&apos;indentation (espaces)" />
+        <Localized key="tabulation_size" lang="Dutch" value="Inspringbreedte (spaties)" />
+        <Localized key="blank_line_after_package" lang="English" value="Blank line after package statement" />
+        <Localized key="blank_line_after_package" lang="French" value="Ligne vide après le package" />
+        <Localized key="blank_line_after_package" lang="Dutch" value="Lege regel na package-statement" />
+        <Localized key="blank_line_after_imports" lang="English" value="Blank line after imports" />
+        <Localized key="blank_line_after_imports" lang="French" value="Ligne vide après les imports" />
+        <Localized key="blank_line_after_imports" lang="Dutch" value="Lege regel na imports" />
+        <Localized key="expand_empty_body" lang="English" value="Expand empty body onto its own lines" />
+        <Localized key="expand_empty_body" lang="French" value="Développer le corps vide sur des lignes séparées" />
+        <Localized key="expand_empty_body" lang="Dutch" value="Lege body op eigen regels weergeven" />
+    </LocalizedDictionary>
+    <Parameter name="title" value="Style" />
+</Inspector>

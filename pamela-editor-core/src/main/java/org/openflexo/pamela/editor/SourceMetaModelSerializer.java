@@ -102,6 +102,33 @@ public class SourceMetaModelSerializer {
             org.openflexo.pamela.editor.model.BuildProgressListener progressListener,
             org.openflexo.pamela.editor.model.CustomMethodFilter customMethodFilter)
             throws IOException {
+        return load(pamelaFile, progressListener, customMethodFilter, true, 4);
+    }
+
+    /**
+     * Loads a {@link SourceMetaModel} from a {@code .pamela} project file, reporting build
+     * progress, applying the given custom-method visibility filter, and configuring the
+     * indentation style used by every AST pretty-print (source-style-preferences-design.md).
+     * These two must be set <em>before</em> the Spoon model is built, unlike the other three
+     * source-style toggles ({@code blankLineAfterPackage}/{@code blankLineAfterImports}/
+     * {@code expandEmptyBody}), which only affect generation and can be set on the returned
+     * model at any time (see {@link SourceMetaModel#setBlankLineAfterPackage}).
+     *
+     * @param pamelaFile         the {@code .pamela} file to load; must exist
+     * @param progressListener   optional progress listener (may be {@code null})
+     * @param customMethodFilter which interface methods are surfaced as operations
+     *                           (may be {@code null} → default)
+     * @param useTabulations     indent with tabs (as opposed to spaces)
+     * @param tabulationSize     indentation width in spaces, used only when
+     *                           {@code useTabulations} is {@code false}
+     * @return a fully built {@link SourceMetaModel}
+     * @throws IOException as {@link #load(File)}
+     */
+    public static SourceMetaModel load(File pamelaFile,
+            org.openflexo.pamela.editor.model.BuildProgressListener progressListener,
+            org.openflexo.pamela.editor.model.CustomMethodFilter customMethodFilter,
+            boolean useTabulations, int tabulationSize)
+            throws IOException {
         if (!pamelaFile.exists()) {
             throw new IOException("Project file not found: " + pamelaFile.getAbsolutePath());
         }
@@ -161,6 +188,8 @@ public class SourceMetaModelSerializer {
 
         mm.setProgressListener(progressListener);
         mm.setCustomMethodFilter(customMethodFilter);
+        mm.setUseTabulations(useTabulations);
+        mm.setTabulationSize(tabulationSize);
         mm.buildMetaModel();
         return mm;
     }
