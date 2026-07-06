@@ -29,6 +29,7 @@ public abstract class SourceEditingAction extends ContextualAction {
         try {
             reselect = applyMutation(target, app, project);
         } catch (Exception e) {
+        	e.printStackTrace();
             ModelEditingSupport.error(app, getLabel(),
                     "Operation failed:\n" + e.getMessage());
             return;
