@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NewSinglePropertyForm.fib — "New single property" (model-editing-design.md §3.3 / §5bis).
+  Header + identifier + type, then getter/setter/updater rows. Each row: checkbox + mode
+  dropdown (Generate/Attach) + (generate) editable name field OR (attach) filtered selector
+  (both fill the row), with a right-justified italic summary below.
+-->
+<Panel dataClassName="org.openflexo.pamela.editor.ui.action.NewSinglePropertyAction"
+       controllerClassName="org.openflexo.gina.controller.FIBController"
+       layout="twocols" name="NewSinglePropertyForm" border="empty" width="600" height="280">
+
+  <Label name="header" data="data.headerSummary" localize="false" align="center" font="SansSerif,1,14"
+         index="0" constraints="twocols(expandHorizontally=true;location=center;insetsTop=10;insetsBottom=10)" />
+
+  <Label name="idLabel" label="Identifier" localize="false" align="left"
+         index="1" constraints="twocols(location=left)" />
+  <TextField name="idTF" data="data.identifier" columns="22" validateOnReturn="false"
+         index="2" constraints="twocols(expandHorizontally=true;location=right)" />
+
+  <Label name="typeLabel" label="Type" localize="false" align="left"
+         index="3" constraints="twocols(location=left)" />
+  <Custom name="typeSelector" componentClassName="org.openflexo.gina.swing.utils.TypeSelector"
+         data="data.type" manageDynamicModel="true" width="260"
+         index="4" constraints="twocols(expandHorizontally=true;location=right)">
+    <Assignment variable="component.customTypeManager" value="data.customTypeManager" />
+    <Assignment variable="component.customTypeEditorProvider" value="data.customTypeEditorProvider" />
+  </Custom>
+
+  <Label name="getterLabel" label="Getter:" localize="false" align="left"
+         index="5" constraints="twocols(location=left)" />
+  <Panel name="getterRow" layout="gridbag" border="empty"
+         index="6" constraints="twocols(expandHorizontally=true;location=right)">
+    <CheckBox name="getterCB" data="data.getterOption.include" enable="data.getterOption.toggleable"
+           constraints="gridbag(gridX=0;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <DropDown name="getterMode" data="data.getterOption.mode" list="data.getterOption.availableModes"
+           iteratorClassName="org.openflexo.pamela.editor.ui.action.AccessorOption$Mode"
+           format="object.label"
+           constraints="gridbag(gridX=1;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <TextField name="getterName" data="data.getterOption.generatedName" columns="10" validateOnReturn="false"
+           visible="data.getterOption.generateMode"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)" />
+    <Custom name="getterSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+           data="data.getterOption.method" manageDynamicModel="true"
+           visible="data.getterOption.attachMode"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)">
+      <Assignment variable="component.entity" value="data.entity" />
+      <Assignment variable="component.restrictedValues" value="data.getterOption.candidates" />
+    </Custom>
+    <Label name="getterSummary" data="data.getterOption.summary" localize="false" align="left" font="SansSerif,2,10"
+           constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
+  </Panel>
+
+  <Label name="setterLabel" label="Setter:" localize="false" align="left"
+         index="7" constraints="twocols(location=left)" />
+  <Panel name="setterRow" layout="gridbag" border="empty"
+         index="8" constraints="twocols(expandHorizontally=true;location=right)">
+    <CheckBox name="setterCB" data="data.setterOption.include"
+           constraints="gridbag(gridX=0;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <DropDown name="setterMode" data="data.setterOption.mode" list="data.setterOption.availableModes"
+           iteratorClassName="org.openflexo.pamela.editor.ui.action.AccessorOption$Mode"
+           format="object.label" enable="data.setterOption.include"
+           constraints="gridbag(gridX=1;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <TextField name="setterName" data="data.setterOption.generatedName" columns="10" validateOnReturn="false"
+           visible="data.setterOption.generateMode" enable="data.setterOption.include"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)" />
+    <Custom name="setterSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+           data="data.setterOption.method" manageDynamicModel="true"
+           visible="data.setterOption.attachMode" enable="data.setterOption.include"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)">
+      <Assignment variable="component.entity" value="data.entity" />
+      <Assignment variable="component.restrictedValues" value="data.setterOption.candidates" />
+    </Custom>
+    <Label name="setterSummary" data="data.setterOption.summary" localize="false" align="left" font="SansSerif,2,10"
+           constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
+  </Panel>
+
+  <Label name="updaterLabel" label="Updater:" localize="false" align="left"
+         index="9" constraints="twocols(location=left)" />
+  <Panel name="updaterRow" layout="gridbag" border="empty"
+         index="10" constraints="twocols(expandHorizontally=true;location=right)">
+    <CheckBox name="updaterCB" data="data.updaterOption.include"
+           constraints="gridbag(gridX=0;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <DropDown name="updaterMode" data="data.updaterOption.mode" list="data.updaterOption.availableModes"
+           iteratorClassName="org.openflexo.pamela.editor.ui.action.AccessorOption$Mode"
+           format="object.label" enable="data.updaterOption.include"
+           constraints="gridbag(gridX=1;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <TextField name="updaterName" data="data.updaterOption.generatedName" columns="10" validateOnReturn="false"
+           visible="data.updaterOption.generateMode" enable="data.updaterOption.include"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)" />
+    <Custom name="updaterSel" componentClassName="org.openflexo.pamela.editor.ui.widget.JavaMethodSelector"
+           data="data.updaterOption.method" manageDynamicModel="true"
+           visible="data.updaterOption.attachMode" enable="data.updaterOption.include"
+           constraints="gridbag(gridX=2;gridY=0;weightX=1.0;fill=horizontal;anchor=west)">
+      <Assignment variable="component.entity" value="data.entity" />
+      <Assignment variable="component.restrictedValues" value="data.updaterOption.candidates" />
+    </Custom>
+    <Label name="updaterSummary" data="data.updaterOption.summary" localize="false" align="left" font="SansSerif,2,10"
+           constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
+  </Panel>
+</Panel>
