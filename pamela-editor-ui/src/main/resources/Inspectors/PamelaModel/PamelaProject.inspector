@@ -1,15 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+<Inspector layout="border" darkLevel="0" font="SansSerif,0,11"
     dataClassName="org.openflexo.pamela.editor.ui.PamelaProject" name="Inspector">
-    <Label name="NameLabel" label="project_name" index="0"
-        constraints="twocols(location=left)" localize="true" />
-    <TextField name="NameTF" index="1" data="data.metaModel.name" readOnly="true"
-        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="20" localize="true" />
-    <Label name="LocationLabel" label="project_location" index="2"
-        constraints="twocols(location=left)" localize="true" />
-    <TextField name="LocationTF" index="3" data="data.pamelaFilePath" readOnly="true"
-        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="20" localize="true" />
+    <TabPanel name="Tab" index="0" constraints="border(location=center)">
+        <Tab title="basic" layout="twocols" name="BasicTab" index="0" localize="true">
+            <Label name="NameLabel" label="project_name" index="0"
+                constraints="twocols(location=left)" localize="true" />
+            <TextField name="NameTF" index="1" data="data.metaModel.name" readOnly="true"
+                constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="20" localize="true" />
+            <Label name="LocationLabel" label="project_location" index="2"
+                constraints="twocols(location=left)" localize="true" />
+            <TextField name="LocationTF" index="3" data="data.pamelaFilePath" readOnly="true"
+                constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="20" localize="true" />
+            <Panel name="Spacer" layout="flow" index="4"
+                constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)" />
+        </Tab>
+    </TabPanel>
     <LocalizedDictionary>
+        <Localized key="basic" lang="English" value="Basic" />
+        <Localized key="basic" lang="French" value="Basique" />
         <Localized key="project_name" lang="English" value="Name" />
         <Localized key="project_name" lang="French" value="Nom" />
         <Localized key="project_location" lang="English" value="Location" />

@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Inspector layout="twocols" darkLevel="0" font="SansSerif,0,11"
+<Inspector layout="border" darkLevel="0" font="SansSerif,0,11"
     dataClassName="org.openflexo.pamela.editor.model.SourceModelInitializer" name="Inspector">
-    <Label name="MethodNameLabel" label="Initializer" index="0"
-        constraints="twocols(location=left)" localize="true" />
-    <TextField name="MethodNameTF" index="1" data="data.methodName" readOnly="true"
-        constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
-    <Label name="ParametersLabel" label="parameters" index="2"
-        constraints="twocols(location=left)" localize="true" />
-    <TextField name="ParametersTF" index="3" data="data.parameters.size" readOnly="true"
-        constraints="twocols(location=right;insetsRight=5)" columns="5" localize="true" />
+    <TabPanel name="Tab" index="0" constraints="border(location=center)">
+        <Tab title="basic" layout="twocols" name="BasicTab" index="0" localize="true">
+            <Label name="MethodNameLabel" label="initializer_label" index="0"
+                constraints="twocols(location=left)" localize="true" />
+            <TextField name="MethodNameTF" index="1" data="data.methodName" readOnly="true"
+                constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
+            <Label name="ParametersLabel" label="parameters" index="2"
+                constraints="twocols(location=left)" localize="true" />
+            <TextField name="ParametersTF" index="3" data="data.parameters.size" readOnly="true"
+                constraints="twocols(location=right;insetsRight=5)" columns="5" localize="true" />
+            <Panel name="Spacer" layout="flow" index="4"
+                constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)" />
+        </Tab>
+    </TabPanel>
     <LocalizedDictionary>
+        <Localized key="basic" lang="English" value="Basic" />
+        <Localized key="basic" lang="French" value="Basique" />
+        <Localized key="initializer_label" lang="English" value="Initializer" />
+        <Localized key="initializer_label" lang="French" value="Initialiseur" />
         <Localized key="method_name" lang="English" value="Method name" />
         <Localized key="method_name" lang="French" value="Nom de méthode" />
         <Localized key="parameters" lang="English" value="Parameters" />
