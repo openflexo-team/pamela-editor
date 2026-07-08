@@ -80,6 +80,9 @@
             <TextFieldColumn id="56" data="iterator.declaredCustomMethods.size.toString"
                 title="#ops" displayTitle="true" resizable="false" columnWidth="35"
                 showIcon="false" readOnly="true" alignment="center" name="EntityOperationsCount" />
+            <TextFieldColumn id="58" data="iterator.importedEntities.size.toString"
+                title="#imports" displayTitle="true" resizable="false" columnWidth="60"
+                showIcon="false" readOnly="true" alignment="center" name="EntityImportsCount" />
         </Table>
 
     </Panel>
@@ -100,6 +103,8 @@
         <Localized id="106" lang="French"  value="Opérations"          key="operations" />
         <Localized id="107" lang="English" value="Implementation class" key="implementation_class" />
         <Localized id="108" lang="French"  value="Classe d'implémentation" key="implementation_class" />
+        <Localized id="109" lang="English" value="Imports"                key="imports" />
+        <Localized id="110" lang="French"  value="Imports"                key="imports" />
     </LocalizedDictionary>
 
 </Panel>

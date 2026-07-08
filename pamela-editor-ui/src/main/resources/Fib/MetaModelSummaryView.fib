@@ -133,15 +133,18 @@
             <TextFieldColumn id="145" data="(iterator.implementationClass != null ? iterator.implementationClass.simpleName : &quot;&quot;)"
                 title="implementation_class" displayTitle="true" resizable="true" columnWidth="150"
                 showIcon="false" readOnly="true" name="EntityImplementationClass" />
-            <TextFieldColumn id="146" data="iterator.declaredProperties.size.toString"
-                title="properties" displayTitle="true" resizable="false" columnWidth="70"
-                showIcon="false" readOnly="true" alignment="center" name="EntityPropertiesCount" />
-            <TextFieldColumn id="147" data="iterator.initializers.size.toString"
-                title="initializers" displayTitle="true" resizable="false" columnWidth="70"
+             <TextFieldColumn id="146" data="iterator.initializers.size.toString"
+                title="#init" displayTitle="true" resizable="false" columnWidth="35"
                 showIcon="false" readOnly="true" alignment="center" name="EntityInitializersCount" />
-            <TextFieldColumn id="148" data="iterator.declaredCustomMethods.size.toString"
-                title="operations" displayTitle="true" resizable="false" columnWidth="70"
+           <TextFieldColumn id="147" data="iterator.declaredProperties.size.toString"
+                title="#props" displayTitle="true" resizable="false" columnWidth="50"
+                showIcon="false" readOnly="true" alignment="center" name="EntityPropertiesCount" />
+           <TextFieldColumn id="148" data="iterator.declaredCustomMethods.size.toString"
+                title="#ops" displayTitle="true" resizable="false" columnWidth="35"
                 showIcon="false" readOnly="true" alignment="center" name="EntityOperationsCount" />
+            <TextFieldColumn id="152" data="iterator.importedEntities.size.toString"
+                title="#imports" displayTitle="true" resizable="false" columnWidth="60"
+                showIcon="false" readOnly="true" alignment="center" name="EntityImportsCount" />
             <AddAction id="151" method="controller.addRootType()"
                 name="add_root_type" />
         </Table>
@@ -174,6 +177,8 @@
         <Localized id="124" lang="French"  value="Opérations"          key="operations" />
         <Localized id="125" lang="English" value="Implementation class" key="implementation_class" />
         <Localized id="126" lang="French"  value="Classe d'implémentation" key="implementation_class" />
+        <Localized id="129" lang="English" value="Imports"                key="imports" />
+        <Localized id="130" lang="French"  value="Imports"                key="imports" />
     </LocalizedDictionary>
 
 </Panel>
