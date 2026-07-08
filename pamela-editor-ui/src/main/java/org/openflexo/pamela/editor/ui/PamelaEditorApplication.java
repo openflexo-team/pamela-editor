@@ -1323,6 +1323,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                 pcs.firePropertyChange("abstractEntitiesCount", -1, metaModel.getAbstractEntitiesCount());
                 pcs.firePropertyChange("totalInitializersCount", -1, metaModel.getTotalInitializersCount());
                 pcs.firePropertyChange("issuesCount", -1, metaModel.getIssuesCount());
+                pcs.firePropertyChange("errorsCount", -1, metaModel.getErrorsCount());
+                pcs.firePropertyChange("warningsCount", -1, metaModel.getWarningsCount());
+                pcs.firePropertyChange("informationCount", -1, metaModel.getInformationCount());
                 pcs.firePropertyChange("issues", null, new ArrayList<>(metaModel.getIssues()));
 
                 // A model-editing mutation leaves the meta-model dirty (deferred save).
