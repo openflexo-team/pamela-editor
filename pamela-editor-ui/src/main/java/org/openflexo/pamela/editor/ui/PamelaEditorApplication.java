@@ -86,6 +86,8 @@ import org.openflexo.pamela.editor.ui.action.RenameEntityAction;
 import org.openflexo.pamela.editor.ui.action.DeleteEntityAction;
 import org.openflexo.pamela.editor.ui.action.AddSuperEntityAction;
 import org.openflexo.pamela.editor.ui.action.RemoveSuperEntityAction;
+import org.openflexo.pamela.editor.ui.action.AddImportAction;
+import org.openflexo.pamela.editor.ui.action.RemoveImportAction;
 import org.openflexo.pamela.editor.ui.action.NewListPropertyAction;
 import org.openflexo.pamela.editor.ui.action.NewSinglePropertyAction;
 import org.openflexo.pamela.editor.ui.action.PromoteMethodAction;
@@ -756,6 +758,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         registerAction(new DeleteEntityAction());
         registerAction(new AddSuperEntityAction());
         registerAction(new RemoveSuperEntityAction());
+        registerAction(new AddImportAction());
+        registerAction(new RemoveImportAction());
         // --- Model-editing actions (properties) — model-editing-design.md Lot 2 ---
         registerAction(new NewSinglePropertyAction());
         registerAction(new NewListPropertyAction());
@@ -2860,6 +2864,14 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if ("addSuperEntityRequested".equals(evt.getPropertyName())
                 && element instanceof SourceModelEntity) {
             new org.openflexo.pamela.editor.ui.action.AddSuperEntityAction().perform(element, this);
+            return;
+        }
+        // UI-intent: the entity inspector's imports table "+" footer asked to add an
+        // import — run the existing AddImportAction (its own selection dialog + mutation +
+        // rebuild) rather than rebuilding here.
+        if ("addImportRequested".equals(evt.getPropertyName())
+                && element instanceof SourceModelEntity) {
+            new org.openflexo.pamela.editor.ui.action.AddImportAction().perform(element, this);
             return;
         }
        // The Source* instance is replaced by the rebuild; capture how to re-resolve

@@ -136,9 +136,12 @@ public class TestIncrementalBuild {
      * Then add the model2 source directory and FlexoProcess as an additional root.
      * The rebuilt model must contain entities from both directories.
      *
-     * <p>Starting from FlexoProcess alone the upward BFS reaches 6 entities from
-     * model2 (FlexoProcess, WKFObject, TestModelObject, AbstractNode, Edge,
-     * WKFAnnotation), plus the 2 entities from model1 = 8 total.</p>
+     * <p>Starting from FlexoProcess alone, the upward BFS plus {@code @Imports}
+     * (imports-support-design.md — FlexoProcess declares
+     * {@code @Imports({ @Import(ActivityNode.class), @Import(StartNode.class),
+     * @Import(EndNode.class), @Import(TokenEdge.class), @Import(WKFAnnotation.class) })})
+     * reaches 11 entities from model2 (see {@code TestModel2
+     * .testEntityCountFromFlexoProcessOnly}), plus the 2 entities from model1 = 13 total.</p>
      */
     @Test
     public void scenario4_addSourceDirectoryAndRebuild() {
@@ -159,7 +162,7 @@ public class TestIncrementalBuild {
         assertNotNull(model.getEntity("test.model1.Foo1"));
         assertNotNull(model.getEntity("test.model1.Foo2"));
 
-        // model2 entities reachable from FlexoProcess
+        // model2 entities reachable from FlexoProcess (inheritance/property types)
         assertNotNull(model.getEntity("test.model2.FlexoProcess"));
         assertNotNull(model.getEntity("test.model2.WKFObject"));
         assertNotNull(model.getEntity("test.model2.TestModelObject"));
@@ -167,8 +170,15 @@ public class TestIncrementalBuild {
         assertNotNull(model.getEntity("test.model2.Edge"));
         assertNotNull(model.getEntity("test.model2.WKFAnnotation"));
 
-        // Total: 2 (model1) + 6 (model2 from FlexoProcess) = 8
-        assertEquals("After adding model2: 8 entities total", 8, model.getEntitiesCount());
+        // ... plus FlexoProcess's own @Imports targets (imports-support-design.md)
+        assertNotNull(model.getEntity("test.model2.ActivityNode"));
+        assertNotNull(model.getEntity("test.model2.StartNode"));
+        assertNotNull(model.getEntity("test.model2.EndNode"));
+        assertNotNull(model.getEntity("test.model2.TokenEdge"));
+        assertNotNull(model.getEntity("test.model2.EventNode")); // transitive via StartNode/EndNode
+
+        // Total: 2 (model1) + 11 (model2 from FlexoProcess) = 13
+        assertEquals("After adding model2: 13 entities total", 13, model.getEntitiesCount());
     }
 
     // =========================================================================

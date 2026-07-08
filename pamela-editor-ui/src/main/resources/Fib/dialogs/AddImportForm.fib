@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel dataClassName="org.openflexo.pamela.editor.ui.action.AddImportAction"
+       controllerClassName="org.openflexo.gina.controller.FIBController"
+       layout="twocols" name="AddImportForm" border="empty" width="400" height="80">
+
+  <Label name="importLabel" label="Import:" localize="false"
+         align="left" index="0" constraints="twocols(location=left)" />
+  <Custom name="importSelector"
+         componentClassName="org.openflexo.pamela.editor.ui.widget.ModelEntitySelector"
+         data="data.selectedEntity" manageDynamicModel="true" width="260"
+         index="1" constraints="twocols(expandHorizontally=true;location=right)">
+    <Assignment variable="component.metaModel" value="data.metaModel" />
+    <Assignment variable="component.restrictedValues" value="data.candidateEntities" />
+  </Custom>
+</Panel>

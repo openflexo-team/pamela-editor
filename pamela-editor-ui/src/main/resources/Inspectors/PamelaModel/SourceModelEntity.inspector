@@ -48,7 +48,22 @@
                 constraints="twocols(location=left)" localize="true" />
             <TextField name="IdStyleTF" index="3" data="data.identifierStyle.name" readOnly="true"
                 constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="12" localize="true" />
-            <Panel name="Spacer" layout="flow" index="4"
+            <Label name="ImportsLabel" label="imports" index="4"
+                constraints="twocols(expandHorizontally=false;expandVertically=false;location=left)" localize="true" />
+            <Table name="ImportsTable" iteratorClassName="org.openflexo.pamela.editor.model.SourceModelEntity"
+                lookAndFeel="FlatDesign" showHeader="false" autoSelectFirstRow="false"
+                createNewRowOnClick="false" showFooter="true" selectionMode="SingleSelection"
+                localize="true" manageDynamicModel="true" opaque="false" index="5"
+                data="data.importedEntities"
+                constraints="twocols(expandHorizontally=true;expandVertically=false;location=right)">
+                <IconColumn name="icon" data="controller.iconForObject(iterator)"
+                    title="icon" columnWidth="25" resizable="false" displayTitle="false" />
+                <LabelColumn name="label" data="iterator.simpleName"
+                    title="entity" columnWidth="120" resizable="true" displayTitle="true" />
+                <RemoveAction name="delete" method="data.unlinkImport(selected)" />
+                <AddAction name="add_import" method="data.requestAddImport()" />
+            </Table>
+            <Panel name="Spacer" layout="flow" index="6"
                 constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)" />
         </Tab>
     </TabPanel>
@@ -79,6 +94,10 @@
         <Localized key="name" lang="French" value="Nom" />
         <Localized key="add_super_entity" lang="English" value="Add" />
         <Localized key="add_super_entity" lang="French" value="Ajouter" />
+        <Localized key="imports" lang="English" value="Imports" />
+        <Localized key="imports" lang="French" value="Imports" />
+        <Localized key="add_import" lang="English" value="Add" />
+        <Localized key="add_import" lang="French" value="Ajouter" />
     </LocalizedDictionary>
     <Parameter name="title" value="Entity" />
 </Inspector>

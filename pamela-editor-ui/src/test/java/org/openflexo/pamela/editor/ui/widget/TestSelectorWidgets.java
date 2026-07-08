@@ -154,6 +154,8 @@ public class TestSelectorWidgets {
 				"Fib/dialogs/NewPackageForm.fib",
 				"Fib/dialogs/NewSinglePropertyForm.fib",
 				"Fib/dialogs/NewListPropertyForm.fib",
+				"Fib/dialogs/AddImportForm.fib",
+				"Fib/dialogs/RemoveImportForm.fib",
 		};
 		for (String form : forms) {
 			loadFIB(ResourceLocator.locateResource(form));

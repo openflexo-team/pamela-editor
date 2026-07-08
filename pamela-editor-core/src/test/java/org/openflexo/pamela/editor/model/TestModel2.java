@@ -35,20 +35,26 @@ import org.openflexo.pamela.editor.SourceMetaModelSerializer;
  *     WKFAnnotation
  * </pre>
  *
- * <p>The bottom-up BFS traversal follows <em>super-interfaces</em> and
- * {@code @Getter} property types upward — it does <em>not</em> traverse
- * downward to subtypes. Starting from {@code FlexoProcess} alone therefore
- * reaches 6 entities: FlexoProcess, WKFObject, TestModelObject, AbstractNode,
- * Edge, WKFAnnotation.</p>
+ * <p>The bottom-up BFS traversal follows <em>super-interfaces</em>,
+ * {@code @Getter} property types, and {@code @Imports}/{@code @Import} targets
+ * (imports-support-design.md) — it does <em>not</em> otherwise traverse downward
+ * to subtypes. {@code FlexoProcess} declares
+ * {@code @Imports({ @Import(ActivityNode.class), @Import(StartNode.class),
+ * @Import(EndNode.class), @Import(TokenEdge.class), @Import(WKFAnnotation.class) })},
+ * so starting from {@code FlexoProcess} alone reaches 11 entities: the 6 reached via
+ * inheritance/property types (FlexoProcess, WKFObject, TestModelObject, AbstractNode,
+ * Edge, WKFAnnotation) plus the 4 leaf entities pulled in directly by {@code @Import}
+ * (ActivityNode, StartNode, EndNode, TokenEdge) plus {@code EventNode}, reached
+ * transitively as StartNode's/EndNode's super-interface.</p>
  *
- * <p>To cover leaf entities like {@code ActivityNode}, {@code StartNode},
- * {@code TokenEdge} etc., we provide them as additional root types.</p>
+ * <p>{@code MyNode} is the only leaf entity {@code FlexoProcess} does not reach this
+ * way (it is not imported); it is provided as an additional root type.</p>
  */
 public class TestModel2 {
 
     /**
      * Meta-model built from {@code FlexoProcess} as the sole root type.
-     * Only 6 entities are reachable via the upward traversal.
+     * 11 entities are reachable via the upward traversal plus {@code @Imports}.
      */
     private static SourceMetaModel metaModelFromFlexoProcess;
 
@@ -74,22 +80,41 @@ public class TestModel2 {
     // =========================================================================
 
     /**
-     * Starting from FlexoProcess alone, the upward traversal reaches 6 entities:
-     * FlexoProcess, WKFObject, TestModelObject, AbstractNode, Edge, WKFAnnotation.
-     * Leaf entities (ActivityNode, StartNode, etc.) are subtypes, not reachable
-     * by following super-interfaces or @Getter property types upward.
+     * Starting from FlexoProcess alone, the upward traversal plus {@code @Imports}
+     * reaches 11 entities: FlexoProcess, WKFObject, TestModelObject, AbstractNode, Edge,
+     * WKFAnnotation (inheritance/property types) plus ActivityNode, StartNode, EndNode,
+     * TokenEdge (FlexoProcess's own {@code @Import} targets) plus EventNode (reached
+     * transitively as StartNode's/EndNode's super-interface). {@code MyNode} is the only
+     * leaf entity not reachable this way (not imported, no property references it).
      */
     @Test
     public void testEntityCountFromFlexoProcessOnly() {
-        assertEquals(6, metaModelFromFlexoProcess.getEntities().size());
+        assertEquals(11, metaModelFromFlexoProcess.getEntities().size());
 
-        // The 6 expected entities
+        // Reached via inheritance / property types
         assertNotNull(metaModelFromFlexoProcess.getEntity("test.model2.FlexoProcess"));
         assertNotNull(metaModelFromFlexoProcess.getEntity("test.model2.WKFObject"));
         assertNotNull(metaModelFromFlexoProcess.getEntity("test.model2.TestModelObject"));
         assertNotNull(metaModelFromFlexoProcess.getEntity("test.model2.AbstractNode"));
         assertNotNull(metaModelFromFlexoProcess.getEntity("test.model2.Edge"));
         assertNotNull(metaModelFromFlexoProcess.getEntity("test.model2.WKFAnnotation"));
+
+        // Reached via FlexoProcess's own @Imports (imports-support-design.md)
+        assertNotNull(metaModelFromFlexoProcess.getEntity("test.model2.ActivityNode"));
+        assertNotNull(metaModelFromFlexoProcess.getEntity("test.model2.StartNode"));
+        assertNotNull(metaModelFromFlexoProcess.getEntity("test.model2.EndNode"));
+        assertNotNull(metaModelFromFlexoProcess.getEntity("test.model2.TokenEdge"));
+
+        // Reached transitively: StartNode/EndNode's own super-interface
+        assertNotNull(metaModelFromFlexoProcess.getEntity("test.model2.EventNode"));
+
+        // Not reachable — no @Import, no property reference
+        assertNull(metaModelFromFlexoProcess.getEntity("test.model2.MyNode"));
+
+        // FlexoProcess.getImportedEntities() reflects the raw @Imports declaration
+        List<SourceModelEntity> imports = metaModelFromFlexoProcess
+                .getEntity("test.model2.FlexoProcess").getImportedEntities();
+        assertEquals(5, imports.size());
     }
 
     /**

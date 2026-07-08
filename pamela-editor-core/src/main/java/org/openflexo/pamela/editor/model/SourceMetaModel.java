@@ -20,6 +20,8 @@ import org.openflexo.pamela.annotations.Deleter;
 import org.openflexo.pamela.annotations.Finder;
 import org.openflexo.pamela.annotations.Getter;
 import org.openflexo.pamela.annotations.ImplementationClass;
+import org.openflexo.pamela.annotations.Import;
+import org.openflexo.pamela.annotations.Imports;
 import org.openflexo.pamela.annotations.Initializer;
 import org.openflexo.pamela.annotations.ModelEntity;
 import org.openflexo.pamela.annotations.Operation;
@@ -680,6 +682,20 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                     }
                 }
             }
+
+            // Enqueue @Imports/@Import targets: types PAMELA embeds in the meta-model
+            // even though they are not reachable via inheritance or a property type
+            // (e.g. concrete subtypes of an abstract entity registered only via @Import —
+            // see imports-support-design.md and pamela-editor-ui's ConnectorView). Mirrors
+            // PAMELA's own ModelEntity.init() embeddedEntities resolution of @Imports.
+            for (String importedName : readImportedTypeNames(ctType)) {
+                CtType<?> importedType = findType(importedName);
+                if (importedType != null && !importedType.isShadow()
+                        && importedType.getAnnotation(ModelEntity.class) != null
+                        && !entities.containsKey(importedName)) {
+                    queue.add(importedName);
+                }
+            }
         }
 
         // Wire SourcePackage instances for packages containing entities.
@@ -765,6 +781,22 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
             // Build custom methods (operations) from the interface, after the impl class
             // is resolved so the IMPLEMENTED_IN_IMPL filter and the impl link work.
             buildCustomMethods(entity, ctType);
+
+            // Capture the raw @Imports/@Import declaration and validate each entry
+            // (imports-support-design.md §4.3). Resolution into SourceModelEntity
+            // references happens in Phase 3, once every entity is known.
+            List<String> importedNames = readImportedTypeNames(ctType);
+            entity.setImportedEntityNames(importedNames);
+            for (String importedName : importedNames) {
+                CtType<?> importedType = findType(importedName);
+                if (importedType == null || importedType.isShadow()
+                        || importedType.getAnnotation(ModelEntity.class) == null) {
+                    fireIssue(new Warning("Entity '" + entity.getQualifiedName()
+                            + "' declares @Import(" + importedName
+                            + ") but it does not resolve to a known @ModelEntity in this project",
+                            entity));
+                }
+            }
 
             // Validate initPolicy = REQUIRED + no initializer + not abstract
             if (!entity.isAbstract()
@@ -979,6 +1011,16 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                 }
             }
 
+            // 1b. Resolve @Imports/@Import links (raw names captured in Phase 2). An entry
+            // that failed to resolve to a known @ModelEntity already fired a Warning there
+            // and is simply absent from the entities map, so it is silently skipped here.
+            for (String importedName : entity.getImportedEntityNames()) {
+                SourceModelEntity importedEntity = entities.get(importedName);
+                if (importedEntity != null) {
+                    entity.addImportedEntity(importedEntity);
+                }
+            }
+
             // 2. Resolve SourceType.modelEntity for each declared property type
             for (SourceModelProperty prop : entity.getDeclaredProperties().values()) {
                 String typeName = prop.getType().getQualifiedName();
@@ -1148,6 +1190,56 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /**
+     * Reads the qualified class names declared via {@code @Imports}/{@code @Import} on
+     * {@code ctType}, in declaration order. PAMELA runtime only ever reads {@code @Imports}
+     * (never a bare {@code @Import}) — see {@code imports-support-design.md §1}.
+     *
+     * <p>Read from the raw AST (not the Java proxy) for the same reason as
+     * {@code @ImplementationClass}: invoking {@code annotation.value()} on the proxy triggers
+     * Spoon's {@code VisitorPartialEvaluator}, which tries to load the class at runtime —
+     * failing when it has not been compiled yet. An {@code @Imports} value is either a
+     * {@code CtNewArray} of nested {@code CtAnnotation}s (explicit array, any size) or a bare
+     * {@code CtAnnotation} (the single-element sugar {@code @Imports(@Import(X.class))},
+     * verified empirically against Spoon 9.1.0). Each nested {@code @Import}'s own value is a
+     * {@code CtFieldRead} targeting a {@code CtTypeAccess}, exactly like
+     * {@code @ImplementationClass}.</p>
+     *
+     * @return the imported qualified names, in declaration order (possibly empty)
+     */
+    private static List<String> readImportedTypeNames(CtType<?> ctType) {
+        CtAnnotation<?> importsAnnotation = ctType.getAnnotations().stream()
+                .filter(a -> a.getAnnotationType().getQualifiedName().equals(Imports.class.getName()))
+                .findFirst().orElse(null);
+        if (importsAnnotation == null) {
+            return Collections.emptyList();
+        }
+        spoon.reflect.code.CtExpression<?> valueExpr = importsAnnotation.getValue("value");
+        List<CtAnnotation<?>> entries = new ArrayList<>();
+        if (valueExpr instanceof spoon.reflect.code.CtNewArray) {
+            for (Object elt : ((spoon.reflect.code.CtNewArray<?>) valueExpr).getElements()) {
+                if (elt instanceof CtAnnotation) {
+                    entries.add((CtAnnotation<?>) elt);
+                }
+            }
+        } else if (valueExpr instanceof CtAnnotation) {
+            entries.add((CtAnnotation<?>) valueExpr);
+        }
+
+        List<String> names = new ArrayList<>();
+        for (CtAnnotation<?> entry : entries) {
+            spoon.reflect.code.CtExpression<?> importValue = entry.getValue("value");
+            if (importValue instanceof spoon.reflect.code.CtFieldRead) {
+                spoon.reflect.code.CtFieldRead<?> fieldRead = (spoon.reflect.code.CtFieldRead<?>) importValue;
+                if (fieldRead.getTarget() instanceof spoon.reflect.code.CtTypeAccess) {
+                    names.add(((spoon.reflect.code.CtTypeAccess<?>) fieldRead.getTarget())
+                            .getAccessedType().getQualifiedName());
+                }
+            }
+        }
+        return names;
     }
 
     /**

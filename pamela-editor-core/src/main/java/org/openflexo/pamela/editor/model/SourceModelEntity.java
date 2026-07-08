@@ -93,6 +93,14 @@ public class SourceModelEntity implements SourceElement,
     // Hierarchy — direct parents only (no transitive closure stored)
     private final List<SourceModelEntity> directSuperEntities;
 
+    // @Imports / @Import — types embedded in the PAMELA meta-model beyond inheritance and
+    // property types (see imports-support-design.md). importedEntityNames is the raw
+    // qualified-name list built in Phase 2 (may include names that failed to resolve to a
+    // known @ModelEntity — see the validation Warning); importedEntities is the resolved
+    // subset, built in Phase 3.
+    private List<String> importedEntityNames = new ArrayList<>();
+    private final List<SourceModelEntity> importedEntities = new ArrayList<>();
+
     // Lifecycle
     private final List<SourceModelInitializer> initializers;
 
@@ -163,6 +171,18 @@ public class SourceModelEntity implements SourceElement,
     void addDirectSuperEntity(SourceModelEntity superEntity) {
         if (!directSuperEntities.contains(superEntity)) {
             directSuperEntities.add(superEntity);
+        }
+    }
+
+    /** Package-private — set during Phase 2 from the raw {@code @Imports}/{@code @Import} AST. */
+    void setImportedEntityNames(List<String> names) {
+        this.importedEntityNames = new ArrayList<>(names);
+    }
+
+    /** Package-private — called during Phase 3 resolution. */
+    void addImportedEntity(SourceModelEntity entity) {
+        if (!importedEntities.contains(entity)) {
+            importedEntities.add(entity);
         }
     }
 
@@ -1224,6 +1244,103 @@ public class SourceModelEntity implements SourceElement,
         pcSupport.firePropertyChange("addSuperEntityRequested", null, this);
     }
 
+    // =========================================================================
+    // @Imports / @Import — editable inspector (FlatDesign table), see
+    // imports-support-design.md §6. Same UI-intent pattern as the super-entities
+    // table above: "-" removes directly (unlinkImport), "+" delegates to
+    // AddImportAction via a fired signal (requestAddImport).
+    //
+    // Unlike addSuperEntity/removeSuperEntity (structural extends clause, mutated
+    // via the Spoon AST), @Imports is an annotation: add/remove goes through
+    // SourceAnnotationEditor targeted text edits (imports-support-design.md §5).
+    // =========================================================================
+
+    /**
+     * Adds an {@code @Import(target.class)} entry to this entity's {@code @Imports}
+     * annotation, embedding {@code target} in the PAMELA meta-model computation even
+     * though it may not be reachable via inheritance or a property type — mirrors
+     * PAMELA's own {@code ModelEntity.init()} {@code embeddedEntities} mechanism. No-op if
+     * {@code target} is {@code null}, {@code this}, or already imported. Annotation
+     * mutation — targeted text edit on the buffer, not an AST rewrite (no disk write yet,
+     * {@code editable-source-dirty-buffer-design.md}). Idempotent.
+     *
+     * @throws IOException if the buffer cannot be read/written
+     * @throws IllegalStateException if this entity has no valid source position
+     */
+    public void addImport(SourceModelEntity target) throws IOException {
+        if (target == null || target == this || importedEntities.contains(target)) {
+            return;
+        }
+        if (ctType.getPosition() == null || !ctType.getPosition().isValidPosition()) {
+            throw new IllegalStateException("No source position for " + qualifiedName);
+        }
+        String referenceText = target.getSimpleName();
+        String qualifiedImport = samePackageAs(target) ? null : target.getQualifiedName();
+        String source = compilationUnit.getText();
+        int declStart = ctType.getPosition().getSourceStart();
+        String edited = SourceAnnotationEditor.addImportEntry(source, declStart, referenceText, qualifiedImport);
+        compilationUnit.setText(edited);
+
+        importedEntityNames.add(target.getQualifiedName());
+        importedEntities.add(target);
+    }
+
+    /**
+     * Removes the {@code @Import(target.class)} entry from this entity's {@code @Imports}
+     * annotation. Removes the whole {@code @Imports} annotation if {@code target} was the
+     * last import. No-op if {@code target} is {@code null} or not currently imported.
+     *
+     * <p>Silent (no {@code PropertyChangeEvent}) — like {@link #removeSuperEntity}, this bare
+     * primitive is invoked by {@code RemoveImportAction}, which manages its own rebuild. The
+     * inspector's direct table removal goes through {@link #unlinkImport}, which fires.</p>
+     *
+     * @throws IOException if the buffer cannot be read/written
+     * @throws IllegalStateException if this entity has no valid source position
+     */
+    public void removeImport(SourceModelEntity target) throws IOException {
+        if (target == null || !importedEntities.contains(target)) {
+            return;
+        }
+        if (ctType.getPosition() == null || !ctType.getPosition().isValidPosition()) {
+            throw new IllegalStateException("No source position for " + qualifiedName);
+        }
+        String source = compilationUnit.getText();
+        int declStart = ctType.getPosition().getSourceStart();
+        String edited = SourceAnnotationEditor.removeImportEntry(source, declStart, target.getSimpleName());
+        compilationUnit.setText(edited);
+
+        importedEntityNames.remove(target.getQualifiedName());
+        importedEntities.remove(target);
+    }
+
+    /**
+     * Removes an import from the inspector table and fires {@code "importedEntities"} so the
+     * application rebuilds. No-op if the argument is not a current import.
+     */
+    public void unlinkImport(SourceModelEntity target) throws IOException {
+        if (target == null || !importedEntities.contains(target)) {
+            return;
+        }
+        removeImport(target);
+        pcSupport.firePropertyChange("importedEntities", target, null);
+    }
+
+    /**
+     * Fires a UI-intent signal that the user asked to add an import (the table's "+" footer).
+     * The model opens no dialog; the application observes the inspected element and runs
+     * {@code AddImportAction} in response (model-editing-design.md §6).
+     */
+    public void requestAddImport() {
+        pcSupport.firePropertyChange("addImportRequested", null, this);
+    }
+
+    /** {@code true} if {@code target} is declared in the same package as this entity. */
+    private boolean samePackageAs(SourceModelEntity target) {
+        String myPkg = sourcePackage != null ? sourcePackage.getQualifiedName() : "";
+        String theirPkg = target.getSourcePackage() != null ? target.getSourcePackage().getQualifiedName() : "";
+        return myPkg.equals(theirPkg);
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
@@ -1426,6 +1543,31 @@ public class SourceModelEntity implements SourceElement,
      */
     public List<SourceModelEntity> getDirectSuperEntities() {
         return Collections.unmodifiableList(directSuperEntities);
+    }
+
+    /**
+     * Raw qualified names declared via {@code @Imports}/{@code @Import} on this entity, in
+     * declaration order. May include names that failed to resolve to a known
+     * {@code @ModelEntity} in this project (see {@link #getImportedEntities()} for the
+     * resolved, filtered subset, and the corresponding {@link Warning} fired at build time).
+     *
+     * @return an unmodifiable list in declaration order
+     */
+    public List<String> getImportedEntityNames() {
+        return Collections.unmodifiableList(importedEntityNames);
+    }
+
+    /**
+     * Resolved {@code @Import} targets — entities this entity's {@code @Imports} annotation
+     * embeds in the PAMELA meta-model even though they may not be reachable via inheritance
+     * or a property type. Mirrors PAMELA's own {@code ModelEntity.getEmbeddedEntities()}
+     * restricted to this source (see {@code pamela-framework-analysis.md} /
+     * {@code imports-support-design.md}).
+     *
+     * @return an unmodifiable list in declaration order
+     */
+    public List<SourceModelEntity> getImportedEntities() {
+        return Collections.unmodifiableList(importedEntities);
     }
 
     /**

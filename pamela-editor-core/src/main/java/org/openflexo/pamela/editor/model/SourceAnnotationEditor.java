@@ -211,9 +211,13 @@ public final class SourceAnnotationEditor {
 
         // The Spoon position of an annotated declaration may point at the FIRST
         // annotation (so the target annotation can sit BELOW it, between it and the
-        // declaration) or at the declaration itself (annotations ABOVE). So scan the
-        // whole contiguous annotation block: walk up to its top, then down to the
-        // declaration, examining each line.
+        // declaration) or at a preceding Javadoc/block comment (Spoon includes the
+        // attached comment in the element's source range) or at the declaration itself
+        // (annotations ABOVE). So scan the whole contiguous annotation block: walk up
+        // to its top, then down to the declaration, examining each line and skipping
+        // over any /** ... */ or /* ... */ comment encountered along the way (never
+        // searching for the token inside one — a Javadoc may itself mention
+        // "@Something" in prose, e.g. {@code @Imports}, which must not false-match).
         int top = lineStart;
         while (top > 0) {
             int prevStart = source.lastIndexOf('\n', top - 2) + 1;
@@ -225,12 +229,35 @@ public final class SourceAnnotationEditor {
             }
         }
         int cur = top;
+        boolean inBlockComment = false;
         while (cur < source.length()) {
             int lineEnd = source.indexOf('\n', cur);
             if (lineEnd < 0) {
                 lineEnd = source.length();
             }
             String line = source.substring(cur, lineEnd);
+            String trimmed = line.trim();
+
+            if (inBlockComment) {
+                if (trimmed.contains("*/")) {
+                    inBlockComment = false;
+                }
+                cur = lineEnd + 1;
+                continue;
+            }
+            if (trimmed.startsWith("/*")) {
+                // Opens a block/Javadoc comment ("/**", "/*"); stays open past this
+                // line unless it also closes on the same line.
+                inBlockComment = !trimmed.contains("*/");
+                cur = lineEnd + 1;
+                continue;
+            }
+            if (trimmed.startsWith("*") || trimmed.equals("*/")) {
+                // Javadoc continuation line ("* ...") or a lone closing line.
+                cur = lineEnd + 1;
+                continue;
+            }
+
             int idx = line.indexOf(token);
             if (idx >= 0) {
                 int after = idx + token.length();
@@ -240,7 +267,6 @@ public final class SourceAnnotationEditor {
                     return cur + idx;
                 }
             }
-            String trimmed = line.trim();
             if (!trimmed.isEmpty() && !trimmed.startsWith("@")) {
                 break; // reached the declaration line
             }
@@ -371,6 +397,167 @@ public final class SourceAnnotationEditor {
         }
         // No package statement: prepend the import.
         return importStatement + "\n\n" + source;
+    }
+
+    /**
+     * Pattern matching one {@code @Import(<ref>.class)} entry within the parenthesized span of
+     * an {@code @Imports(...)} annotation. Works uniformly whether the entries are wrapped in
+     * {@code { ... }} (explicit array, single or multiple) or written as the bare single-element
+     * sugar {@code @Imports(@Import(X.class))} — the regex does not care about braces.
+     */
+    private static final java.util.regex.Pattern IMPORT_ENTRY_PATTERN =
+            java.util.regex.Pattern.compile("@Import\\s*\\(\\s*([\\w.]+)\\s*\\.class\\s*\\)");
+
+    /**
+     * Adds one {@code @Import(<referenceText>.class)} entry to the {@code @Imports(...)}
+     * annotation on the declaration starting at {@code declarationStart}, creating the
+     * {@code @Imports} annotation (and ensuring the two annotations' own imports) if absent.
+     * Idempotent — an entry whose last dot-segment already equals {@code referenceText}'s last
+     * dot-segment is left untouched (besides ensuring {@code qualifiedNameToImport}).
+     *
+     * <p>Always normalizes to the explicit array form {@code @Imports({ @Import(...), ... })},
+     * even if the existing annotation used the single-element sugar or a {@code value = ...}
+     * form — same rewrite-the-whole-annotation-text philosophy as
+     * {@link #setAnnotationParameter}.</p>
+     *
+     * @param referenceText        the text to reference the imported type by, e.g. {@code "Circle"}
+     *                             (same package) or {@code "other.pkg.Circle"} (fully qualified,
+     *                             if the caller chooses not to add an import statement)
+     * @param qualifiedNameToImport the qualified name to {@code import}, or {@code null} if no
+     *                              import statement is needed (same package, or the caller
+     *                              already used a fully-qualified {@code referenceText})
+     * @return the edited source text
+     */
+    public static String addImportEntry(String source, int declarationStart,
+            String referenceText, String qualifiedNameToImport) {
+        if (source == null || declarationStart < 0 || declarationStart > source.length()) {
+            throw new IllegalArgumentException("Invalid declaration offset");
+        }
+        int annStart = findAnnotation(source, declarationStart, "Imports");
+        String edited;
+        if (annStart < 0) {
+            String annotationText = "@Imports({ @Import(" + referenceText + ".class) })";
+            edited = insertAnnotationLine(source, declarationStart, annotationText);
+            edited = ensureImport(edited, "org.openflexo.pamela.annotations.Imports");
+            edited = ensureImport(edited, "org.openflexo.pamela.annotations.Import");
+        } else {
+            int[] span = annotationParenSpan(source, annStart, "Imports");
+            if (span == null) {
+                return source; // malformed / marker-only @Imports — leave untouched
+            }
+            String inner = source.substring(span[0] + 1, span[1]);
+            java.util.List<String> refs = new java.util.ArrayList<>(extractImportReferences(inner));
+            if (!containsReference(refs, referenceText)) {
+                refs.add(referenceText);
+            }
+            edited = source.substring(0, annStart) + buildImportsAnnotationText(refs)
+                    + source.substring(span[1] + 1);
+        }
+        return ensureImport(edited, qualifiedNameToImport);
+    }
+
+    /**
+     * Removes the {@code @Import} entry whose last dot-segment equals {@code targetSimpleName}
+     * from the {@code @Imports(...)} annotation on the declaration starting at
+     * {@code declarationStart}. If the array becomes empty, removes the whole {@code @Imports}
+     * annotation line (rather than leaving a pointless {@code @Imports({})}).
+     *
+     * @return the edited source, or the original if {@code @Imports} is absent or has no
+     *         matching entry
+     */
+    public static String removeImportEntry(String source, int declarationStart, String targetSimpleName) {
+        if (source == null || declarationStart < 0 || declarationStart > source.length()) {
+            throw new IllegalArgumentException("Invalid declaration offset");
+        }
+        int annStart = findAnnotation(source, declarationStart, "Imports");
+        if (annStart < 0) {
+            return source;
+        }
+        int[] span = annotationParenSpan(source, annStart, "Imports");
+        if (span == null) {
+            return source;
+        }
+        String inner = source.substring(span[0] + 1, span[1]);
+        java.util.List<String> refs = new java.util.ArrayList<>(extractImportReferences(inner));
+        if (!removeReference(refs, targetSimpleName)) {
+            return source; // not present
+        }
+        if (refs.isEmpty()) {
+            return removeAnnotation(source, declarationStart, "Imports");
+        }
+        return source.substring(0, annStart) + buildImportsAnnotationText(refs)
+                + source.substring(span[1] + 1);
+    }
+
+    /**
+     * Locates the {@code (...)} span of the annotation named {@code simpleName} starting at
+     * {@code annStart}. Returns {@code {openIndex, closeIndex}} (both inclusive of the
+     * parentheses themselves), or {@code null} if there are no parentheses (marker annotation)
+     * or they are unbalanced.
+     */
+    private static int[] annotationParenSpan(String source, int annStart, String simpleName) {
+        int afterName = annStart + 1 + simpleName.length();
+        int i = afterName;
+        while (i < source.length() && Character.isWhitespace(source.charAt(i))) {
+            i++;
+        }
+        if (i >= source.length() || source.charAt(i) != '(') {
+            return null;
+        }
+        int close = matchingParen(source, i);
+        if (close < 0) {
+            return null;
+        }
+        return new int[] { i, close };
+    }
+
+    private static java.util.List<String> extractImportReferences(String annotationInner) {
+        java.util.List<String> refs = new java.util.ArrayList<>();
+        java.util.regex.Matcher m = IMPORT_ENTRY_PATTERN.matcher(annotationInner);
+        while (m.find()) {
+            refs.add(m.group(1));
+        }
+        return refs;
+    }
+
+    private static String buildImportsAnnotationText(java.util.List<String> refs) {
+        StringBuilder sb = new StringBuilder("@Imports({ ");
+        for (int i = 0; i < refs.size(); i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            sb.append("@Import(").append(refs.get(i)).append(".class)");
+        }
+        sb.append(" })");
+        return sb.toString();
+    }
+
+    /** Last {@code .}-separated segment of a (possibly fully-qualified) reference text. */
+    private static String lastSegment(String reference) {
+        int dot = reference.lastIndexOf('.');
+        return dot < 0 ? reference : reference.substring(dot + 1);
+    }
+
+    private static boolean containsReference(java.util.List<String> refs, String referenceText) {
+        String target = lastSegment(referenceText);
+        for (String r : refs) {
+            if (lastSegment(r).equals(target)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean removeReference(java.util.List<String> refs, String targetSimpleName) {
+        String target = lastSegment(targetSimpleName);
+        java.util.Iterator<String> it = refs.iterator();
+        while (it.hasNext()) {
+            if (lastSegment(it.next()).equals(target)) {
+                it.remove();
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -1,0 +1,5 @@
+{
+  "name" : "test-model4",
+  "sourceDirectories" : [ "model4" ],
+  "rootTypes" : [ "test.model4.ShapeContainer", "test.model4.SingleImportShape", "test.model4.BadImportEntity" ]
+}

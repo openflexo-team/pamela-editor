@@ -1,6 +1,7 @@
 package org.openflexo.pamela.editor.model;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -93,6 +94,98 @@ public class TestSourceAnnotationEditor {
         String src = "@ModelEntity\npublic interface Foo {\n}\n";
         String out = SourceAnnotationEditor.setAnnotationParameter(
                 src, declOf(src, "public interface"), "XMLElement", "primary", "true");
+        assertEquals(src, out);
+    }
+
+    // -------------------------------------------------------------------------
+    // addImportEntry / removeImportEntry (imports-support-design.md §5.1)
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testAddImportEntryCreatesNewAnnotation() {
+        String src = "package test.model4;\n\npublic interface Foo {\n}\n";
+        String out = SourceAnnotationEditor.addImportEntry(
+                src, declOf(src, "public interface"), "Bar", null);
+        assertEquals(
+                "package test.model4;\n\n"
+                        + "import org.openflexo.pamela.annotations.Import;\n\n"
+                        + "import org.openflexo.pamela.annotations.Imports;\n\n"
+                        + "@Imports({ @Import(Bar.class) })\n"
+                        + "public interface Foo {\n}\n",
+                out);
+    }
+
+    @Test
+    public void testAddImportEntryEnsuresCrossPackageImport() {
+        String src = "package test.model4;\n\npublic interface Foo {\n}\n";
+        String out = SourceAnnotationEditor.addImportEntry(
+                src, declOf(src, "public interface"), "Bar", "other.pkg.Bar");
+        assertTrue(out.contains("import other.pkg.Bar;"));
+        assertTrue(out.contains("@Imports({ @Import(Bar.class) })"));
+    }
+
+    @Test
+    public void testAddImportEntryAppendsToExplicitArrayForm() {
+        String src = "\t@Imports({ @Import(A.class) })\n\tpublic interface Foo {\n\t}\n";
+        String out = SourceAnnotationEditor.addImportEntry(
+                src, declOf(src, "public interface"), "B", null);
+        assertEquals("\t@Imports({ @Import(A.class), @Import(B.class) })\n\tpublic interface Foo {\n\t}\n", out);
+    }
+
+    @Test
+    public void testAddImportEntryNormalizesSugarForm() {
+        String src = "\t@Imports(@Import(A.class))\n\tpublic interface Foo {\n\t}\n";
+        String out = SourceAnnotationEditor.addImportEntry(
+                src, declOf(src, "public interface"), "B", null);
+        assertEquals("\t@Imports({ @Import(A.class), @Import(B.class) })\n\tpublic interface Foo {\n\t}\n", out);
+    }
+
+    @Test
+    public void testAddImportEntryIsIdempotent() {
+        String src = "\t@Imports({ @Import(A.class) })\n\tpublic interface Foo {\n\t}\n";
+        String out = SourceAnnotationEditor.addImportEntry(
+                src, declOf(src, "public interface"), "A", null);
+        assertEquals(src, out);
+    }
+
+    @Test
+    public void testRemoveImportEntryLeavesOtherEntries() {
+        String src = "\t@Imports({ @Import(A.class), @Import(B.class) })\n\tpublic interface Foo {\n\t}\n";
+        String out = SourceAnnotationEditor.removeImportEntry(
+                src, declOf(src, "public interface"), "A");
+        assertEquals("\t@Imports({ @Import(B.class) })\n\tpublic interface Foo {\n\t}\n", out);
+    }
+
+    @Test
+    public void testRemoveImportEntryDownToEmptyRemovesWholeAnnotation() {
+        String src = "\t@Imports({ @Import(A.class) })\n\tpublic interface Foo {\n\t}\n";
+        String out = SourceAnnotationEditor.removeImportEntry(
+                src, declOf(src, "public interface"), "A");
+        assertEquals("\tpublic interface Foo {\n\t}\n", out);
+    }
+
+    @Test
+    public void testRemoveImportEntryMatchesByLastSegmentAgainstQualifiedEntry() {
+        // Entry written fully-qualified in source; removal by simple name still matches.
+        String src = "\t@Imports({ @Import(other.pkg.A.class), @Import(B.class) })\n\tpublic interface Foo {\n\t}\n";
+        String out = SourceAnnotationEditor.removeImportEntry(
+                src, declOf(src, "public interface"), "A");
+        assertEquals("\t@Imports({ @Import(B.class) })\n\tpublic interface Foo {\n\t}\n", out);
+    }
+
+    @Test
+    public void testRemoveImportEntryNotPresentReturnsOriginal() {
+        String src = "\t@Imports({ @Import(A.class) })\n\tpublic interface Foo {\n\t}\n";
+        String out = SourceAnnotationEditor.removeImportEntry(
+                src, declOf(src, "public interface"), "NotThere");
+        assertEquals(src, out);
+    }
+
+    @Test
+    public void testRemoveImportEntryNoImportsAnnotationReturnsOriginal() {
+        String src = "public interface Foo {\n}\n";
+        String out = SourceAnnotationEditor.removeImportEntry(
+                src, declOf(src, "public interface"), "A");
         assertEquals(src, out);
     }
 }

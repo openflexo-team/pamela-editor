@@ -2097,4 +2097,127 @@ public class TestMutations {
         assertTrue("setter must reference the property constant", content.contains("@Setter(value = NOTE)"));
         assertFalse("setter must not use a literal", content.contains("@Setter(value = \"note\")"));
     }
+
+    // =========================================================================
+    // @Import / @Imports management (imports-support-design.md)
+    // =========================================================================
+
+    private static final File MODEL4_SRC = new File(
+            System.getProperty("user.dir") + "/src/test/java/test/model4");
+
+    /**
+     * Adding an import to an entity with no {@code @Imports} yet creates the annotation and
+     * persists it.
+     */
+    @Test
+    public void testAddImportCreatesNewAnnotationOnEntityWithoutOne() throws IOException {
+        File workDir = tmp.newFolder("addImportNew");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1", "test.model1.Foo2");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity foo1 = mm.getEntity("test.model1.Foo1");
+        SourceModelEntity foo2 = mm.getEntity("test.model1.Foo2");
+        assertTrue(foo1.getImportedEntities().isEmpty());
+
+        // --- Mutate ---
+        foo1.addImport(foo2);
+
+        // --- In-memory assertions ---
+        assertEquals(1, foo1.getImportedEntities().size());
+        assertEquals("test.model1.Foo2", foo1.getImportedEntities().get(0).getQualifiedName());
+
+        // --- Reload ---
+        mm.flushAll();
+        String content = new String(Files.readAllBytes(new File(srcCopy, "Foo1.java").toPath()));
+        assertTrue("@Imports must be persisted", content.contains("@Imports({ @Import(Foo2.class) })"));
+
+        File pamelaFile2 = new File(workDir, "test2.pamela");
+        writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1", "test.model1.Foo2");
+        SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
+        SourceModelEntity foo1r = mm2.getEntity("test.model1.Foo1");
+        assertEquals(1, foo1r.getImportedEntities().size());
+        assertEquals("test.model1.Foo2", foo1r.getImportedEntities().get(0).getQualifiedName());
+    }
+
+    /**
+     * Adding an import to an entity that already has {@code @Imports} entries appends to the
+     * array instead of replacing it (model4's {@code AbstractShape} already imports
+     * {@code Circle}/{@code Square}).
+     */
+    @Test
+    public void testAddImportAppendsToEntityWithExistingImports() throws IOException {
+        File workDir = tmp.newFolder("addImportAppend");
+        File srcCopy = copyDir(MODEL4_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model4.ShapeContainer", "test.model4.SingleImportShape");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity abstractShape = mm.getEntity("test.model4.AbstractShape");
+        SourceModelEntity shapeContainer = mm.getEntity("test.model4.ShapeContainer");
+        assertEquals(2, abstractShape.getImportedEntities().size());
+
+        // --- Mutate ---
+        abstractShape.addImport(shapeContainer);
+
+        // --- In-memory assertions ---
+        assertEquals(3, abstractShape.getImportedEntities().size());
+        assertEquals("test.model4.ShapeContainer",
+                abstractShape.getImportedEntities().get(2).getQualifiedName());
+
+        // --- Reload ---
+        mm.flushAll();
+        String content = new String(Files.readAllBytes(new File(srcCopy, "AbstractShape.java").toPath()));
+        assertTrue(content.contains(
+                "@Imports({ @Import(Circle.class), @Import(Square.class), @Import(ShapeContainer.class) })"));
+
+        File pamelaFile2 = new File(workDir, "test2.pamela");
+        writePamelaFile(pamelaFile2, srcCopy, "test.model4.ShapeContainer", "test.model4.SingleImportShape");
+        SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
+        assertEquals(3, mm2.getEntity("test.model4.AbstractShape").getImportedEntities().size());
+    }
+
+    /**
+     * Removing every import from an entity removes the whole {@code @Imports} annotation
+     * (rather than leaving {@code @Imports({})}), and an entity reachable only via that
+     * removed import (here {@code Square}, not imported anywhere else in model4) disappears
+     * from the rebuilt meta-model entirely.
+     */
+    @Test
+    public void testRemoveImportDownToZeroRemovesWholeAnnotation() throws IOException {
+        File workDir = tmp.newFolder("removeImportZero");
+        File srcCopy = copyDir(MODEL4_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model4.ShapeContainer", "test.model4.SingleImportShape");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity abstractShape = mm.getEntity("test.model4.AbstractShape");
+        SourceModelEntity circle = mm.getEntity("test.model4.Circle");
+        SourceModelEntity square = mm.getEntity("test.model4.Square");
+        assertNotNull(square);
+
+        // --- Mutate: drop both imports ---
+        abstractShape.removeImport(circle);
+        abstractShape.removeImport(square);
+
+        // --- In-memory assertions ---
+        assertTrue(abstractShape.getImportedEntities().isEmpty());
+
+        // --- Reload ---
+        mm.flushAll();
+        String content = new String(Files.readAllBytes(new File(srcCopy, "AbstractShape.java").toPath()));
+        // Match the annotation usage "@Imports(" specifically, not the Javadoc prose
+        // above ("{@code @Imports}.") which also legitimately contains the bare word.
+        assertFalse("the whole @Imports annotation must be gone", content.contains("@Imports("));
+
+        File pamelaFile2 = new File(workDir, "test2.pamela");
+        writePamelaFile(pamelaFile2, srcCopy, "test.model4.ShapeContainer", "test.model4.SingleImportShape");
+        SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
+        assertTrue(mm2.getEntity("test.model4.AbstractShape").getImportedEntities().isEmpty());
+        // Circle is still reachable via SingleImportShape's own @Imports; Square is not
+        // reachable from anywhere any more and must be entirely absent.
+        assertNotNull("Circle still imported by SingleImportShape", mm2.getEntity("test.model4.Circle"));
+        assertNull("Square is no longer reachable from any root", mm2.getEntity("test.model4.Square"));
+    }
 }
