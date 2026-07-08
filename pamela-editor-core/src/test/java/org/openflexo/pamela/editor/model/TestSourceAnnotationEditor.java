@@ -188,4 +188,54 @@ public class TestSourceAnnotationEditor {
                 src, declOf(src, "public interface"), "A");
         assertEquals(src, out);
     }
+
+    // -------------------------------------------------------------------------
+    // setClassAnnotationValue (implementation-class-support-design.md §2)
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testSetClassAnnotationValueCreatesNewAnnotation() {
+        String src = "package test;\n\npublic interface Foo {\n}\n";
+        String out = SourceAnnotationEditor.setClassAnnotationValue(
+                src, declOf(src, "public interface"),
+                "ImplementationClass", "org.openflexo.pamela.annotations.ImplementationClass",
+                "FooImpl", null);
+        assertEquals(
+                "package test;\n\n"
+                        + "import org.openflexo.pamela.annotations.ImplementationClass;\n\n"
+                        + "@ImplementationClass(FooImpl.class)\n"
+                        + "public interface Foo {\n}\n",
+                out);
+    }
+
+    @Test
+    public void testSetClassAnnotationValueEnsuresCrossPackageImport() {
+        String src = "package test;\n\npublic interface Foo {\n}\n";
+        String out = SourceAnnotationEditor.setClassAnnotationValue(
+                src, declOf(src, "public interface"),
+                "ImplementationClass", "org.openflexo.pamela.annotations.ImplementationClass",
+                "FooImpl", "other.pkg.FooImpl");
+        assertTrue(out.contains("import other.pkg.FooImpl;"));
+        assertTrue(out.contains("@ImplementationClass(FooImpl.class)"));
+    }
+
+    @Test
+    public void testSetClassAnnotationValueReplacesBareShorthandForm() {
+        String src = "\t@ImplementationClass(OldImpl.class)\n\tpublic interface Foo {\n\t}\n";
+        String out = SourceAnnotationEditor.setClassAnnotationValue(
+                src, declOf(src, "public interface"),
+                "ImplementationClass", "org.openflexo.pamela.annotations.ImplementationClass",
+                "NewImpl", null);
+        assertEquals("\t@ImplementationClass(NewImpl.class)\n\tpublic interface Foo {\n\t}\n", out);
+    }
+
+    @Test
+    public void testSetClassAnnotationValueReplacesExplicitValueForm() {
+        String src = "\t@ImplementationClass(value = OldImpl.class)\n\tpublic interface Foo {\n\t}\n";
+        String out = SourceAnnotationEditor.setClassAnnotationValue(
+                src, declOf(src, "public interface"),
+                "ImplementationClass", "org.openflexo.pamela.annotations.ImplementationClass",
+                "NewImpl", null);
+        assertEquals("\t@ImplementationClass(NewImpl.class)\n\tpublic interface Foo {\n\t}\n", out);
+    }
 }

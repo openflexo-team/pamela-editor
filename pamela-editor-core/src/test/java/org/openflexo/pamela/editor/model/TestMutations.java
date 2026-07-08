@@ -1377,6 +1377,27 @@ public class TestMutations {
         assertTrue("requestAddSuperEntity fires the UI-intent signal", fired[0]);
     }
 
+    /**
+     * The entity inspector's "Rename…" button (next to the read-only simple-name field) is a
+     * UI intent: {@code requestRename()} fires the signal, handled by
+     * {@code RenameEntityAction} in {@code PamelaEditorApplication.onInspectedElementEdited}.
+     */
+    @Test
+    public void testEntityRequestRenameFiresUiIntent() throws IOException {
+        File workDir = tmp.newFolder("testEntityRequestRename");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity foo1 = mm.getEntity("test.model1.Foo1");
+
+        final boolean[] fired = { false };
+        foo1.getPropertyChangeSupport().addPropertyChangeListener("renameRequested",
+                evt -> fired[0] = true);
+        foo1.requestRename();
+        assertTrue("requestRename fires the UI-intent signal", fired[0]);
+    }
+
     // =========================================================================
     // Test 20 — createProperty: generate the getter, attach an existing setter
     // =========================================================================
@@ -2219,5 +2240,236 @@ public class TestMutations {
         // reachable from anywhere any more and must be entirely absent.
         assertNotNull("Circle still imported by SingleImportShape", mm2.getEntity("test.model4.Circle"));
         assertNull("Square is no longer reachable from any root", mm2.getEntity("test.model4.Square"));
+    }
+
+    // =========================================================================
+    // @ImplementationClass management (implementation-class-support-design.md)
+    // =========================================================================
+
+    /**
+     * Attaching an existing class to an entity with no {@code @ImplementationClass} yet
+     * creates the annotation and persists it ({@code test.model1.Foo1Impl}, a plain
+     * abstract class implementing {@code Foo1} but not yet wired to it).
+     */
+    @Test
+    public void testAttachImplementationClassCreatesNewAnnotation() throws IOException {
+        File workDir = tmp.newFolder("attachImplNew");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity foo1 = mm.getEntity("test.model1.Foo1");
+        assertNull(foo1.getImplementationClass());
+
+        // --- Mutate ---
+        foo1.attachImplementationClass("test.model1.Foo1Impl");
+
+        // --- Reload ---
+        mm.flushAll();
+        String content = new String(Files.readAllBytes(new File(srcCopy, "Foo1.java").toPath()));
+        assertTrue("@ImplementationClass must be persisted",
+                content.contains("@ImplementationClass(Foo1Impl.class)"));
+
+        File pamelaFile2 = new File(workDir, "test2.pamela");
+        writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
+        SourceModelEntity foo1r = mm2.getEntity("test.model1.Foo1");
+        assertNotNull(foo1r.getImplementationClass());
+        assertEquals("test.model1.Foo1Impl", foo1r.getImplementationClass().getQualifiedName());
+        assertTrue(foo1r.getImplementationClass().isAbstract());
+    }
+
+    /**
+     * Retargeting an entity that already has an {@code @ImplementationClass} (the bare
+     * shorthand form, {@code FlexoProcess} → {@code FlexoProcessImpl}) replaces the value
+     * rather than appending a conflicting second one.
+     */
+    @Test
+    public void testAttachImplementationClassRetargetsExisting() throws IOException {
+        File workDir = tmp.newFolder("attachImplRetarget");
+        File srcCopy = copyDir(MODEL2_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model2.FlexoProcess");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity flexoProcess = mm.getEntity("test.model2.FlexoProcess");
+        assertNotNull(flexoProcess.getImplementationClass());
+        assertEquals("test.model2.FlexoProcessImpl", flexoProcess.getImplementationClass().getQualifiedName());
+
+        // --- Mutate: retarget to a different (arbitrary) class ---
+        flexoProcess.attachImplementationClass("test.model2.TokenEdgeImpl");
+
+        // --- Reload ---
+        mm.flushAll();
+        String content = new String(Files.readAllBytes(new File(srcCopy, "FlexoProcess.java").toPath()));
+        assertTrue(content.contains("@ImplementationClass(TokenEdgeImpl.class)"));
+        assertFalse("the old value must be replaced, not appended",
+                content.contains("@ImplementationClass(FlexoProcessImpl.class)"));
+
+        File pamelaFile2 = new File(workDir, "test2.pamela");
+        writePamelaFile(pamelaFile2, srcCopy, "test.model2.FlexoProcess");
+        SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
+        assertEquals("test.model2.TokenEdgeImpl",
+                mm2.getEntity("test.model2.FlexoProcess").getImplementationClass().getQualifiedName());
+    }
+
+    /**
+     * Detaching an entity's implementation class removes the {@code @ImplementationClass}
+     * annotation (the class file itself is untouched) and nulls the in-memory link
+     * immediately, ahead of any rebuild.
+     */
+    @Test
+    public void testDetachImplementationClass() throws IOException {
+        File workDir = tmp.newFolder("detachImpl");
+        File srcCopy = copyDir(MODEL2_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model2.FlexoProcess");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity flexoProcess = mm.getEntity("test.model2.FlexoProcess");
+        assertNotNull(flexoProcess.getImplementationClass());
+
+        // --- Mutate ---
+        flexoProcess.detachImplementationClass();
+
+        // --- In-memory assertion (before any rebuild) ---
+        assertNull(flexoProcess.getImplementationClass());
+
+        // --- Reload ---
+        mm.flushAll();
+        String content = new String(Files.readAllBytes(new File(srcCopy, "FlexoProcess.java").toPath()));
+        assertFalse(content.contains("@ImplementationClass("));
+        // The implementation class file itself must survive untouched.
+        assertTrue(new File(srcCopy, "FlexoProcessImpl.java").exists());
+
+        File pamelaFile2 = new File(workDir, "test2.pamela");
+        writePamelaFile(pamelaFile2, srcCopy, "test.model2.FlexoProcess");
+        SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
+        assertNull(mm2.getEntity("test.model2.FlexoProcess").getImplementationClass());
+    }
+
+    /**
+     * Creating a brand-new implementation class writes a new file right next to the entity's
+     * own file, wires {@code @ImplementationClass} on the entity, and eagerly registers a
+     * fully valid {@link SourceImplementationClass} (abstract, implementing the entity) without
+     * waiting for a rebuild.
+     */
+    @Test
+    public void testCreateImplementationClass() throws IOException {
+        File workDir = tmp.newFolder("createImpl");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo2");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity foo2 = mm.getEntity("test.model1.Foo2");
+        assertNull(foo2.getImplementationClass());
+
+        // --- Mutate ---
+        SourceImplementationClass impl = mm.createImplementationClass(foo2, "Foo2Impl");
+
+        // --- In-memory assertions (eager, no rebuild needed) ---
+        assertNotNull(impl);
+        assertEquals("test.model1.Foo2Impl", impl.getQualifiedName());
+        assertTrue(impl.isAbstract());
+        assertSame(impl, foo2.getImplementationClass());
+
+        // --- Reload ---
+        mm.flushAll();
+        File implFile = new File(srcCopy, "Foo2Impl.java");
+        assertTrue("new impl class file must be written", implFile.exists());
+        String implContent = new String(Files.readAllBytes(implFile.toPath()));
+        assertTrue(implContent.contains("public abstract class Foo2Impl"));
+        assertTrue(implContent.contains("implements Foo2"));
+
+        String entityContent = new String(Files.readAllBytes(new File(srcCopy, "Foo2.java").toPath()));
+        assertTrue(entityContent.contains("@ImplementationClass(Foo2Impl.class)"));
+
+        File pamelaFile2 = new File(workDir, "test2.pamela");
+        writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo2");
+        SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
+        SourceModelEntity foo2r = mm2.getEntity("test.model1.Foo2");
+        assertNotNull(foo2r.getImplementationClass());
+        assertEquals("test.model1.Foo2Impl", foo2r.getImplementationClass().getQualifiedName());
+        assertTrue(foo2r.getImplementationClass().isAbstract());
+    }
+
+    /**
+     * {@code setImplementationClassType} — the {@code JavaClassSelector} two-way binding
+     * (implementation-class-support-design.md, revised §4). Selecting a class persists the
+     * annotation and fires {@code "implementationClass"}; the in-memory link itself is left
+     * for the rebuild that always follows (only the null/detach branch updates it eagerly).
+     */
+    @Test
+    public void testSetImplementationClassTypeAttachesAndPersists() throws IOException {
+        File workDir = tmp.newFolder("setImplTypeAttach");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity foo1 = mm.getEntity("test.model1.Foo1");
+        assertNull(foo1.getImplementationClassType());
+
+        spoon.reflect.declaration.CtType<?> foo1ImplType =
+                mm.getCompilationUnit("test.model1.Foo1Impl").getRootTypes().get(0);
+
+        boolean[] fired = { false };
+        foo1.getPropertyChangeSupport().addPropertyChangeListener("implementationClass", evt -> fired[0] = true);
+
+        // --- Mutate ---
+        foo1.setImplementationClassType(foo1ImplType);
+
+        // --- Assertions ---
+        assertTrue("setImplementationClassType must fire \"implementationClass\"", fired[0]);
+
+        mm.flushAll();
+        String content = new String(Files.readAllBytes(new File(srcCopy, "Foo1.java").toPath()));
+        assertTrue(content.contains("@ImplementationClass(Foo1Impl.class)"));
+
+        File pamelaFile2 = new File(workDir, "test2.pamela");
+        writePamelaFile(pamelaFile2, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
+        SourceModelEntity foo1r = mm2.getEntity("test.model1.Foo1");
+        assertNotNull(foo1r.getImplementationClassType());
+        assertEquals("test.model1.Foo1Impl", foo1r.getImplementationClassType().getQualifiedName());
+    }
+
+    /**
+     * Clearing the {@code JavaClassSelector} (its "Reset" action, {@code selector-widgets-
+     * design.md}) detaches the current implementation class — immediately in-memory (unlike
+     * attach) since detach only ever nulls a reference, and persists the removal.
+     */
+    @Test
+    public void testSetImplementationClassTypeToNullDetachesImmediately() throws IOException {
+        File workDir = tmp.newFolder("setImplTypeDetach");
+        File srcCopy = copyDir(MODEL2_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model2.FlexoProcess");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity flexoProcess = mm.getEntity("test.model2.FlexoProcess");
+        assertNotNull(flexoProcess.getImplementationClassType());
+
+        boolean[] fired = { false };
+        flexoProcess.getPropertyChangeSupport().addPropertyChangeListener("implementationClass", evt -> fired[0] = true);
+
+        // --- Mutate ---
+        flexoProcess.setImplementationClassType(null);
+
+        // --- In-memory assertion (before any rebuild) ---
+        assertNull(flexoProcess.getImplementationClassType());
+        assertTrue("setImplementationClassType(null) must fire \"implementationClass\"", fired[0]);
+
+        // --- Reload ---
+        mm.flushAll();
+        String content = new String(Files.readAllBytes(new File(srcCopy, "FlexoProcess.java").toPath()));
+        assertFalse(content.contains("@ImplementationClass("));
+
+        File pamelaFile2 = new File(workDir, "test2.pamela");
+        writePamelaFile(pamelaFile2, srcCopy, "test.model2.FlexoProcess");
+        SourceMetaModel mm2 = SourceMetaModelSerializer.load(pamelaFile2);
+        assertNull(mm2.getEntity("test.model2.FlexoProcess").getImplementationClassType());
     }
 }

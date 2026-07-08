@@ -125,6 +125,15 @@ public class SourceImplementationClass implements SourceElement {
         return true;
     }
 
+    /**
+     * Returns the internal Spoon class. Package-private — used by
+     * {@link SourceModelEntity#getImplementationClassType()} (the {@code JavaClassSelector}
+     * two-way binding, {@code selector-widgets-design.md §10bis}-style Spoon-API exception).
+     */
+    CtClass<?> getCtClass() {
+        return ctClass;
+    }
+
     // -------------------------------------------------------------------------
     // Public API
     // -------------------------------------------------------------------------

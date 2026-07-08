@@ -490,6 +490,53 @@ public final class SourceAnnotationEditor {
     }
 
     /**
+     * Sets or replaces the value of a single-{@code Class}-valued annotation such as
+     * {@code @ImplementationClass(Foo.class)}, creating the annotation (with its own import
+     * ensured) if absent. Handles both the bare shorthand form ({@code @Foo(Bar.class)}, used
+     * throughout this codebase) and the explicit {@code @Foo(value = Bar.class)} form when
+     * replacing an existing value — {@link #setAnnotationParameter} cannot be reused here since
+     * it only recognizes a segment starting with {@code "<paramName> ="}, so a bare-shorthand
+     * existing value would not be found and a second, conflicting {@code value = ...} segment
+     * would be appended instead. Always normalizes to the bare shorthand form on write.
+     *
+     * @param annotationSimpleName    e.g. {@code "ImplementationClass"}
+     * @param annotationQualifiedName e.g. {@code "org.openflexo.pamela.annotations.ImplementationClass"},
+     *                                used to ensure the annotation's own import when the
+     *                                annotation must be created
+     * @param referenceText           the text to reference the class by, e.g. {@code "FooImpl"}
+     *                                (same package) or {@code "other.pkg.FooImpl"} (fully
+     *                                qualified, if the caller chooses not to add an import)
+     * @param qualifiedNameToImport   the qualified name to {@code import} for the referenced
+     *                                class, or {@code null} if no import statement is needed
+     * @return the edited source text
+     */
+    public static String setClassAnnotationValue(String source, int declarationStart,
+            String annotationSimpleName, String annotationQualifiedName,
+            String referenceText, String qualifiedNameToImport) {
+        if (source == null || declarationStart < 0 || declarationStart > source.length()) {
+            throw new IllegalArgumentException("Invalid declaration offset");
+        }
+        int annStart = findAnnotation(source, declarationStart, annotationSimpleName);
+        String newAnnotationText = "@" + annotationSimpleName + "(" + referenceText + ".class)";
+        String edited;
+        if (annStart < 0) {
+            edited = insertAnnotationLine(source, declarationStart, newAnnotationText);
+            edited = ensureImport(edited, annotationQualifiedName);
+        } else {
+            int[] span = annotationParenSpan(source, annStart, annotationSimpleName);
+            if (span == null) {
+                // Marker annotation (no parentheses at all) — insert the value directly
+                // after the annotation name.
+                int afterName = annStart + 1 + annotationSimpleName.length();
+                edited = source.substring(0, annStart) + newAnnotationText + source.substring(afterName);
+            } else {
+                edited = source.substring(0, annStart) + newAnnotationText + source.substring(span[1] + 1);
+            }
+        }
+        return ensureImport(edited, qualifiedNameToImport);
+    }
+
+    /**
      * Locates the {@code (...)} span of the annotation named {@code simpleName} starting at
      * {@code annStart}. Returns {@code {openIndex, closeIndex}} (both inclusive of the
      * parentheses themselves), or {@code null} if there are no parentheses (marker annotation)

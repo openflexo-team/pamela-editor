@@ -12,7 +12,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import spoon.reflect.cu.CompilationUnit;
-import spoon.reflect.declaration.CtInterface;
 import spoon.reflect.declaration.CtType;
 
 /**
@@ -40,17 +39,18 @@ import spoon.reflect.declaration.CtType;
  * <ul>
  *   <li>Normal path (loading): via {@link #SourceCompilationUnit(CompilationUnit, SourceMetaModel)}
  *       — backed by a Spoon {@link CompilationUnit}.</li>
- *   <li>New-entity path (creation): via {@link #forNewEntity(CtInterface, File, SourceMetaModel)}
- *       — backed directly by a {@link CtInterface}, no Spoon compilation unit yet.</li>
+ *   <li>New-type path (creation): via {@link #forNewType(CtType, File, SourceMetaModel)}
+ *       — backed directly by a {@link CtType} (an interface for a new entity, a class for a
+ *       new implementation class), no Spoon compilation unit yet.</li>
  * </ul>
  * </p>
  */
 public class SourceCompilationUnit implements SourceElement {
 
     // Internal Spoon reference — never exposed in the public API.
-    // Exactly one of ctCompilationUnit or ctInterface is non-null.
+    // Exactly one of ctCompilationUnit or ctType is non-null.
     private final CompilationUnit ctCompilationUnit;
-    private final CtInterface<?> ctInterface; // non-null only for new entities created via forNewEntity
+    private final CtType<?> ctType; // non-null only for new types created via forNewType
 
     // Non-final: the rename operation updates the file path
     private File file;
@@ -73,7 +73,7 @@ public class SourceCompilationUnit implements SourceElement {
      */
     public SourceCompilationUnit(CompilationUnit ctCompilationUnit, SourceMetaModel metaModel) {
         this.ctCompilationUnit = ctCompilationUnit;
-        this.ctInterface = null;
+        this.ctType = null;
         this.metaModel = metaModel;
 
         // Derive the file path from the Spoon compilation unit. For a unit parsed
@@ -92,28 +92,29 @@ public class SourceCompilationUnit implements SourceElement {
     }
 
     /**
-     * Private constructor for the new-entity path.
-     * Use {@link #forNewEntity(CtInterface, File, SourceMetaModel)} to construct.
+     * Private constructor for the new-type path.
+     * Use {@link #forNewType(CtType, File, SourceMetaModel)} to construct.
      */
-    private SourceCompilationUnit(CtInterface<?> ctInterface, File file, SourceMetaModel metaModel) {
+    private SourceCompilationUnit(CtType<?> ctType, File file, SourceMetaModel metaModel) {
         this.ctCompilationUnit = null;
-        this.ctInterface = ctInterface;
+        this.ctType = ctType;
         this.file = file;
         this.metaModel = metaModel;
-        this.primaryTypeName = ctInterface.getQualifiedName();
+        this.primaryTypeName = ctType.getQualifiedName();
     }
 
     /**
-     * Factory method for a freshly created entity that has no Spoon compilation
-     * unit yet.  Used by {@link SourceMetaModel#createEntity}.
+     * Factory method for a freshly created type that has no Spoon compilation unit yet — an
+     * interface for a new entity ({@link SourceMetaModel#createEntity}) or a class for a new
+     * implementation class ({@link SourceMetaModel#createImplementationClass}).
      *
-     * @param ctInterface the newly created Spoon interface (must not be {@code null})
-     * @param file        the target {@code .java} file on disk (may not exist yet)
-     * @param metaModel   the owning meta-model
+     * @param ctType    the newly created Spoon type (must not be {@code null})
+     * @param file      the target {@code .java} file on disk (may not exist yet)
+     * @param metaModel the owning meta-model
      * @return a new {@code SourceCompilationUnit}
      */
-    static SourceCompilationUnit forNewEntity(CtInterface<?> ctInterface, File file, SourceMetaModel metaModel) {
-        return new SourceCompilationUnit(ctInterface, file, metaModel);
+    static SourceCompilationUnit forNewType(CtType<?> ctType, File file, SourceMetaModel metaModel) {
+        return new SourceCompilationUnit(ctType, file, metaModel);
     }
 
     // -------------------------------------------------------------------------
@@ -280,7 +281,7 @@ public class SourceCompilationUnit implements SourceElement {
 
     /**
      * Pretty-prints the current Spoon AST to source text (no disk I/O, no dirty
-     * marking). Internal helper for {@link #regenerateFromAST()} and the new-entity
+     * marking). Internal helper for {@link #regenerateFromAST()} and the new-type
      * seed in {@link #getText()}.
      */
     private String printFromAst() {
@@ -290,11 +291,11 @@ public class SourceCompilationUnit implements SourceElement {
                     .createPrettyPrinter()
                     .printCompilationUnit(ctCompilationUnit);
         }
-        // New-entity path: same entry point (env.createPrettyPrinter()), so imports are
+        // New-type path: same entry point (env.createPrettyPrinter()), so imports are
         // computed and simple names are used, matching the normal path's formatting.
-        String printed = ctInterface.getFactory().getEnvironment()
+        String printed = ctType.getFactory().getEnvironment()
                 .createPrettyPrinter()
-                .printTypes(ctInterface);
+                .printTypes(ctType);
         // Spoon's default printer packs the package statement, the imports and the type
         // declaration with no blank line in between, and collapses an empty body to "{}"
         // on one line. This is fine as a diff-minimal reprint of an *existing* file, but
@@ -402,8 +403,8 @@ public class SourceCompilationUnit implements SourceElement {
         if (ctCompilationUnit != null) {
             return Collections.unmodifiableList(ctCompilationUnit.getDeclaredTypes());
         }
-        if (ctInterface != null) {
-            return Collections.singletonList(ctInterface);
+        if (ctType != null) {
+            return Collections.singletonList(ctType);
         }
         return Collections.emptyList();
     }

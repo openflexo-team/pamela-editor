@@ -7,8 +7,13 @@
         <Tab title="basic" layout="twocols" name="BasicTab" index="0" localize="true">
             <Label name="SimpleNameLabel" label="entity_label" index="0"
                 constraints="twocols(location=left)" localize="true" />
-            <TextField name="SimpleNameTF" index="1" data="data.simpleName" readOnly="true"
-                constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
+            <Panel name="SimpleNameRow" layout="border" flowAlignment="LEFT" hGap="0" vGap="0" border="empty" index="1"
+                constraints="twocols(expandHorizontally=true;location=right)">
+                <TextField name="SimpleNameTF" data="data.simpleName" readOnly="true"
+                    columns="13" localize="true" constraints="border(location=center)" />
+                <Button name="RenameBtn" buttonType="Trigger" label="rename_button" constraints="border(location=east)" localize="true"
+                    action="data.requestRename()" />
+            </Panel>
             <Label name="QualifiedNameLabel" label="qualified_name" index="2"
                 constraints="twocols(location=left)" localize="true" />
             <TextField name="QualifiedNameTF" index="3" data="data.qualifiedName" readOnly="true"
@@ -36,7 +41,20 @@
                 <RemoveAction name="delete" method="data.unlinkSuperEntity(selected)" />
                 <AddAction name="add_super_entity" method="data.requestAddSuperEntity()" />
             </Table>
-            <Panel name="Spacer" layout="flow" index="10"
+            <Label name="ImplementationClassLabel" label="implementation_class" index="10"
+                constraints="twocols(location=left)" localize="true" />
+            <Panel name="ImplementationClassRow" layout="border" flowAlignment="LEFT" hGap="0" vGap="0" border="empty" index="11"
+                constraints="twocols(expandHorizontally=true;location=right)">
+                <Custom name="implementationClassSelector"
+                    componentClassName="org.openflexo.pamela.editor.ui.widget.JavaClassSelector"
+                    data="data.implementationClassType" manageDynamicModel="true"
+                    classKind="CLASS" constraints="border(location=center)">
+                    <Assignment variable="component.metaModel" value="data.metaModel" />
+                </Custom>
+                <Button name="CreateImplementationClassBtn" buttonType="Trigger" label="create_button" constraints="border(location=east)" localize="true"
+                    action="data.requestCreateImplementationClass()" />
+            </Panel>
+            <Panel name="Spacer" layout="flow" index="12"
                 constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)" />
         </Tab>
         <Tab title="advanced" layout="twocols" name="AdvancedTab" index="1" localize="true">
@@ -98,6 +116,12 @@
         <Localized key="imports" lang="French" value="Imports" />
         <Localized key="add_import" lang="English" value="Add" />
         <Localized key="add_import" lang="French" value="Ajouter" />
+        <Localized key="implementation_class" lang="English" value="Implementation class" />
+        <Localized key="implementation_class" lang="French" value="Classe d'implémentation" />
+        <Localized key="create_button" lang="English" value="Create…" />
+        <Localized key="create_button" lang="French" value="Créer…" />
+        <Localized key="rename_button" lang="English" value="Rename…" />
+        <Localized key="rename_button" lang="French" value="Renommer…" />
     </LocalizedDictionary>
     <Parameter name="title" value="Entity" />
 </Inspector>

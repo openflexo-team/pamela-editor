@@ -1516,7 +1516,7 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         ctPackage.addType(newInterface);
 
         // Create the compilation unit wrapper
-        SourceCompilationUnit scu = SourceCompilationUnit.forNewEntity(newInterface, newFile, this);
+        SourceCompilationUnit scu = SourceCompilationUnit.forNewType(newInterface, newFile, this);
 
         // Buffer the new source (deferred): the .java file is written on the next flush
         // (Save project). The new entity is dirty from creation, like a new diagram.
@@ -1539,6 +1539,74 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         }
 
         return entity;
+    }
+
+    /**
+     * Generates a brand-new abstract implementation class for {@code entity} and attaches it
+     * via {@code @ImplementationClass} — the "create" path of
+     * {@code implementation-class-support-design.md §3.2} (the "attach" path for an
+     * <em>existing</em> class is {@link SourceModelEntity#attachImplementationClass}).
+     *
+     * <p>Placed in the same directory as the entity's own file — the universal convention in
+     * this codebase ({@code ConnectorViewImpl} next to {@code ConnectorView}, etc.); no
+     * folder/package picker. Public, abstract, implementing the entity's interface. Unlike
+     * {@code attachImplementationClass} (which only edits text, since the target may be an
+     * arbitrary, not-yet-tracked class), this method has everything needed to eagerly
+     * construct and register a fully valid {@link SourceImplementationClass} in the same call
+     * (own compilation unit; freshly generated code is by construction abstract and
+     * implements the entity, so neither of {@code SourceImplementationClass}'s validation
+     * rules can fire) — mirrors {@link #createEntity}'s eager, non-deferred registration.</p>
+     *
+     * @param entity     the entity to attach the new implementation class to
+     * @param simpleName the simple name for the new class, e.g. {@code "FooImpl"}
+     * @return the newly created {@link SourceImplementationClass}
+     * @throws IOException if the file cannot be written
+     */
+    public SourceImplementationClass createImplementationClass(SourceModelEntity entity, String simpleName)
+            throws IOException {
+        SourcePackage sourcePackage = entity.getSourcePackage();
+        String pkgName = sourcePackage != null ? sourcePackage.getQualifiedName() : "";
+        String qualifiedName = (pkgName == null || pkgName.isEmpty())
+                ? simpleName
+                : pkgName + "." + simpleName;
+
+        File entityFile = entity.getCompilationUnit().getFile();
+        File targetDir = entityFile.getParentFile();
+        targetDir.mkdirs();
+        File newFile = new File(targetDir, simpleName + ".java");
+
+        Factory factory = ctModel.getRootPackage().getFactory();
+
+        CtClass<Object> newClass = factory.Core().createClass();
+        newClass.setSimpleName(simpleName);
+        newClass.addModifier(ModifierKind.PUBLIC);
+        newClass.addModifier(ModifierKind.ABSTRACT);
+        newClass.addSuperInterface(entity.getCtType().getReference());
+
+        CtPackage ctPackage = sourcePackage.getCtPackage();
+        if (ctPackage == null) {
+            ctPackage = (pkgName == null || pkgName.isEmpty())
+                    ? factory.Package().getRootPackage()
+                    : factory.Package().getOrCreate(pkgName);
+            sourcePackage.setCtPackage(ctPackage);
+        }
+        ctPackage.addType(newClass);
+
+        // Create the compilation unit wrapper (deferred-save: buffer only, see createEntity).
+        SourceCompilationUnit scu = SourceCompilationUnit.forNewType(newClass, newFile, this);
+        scu.regenerateFromAST();
+
+        // Build and register the SourceImplementationClass, and wire it on the entity.
+        SourceImplementationClass impl = new SourceImplementationClass(newClass, entity, scu);
+        entity.setImplementationClass(impl);
+        entity.attachImplementationClass(qualifiedName);
+
+        compilationUnits.put(qualifiedName, scu);
+        if (typeIndex != null) {
+            typeIndex.put(qualifiedName, newClass);
+        }
+
+        return impl;
     }
 
     /**

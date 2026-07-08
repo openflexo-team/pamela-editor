@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel dataClassName="org.openflexo.pamela.editor.ui.action.AttachImplementationClassAction"
+       controllerClassName="org.openflexo.gina.controller.FIBController"
+       layout="twocols" name="AttachImplementationClassForm" border="empty" width="420" height="90">
+
+  <Label name="classLabel" label="Class:" localize="false"
+         align="left" index="0" constraints="twocols(location=left)" />
+  <Custom name="classSelector"
+         componentClassName="org.openflexo.pamela.editor.ui.widget.JavaClassSelector"
+         data="data.selectedType" manageDynamicModel="true" width="280"
+         index="1" constraints="twocols(expandHorizontally=true;location=right)">
+    <Assignment variable="component.metaModel" value="data.metaModel" />
+    <Assignment variable="component.restrictedValues" value="data.candidateTypes" />
+  </Custom>
+</Panel>

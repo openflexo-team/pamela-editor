@@ -88,6 +88,9 @@ import org.openflexo.pamela.editor.ui.action.AddSuperEntityAction;
 import org.openflexo.pamela.editor.ui.action.RemoveSuperEntityAction;
 import org.openflexo.pamela.editor.ui.action.AddImportAction;
 import org.openflexo.pamela.editor.ui.action.RemoveImportAction;
+import org.openflexo.pamela.editor.ui.action.AttachImplementationClassAction;
+import org.openflexo.pamela.editor.ui.action.CreateImplementationClassAction;
+import org.openflexo.pamela.editor.ui.action.DetachImplementationClassAction;
 import org.openflexo.pamela.editor.ui.action.NewListPropertyAction;
 import org.openflexo.pamela.editor.ui.action.NewSinglePropertyAction;
 import org.openflexo.pamela.editor.ui.action.PromoteMethodAction;
@@ -760,6 +763,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         registerAction(new RemoveSuperEntityAction());
         registerAction(new AddImportAction());
         registerAction(new RemoveImportAction());
+        registerAction(new AttachImplementationClassAction());
+        registerAction(new CreateImplementationClassAction());
+        registerAction(new DetachImplementationClassAction());
         // --- Model-editing actions (properties) — model-editing-design.md Lot 2 ---
         registerAction(new NewSinglePropertyAction());
         registerAction(new NewListPropertyAction());
@@ -2858,6 +2864,13 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             new org.openflexo.pamela.editor.ui.action.RenamePropertyAction().perform(element, this);
             return;
         }
+        // UI-intent: the entity inspector's "Rename…" button (next to the read-only simple-name
+        // field) asked to rename this entity — run the existing RenameEntityAction.
+        if ("renameRequested".equals(evt.getPropertyName())
+                && element instanceof SourceModelEntity) {
+            new org.openflexo.pamela.editor.ui.action.RenameEntityAction().perform(element, this);
+            return;
+        }
         // UI-intent: the entity inspector's super-entities table "+" footer asked to add a
         // super-entity — run the existing AddSuperEntityAction (its own selection dialog +
         // mutation + rebuild) rather than rebuilding here.
@@ -2872,6 +2885,13 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if ("addImportRequested".equals(evt.getPropertyName())
                 && element instanceof SourceModelEntity) {
             new org.openflexo.pamela.editor.ui.action.AddImportAction().perform(element, this);
+            return;
+        }
+        // UI-intent: the entity inspector's "Create…" button asked to generate a new
+        // implementation class — run CreateImplementationClassAction.
+        if ("createImplementationClassRequested".equals(evt.getPropertyName())
+                && element instanceof SourceModelEntity) {
+            new org.openflexo.pamela.editor.ui.action.CreateImplementationClassAction().perform(element, this);
             return;
         }
        // The Source* instance is replaced by the rebuild; capture how to re-resolve

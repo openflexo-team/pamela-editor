@@ -1341,6 +1341,124 @@ public class SourceModelEntity implements SourceElement,
         return myPkg.equals(theirPkg);
     }
 
+    // =========================================================================
+    // @ImplementationClass — editable inspector, see
+    // implementation-class-support-design.md §3/§4. The inspector embeds a
+    // JavaClassSelector directly (two-way bound to getImplementationClassType/
+    // setImplementationClassType) to select/deselect a class, plus a "Create…"
+    // button for generating a brand-new one (fired signal, handled by
+    // CreateImplementationClassAction — a dialog is needed to name the new class).
+    // The standalone Attach/Detach ContextualActions remain available from the
+    // browser/diagram context menu.
+    //
+    // Like @Imports, @ImplementationClass is an annotation: mutation goes through
+    // SourceAnnotationEditor targeted text edits (implementation-class-support-design.md §2).
+    // =========================================================================
+
+    /**
+     * Sets this entity's {@code @ImplementationClass} to {@code qualifiedClassName},
+     * creating the annotation if absent or retargeting it if already present. Annotation
+     * mutation — targeted text edit on the buffer, not an AST rewrite (no disk write yet,
+     * {@code editable-source-dirty-buffer-design.md}). Does not construct or validate a
+     * {@link SourceImplementationClass} — the next rebuild's Phase 2 does that (the target
+     * may not yet be a tracked object in this meta-model at all, e.g. a plain class picked
+     * from the whole project).
+     *
+     * <p>Silent (no {@code PropertyChangeEvent}) — like {@link #addSuperEntity}/
+     * {@link #addImport}, this bare primitive is invoked by
+     * {@code AttachImplementationClassAction}/{@code CreateImplementationClassAction} (which
+     * manage their own rebuild) and by the inspector's {@link #setImplementationClassType}
+     * (which fires on top).</p>
+     *
+     * @throws IOException if the buffer cannot be read/written
+     * @throws IllegalStateException if this entity has no valid source position
+     */
+    public void attachImplementationClass(String qualifiedClassName) throws IOException {
+        if (qualifiedClassName == null) {
+            return;
+        }
+        if (ctType.getPosition() == null || !ctType.getPosition().isValidPosition()) {
+            throw new IllegalStateException("No source position for " + qualifiedName);
+        }
+        int lastDot = qualifiedClassName.lastIndexOf('.');
+        String simpleName = lastDot < 0 ? qualifiedClassName : qualifiedClassName.substring(lastDot + 1);
+        String targetPackage = lastDot < 0 ? "" : qualifiedClassName.substring(0, lastDot);
+        String myPkg = sourcePackage != null ? sourcePackage.getQualifiedName() : "";
+        String qualifiedImport = targetPackage.equals(myPkg) ? null : qualifiedClassName;
+
+        String source = compilationUnit.getText();
+        int declStart = ctType.getPosition().getSourceStart();
+        String edited = SourceAnnotationEditor.setClassAnnotationValue(source, declStart,
+                "ImplementationClass", "org.openflexo.pamela.annotations.ImplementationClass",
+                simpleName, qualifiedImport);
+        compilationUnit.setText(edited);
+    }
+
+    /**
+     * Removes this entity's {@code @ImplementationClass} annotation (the class file itself is
+     * left untouched — only the link is dropped). No-op if there is none. Also nulls the
+     * in-memory {@link #getImplementationClass()} immediately, for instant UI feedback ahead
+     * of the rebuild that always follows a mutation.
+     *
+     * <p>Silent — like {@link #removeSuperEntity}/{@link #removeImport}; the inspector's
+     * {@code JavaClassSelector} goes through {@link #setImplementationClassType}, which
+     * fires.</p>
+     *
+     * @throws IOException if the buffer cannot be read/written
+     * @throws IllegalStateException if this entity has no valid source position
+     */
+    public void detachImplementationClass() throws IOException {
+        if (implementationClass == null) {
+            return;
+        }
+        if (ctType.getPosition() == null || !ctType.getPosition().isValidPosition()) {
+            throw new IllegalStateException("No source position for " + qualifiedName);
+        }
+        String source = compilationUnit.getText();
+        int declStart = ctType.getPosition().getSourceStart();
+        String edited = SourceAnnotationEditor.removeAnnotation(source, declStart, "ImplementationClass");
+        compilationUnit.setText(edited);
+        setImplementationClass(null);
+    }
+
+    /**
+     * The Spoon type of the current implementation class, or {@code null} if there is none —
+     * the {@code JavaClassSelector} two-way binding value (an explicit exception to the
+     * no-Spoon-in-public-API rule, since the selector is inherently a Spoon view; mirrors
+     * {@code SourceModelProperty}'s accessor-role selectors, {@code selector-widgets-design.md
+     * §10bis}).
+     */
+    public CtType<?> getImplementationClassType() {
+        return implementationClass != null ? implementationClass.getCtClass() : null;
+    }
+
+    /**
+     * Editable-inspector setter for the {@code JavaClassSelector}: selecting a class attaches
+     * it ({@link #attachImplementationClass}), clearing the selector (Reset) detaches the
+     * current one ({@link #detachImplementationClass}). Fires {@code "implementationClass"} so
+     * the application rebuilds (model-editing-design.md §6 — the model never rebuilds itself).
+     *
+     * @throws IOException if the buffer cannot be read/written
+     */
+    public void setImplementationClassType(CtType<?> type) throws IOException {
+        SourceImplementationClass old = implementationClass;
+        if (type == null) {
+            detachImplementationClass();
+        } else {
+            attachImplementationClass(type.getQualifiedName());
+        }
+        pcSupport.firePropertyChange("implementationClass", old, implementationClass);
+    }
+
+    /**
+     * Fires a UI-intent signal that the user asked to generate a new implementation class
+     * (the inspector's "Create…" button). The application runs
+     * {@code CreateImplementationClassAction} in response.
+     */
+    public void requestCreateImplementationClass() {
+        pcSupport.firePropertyChange("createImplementationClassRequested", null, this);
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
@@ -1372,6 +1490,17 @@ public class SourceModelEntity implements SourceElement,
      */
     public String getSimpleName() {
         return simpleName;
+    }
+
+    /**
+     * Fires a UI-intent signal that the user asked to rename this entity (the inspector's
+     * "Rename…" button, next to the read-only simple-name field). The model opens no dialog;
+     * the application observes the inspected element and runs {@code RenameEntityAction} in
+     * response — mirrors {@link SourceModelProperty#requestRename()}
+     * (model-editing-design.md §6).
+     */
+    public void requestRename() {
+        pcSupport.firePropertyChange("renameRequested", null, this);
     }
 
     /** The package containing this entity. */
