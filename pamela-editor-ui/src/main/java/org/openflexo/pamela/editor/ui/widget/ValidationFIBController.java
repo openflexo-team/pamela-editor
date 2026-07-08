@@ -81,7 +81,9 @@ public class ValidationFIBController extends PamelaEditorFIBController<SourceMet
 
     /**
      * Called when the user clicks a row in the issues table (FIB {@code clickAction}).
-     * Navigates the central view to the issue's source element, when known.
+     * Navigates the central view to the issue's source element (when known) and re-anchors
+     * the main browser on the corresponding node — see
+     * {@link PamelaEditorApplication#selectIssueSource(Object)}.
      */
     public void selectIssue(Object selected) {
         if (application == null || !(selected instanceof Issue)) {
@@ -89,7 +91,7 @@ public class ValidationFIBController extends PamelaEditorFIBController<SourceMet
         }
         Object source = ((Issue) selected).getSource();
         if (source != null) {
-            application.setCurrentSelectedElement(source);
+            application.selectIssueSource(source);
         }
     }
 

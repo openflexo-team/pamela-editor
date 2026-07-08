@@ -2004,6 +2004,60 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                 metaModelBrowser.getController().setSelectedElement(element));
     }
 
+    /**
+     * Selects an {@link org.openflexo.pamela.editor.model.Issue}'s source element — called
+     * from the validation panel (the issues table's {@code clickAction},
+     * {@code validation-log-panel-design.md}). Like any other selection, this refreshes the
+     * detailed browser, inspector, context panel and central view via
+     * {@link #setCurrentSelectedElement(Object)}. Unlike a plain navigation, it additionally
+     * re-anchors the {@link MetaModelBrowser} (the main browser) on the corresponding node —
+     * mirroring the re-anchoring already done after a model mutation (see
+     * {@link #selectInBrowser(Object)}'s callers).
+     *
+     * <p>The main browser only shows entities, packages, source folders, Java files and
+     * diagrams as nodes (ui-design.md §4.1) — it never shows a property, initializer,
+     * implementation class or custom method. So when the issue's source is one of those, the
+     * browser is anchored on its <em>owning entity</em> instead (the same redirection already
+     * used for the detailed browser, {@link #getDetailedBrowserElement(Object)}). A
+     * metamodel-level issue (no specific entity/property — e.g. an unresolved root type) is
+     * redirected to the owning {@link PamelaProject}.</p>
+     */
+    public void selectIssueSource(Object source) {
+        if (source == null) {
+            return;
+        }
+        setCurrentSelectedElement(source);
+        Object browserTarget = resolveBrowserSelectionTarget(source);
+        if (browserTarget != null) {
+            selectInBrowser(browserTarget);
+        }
+    }
+
+    /**
+     * The nearest ancestor of {@code element} that is an actual node type of the
+     * {@link MetaModelBrowser} tree: an entity/package/source folder/Java file/diagram/project
+     * passes through unchanged; a property/initializer/implementation class/custom method
+     * redirects to its owning entity ({@link #getDetailedBrowserElement(Object)}); a
+     * metamodel-level element redirects to its owning {@link PamelaProject}
+     * ({@link #getProjectForElement(Object)}). {@code null} when no such node exists (e.g. the
+     * element belongs to a project that is no longer open).
+     */
+    private Object resolveBrowserSelectionTarget(Object element) {
+        if (element instanceof SourceMetaModel) {
+            return getProjectForElement(element);
+        }
+        Object described = getDetailedBrowserElement(element);
+        if (described instanceof SourceModelEntity
+                || described instanceof SourcePackage
+                || described instanceof SourceFolder
+                || described instanceof SourceJavaFile
+                || described instanceof PamelaClassDiagram
+                || described instanceof PamelaProject) {
+            return described;
+        }
+        return null;
+    }
+
     // =========================================================================
     // Central view — single view + Back/Forward history (ui-design.md §5)
     // =========================================================================
