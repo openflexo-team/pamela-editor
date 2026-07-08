@@ -1,6 +1,7 @@
 package org.openflexo.pamela.editor.model;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -71,5 +72,100 @@ public class TestIssueSourceAndSeverity {
         int infos = model3.getInformationCount();
         assertEquals(model3.getIssuesCount(), errors + warnings + infos);
         assertTrue("expected at least one warning in model3", warnings >= 1);
+    }
+
+    // -------------------------------------------------------------------------
+    // hasErrors / hasWarnings — per-element severity lookup (icon-decoration support,
+    // context-menu-design.md / PamelaEditorIconLibrary#decorateWithSeverity)
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testHasWarningsTrueForElementWithAttachedWarning() {
+        SourceModelEntity inconsistent = model3.getEntity("test.model3.InconsistentEntity");
+        SourceModelProperty label = inconsistent.getDeclaredProperties().get("label");
+
+        assertTrue(model3.hasWarnings(label));
+        assertFalse(model3.hasErrors(label));
+    }
+
+    @Test
+    public void testHasErrorsAndWarningsFalseForCleanElement() {
+        // Every entity in model3 carries its own "no @Initializer" Warning, so a property is
+        // used here instead — LiteralEntity's own "name" property carries no issue.
+        SourceModelEntity literalEntity = model3.getEntity("test.model3.LiteralEntity");
+        SourceModelProperty clean = literalEntity.getDeclaredProperties().get("name");
+        assertFalse(model3.hasErrors(clean));
+        assertFalse(model3.hasWarnings(clean));
+    }
+
+    @Test
+    public void testHasErrorsAndWarningsAreNullSafe() {
+        assertFalse(model3.hasErrors(null));
+        assertFalse(model3.hasWarnings(null));
+    }
+
+    @Test
+    public void testSourceElementResolvesItsOwningMetaModel() {
+        SourceModelEntity inconsistent = model3.getEntity("test.model3.InconsistentEntity");
+        SourceModelProperty label = inconsistent.getDeclaredProperties().get("label");
+
+        assertSame(model3, inconsistent.getMetaModel());
+        assertSame(model3, label.getMetaModel());
+        assertSame(model3, model3.getMetaModel());
+    }
+
+    // -------------------------------------------------------------------------
+    // Roll-up through the containment hierarchy — a container (package, source folder,
+    // metamodel) reports an issue raised against a nested element, even though it carries
+    // no issue of its own.
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testPackageAggregatesWarningFromNestedProperty() {
+        // SourcePackage is never itself a direct Issue source in this codebase, so this
+        // isolates pure roll-up from InconsistentEntity.label's consistency warning.
+        SourceModelEntity inconsistent = model3.getEntity("test.model3.InconsistentEntity");
+        SourcePackage pkg = inconsistent.getSourcePackage();
+
+        assertFalse("the package itself carries no direct issue",
+                model3.getIssues().stream().anyMatch(i -> i.getSource() == pkg));
+        assertTrue(model3.hasWarnings(pkg));
+        assertFalse(model3.hasErrors(pkg));
+    }
+
+    @Test
+    public void testSourceFolderAggregatesWarningFromNestedEntity() {
+        // SourceFolder is never itself a direct Issue source either — same isolation as above,
+        // one level further up (folder -> package -> entity -> property).
+        assertFalse("no source folder is itself a direct issue source",
+                model3.getIssues().stream().anyMatch(i -> i.getSource() instanceof SourceFolder));
+
+        boolean anyFolderAggregatesWarning = model3.getSourceFolders().stream()
+                .anyMatch(model3::hasWarnings);
+        assertTrue("expected at least one source folder to roll up a nested warning",
+                anyFolderAggregatesWarning);
+    }
+
+    @Test
+    public void testMetaModelAggregatesWarningsWithNoDirectIssueOfItsOwn() {
+        assertFalse("the metamodel itself carries no direct issue in model3",
+                model3.getIssues().stream().anyMatch(i -> i.getSource() == model3));
+        assertTrue(model3.hasWarnings(model3));
+        assertFalse("model3 has no Error anywhere", model3.hasErrors(model3));
+    }
+
+    @Test
+    public void testRollUpIsOneDirectionalChildToParentOnly() {
+        // MixedEntity itself carries its own "no @Initializer" warning, but its two
+        // properties ("name", "age") carry no issue at all — the roll-up must not leak
+        // the other way (parent's own issue must not make its clean children look flagged).
+        SourceModelEntity mixed = model3.getEntity("test.model3.MixedEntity");
+        SourceModelProperty name = mixed.getDeclaredProperties().get("name");
+        SourceModelProperty age = mixed.getDeclaredProperties().get("age");
+
+        assertTrue("the entity itself has its own direct warning", model3.hasWarnings(mixed));
+        assertFalse(model3.hasWarnings(name));
+        assertFalse(model3.hasWarnings(age));
+        assertFalse(model3.hasErrors(mixed));
     }
 }

@@ -5,6 +5,8 @@ import javax.swing.ImageIcon;
 import org.openflexo.icon.IconFactory;
 import org.openflexo.icon.IconMarker;
 import org.openflexo.icon.ImageIconResource;
+import org.openflexo.pamela.editor.model.SourceElement;
+import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
 
@@ -70,6 +72,18 @@ public class PamelaEditorIconLibrary {
             new IconMarker(buildIcon("Icons/Markers/Reinject.png"), 8, 0);
     public static final IconMarker SYNC =
             new IconMarker(buildIcon("Icons/Markers/Sync.png"), 8, 0);
+
+    /**
+     * Severity markers — overlaid bottom-left on a model element's own icon
+     * (browser / detailed browser / inspector / diagram) when that element has at
+     * least one {@code Error}/{@code Warning} raised against it. See
+     * {@code org.openflexo.pamela.editor.model.SourceMetaModel#hasErrors(SourceElement)} /
+     * {@code #hasWarnings(SourceElement)}.
+     */
+    public static final IconMarker ERROR_MARKER =
+            new IconMarker(buildIcon("Icons/Markers/Error.gif"), 0, 8);
+    public static final IconMarker WARNING_MARKER =
+            new IconMarker(buildIcon("Icons/Markers/Warning.gif"), 0, 8);
 
     // -------------------------------------------------------------------------
     // Model element icons
@@ -264,6 +278,30 @@ public class PamelaEditorIconLibrary {
             return base;
         }
         return IconFactory.getImageIcon(base, markers);
+    }
+
+    /**
+     * Overlays {@link #ERROR_MARKER} or {@link #WARNING_MARKER} on {@code baseIcon} when
+     * {@code element} has at least one such {@code Issue} raised against it (error takes
+     * priority over warning). Returns {@code baseIcon} unchanged when the element resolves
+     * cleanly. Null-safe (a {@code null} element or a {@code null}/unresolvable metamodel is
+     * treated as "no issue").
+     */
+    public static ImageIcon decorateWithSeverity(ImageIcon baseIcon, SourceElement element) {
+        if (element == null) {
+            return baseIcon;
+        }
+        SourceMetaModel metaModel = element.getMetaModel();
+        if (metaModel == null) {
+            return baseIcon;
+        }
+        if (metaModel.hasErrors(element)) {
+            return decorate(baseIcon, ERROR_MARKER);
+        }
+        if (metaModel.hasWarnings(element)) {
+            return decorate(baseIcon, WARNING_MARKER);
+        }
+        return baseIcon;
     }
 
     private static ImageIcon buildIcon(String path) {

@@ -1039,15 +1039,20 @@ public class PamelaClassDiagramDrawing extends DrawingImpl<PamelaClassDiagram> {
         gr.setBackground(f.makeColoredBackground(bg));
     }
 
-    /** The icon for an entity view: abstract vs concrete; {@code null} when unresolved. */
+    /**
+     * The icon for an entity view: abstract vs concrete, decorated with an error/warning
+     * marker when the resolved entity has an issue raised against it (§context-menu-design.md
+     * marker composition); {@code null} when unresolved.
+     */
     private static ImageIcon iconForEntityView(EntityView ev) {
         SourceModelEntity e = ev.getEntity();
         if (e == null) {
             return null;
         }
-        return e.isAbstract()
+        ImageIcon base = e.isAbstract()
                 ? PamelaEditorIconLibrary.ABSTRACT_ENTITY_ICON
                 : PamelaEditorIconLibrary.ENTITY_ICON;
+        return PamelaEditorIconLibrary.decorateWithSeverity(base, e);
     }
 
     /**

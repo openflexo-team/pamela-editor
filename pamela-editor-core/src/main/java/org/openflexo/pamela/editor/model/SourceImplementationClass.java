@@ -134,6 +134,11 @@ public class SourceImplementationClass implements SourceElement {
         return entity;
     }
 
+    @Override
+    public SourceMetaModel getMetaModel() {
+        return entity.getMetaModel();
+    }
+
     /** The {@code .java} file that declares this implementation class. */
     public SourceCompilationUnit getCompilationUnit() {
         return compilationUnit;

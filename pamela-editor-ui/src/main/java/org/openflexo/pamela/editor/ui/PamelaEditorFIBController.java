@@ -62,6 +62,7 @@ import org.openflexo.gina.swing.view.SwingViewFactory;
 import org.openflexo.icon.IconFactory;
 import org.openflexo.localization.LocalizedDelegate;
 import org.openflexo.localization.LocalizedDelegateImpl;
+import org.openflexo.pamela.editor.model.SourceElement;
 import org.openflexo.pamela.validation.FixProposal;
 import org.openflexo.pamela.validation.InformationIssue;
 import org.openflexo.pamela.validation.ValidationError;
@@ -148,6 +149,26 @@ public class PamelaEditorFIBController<T> extends FIBController implements Prope
 					returned = IconFactory.getImageIcon(returned, FIBUtilsIconLibrary.WARNING);
 				}
 				cachedIcons.put(object, returned);
+			}
+			else if (object instanceof SourceElement) {
+				// Decorate a metamodel element's own icon with an error/warning marker when
+				// pamela-editor's own Issue model (source-metamodel-design.md §12,
+				// validation-log-panel-design.md) raised a diagnostic against it — the same
+				// base-icon-plus-marker composition already used for action icons
+				// (context-menu-design.md, PamelaEditorIconLibrary#decorate). hasErrors/
+				// hasWarnings roll up through the containment hierarchy (package → entity →
+				// property…), so a container's icon reflects any issue nested underneath it,
+				// not only issues raised directly against it. Not cached in cachedIcons:
+				// IconFactory#getImageIcon already caches the composed image per (base icon,
+				// marker) pair, and the underlying lookup is a cheap scan over the metamodel's
+				// (typically small) issue list.
+				returned = PamelaEditorIconLibrary.decorateWithSeverity(returned, (SourceElement) object);
+			}
+			else if (object instanceof PamelaProject) {
+				// PamelaProject (the top-level browser node) is a UI-level wrapper, not a
+				// SourceElement — decorate it via the SourceMetaModel it owns.
+				returned = PamelaEditorIconLibrary.decorateWithSeverity(
+						returned, ((PamelaProject) object).getMetaModel());
 			}
 		}
 		return returned;

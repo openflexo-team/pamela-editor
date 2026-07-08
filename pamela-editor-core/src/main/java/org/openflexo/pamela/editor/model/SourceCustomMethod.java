@@ -87,6 +87,11 @@ public class SourceCustomMethod implements SourceElement {
         return entity;
     }
 
+    @Override
+    public SourceMetaModel getMetaModel() {
+        return entity.getMetaModel();
+    }
+
     /** The kind of operation (finder / deleter / operation / plain). */
     public Kind getKind() {
         return kind;

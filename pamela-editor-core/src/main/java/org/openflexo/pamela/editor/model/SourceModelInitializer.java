@@ -82,6 +82,11 @@ public class SourceModelInitializer implements SourceElement {
         return entity;
     }
 
+    @Override
+    public SourceMetaModel getMetaModel() {
+        return entity.getMetaModel();
+    }
+
     /** The simple name of the initializer method, e.g. {@code "init"}. */
     public String getMethodName() {
         return methodName;

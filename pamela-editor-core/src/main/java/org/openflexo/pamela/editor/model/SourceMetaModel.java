@@ -1874,6 +1874,90 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
     }
 
     /**
+     * Returns {@code true} if at least one {@link Error} is raised against {@code element}
+     * itself, <em>or against any element nested underneath it</em> in the model's
+     * containment hierarchy (see {@link #childrenOf(SourceElement)}) — e.g. a property error
+     * is also reported by its owning entity, package and source folder, and by the metamodel
+     * itself. Used to decorate a container's icon with an error marker so a problem is
+     * visible without expanding — see {@code context-menu-design.md} for the
+     * base-icon-plus-marker composition mechanism.
+     */
+    public boolean hasErrors(SourceElement element) {
+        return hasIssue(element, Error.class);
+    }
+
+    /**
+     * Returns {@code true} if at least one {@link Warning} is raised against {@code element}
+     * itself, or against any element nested underneath it — see {@link #hasErrors(SourceElement)}.
+     */
+    public boolean hasWarnings(SourceElement element) {
+        return hasIssue(element, Warning.class);
+    }
+
+    /**
+     * Shared recursive lookup for {@link #hasErrors(SourceElement)} / {@link #hasWarnings(SourceElement)}:
+     * true if {@code element} itself carries an issue of the given severity (identity comparison
+     * on {@link Issue#getSource()}), or if any of its {@linkplain #childrenOf(SourceElement)
+     * containment children} does, recursively.
+     */
+    private boolean hasIssue(SourceElement element, Class<? extends Issue> severityClass) {
+        if (element == null) {
+            return false;
+        }
+        for (Issue issue : issues) {
+            if (severityClass.isInstance(issue) && issue.getSource() == element) {
+                return true;
+            }
+        }
+        for (SourceElement child : childrenOf(element)) {
+            if (hasIssue(child, severityClass)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The direct containment children of {@code element}, used only to roll up issue
+     * severity markers (see {@link #hasIssue(SourceElement, Class)}). Mirrors the
+     * containment hierarchy of {@code source-metamodel-design.md §2}:
+     * metamodel → entities; source folder → packages; package → entities;
+     * entity → properties, initializers, custom methods, implementation class.
+     * Returns an empty list for element kinds that have no containment children
+     * (properties, initializers, custom methods, implementation classes).
+     */
+    private List<SourceElement> childrenOf(SourceElement element) {
+        if (element instanceof SourceMetaModel) {
+            return new ArrayList<>(((SourceMetaModel) element).getEntities().values());
+        }
+        if (element instanceof SourceFolder) {
+            return new ArrayList<>(((SourceFolder) element).getPackages());
+        }
+        if (element instanceof SourcePackage) {
+            return new ArrayList<>(((SourcePackage) element).getEntities());
+        }
+        if (element instanceof SourceModelEntity) {
+            SourceModelEntity entity = (SourceModelEntity) element;
+            List<SourceElement> children = new ArrayList<>();
+            children.addAll(entity.getDeclaredProperties().values());
+            children.addAll(entity.getInitializers());
+            children.addAll(entity.getDeclaredCustomMethods());
+            SourceImplementationClass impl = entity.getImplementationClass();
+            if (impl != null) {
+                children.add(impl);
+            }
+            return children;
+        }
+        return Collections.emptyList();
+    }
+
+    /** {@code this} — a {@link SourceMetaModel} is its own owning meta-model. */
+    @Override
+    public SourceMetaModel getMetaModel() {
+        return this;
+    }
+
+    /**
      * Returns the total number of declared properties across all entities in this metamodel.
      * Useful as a quick metric in summary views.
      */

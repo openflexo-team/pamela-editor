@@ -1225,6 +1225,11 @@ public class SourceModelProperty implements SourceElement,
         return modelEntity;
     }
 
+    @Override
+    public SourceMetaModel getMetaModel() {
+        return modelEntity.getMetaModel();
+    }
+
     /** {@code SINGLE} or {@code LIST}. */
     public Cardinality getCardinality() {
         return cardinality;
