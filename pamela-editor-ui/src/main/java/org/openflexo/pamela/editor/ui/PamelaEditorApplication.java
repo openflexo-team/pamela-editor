@@ -980,8 +980,13 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     metaModelBrowser.focusNewlyOpenedProject(project);
 
                     // Select the project so the central view switches to MetaModelSummaryView
-                    // (matches newProject()'s behaviour, which already did this).
+                    // (matches newProject()'s behaviour, which already did this) — and, since
+                    // setCurrentSelectedElement alone does not touch the MetaModelBrowser's own
+                    // tree selection, re-anchor the tree on the project node too (same pattern as
+                    // selectIssueSource: immediate central-view switch, then a deferred
+                    // selectInBrowser to highlight/scroll the node once Gina's tree is built).
                     setCurrentSelectedElement(project);
+                    selectInBrowser(project);
 
                 } catch (Exception e) {
                     Throwable cause = (e.getCause() != null) ? e.getCause() : e;
@@ -1060,8 +1065,12 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     // newly-created one to fill the view (see MetaModelBrowser.focusNewlyOpenedProject).
                     metaModelBrowser.focusNewlyOpenedProject(project);
 
-                    // Select the new project in the browser
+                    // Select the new project: immediate central-view switch, then re-anchor the
+                    // MetaModelBrowser's own tree selection once Gina has (re)built the tree
+                    // (setCurrentSelectedElement alone does not touch the tree's selection —
+                    // mirrors the openProject() fix / selectIssueSource's pattern).
                     setCurrentSelectedElement(project);
+                    selectInBrowser(project);
 
                 } catch (Exception e) {
                     Throwable cause = (e.getCause() != null) ? e.getCause() : e;
