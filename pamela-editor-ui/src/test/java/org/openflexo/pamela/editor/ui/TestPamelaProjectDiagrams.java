@@ -71,4 +71,22 @@ public class TestPamelaProjectDiagrams {
         assertEquals(1, events.size());
         assertTrue(project.getDiagrams().isEmpty());
     }
+
+    /**
+     * The {@code PamelaProject.inspector}'s "Rename…" button fires on the project itself —
+     * not on {@code metaModel} — since {@code PamelaProject.inspector} (not
+     * {@code SourceMetaModel.inspector}) is what is actually shown when a project is selected
+     * in the browser (see {@code model-editing-design.md §6} and
+     * {@link PamelaProject#requestRename()}'s javadoc).
+     */
+    @Test
+    public void testRequestRenameFiresOnTheProjectItself() throws Exception {
+        PamelaProject project = newProject();
+        List<PropertyChangeEvent> events = new ArrayList<>();
+        project.getPropertyChangeSupport().addPropertyChangeListener("renameRequested", events::add);
+
+        project.requestRename();
+
+        assertEquals(1, events.size());
+    }
 }

@@ -1398,6 +1398,33 @@ public class TestMutations {
         assertTrue("requestRename fires the UI-intent signal", fired[0]);
     }
 
+    /**
+     * The meta-model inspector's "Rename…" button is a UI intent too: {@code requestRename()}
+     * fires the signal; separately, {@code setName(...)} itself fires {@code "name"} so any
+     * live label binding (e.g. the summary view header) refreshes — a plain project-metadata
+     * edit, not a source rebuild (model-editing-design.md §6).
+     */
+    @Test
+    public void testMetaModelRequestRenameFiresUiIntentAndSetNameFiresNameChange() throws IOException {
+        File workDir = tmp.newFolder("testMetaModelRequestRename");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+
+        final boolean[] renameRequested = { false };
+        mm.getPropertyChangeSupport().addPropertyChangeListener("renameRequested",
+                evt -> renameRequested[0] = true);
+        mm.requestRename();
+        assertTrue("requestRename fires the UI-intent signal", renameRequested[0]);
+
+        final boolean[] nameChanged = { false };
+        mm.getPropertyChangeSupport().addPropertyChangeListener("name", evt -> nameChanged[0] = true);
+        mm.setName("Renamed Meta-Model");
+        assertTrue("setName fires \"name\"", nameChanged[0]);
+        assertEquals("Renamed Meta-Model", mm.getName());
+    }
+
     // =========================================================================
     // Test 20 — createProperty: generate the getter, attach an existing setter
     // =========================================================================

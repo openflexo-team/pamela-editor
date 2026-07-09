@@ -1869,8 +1869,26 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         return name;
     }
 
+    /**
+     * Editable-inspector setter: renames the display name (a free-form string, persisted in
+     * the {@code .pamela} project file — not a source-code mutation, so it does not touch
+     * any compilation unit). Fires {@code "name"} so any live label binding
+     * (e.g. {@code MetaModelSummaryView}'s header) refreshes.
+     */
     public void setName(String name) {
+        String old = this.name;
         this.name = name;
+        pcSupport.firePropertyChange("name", old, name);
+    }
+
+    /**
+     * Fires a UI-intent signal that the user asked to rename this meta-model (the inspector's
+     * "Rename…" button, next to the read-only name field). The model opens no dialog; the
+     * application observes the inspected element and prompts for a new name in response
+     * (model-editing-design.md §6) — a plain project-metadata edit, not a source rebuild.
+     */
+    public void requestRename() {
+        pcSupport.firePropertyChange("renameRequested", null, this);
     }
 
     /**

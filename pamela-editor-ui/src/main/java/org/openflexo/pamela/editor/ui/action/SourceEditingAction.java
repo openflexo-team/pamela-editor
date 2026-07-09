@@ -6,16 +6,21 @@ import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaProject;
 
 /**
- * Base class for actions that mutate the source of a project and need a
+ * Base class for actions that apply a change to a project and (usually) need a Spoon
  * re-analysis afterwards. Factors the common body shared by every such action
  * (parameterized or confirmation-gated): resolve the owning project, apply the
  * mutation (with error reporting), rebuild off the EDT, and reselect.
  *
- * <p>Subclasses implement {@link #applyMutation}, which performs the source
- * change and returns a {@link Supplier} of the element to reselect once the
- * (background) rebuild completes ({@code null} = no reselection). The optional
- * gate ({@link #confirmPerform}) is where a confirmation or a parameter dialog
- * lives — see {@link ParameteredAction}.</p>
+ * <p>Subclasses implement {@link #applyMutation}, which performs the change and returns a
+ * {@link Supplier} of the element to reselect afterwards ({@code null} = no reselection). The
+ * optional gate ({@link #confirmPerform}) is where a confirmation or a parameter dialog lives
+ * — see {@link ParameteredAction}.</p>
+ *
+ * <p>The re-analysis is skipped when {@link #needsRebuild()} returns {@code false} — for the
+ * rare action that edits <em>project metadata</em> (the meta-model display name, the
+ * {@code .pamela} file location) rather than {@code .java} source, and therefore has nothing
+ * for Spoon to re-parse (e.g. {@code RenameMetaModelAction}). In that case {@code applyMutation}
+ * runs and any reselection is applied directly, without the (potentially multi-second) rebuild.</p>
  */
 public abstract class SourceEditingAction extends ContextualAction {
 
@@ -25,11 +30,12 @@ public abstract class SourceEditingAction extends ContextualAction {
         if (project == null) {
             return;
         }
-        if (app.isRebuilding(project)) {
+        if (needsRebuild() && app.isRebuilding(project)) {
             // A background rebuild is already iterating/rewriting this project's SourceMetaModel
             // collections (entities, packages…). Running applyMutation now would race it on the
             // EDT and can throw ConcurrentModificationException — refuse and let the user retry
-            // once the in-flight rebuild has finished.
+            // once the in-flight rebuild has finished. (A metadata-only edit, needsRebuild()
+            // == false, touches none of those collections, so it need not wait.)
             ModelEditingSupport.error(app, getLabel(),
                     "A rebuild is already in progress for this project.\n"
                             + "Please wait for it to finish, then try again.");
@@ -44,19 +50,34 @@ public abstract class SourceEditingAction extends ContextualAction {
                     "Operation failed:\n" + e.getMessage());
             return;
         }
-        app.rebuildProject(project, () -> {
-            if (reselect != null) {
-                Object sel = reselect.get();
-                if (sel != null) {
-                    app.selectInBrowser(sel);
-                }
+        if (needsRebuild()) {
+            app.rebuildProject(project, () -> reselect(app, reselect));
+        } else {
+            reselect(app, reselect);
+        }
+    }
+
+    private static void reselect(PamelaEditorApplication app, Supplier<Object> reselect) {
+        if (reselect != null) {
+            Object sel = reselect.get();
+            if (sel != null) {
+                app.selectInBrowser(sel);
             }
-        });
+        }
     }
 
     /**
-     * Performs the source mutation. Returns a supplier of the element to
-     * reselect after the rebuild, or {@code null}.
+     * Whether a Spoon re-analysis of the project must run after {@link #applyMutation}.
+     * Default {@code true} (the action edited {@code .java} source). Override to {@code false}
+     * for an action that only edits project metadata (see the class javadoc).
+     */
+    protected boolean needsRebuild() {
+        return true;
+    }
+
+    /**
+     * Performs the mutation. Returns a supplier of the element to reselect afterwards, or
+     * {@code null}.
      */
     protected abstract Supplier<Object> applyMutation(Object target,
             PamelaEditorApplication app, PamelaProject project) throws Exception;

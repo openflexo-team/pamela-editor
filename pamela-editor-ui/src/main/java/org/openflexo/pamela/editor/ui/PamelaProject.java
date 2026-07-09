@@ -53,7 +53,9 @@ public class PamelaProject implements HasPropertyChangeSupport {
         return null;
     }
 
-    private final File pamelaFile;
+    // Non-final: the "Rename Meta-Model…" action can also rename the .pamela file on disk
+    // (implementation-class-support-design.md sibling — see RenameMetaModelAction).
+    private File pamelaFile;
     private final SourceMetaModel metaModel;
     private final List<PamelaClassDiagram> diagrams;
 
@@ -102,6 +104,20 @@ public class PamelaProject implements HasPropertyChangeSupport {
         return pamelaFile;
     }
 
+    /**
+     * Repoints this project at a different {@code .pamela} file — used when the user renames
+     * the project file (the physical rename on disk is done by the caller,
+     * {@link PamelaEditorApplication#applyMetaModelRename}). Fires {@code "pamelaFile"} so any
+     * live binding (e.g. the {@code PamelaProject.inspector} location field) refreshes.
+     */
+    public void setPamelaFile(File pamelaFile) {
+        File old = this.pamelaFile;
+        this.pamelaFile = pamelaFile;
+        pcSupport.firePropertyChange("pamelaFile", old, pamelaFile);
+        // The inspector's location field binds data.pamelaFilePath, so fire that name too.
+        pcSupport.firePropertyChange("pamelaFilePath", null, getPamelaFilePath());
+    }
+
     /** Absolute path of the {@code .pamela} file, as a String for inspector bindings. */
     public String getPamelaFilePath() {
         return pamelaFile != null ? pamelaFile.getAbsolutePath() : "";
@@ -110,6 +126,21 @@ public class PamelaProject implements HasPropertyChangeSupport {
     /** The fully built {@link SourceMetaModel} for this project. */
     public SourceMetaModel getMetaModel() {
         return metaModel;
+    }
+
+    /**
+     * Fires a UI-intent signal that the user asked to rename this project's meta-model (the
+     * {@code PamelaProject.inspector}'s "Rename…" button, next to the read-only name field).
+     *
+     * <p>Deliberately fired on <b>this</b> object's own {@code PropertyChangeSupport} rather
+     * than on {@link #metaModel}'s: when a project is selected in the browser, {@code element}
+     * passed to {@code installEditListener} (model-editing-design.md §6) is the
+     * {@code PamelaProject} itself — {@code PamelaProject.inspector} is what actually gets
+     * shown (not {@code SourceMetaModel.inspector}; {@code PamelaProject} is not a
+     * {@code SourceElement}) — so the signal must originate here to be observed at all.</p>
+     */
+    public void requestRename() {
+        pcSupport.firePropertyChange("renameRequested", null, this);
     }
 
     /**

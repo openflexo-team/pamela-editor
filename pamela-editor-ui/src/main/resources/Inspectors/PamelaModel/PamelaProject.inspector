@@ -5,8 +5,13 @@
         <Tab title="basic" layout="twocols" name="BasicTab" index="0" localize="true">
             <Label name="NameLabel" label="project_name" index="0"
                 constraints="twocols(location=left)" localize="true" />
-            <TextField name="NameTF" index="1" data="data.metaModel.name" readOnly="true"
-                constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="20" localize="true" />
+            <Panel name="NameRow" layout="border" flowAlignment="LEFT" hGap="0" vGap="0" border="empty" index="1"
+                constraints="twocols(expandHorizontally=true;location=right)">
+                <TextField name="NameTF" data="data.metaModel.name" readOnly="true"
+                    columns="13" localize="true" constraints="border(location=center)" />
+                <Button name="RenameBtn" buttonType="Trigger" label="rename_button" constraints="border(location=east)" localize="true"
+                    action="data.requestRename()" />
+            </Panel>
             <Label name="LocationLabel" label="project_location" index="2"
                 constraints="twocols(location=left)" localize="true" />
             <TextField name="LocationTF" index="3" data="data.pamelaFilePath" readOnly="true"
@@ -22,6 +27,8 @@
         <Localized key="project_name" lang="French" value="Nom" />
         <Localized key="project_location" lang="English" value="Location" />
         <Localized key="project_location" lang="French" value="Emplacement" />
+        <Localized key="rename_button" lang="English" value="Rename…" />
+        <Localized key="rename_button" lang="French" value="Renommer…" />
     </LocalizedDictionary>
     <Parameter name="title" value="Project" />
 </Inspector>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Panel dataClassName="org.openflexo.pamela.editor.ui.action.RenameMetaModelAction"
+       controllerClassName="org.openflexo.gina.controller.FIBController"
+       layout="twocols" name="RenameMetaModelForm" border="empty" width="440" height="110">
+
+  <Label name="nameLabel" label="New meta-model name:" localize="false"
+         align="left" index="0" constraints="twocols(location=left)" />
+  <TextField name="nameTF" data="data.newName" columns="22" validateOnReturn="false"
+         index="1" constraints="twocols(expandHorizontally=true;location=right)" />
+
+  <Label name="renameFileLabel" label="Also rename the .pamela file:" localize="false"
+         align="left" index="2" constraints="twocols(location=left)" />
+  <CheckBox name="renameFileCB" data="data.renameFile" readOnly="false"
+         index="3" constraints="twocols(location=right)" />
+
+  <Label name="fileNameLabel" label="New file name:" localize="false"
+         align="left" index="4" constraints="twocols(location=left)" />
+  <Panel name="fileNameRow" layout="border" flowAlignment="LEFT" hGap="0" vGap="0" border="empty" index="5"
+         constraints="twocols(expandHorizontally=true;location=right)">
+    <TextField name="fileNameTF" data="data.newFileName" columns="18" validateOnReturn="false"
+         enable="data.renameFile" constraints="border(location=center)" />
+    <Label name="extLabel" label=".pamela" localize="false" constraints="border(location=east)" />
+  </Panel>
+</Panel>

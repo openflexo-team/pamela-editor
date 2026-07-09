@@ -69,6 +69,7 @@ import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.action.ActionGroup;
 import org.openflexo.pamela.editor.ui.action.AddAsRootTypeAction;
 import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
+import org.openflexo.pamela.editor.ui.action.RenameMetaModelAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsAdderAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsFinderAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsInitializerAction;
@@ -752,6 +753,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
 
         // --- Contextual actions ---
         registerAction(new AddSourceFolderAction());
+        registerAction(new RenameMetaModelAction());
         registerAction(new AddAsRootTypeAction());
         registerAction(new DeclareAsPamelaEntityAction());
         // --- Model-editing actions (entities) — model-editing-design.md Lot 1 ---
@@ -2591,6 +2593,77 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     }
 
     /**
+     * Applies a meta-model rename collected by {@link RenameMetaModelAction}'s FIB dialog:
+     * always sets the display name (persisted in the {@code .pamela} project file), and — when
+     * {@code newPamelaFile} is non-null — also renames the {@code .pamela} file on disk.
+     *
+     * <p>A plain project-metadata edit — no {@code .java} source is touched, so this
+     * deliberately does <b>not</b> go through {@code rebuildProject} (unlike entity/property
+     * renames): it marks the project dirty and refreshes the browser label / central title,
+     * mirroring {@link #renameDiagram}. The physical file rename is done now (a file move
+     * cannot be deferred), while the new name is written into the (renamed) file only on the
+     * next explicit save — consistent with the dirty + explicit-save model.</p>
+     *
+     * @param metaModel     the meta-model to rename
+     * @param newName       the new display name (already trimmed; must be non-empty)
+     * @param newPamelaFile the new {@code .pamela} file, or {@code null} to keep the file name
+     */
+    public void applyMetaModelRename(SourceMetaModel metaModel, String newName, File newPamelaFile) {
+        PamelaProject project = getProjectForElement(metaModel);
+        if (metaModel == null || project == null || newName == null || newName.isEmpty()) {
+            return;
+        }
+        boolean nameChanged = !newName.equals(metaModel.getName());
+        if (nameChanged) {
+            // setName(...) fires "name", observed by MetaModelSummaryView's header and the
+            // browser's "project.metaModel.name" label binding — no extra event needed.
+            metaModel.setName(newName);
+        }
+
+        boolean fileChanged = false;
+        if (newPamelaFile != null && !newPamelaFile.equals(project.getPamelaFile())) {
+            File oldFile = project.getPamelaFile();
+            if (oldFile != null && oldFile.exists()) {
+                if (!oldFile.renameTo(newPamelaFile)) {
+                    JOptionPane.showMessageDialog(frame,
+                            "Could not rename the project file to:\n" + newPamelaFile.getName(),
+                            "Rename Meta-Model", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    // Move the hidden build-cache sidecar alongside the .pamela file, so the
+                    // fast-open path is not orphaned (source-metamodel-design.md §18.6).
+                    File oldCache = metaModel.getBuildCacheFile();
+                    File newCache = org.openflexo.pamela.editor.model.SourceBuildCache
+                            .cacheFileFor(newPamelaFile);
+                    if (oldCache != null && oldCache.exists()) {
+                        oldCache.renameTo(newCache);
+                    }
+                    project.setPamelaFile(newPamelaFile);
+                    metaModel.setBuildCacheFile(newCache);
+                    // Keep the Open Recent list pointing at the new location.
+                    java.util.List<File> recent = PamelaEditorPreferences.getLastFiles();
+                    recent.remove(oldFile);
+                    PamelaEditorPreferences.setLastFiles(recent);
+                    PamelaEditorPreferences.setLastFile(newPamelaFile);
+                    fileChanged = true;
+                }
+            } else {
+                // .pamela not on disk yet (brand-new unsaved project): just repoint.
+                project.setPamelaFile(newPamelaFile);
+                metaModel.setBuildCacheFile(org.openflexo.pamela.editor.model.SourceBuildCache
+                        .cacheFileFor(newPamelaFile));
+                fileChanged = true;
+            }
+        }
+
+        if (nameChanged || fileChanged) {
+            markProjectDirty(project);
+        }
+        if (currentHistoryElement == metaModel || currentHistoryElement == project) {
+            centralTitleLabel.setText(titleFor(currentHistoryElement));
+        }
+    }
+
+    /**
      * Deletes a diagram after confirmation: removes it from the project, discards its
      * cached view/editor, and marks the project dirty. The {@code .diagram} file is
      * removed from disk on the next save (purge in {@link #saveProject(PamelaProject)}).
@@ -2869,6 +2942,18 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         if ("renameRequested".equals(evt.getPropertyName())
                 && element instanceof SourceModelEntity) {
             new org.openflexo.pamela.editor.ui.action.RenameEntityAction().perform(element, this);
+            return;
+        }
+        // UI-intent: the meta-model / project inspector's "Rename…" button asked to rename the
+        // meta-model — run RenameMetaModelAction (its own FIB dialog: new name + optional
+        // .pamela file rename). A plain project-metadata edit, not a rebuild-worthy source
+        // mutation, so RenameMetaModelAction is a ContextualAction (not a SourceEditingAction).
+        // PamelaProject.inspector is what is actually shown when a project is selected
+        // (SourceMetaModel.inspector is unreachable from the browser, since PamelaProject is
+        // not a SourceElement — see PamelaProject.requestRename()); the action accepts either.
+        if ("renameRequested".equals(evt.getPropertyName())
+                && (element instanceof SourceMetaModel || element instanceof PamelaProject)) {
+            new org.openflexo.pamela.editor.ui.action.RenameMetaModelAction().perform(element, this);
             return;
         }
         // UI-intent: the entity inspector's super-entities table "+" footer asked to add a
