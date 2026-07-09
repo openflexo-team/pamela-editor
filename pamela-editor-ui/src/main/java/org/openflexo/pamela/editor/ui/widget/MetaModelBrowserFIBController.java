@@ -4,7 +4,9 @@ import javax.swing.ImageIcon;
 
 import org.openflexo.gina.model.FIBComponent;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
+import org.openflexo.pamela.editor.model.SourceCompilationUnit;
 import org.openflexo.pamela.editor.model.SourceFolder;
+import org.openflexo.pamela.editor.model.SourceJavaFile;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
@@ -61,6 +63,33 @@ public class MetaModelBrowserFIBController extends PamelaEditorFIBController<Pam
     /** Called on right-click — builds and shows the contextual menu. */
     public void rightClick(Object object, Object event) {
         showContextualMenu(object, event, getDataObject());
+    }
+
+    // -------------------------------------------------------------------------
+    // Browser labels (with a "> " prefix for dirty source files)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Label for a {@link SourceModelEntity} node: {@code <simpleName>.java},
+     * prefixed with {@code "> "} when its compilation unit has unsaved changes.
+     */
+    public String labelForEntity(SourceModelEntity entity) {
+        String name = entity.getSimpleName() + ".java";
+        return isDirty(entity.getCompilationUnit()) ? "> " + name : name;
+    }
+
+    /**
+     * Label for a non-entity {@link SourceJavaFile} node: {@code <simpleName>.java},
+     * prefixed with {@code "> "} when its compilation unit has unsaved changes.
+     */
+    public String labelForJavaFile(SourceJavaFile javaFile) {
+        String name = javaFile.getSimpleName() + ".java";
+        SourceCompilationUnit cu = javaFile.getMetaModel().getCompilationUnit(javaFile.getQualifiedName());
+        return isDirty(cu) ? "> " + name : name;
+    }
+
+    private static boolean isDirty(SourceCompilationUnit cu) {
+        return cu != null && cu.isDirty();
     }
 
     // -------------------------------------------------------------------------
