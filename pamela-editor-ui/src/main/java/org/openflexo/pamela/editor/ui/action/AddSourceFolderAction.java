@@ -2,10 +2,15 @@ package org.openflexo.pamela.editor.ui.action;
 import org.openflexo.pamela.editor.ui.PamelaEditorIconLibrary;
 import javax.swing.ImageIcon;
 
+import java.awt.BorderLayout;
 import java.awt.Component;
 import java.io.File;
 
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
@@ -79,6 +84,11 @@ public class AddSourceFolderAction extends ContextualAction {
      * Opens a directory-chooser dialog and adds the chosen directory to
      * {@code model} if it is not already registered.
      *
+     * <p>The chooser carries a "New folder…" accessory button so a brand-new
+     * source directory can be created on the fly. The system (Aqua) file
+     * chooser offers no folder-creation affordance in open mode, hence the
+     * explicit accessory.</p>
+     *
      * @param model          the metamodel to update (must not be null)
      * @param projectDir     starting directory for the chooser (may be null)
      * @param parentComponent parent Swing component for dialog centering (may be null)
@@ -96,11 +106,56 @@ public class AddSourceFolderAction extends ContextualAction {
         if (projectDir != null && projectDir.exists()) {
             chooser.setCurrentDirectory(projectDir);
         }
+        chooser.setAccessory(makeNewFolderAccessory(chooser));
         if (chooser.showOpenDialog(parentComponent) == JFileChooser.APPROVE_OPTION) {
             File dir = chooser.getSelectedFile();
             if (dir != null && !model.getSourceDirectories().contains(dir)) {
                 model.addSourceDirectory(dir);
             }
         }
+    }
+
+    /**
+     * Builds the chooser accessory holding the "New folder…" button: prompts
+     * for a name, creates the directory under the chooser's current location
+     * (or under the selected directory when one is selected), and selects it
+     * so that OK adds it directly.
+     */
+    private static JPanel makeNewFolderAccessory(JFileChooser chooser) {
+        JButton newFolderButton = new JButton("New folder…");
+        newFolderButton.addActionListener(e -> {
+            String name = JOptionPane.showInputDialog(chooser,
+                    "Name of the new folder:", "New folder", JOptionPane.PLAIN_MESSAGE);
+            if (name == null) {
+                return; // cancelled
+            }
+            name = name.trim();
+            if (name.isEmpty() || name.contains(File.separator) || name.contains("/")) {
+                JOptionPane.showMessageDialog(chooser,
+                        "Invalid folder name: " + name, "New folder", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            File selected = chooser.getSelectedFile();
+            File base = (selected != null && selected.isDirectory()) ? selected : chooser.getCurrentDirectory();
+            File newDir = new File(base, name);
+            if (newDir.exists()) {
+                JOptionPane.showMessageDialog(chooser,
+                        "A file or folder named '" + name + "' already exists here.",
+                        "New folder", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (!newDir.mkdirs()) {
+                JOptionPane.showMessageDialog(chooser,
+                        "Could not create folder: " + newDir.getAbsolutePath(),
+                        "New folder", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            chooser.setSelectedFile(newDir);
+            chooser.rescanCurrentDirectory();
+        });
+        JPanel accessory = new JPanel(new BorderLayout());
+        accessory.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 0));
+        accessory.add(newFolderButton, BorderLayout.SOUTH);
+        return accessory;
     }
 }
