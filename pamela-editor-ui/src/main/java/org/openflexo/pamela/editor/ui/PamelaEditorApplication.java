@@ -506,6 +506,36 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
      */
     private boolean settingSelectedElement = false;
 
+    /**
+     * True while a {@link org.openflexo.pamela.editor.ui.action.SourceEditingAction} is applying
+     * its mutation. Model mutations fire {@link java.beans.PropertyChangeEvent}s as a side effect
+     * (e.g. {@code createEntity} → the package's {@code "entities"}/{@code "members"} change),
+     * which the inspector's {@link #editListener} would otherwise turn into a <em>spurious</em>
+     * rebuild — pre-empting the action's own rebuild (and its result presentation) via the
+     * {@code isRebuilding} guard. The action brackets its {@code applyMutation} with
+     * {@link #beginSourceMutation()} / {@link #endSourceMutation()} so those side-effect events
+     * are ignored (see {@link #onInspectedElementEdited}).
+     */
+    private boolean applyingSourceMutation = false;
+
+    /** @see #applyingSourceMutation */
+    public void beginSourceMutation() {
+        applyingSourceMutation = true;
+    }
+
+    /** @see #applyingSourceMutation */
+    public void endSourceMutation() {
+        applyingSourceMutation = false;
+    }
+
+    /**
+     * When {@code true}, {@link #setCurrentSelectedElement(Object, boolean)} updates the
+     * inspector and the detailed/main browsers but does <em>not</em> switch the central view.
+     * Used to select a newly created entity while keeping the active tabular summary view
+     * on screen (see {@link #presentNewEntity}).
+     */
+    private boolean suppressCentralViewNavigation = false;
+
     // --- Browser drag-to-diagram coordination ---
     // While the user holds the mouse down on the MetaModelBrowser tree (a potential
     // drag), the central view switch is deferred so the active diagram stays visible
@@ -1628,7 +1658,10 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     //    diagram), defer the switch: keep the current diagram visible so it
                     //    remains a valid drop target. The switch is committed on mouse
                     //    release only if no drag happened (see onBrowserMouseReleased).
-                    if (browserPressActive) {
+                    if (suppressCentralViewNavigation) {
+                        // Keep the current central view (e.g. a tabular summary): only the
+                        // inspector and the detailed/main browsers reflect the new selection.
+                    } else if (browserPressActive) {
                         deferredCentralViewElement = element;
                     } else {
                         openOrSwitchCentralView(element);
@@ -2023,6 +2056,203 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     public void selectInBrowser(Object element) {
         javax.swing.SwingUtilities.invokeLater(() ->
                 metaModelBrowser.getController().setSelectedElement(element));
+    }
+
+    /**
+     * Like {@link #selectInBrowser(Object)}, but keeps the current central view unchanged.
+     * The main-browser node is highlighted and the selection cascades to the inspector and
+     * the detailed browser (whose root becomes {@code element}), but the central view is
+     * <em>not</em> switched to the element's own view — used when a new entity is created
+     * from a tabular summary, which must stay on screen (see {@link #presentNewEntity}).
+     */
+    private void selectInBrowserKeepingCentralView(Object element) {
+        reapplyBrowserSelection(() -> {
+            suppressCentralViewNavigation = true;
+            try {
+                metaModelBrowser.getController().setSelectedElement(element);
+            } finally {
+                suppressCentralViewNavigation = false;
+            }
+        }, BROWSER_REANCHOR_ATTEMPTS);
+    }
+
+    /**
+     * Highlights and expands to {@code element} in the main browser tree <em>only</em> — the
+     * selection cascade (central view, detailed browser, inspector) is discarded by the
+     * re-entrance guard, while Gina's own two-way binding still updates the tree, re-expanding
+     * to the node ({@code deepExploration}). Used after a rebuild collapses the tree, when
+     * another surface (the diagram) drives the detailed browser / inspector: without this the
+     * main browser would stay collapsed with the new entity nowhere to be seen.
+     */
+    private void anchorMainBrowserOnly(Object element) {
+        reapplyBrowserSelection(() -> {
+            boolean prev = settingSelectedElement;
+            settingSelectedElement = true;
+            try {
+                metaModelBrowser.getController().setSelectedElement(element);
+            } finally {
+                settingSelectedElement = prev;
+            }
+        }, BROWSER_REANCHOR_ATTEMPTS);
+    }
+
+    /** Number of EDT cycles over which a post-rebuild browser selection is re-applied. */
+    private static final int BROWSER_REANCHOR_ATTEMPTS = 5;
+
+    /**
+     * Re-applies a browser selection across several successive EDT cycles.
+     *
+     * <p>After a metamodel rebuild, Gina rebuilds the {@link MetaModelBrowser} tree over
+     * <em>several</em> {@code invokeLater} phases (see {@link #onBrowserSelectionChanged}); a
+     * phase can briefly remove the selected node and clear the selection. A single deferred
+     * {@code setSelectedElement} therefore often runs too early (the target node does not exist
+     * yet) or is overwritten by a later phase. Re-applying the selection on each of the next
+     * few EDT cycles guarantees the <em>last</em> application lands after the tree has settled,
+     * so the new node ends up selected and expanded (via {@code deepExploration}). Re-applying
+     * the same selection is idempotent for the tree.</p>
+     */
+    private void reapplyBrowserSelection(Runnable setSelection, int attemptsLeft) {
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            setSelection.run();
+            if (attemptsLeft > 1) {
+                reapplyBrowserSelection(setSelection, attemptsLeft - 1);
+            }
+        });
+    }
+
+    // =========================================================================
+    // Context-sensitive presentation of a newly created entity
+    // (model-editing-design.md — NewEntityAction)
+    // =========================================================================
+
+    /** How the central view should react to the creation of a new entity. */
+    public enum NewEntityDisplay {
+        /** A tabular summary (metamodel / project / source folder / package) was active. */
+        TABULAR,
+        /** A class diagram was active. */
+        DIAGRAM,
+        /** An entity source-code view (or a Java file view) was active. */
+        CODE
+    }
+
+    /**
+     * The presentation to use for an entity created right now, derived from the kind of view
+     * currently active in the central panel (see {@code model-editing-design.md},
+     * NewEntityAction). Captured <em>before</em> the mutation, since the rebuild that follows
+     * may recreate the displayed element.
+     */
+    public NewEntityDisplay currentViewPresentation() {
+        if (currentHistoryElement instanceof PamelaClassDiagram) {
+            return NewEntityDisplay.DIAGRAM;
+        }
+        if (currentHistoryElement instanceof SourceModelEntity
+                || currentHistoryElement instanceof SourceJavaFile) {
+            return NewEntityDisplay.CODE;
+        }
+        return NewEntityDisplay.TABULAR;
+    }
+
+    /**
+     * Presents a freshly created entity according to the view that was active when the
+     * creation was requested (see {@code model-editing-design.md}, NewEntityAction):
+     *
+     * <ul>
+     *   <li>{@link NewEntityDisplay#CODE}: switch the central view to the new entity's source
+     *       code (also selected in the main browser, new root of the detailed browser).</li>
+     *   <li>{@link NewEntityDisplay#DIAGRAM}: add the entity to the active diagram and
+     *       soft-select it (highlighted on the canvas and in the detailed browser), the
+     *       diagram staying the central view.</li>
+     *   <li>{@link NewEntityDisplay#TABULAR}: keep the tabular summary on screen (re-rendered
+     *       so the new row appears and is selected in it), select the entity in the main
+     *       browser, and make it the new root of the detailed browser.</li>
+     * </ul>
+     *
+     * Runs on the EDT, in the rebuild-completion callback.
+     */
+    public void presentNewEntity(SourceModelEntity entity, NewEntityDisplay display) {
+        if (entity == null) {
+            return;
+        }
+        switch (display) {
+            case DIAGRAM:
+                presentNewEntityOnDiagram(entity);
+                break;
+            case TABULAR:
+                presentNewEntityInTabularView(entity);
+                break;
+            case CODE:
+            default:
+                // Default behaviour: anchor in the browser → central view = the entity's
+                // source code, inspector + detailed browser follow.
+                selectInBrowser(entity);
+                break;
+        }
+    }
+
+    private void presentNewEntityOnDiagram(SourceModelEntity entity) {
+        PamelaClassDiagramEditor diagramEditor = getActiveDiagramEditor();
+        if (diagramEditor == null) {
+            // The diagram is no longer the active central view — fall back to the code view.
+            selectInBrowser(entity);
+            return;
+        }
+        diagramEditor.getDianaEditor().addEntityAtVisibleCenter(entity);
+        // Soft-select the new box: inspector + detailed browser highlight it, the diagram
+        // stays the central view (ui-design.md §18.2). Deferred so the drawing hierarchy
+        // update has settled.
+        javax.swing.SwingUtilities.invokeLater(() ->
+                setCurrentSelectedElement(entity, false));
+        // Re-anchor the main browser on the new entity too: the rebuild collapsed the tree
+        // and the diagram soft-selection does not touch the main browser, so without this the
+        // browser would appear "closed". Guarded so it does not switch the central view away
+        // from the diagram or rebind the detailed browser (which stays on the diagram).
+        anchorMainBrowserOnly(entity);
+    }
+
+    private void presentNewEntityInTabularView(SourceModelEntity entity) {
+        SourceMetaModel metaModel = entity.getMetaModel();
+        Object tabularElement = currentHistoryElement;
+        // A rebuild replaces every SourcePackage instance (packages.clear() + rescan), so the
+        // package captured in currentHistoryElement is now stale — its entity list holds the
+        // pre-rebuild instances, which do NOT match the fresh `entity`. Re-resolve the fresh
+        // package (by qualified name) so the recreated summary table shows fresh instances that
+        // the selection can actually match. (PamelaProject / SourceMetaModel / SourceFolder
+        // persist across a rebuild, so they need no re-resolution.)
+        if (tabularElement instanceof SourcePackage && metaModel != null) {
+            SourcePackage fresh = metaModel.getPackage(((SourcePackage) tabularElement).getQualifiedName());
+            if (fresh != null) {
+                tabularElement = fresh;
+            }
+        }
+        // The active summary view was evicted from the cache by the rebuild
+        // (invalidateSourceViews). Recreate and display it so its entity table shows the new
+        // row; keep it as the current central view element (now the fresh instance).
+        if (tabularElement != null) {
+            currentHistoryElement = tabularElement;
+            showViewForElement(tabularElement);
+            JComponent view = viewCache.get(tabularElement);
+            // Set the table's selection binding now (the FlatDesign table re-applies the
+            // "selected" binding on every data update — FIBTableWidgetImpl.updateData — so
+            // setting it before/at the first data load makes the row select and stick), and
+            // once more deferred as a safety net for any ordering where the table's rows are
+            // built on a later EDT cycle.
+            selectEntityInSummaryView(view, entity);
+            javax.swing.SwingUtilities.invokeLater(() -> selectEntityInSummaryView(view, entity));
+        }
+        // Select in the main browser + inspector + detailed browser (new root = entity),
+        // without switching the central view away from the tabular summary.
+        selectInBrowserKeepingCentralView(entity);
+    }
+
+    /** Selects {@code entity}'s row in a tabular summary view, if the view supports it. */
+    private void selectEntityInSummaryView(JComponent view, SourceModelEntity entity) {
+        if (view instanceof MetaModelSummaryView) {
+            ((MetaModelSummaryView) view).selectEntity(entity);
+        } else if (view instanceof PackageSummaryView) {
+            ((PackageSummaryView) view).selectEntity(entity);
+        } else if (view instanceof SourceFolderSummaryView) {
+            ((SourceFolderSummaryView) view).selectEntity(entity);
+        }
     }
 
     /**
@@ -2929,6 +3159,13 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
 
     private void onInspectedElementEdited(java.beans.PropertyChangeEvent evt) {
         Object element = evt.getSource();
+        // Ignore side-effect events fired while a SourceEditingAction is applying its mutation
+        // (e.g. createEntity firing the package's "entities"/"members" change on the currently
+        // inspected package). Honouring them starts a spurious rebuild that pre-empts the
+        // action's own rebuild + result presentation (see applyingSourceMutation).
+        if (applyingSourceMutation) {
+            return;
+        }
         PamelaProject project = getProjectForElement(element);
         if (project == null) {
             return;
@@ -3142,6 +3379,13 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }
         if (element instanceof PromotableMethod) {
             return getProjectForElement(((PromotableMethod) element).getEntity());
+        }
+        if (element instanceof PamelaClassDiagram) {
+            for (PamelaProject s : projects) {
+                if (s.getDiagrams().contains(element)) {
+                    return s;
+                }
+            }
         }
         return null;
     }

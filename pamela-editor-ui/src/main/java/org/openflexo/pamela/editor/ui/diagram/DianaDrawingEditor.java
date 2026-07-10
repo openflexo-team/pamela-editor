@@ -235,4 +235,25 @@ public class DianaDrawingEditor extends JDianaInteractiveEditor<PamelaClassDiagr
         logger.fine("Added entity " + qualifiedName + " to diagram at " + x + "," + y);
         return ev;
     }
+
+    /**
+     * Adds {@code entity} to the diagram at the centre of the currently visible viewport
+     * (logical drawing coordinates), like {@link #addEntity} but without an explicit position.
+     * Used when a new entity is created while a diagram is the active central view
+     * (see {@code model-editing-design.md}, NewEntityAction). Never duplicates an entity
+     * already on the diagram.
+     */
+    public EntityView addEntityAtVisibleCenter(SourceModelEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        double scale = getDrawingView().getScale();
+        if (scale <= 0) {
+            scale = 1.0;
+        }
+        java.awt.Rectangle visible = getDrawingView().getVisibleRect();
+        double logicalX = (visible.x + visible.width / 2.0) / scale;
+        double logicalY = (visible.y + visible.height / 2.0) / scale;
+        return addEntity(entity, logicalX, logicalY);
+    }
 }

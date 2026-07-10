@@ -120,6 +120,7 @@
             manageDynamicModel="true"
             clickAction="controller.selectEntity(entitiesTable.selected)"
             rightClickAction="controller.rightClick(entitiesTable.selected,event)"
+            selected="controller.selectedEntity"
             constraints="twocols(expandHorizontally=true;expandVertically=false;location=center)"
             name="entitiesTable">
             <IconColumn id="143" data="controller.iconForObject(iterator)"

@@ -7,11 +7,13 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.model.SourceFolder;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
 import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
+import org.openflexo.pamela.editor.ui.PamelaEditorApplication.NewEntityDisplay;
 import org.openflexo.pamela.editor.ui.PamelaProject;
 import org.openflexo.rm.Resource;
 import org.openflexo.rm.ResourceLocator;
@@ -55,6 +57,12 @@ public class NewEntityAction extends ParameteredAction {
     private SourceModelEntity superEntity;
     private Set<String> forbidden = Collections.emptySet();
 
+    /**
+     * How the new entity should be presented, captured from the active central view
+     * <em>before</em> the mutation (see {@code model-editing-design.md}, NewEntityAction).
+     */
+    private NewEntityDisplay display = NewEntityDisplay.CODE;
+
     @Override
     public String getLabel() {
         return "New Entity…";
@@ -62,7 +70,10 @@ public class NewEntityAction extends ParameteredAction {
 
     @Override
     public boolean isApplicable(Object target) {
-        return resolveMetaModel(target) != null;
+        // A class diagram (right-click on the diagram background) is also a valid context:
+        // the entity is created and added to that diagram (its metamodel is resolved via the
+        // application in prepareDialog).
+        return resolveMetaModel(target) != null || target instanceof PamelaClassDiagram;
     }
 
     @Override
@@ -77,7 +88,18 @@ public class NewEntityAction extends ParameteredAction {
 
     @Override
     protected boolean prepareDialog(Object target, PamelaEditorApplication app) {
+        // Capture how to present the result from the currently active central view, before
+        // the mutation + rebuild recreate the displayed element.
+        display = (app != null) ? app.currentViewPresentation() : NewEntityDisplay.CODE;
+
         SourceMetaModel model = resolveMetaModel(target);
+        if (model == null && target instanceof PamelaClassDiagram && app != null) {
+            // Right-click on a diagram: resolve the metamodel through the owning project.
+            PamelaProject project = app.getProjectForElement(target);
+            if (project != null) {
+                model = project.getMetaModel();
+            }
+        }
         if (model == null) {
             return false;
         }
@@ -125,6 +147,17 @@ public class NewEntityAction extends ParameteredAction {
         }
         final String qualifiedName = entity.getQualifiedName();
         return () -> model.getEntity(qualifiedName);
+    }
+
+    @Override
+    protected void presentResult(PamelaEditorApplication app, Object result) {
+        // Present the new entity according to the view that was active when creation was
+        // requested (tabular stays / diagram box / new code view) — model-editing-design.md.
+        if (result instanceof SourceModelEntity) {
+            app.presentNewEntity((SourceModelEntity) result, display);
+        } else {
+            super.presentResult(app, result);
+        }
     }
 
     // --- bound by NewEntityForm.fib -----------------------------------------

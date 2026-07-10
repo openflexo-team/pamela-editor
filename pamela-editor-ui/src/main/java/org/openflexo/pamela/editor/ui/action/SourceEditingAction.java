@@ -42,6 +42,7 @@ public abstract class SourceEditingAction extends ContextualAction {
             return;
         }
         Supplier<Object> reselect;
+        app.beginSourceMutation();
         try {
             reselect = applyMutation(target, app, project);
         } catch (Exception e) {
@@ -49,6 +50,8 @@ public abstract class SourceEditingAction extends ContextualAction {
             ModelEditingSupport.error(app, getLabel(),
                     "Operation failed:\n" + e.getMessage());
             return;
+        } finally {
+            app.endSourceMutation();
         }
         if (needsRebuild()) {
             app.rebuildProject(project, () -> reselect(app, reselect));
@@ -57,13 +60,22 @@ public abstract class SourceEditingAction extends ContextualAction {
         }
     }
 
-    private static void reselect(PamelaEditorApplication app, Supplier<Object> reselect) {
-        if (reselect != null) {
-            Object sel = reselect.get();
-            if (sel != null) {
-                app.selectInBrowser(sel);
-            }
+    private void reselect(PamelaEditorApplication app, Supplier<Object> reselect) {
+        Object sel = (reselect != null) ? reselect.get() : null;
+        if (sel != null) {
+            presentResult(app, sel);
         }
+    }
+
+    /**
+     * Presents the element produced by {@link #applyMutation} once the (optional) rebuild has
+     * completed. The default anchors it in the main browser — which cascades to the central
+     * view, the inspector and the detailed browser. An action may override this to present its
+     * result differently depending on context (e.g. {@code NewEntityAction} keeps the active
+     * tabular/diagram view instead of always switching to the entity's source code).
+     */
+    protected void presentResult(PamelaEditorApplication app, Object result) {
+        app.selectInBrowser(result);
     }
 
     /**

@@ -3,6 +3,8 @@
 \#init=\#init
 \#ops=\#ops
 \#props=\#props
+Advanced=Advanced
+Basic=Basic
 Bounds\ adjustability=Bounds adjustability
 Dutch=Dutch
 English=English
@@ -11,6 +13,7 @@ French=French
 Initializer=Initializer
 Line\ connector=Line connector
 Method=Method
+Nodes=Nodes
 Panel=Panel
 Property=Property
 Rect\ polylin\ connector=Rect polylin connector

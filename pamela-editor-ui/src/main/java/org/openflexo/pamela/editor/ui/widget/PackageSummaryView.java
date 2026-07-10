@@ -2,6 +2,7 @@ package org.openflexo.pamela.editor.ui.widget;
 
 import org.openflexo.gina.ApplicationFIBLibrary.ApplicationFIBLibraryImpl;
 import org.openflexo.gina.swing.utils.FIBJPanel;
+import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.PamelaEditorFIBController;
@@ -35,6 +36,15 @@ public class PackageSummaryView extends FIBJPanel<SourcePackage> {
                 (PackageSummaryViewFIBController) getController();
         if (ctrl != null) {
             ctrl.setApplication(application);
+        }
+    }
+
+    /** Highlights {@code entity}'s row in the entities table (no-op if it is not listed). */
+    public void selectEntity(SourceModelEntity entity) {
+        PackageSummaryViewFIBController ctrl =
+                (PackageSummaryViewFIBController) getController();
+        if (ctrl != null) {
+            ctrl.setSelectedEntity(entity);
         }
     }
 

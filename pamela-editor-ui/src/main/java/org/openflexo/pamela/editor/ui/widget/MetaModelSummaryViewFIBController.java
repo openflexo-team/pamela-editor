@@ -67,6 +67,23 @@ public class MetaModelSummaryViewFIBController extends PamelaEditorFIBController
         return super.retrieveIconForObject(object);
     }
 
+    /**
+     * Two-way-bound selection of the entities table ({@code selected="controller.selectedEntity"}).
+     * Written by the table on click and set programmatically to highlight a row (e.g. a
+     * newly created entity — see {@code PamelaEditorApplication.presentNewEntity}).
+     */
+    private SourceModelEntity selectedEntity;
+
+    public SourceModelEntity getSelectedEntity() {
+        return selectedEntity;
+    }
+
+    public void setSelectedEntity(SourceModelEntity selectedEntity) {
+        SourceModelEntity old = this.selectedEntity;
+        this.selectedEntity = selectedEntity;
+        getPropertyChangeSupport().firePropertyChange("selectedEntity", old, selectedEntity);
+    }
+
     /** Called when the user clicks a row in the entities table (FIB {@code clickAction}). */
     public void selectEntity(Object selected) {
         EntityTableSupport.selectEntity(application, selected);

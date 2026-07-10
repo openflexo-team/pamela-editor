@@ -5,6 +5,7 @@ import java.io.File;
 import org.openflexo.gina.ApplicationFIBLibrary.ApplicationFIBLibraryImpl;
 import org.openflexo.gina.swing.utils.FIBJPanel;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
+import org.openflexo.pamela.editor.model.SourceModelEntity;
 import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
 import org.openflexo.pamela.editor.ui.widget.MetaModelSummaryViewFIBController;
 import org.openflexo.rm.Resource;
@@ -52,6 +53,15 @@ public class MetaModelSummaryView extends FIBJPanel<SourceMetaModel> {
                 (MetaModelSummaryViewFIBController) getController();
         if (ctrl != null) {
             ctrl.setApplication(application);
+        }
+    }
+
+    /** Highlights {@code entity}'s row in the entities table (no-op if it is not listed). */
+    public void selectEntity(SourceModelEntity entity) {
+        MetaModelSummaryViewFIBController ctrl =
+                (MetaModelSummaryViewFIBController) getController();
+        if (ctrl != null) {
+            ctrl.setSelectedEntity(entity);
         }
     }
 
