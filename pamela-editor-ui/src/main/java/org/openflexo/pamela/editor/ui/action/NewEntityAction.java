@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.openflexo.pamela.editor.diagram.EntityView;
 import org.openflexo.pamela.editor.diagram.PamelaClassDiagram;
 import org.openflexo.pamela.editor.model.SourceFolder;
 import org.openflexo.pamela.editor.model.SourceMetaModel;
@@ -120,6 +121,8 @@ public class NewEntityAction extends ParameteredAction {
             sourcePackage = entity.getSourcePackage();
             sourceFolder = folderContaining(model, sourcePackage);
             superEntity = entity;
+        } else if (target instanceof PamelaClassDiagram) {
+            prefillFromDiagram(model, (PamelaClassDiagram) target, app);
         }
         // SourceMetaModel / PamelaProject: nothing pre-filled beyond the metamodel scope.
 
@@ -252,6 +255,107 @@ public class NewEntityAction extends ParameteredAction {
             return ((PamelaProject) target).getMetaModel();
         }
         return null;
+    }
+
+    /**
+     * Pre-fills the source folder / package for a "New Entity" invoked from a diagram background
+     * (right-click on the canvas), inferring the most likely destination — a cascade from the most
+     * direct intent signal to the most general fallback:
+     * <ol>
+     *   <li><b>Selected entity</b>: if an entity is currently selected <em>on this diagram</em>
+     *       (e.g. the box just clicked or created) → pre-select its package (and its folder);</li>
+     *   <li><b>Majority package</b>: else the package shared by the most resolved entities on the
+     *       diagram → pre-select it (and its folder); a strict tie for the top is skipped as
+     *       ambiguous;</li>
+     *   <li><b>Majority source folder</b>: else the folder shared by the most on-diagram entities
+     *       → pre-select it (the package is left to the user); a strict tie is skipped;</li>
+     *   <li><b>Single source folder</b>: else, if the metamodel has exactly one source folder →
+     *       pre-select it;</li>
+     *   <li>otherwise pre-fill nothing (the user picks both).</li>
+     * </ol>
+     * Unresolved entity views (dangling placeholders) and package-less entities are ignored.
+     */
+    private void prefillFromDiagram(SourceMetaModel model, PamelaClassDiagram diagram,
+            PamelaEditorApplication app) {
+        // 1. Strongest signal: the entity currently selected on this diagram → its package.
+        Object selected = (app != null) ? app.getCurrentSelectedElement() : null;
+        if (selected instanceof SourceModelEntity && isOnDiagram((SourceModelEntity) selected, diagram)) {
+            SourcePackage pkg = ((SourceModelEntity) selected).getSourcePackage();
+            if (pkg != null) {
+                sourcePackage = pkg;
+                sourceFolder = folderContaining(model, pkg);
+                return;
+            }
+        }
+        // Tally the packages / folders of the resolved entities on the diagram.
+        java.util.Map<SourcePackage, Integer> packageCounts = new java.util.LinkedHashMap<>();
+        java.util.Map<SourceFolder, Integer> folderCounts = new java.util.LinkedHashMap<>();
+        for (EntityView ev : diagram.getEntityViews()) {
+            SourceModelEntity entity = ev.getEntity();
+            if (entity == null) {
+                continue;
+            }
+            SourcePackage pkg = entity.getSourcePackage();
+            if (pkg == null) {
+                continue;
+            }
+            packageCounts.merge(pkg, 1, Integer::sum);
+            SourceFolder folder = folderContaining(model, pkg);
+            if (folder != null) {
+                folderCounts.merge(folder, 1, Integer::sum);
+            }
+        }
+        // 2. Majority package (unique winner).
+        SourcePackage majorityPackage = strictMostFrequent(packageCounts);
+        if (majorityPackage != null) {
+            sourcePackage = majorityPackage;
+            sourceFolder = folderContaining(model, majorityPackage);
+            return;
+        }
+        // 3. Majority source folder (disambiguates a package tie when they share a folder).
+        SourceFolder majorityFolder = strictMostFrequent(folderCounts);
+        if (majorityFolder != null) {
+            sourceFolder = majorityFolder;
+            return;
+        }
+        // 4. Single source folder in the metamodel.
+        if (model.getSourceFolders().size() == 1) {
+            sourceFolder = model.getSourceFolders().get(0);
+        }
+    }
+
+    /** Whether {@code entity} is represented by an {@link EntityView} on {@code diagram}. */
+    private static boolean isOnDiagram(SourceModelEntity entity, PamelaClassDiagram diagram) {
+        String qualifiedName = entity.getQualifiedName();
+        for (EntityView ev : diagram.getEntityViews()) {
+            if (qualifiedName.equals(ev.getQualifiedName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The key with the strictly highest count, or {@code null} when the map is empty or several
+     * keys tie for the top count (ambiguous → let the caller fall through to a coarser rule).
+     */
+    private static <T> T strictMostFrequent(java.util.Map<T, Integer> counts) {
+        int max = 0;
+        for (int c : counts.values()) {
+            max = Math.max(max, c);
+        }
+        if (max == 0) {
+            return null;
+        }
+        T winner = null;
+        int winners = 0;
+        for (java.util.Map.Entry<T, Integer> e : counts.entrySet()) {
+            if (e.getValue() == max) {
+                winner = e.getKey();
+                winners++;
+            }
+        }
+        return winners == 1 ? winner : null;
     }
 
     private static SourceFolder folderContaining(SourceMetaModel model, SourcePackage pkg) {

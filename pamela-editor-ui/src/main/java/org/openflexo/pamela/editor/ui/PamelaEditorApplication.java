@@ -497,6 +497,24 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     /** The currently selected element (any Source* or PamelaClassDiagram). */
     private Object currentSelectedElement;
 
+    /** The currently selected element (any {@code Source*} or {@link PamelaClassDiagram}), or {@code null}. */
+    public Object getCurrentSelectedElement() {
+        return currentSelectedElement;
+    }
+
+    /**
+     * Whether the central view currently shows the source code of {@code entity} (i.e. its
+     * {@code SourceCodeView} is the active central view). Keyed on the central view element
+     * ({@link #currentHistoryElement}), not the selection — a diagram may be the central view
+     * while an entity is soft-selected. Used to hide the redundant "Show source code" action.
+     */
+    public boolean isSourceCodeViewActive(SourceModelEntity entity) {
+        return entity != null
+                && currentHistoryElement instanceof SourceModelEntity
+                && entity.getQualifiedName()
+                        .equals(((SourceModelEntity) currentHistoryElement).getQualifiedName());
+    }
+
     /**
      * Re-entrance guard for {@link #setCurrentSelectedElement(Object)}.
      * Prevents Gina's internal rebind machinery from triggering a recursive selection
@@ -823,7 +841,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         registerAction(new NewClassDiagramAction());
         registerAction(new RenameClassDiagramAction());
         registerAction(new DeleteClassDiagramAction());
-        registerAction(new ShowSourceCodeAction());
+        registerAction(new ShowSourceCodeAction(this));
         registerAction(new RemoveFromDiagramAction());
         registerAction(new HideMemberAction(this));
         registerAction(new ShowMemberAction(this));
