@@ -15,6 +15,15 @@ import org.openflexo.pamela.editor.ui.PamelaEditorApplication;
  */
 public class ShowSourceCodeAction extends ContextualAction {
 
+    private final PamelaEditorApplication application;
+
+    /**
+     * @param application back-reference used by {@link #isApplicable} to hide the action when the
+     *        target entity's source code is already the active central view.
+     */
+    public ShowSourceCodeAction(PamelaEditorApplication application) {
+        this.application = application;
+    }
 
     @Override
     public ActionGroup getGroup() {
@@ -33,8 +42,16 @@ public class ShowSourceCodeAction extends ContextualAction {
 
     @Override
     public boolean isApplicable(Object target) {
-        return target instanceof SourceModelEntity
-                || target instanceof SourceModelProperty;
+        SourceModelEntity entity;
+        if (target instanceof SourceModelEntity) {
+            entity = (SourceModelEntity) target;
+        } else if (target instanceof SourceModelProperty) {
+            entity = ((SourceModelProperty) target).getModelEntity();
+        } else {
+            return false;
+        }
+        // Hide when that entity's source code is already the active central view (redundant).
+        return !application.isSourceCodeViewActive(entity);
     }
 
     @Override
