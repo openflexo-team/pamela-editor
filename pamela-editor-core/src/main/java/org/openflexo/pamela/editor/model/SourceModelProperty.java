@@ -419,33 +419,45 @@ public class SourceModelProperty implements SourceElement,
      * {@code removeFromXxx}). If this property has a resolved inverse, the inverse
      * property's {@code @Getter(inverse = …)} is updated to the new key.
      *
-     * <p>Limitations (first slice): reindexer/updater methods keep their name (only
-     * their annotation {@code value} is updated); direct calls to the renamed
-     * methods in implementation classes / custom code are not rewritten.</p>
+     * <p>Convenience form that renames <em>every</em> present accessor method to its
+     * convention (getter/setter/updater/adder/remover/reindexer). Equivalent to
+     * {@link #rename(String, Map)} with {@link #conventionalMethodNames}.</p>
      *
      * @param newIdentifier the new property key
      */
     public void rename(String newIdentifier) throws IOException {
+        rename(newIdentifier, conventionalMethodNames(newIdentifier));
+    }
+
+    /**
+     * Renames this property (C19), giving explicit control over which accessor
+     * methods are also renamed. The PAMELA key (the {@code value} of every present
+     * accessor annotation) is always updated to {@code newIdentifier}. Each entry
+     * of {@code methodRenames} additionally renames the corresponding accessor
+     * <em>method</em> to the supplied name; an accessor whose {@link AccessorSpec.Role}
+     * is absent from the map keeps its current method name (only its annotation
+     * value changes). If this property has a resolved inverse, the inverse
+     * property's {@code @Getter(inverse = …)} is updated to the new key.
+     *
+     * <p>Limitations: direct calls to the renamed methods in implementation classes
+     * / custom code are not rewritten.</p>
+     *
+     * @param newIdentifier the new property key
+     * @param methodRenames per-role new method names (only the present accessors
+     *        whose role appears here are renamed); {@code null} is treated as empty
+     */
+    public void rename(String newIdentifier, Map<AccessorSpec.Role, String> methodRenames)
+            throws IOException {
         Factory factory = ctGetter.getFactory();
-        String cap = capitalise(newIdentifier);
+        Map<AccessorSpec.Role, String> renames =
+                methodRenames == null ? Collections.emptyMap() : methodRenames;
 
-        // Getter: keep the get/is prefix, rename + update @Getter(value).
-        String prefix = getterMethodName.startsWith("is") ? "is" : "get";
-        ctGetter.setSimpleName(prefix + cap);
-        setAnnotationValue(ctGetter, Getter.class, "value", newIdentifier, factory);
-
-        if (ctSetter != null) {
-            ctSetter.setSimpleName("set" + cap);
-            setAnnotationValue(ctSetter, Setter.class, "value", newIdentifier, factory);
-        }
-        if (ctAdder != null) {
-            ctAdder.setSimpleName("addTo" + cap);
-            setAnnotationValue(ctAdder, Adder.class, "value", newIdentifier, factory);
-        }
-        if (ctRemover != null) {
-            ctRemover.setSimpleName("removeFrom" + cap);
-            setAnnotationValue(ctRemover, Remover.class, "value", newIdentifier, factory);
-        }
+        renameAccessor(ctGetter, Getter.class, AccessorSpec.Role.GETTER, newIdentifier, renames, factory);
+        renameAccessor(ctSetter, Setter.class, AccessorSpec.Role.SETTER, newIdentifier, renames, factory);
+        renameAccessor(ctAdder, Adder.class, AccessorSpec.Role.ADDER, newIdentifier, renames, factory);
+        renameAccessor(ctRemover, Remover.class, AccessorSpec.Role.REMOVER, newIdentifier, renames, factory);
+        renameAccessor(ctReindexer, Reindexer.class, AccessorSpec.Role.REINDEXER, newIdentifier, renames, factory);
+        renameAccessor(ctUpdater, Updater.class, AccessorSpec.Role.UPDATER, newIdentifier, renames, factory);
 
         modelEntity.getCompilationUnit().regenerateFromAST();
 
@@ -455,6 +467,53 @@ public class SourceModelProperty implements SourceElement,
                     newIdentifier, factory);
             inverseProperty.modelEntity.getCompilationUnit().regenerateFromAST();
         }
+    }
+
+    /**
+     * Updates one accessor's PAMELA key ({@code value}) and, when a new name is
+     * supplied for its role, renames the method. No-op when the accessor is absent.
+     */
+    private static void renameAccessor(CtMethod<?> accessor,
+            Class<? extends Annotation> annotationType, AccessorSpec.Role role,
+            String newIdentifier, Map<AccessorSpec.Role, String> renames, Factory factory) {
+        if (accessor == null) {
+            return;
+        }
+        setAnnotationValue(accessor, annotationType, "value", newIdentifier, factory);
+        String newName = renames.get(role);
+        if (newName != null && !newName.isEmpty()) {
+            accessor.setSimpleName(newName);
+        }
+    }
+
+    /**
+     * The conventional accessor-method names for a rename to {@code newIdentifier}:
+     * {@code getXxx}/{@code isXxx}, {@code setXxx}, {@code updateXxx}, {@code addToXxx},
+     * {@code removeFromXxx}, {@code reindexXxx} for every present accessor. Used by the
+     * convenience {@link #rename(String)} form, which renames all present accessor methods
+     * to their convention.
+     */
+    private Map<AccessorSpec.Role, String> conventionalMethodNames(String newIdentifier) {
+        String cap = capitalise(newIdentifier);
+        Map<AccessorSpec.Role, String> names = new LinkedHashMap<>();
+        String prefix = getterMethodName.startsWith("is") ? "is" : "get";
+        names.put(AccessorSpec.Role.GETTER, prefix + cap);
+        if (ctSetter != null) {
+            names.put(AccessorSpec.Role.SETTER, "set" + cap);
+        }
+        if (ctUpdater != null) {
+            names.put(AccessorSpec.Role.UPDATER, "update" + cap);
+        }
+        if (ctAdder != null) {
+            names.put(AccessorSpec.Role.ADDER, "addTo" + cap);
+        }
+        if (ctRemover != null) {
+            names.put(AccessorSpec.Role.REMOVER, "removeFrom" + cap);
+        }
+        if (ctReindexer != null) {
+            names.put(AccessorSpec.Role.REINDEXER, "reindex" + cap);
+        }
+        return names;
     }
 
     /**

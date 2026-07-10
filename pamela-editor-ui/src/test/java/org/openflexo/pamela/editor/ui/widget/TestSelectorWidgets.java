@@ -154,6 +154,7 @@ public class TestSelectorWidgets {
 				"Fib/dialogs/NewPackageForm.fib",
 				"Fib/dialogs/NewSinglePropertyForm.fib",
 				"Fib/dialogs/NewListPropertyForm.fib",
+				"Fib/dialogs/RenamePropertyForm.fib",
 				"Fib/dialogs/AddImportForm.fib",
 				"Fib/dialogs/RemoveImportForm.fib",
 				"Fib/dialogs/AttachImplementationClassForm.fib",

@@ -1,10 +1,106 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  RenamePropertyForm.fib — "Rename property" (model-editing-design.md §3.2).
+  New key + one row per present accessor: a "rename method?" checkbox + an editable
+  new-method-name field (defaulted to the convention), with a right-justified italic
+  summary below. Each row is visible only when its accessor exists on the property.
+-->
 <Panel dataClassName="org.openflexo.pamela.editor.ui.action.RenamePropertyAction"
        controllerClassName="org.openflexo.gina.controller.FIBController"
-       layout="twocols" name="RenamePropertyForm" border="empty" width="400" height="60">
+       layout="twocols" name="RenamePropertyForm" border="empty" width="480" height="260">
 
   <Label name="nameLabel" label="New property name:" localize="false" align="left"
          index="0" constraints="twocols(location=left)" />
   <TextField name="nameTF" data="data.name" columns="22" validateOnReturn="false"
-         index="1" constraints="twocols(expandHorizontally=true;location=right)" />
+         index="1" constraints="twocols(expandHorizontally=true;location=right;insetsBottom=8)" />
+
+  <Label name="getterLabel" label="Also rename getter:" localize="false" align="left"
+         visible="data.getterOption.present"
+         index="2" constraints="twocols(location=left)" />
+  <Panel name="getterRow" layout="gridbag" border="empty"
+         visible="data.getterOption.present"
+         index="3" constraints="twocols(expandHorizontally=true;location=right)">
+    <CheckBox name="getterCB" data="data.getterOption.rename"
+           constraints="gridbag(gridX=0;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <TextField name="getterName" data="data.getterOption.newName" columns="16" validateOnReturn="false"
+           enable="data.getterOption.rename"
+           constraints="gridbag(gridX=1;gridY=0;weightX=1.0;fill=horizontal;anchor=west)" />
+    <Label name="getterSummary" data="data.getterOption.summary" localize="false" align="left" font="SansSerif,2,10"
+           constraints="gridbag(gridX=0;gridY=1;gridWidth=2;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
+  </Panel>
+
+  <Label name="setterLabel" label="Also rename setter:" localize="false" align="left"
+         visible="data.setterOption.present"
+         index="4" constraints="twocols(location=left)" />
+  <Panel name="setterRow" layout="gridbag" border="empty"
+         visible="data.setterOption.present"
+         index="5" constraints="twocols(expandHorizontally=true;location=right)">
+    <CheckBox name="setterCB" data="data.setterOption.rename"
+           constraints="gridbag(gridX=0;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <TextField name="setterName" data="data.setterOption.newName" columns="16" validateOnReturn="false"
+           enable="data.setterOption.rename"
+           constraints="gridbag(gridX=1;gridY=0;weightX=1.0;fill=horizontal;anchor=west)" />
+    <Label name="setterSummary" data="data.setterOption.summary" localize="false" align="left" font="SansSerif,2,10"
+           constraints="gridbag(gridX=0;gridY=1;gridWidth=2;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
+  </Panel>
+
+  <Label name="updaterLabel" label="Also rename updater:" localize="false" align="left"
+         visible="data.updaterOption.present"
+         index="6" constraints="twocols(location=left)" />
+  <Panel name="updaterRow" layout="gridbag" border="empty"
+         visible="data.updaterOption.present"
+         index="7" constraints="twocols(expandHorizontally=true;location=right)">
+    <CheckBox name="updaterCB" data="data.updaterOption.rename"
+           constraints="gridbag(gridX=0;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <TextField name="updaterName" data="data.updaterOption.newName" columns="16" validateOnReturn="false"
+           enable="data.updaterOption.rename"
+           constraints="gridbag(gridX=1;gridY=0;weightX=1.0;fill=horizontal;anchor=west)" />
+    <Label name="updaterSummary" data="data.updaterOption.summary" localize="false" align="left" font="SansSerif,2,10"
+           constraints="gridbag(gridX=0;gridY=1;gridWidth=2;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
+  </Panel>
+
+  <Label name="adderLabel" label="Also rename adder:" localize="false" align="left"
+         visible="data.adderOption.present"
+         index="8" constraints="twocols(location=left)" />
+  <Panel name="adderRow" layout="gridbag" border="empty"
+         visible="data.adderOption.present"
+         index="9" constraints="twocols(expandHorizontally=true;location=right)">
+    <CheckBox name="adderCB" data="data.adderOption.rename"
+           constraints="gridbag(gridX=0;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <TextField name="adderName" data="data.adderOption.newName" columns="16" validateOnReturn="false"
+           enable="data.adderOption.rename"
+           constraints="gridbag(gridX=1;gridY=0;weightX=1.0;fill=horizontal;anchor=west)" />
+    <Label name="adderSummary" data="data.adderOption.summary" localize="false" align="left" font="SansSerif,2,10"
+           constraints="gridbag(gridX=0;gridY=1;gridWidth=2;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
+  </Panel>
+
+  <Label name="removerLabel" label="Also rename remover:" localize="false" align="left"
+         visible="data.removerOption.present"
+         index="10" constraints="twocols(location=left)" />
+  <Panel name="removerRow" layout="gridbag" border="empty"
+         visible="data.removerOption.present"
+         index="11" constraints="twocols(expandHorizontally=true;location=right)">
+    <CheckBox name="removerCB" data="data.removerOption.rename"
+           constraints="gridbag(gridX=0;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <TextField name="removerName" data="data.removerOption.newName" columns="16" validateOnReturn="false"
+           enable="data.removerOption.rename"
+           constraints="gridbag(gridX=1;gridY=0;weightX=1.0;fill=horizontal;anchor=west)" />
+    <Label name="removerSummary" data="data.removerOption.summary" localize="false" align="left" font="SansSerif,2,10"
+           constraints="gridbag(gridX=0;gridY=1;gridWidth=2;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
+  </Panel>
+
+  <Label name="reindexerLabel" label="Also rename reindexer:" localize="false" align="left"
+         visible="data.reindexerOption.present"
+         index="12" constraints="twocols(location=left)" />
+  <Panel name="reindexerRow" layout="gridbag" border="empty"
+         visible="data.reindexerOption.present"
+         index="13" constraints="twocols(expandHorizontally=true;location=right)">
+    <CheckBox name="reindexerCB" data="data.reindexerOption.rename"
+           constraints="gridbag(gridX=0;gridY=0;weightX=0.0;fill=none;anchor=west;insetsRight=3)" />
+    <TextField name="reindexerName" data="data.reindexerOption.newName" columns="16" validateOnReturn="false"
+           enable="data.reindexerOption.rename"
+           constraints="gridbag(gridX=1;gridY=0;weightX=1.0;fill=horizontal;anchor=west)" />
+    <Label name="reindexerSummary" data="data.reindexerOption.summary" localize="false" align="left" font="SansSerif,2,10"
+           constraints="gridbag(gridX=0;gridY=1;gridWidth=2;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
+  </Panel>
 </Panel>

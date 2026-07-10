@@ -1011,6 +1011,51 @@ public class TestMutations {
     }
 
     // =========================================================================
+    // Test 12b — renameProperty with per-method rename control
+    // =========================================================================
+
+    /**
+     * Rename Foo1.foo2 → bar but keep the setter method name unchanged: the PAMELA key
+     * updates on every accessor, the getter method is renamed, the setter method keeps
+     * its old name.
+     */
+    @Test
+    public void testRenamePropertyKeepingSetterMethod() throws IOException {
+        File workDir = tmp.newFolder("testRenameKeepSetter");
+        File srcCopy = copyDir(MODEL1_SRC, workDir);
+        File pamelaFile = new File(workDir, "test.pamela");
+        writePamelaFile(pamelaFile, srcCopy, "test.model1.Foo1");
+
+        SourceMetaModel mm = SourceMetaModelSerializer.load(pamelaFile);
+        SourceModelEntity foo1 = mm.getEntity("test.model1.Foo1");
+        SourceModelProperty foo2Prop = foo1.getDeclaredProperties().get("foo2");
+        assertNotNull(foo2Prop);
+        String originalSetter = foo2Prop.getSetterMethodName();
+        assertNotNull("foo2 must have a setter", originalSetter);
+
+        // --- Mutate: rename the getter method only, keep the setter method name ---
+        java.util.Map<AccessorSpec.Role, String> renames = new java.util.EnumMap<>(AccessorSpec.Role.class);
+        renames.put(AccessorSpec.Role.GETTER, "getBar");
+        foo2Prop.rename("bar", renames);
+        mm.flushAll();
+
+        String content = new String(Files.readAllBytes(new File(srcCopy, "Foo1.java").toPath()));
+        assertTrue("getter renamed to getBar", content.contains("getBar"));
+        assertTrue("@Getter/@Setter value updated to \"bar\"", content.contains("\"bar\""));
+        assertTrue("setter method keeps its original name", content.contains(originalSetter));
+        assertFalse("setter must NOT be renamed to setBar", content.contains("setBar"));
+
+        // --- Rebuild: it is the same property 'bar' with the original setter name ---
+        mm.rebuildMetaModel();
+        SourceModelEntity rebuilt = mm.getEntity("test.model1.Foo1");
+        SourceModelProperty bar = rebuilt.getDeclaredProperties().get("bar");
+        assertNotNull("bar must now be a property", bar);
+        assertEquals("setter still linked to the key via its unchanged name",
+                originalSetter, bar.getSetterMethodName());
+        assertEquals("getBar", bar.getGetterMethodName());
+    }
+
+    // =========================================================================
     // Test 13b — setInverse clears + re-establishes the link on both sides
     // =========================================================================
 
