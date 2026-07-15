@@ -95,7 +95,6 @@ public class SourceModelProperty implements SourceElement,
     private boolean ignoreType;
     private boolean ignoreForEquality;
     private boolean allowsMultipleOccurrences;
-    private final boolean stringConvertable;
 
     // Relationships
     private final String inversePropertyIdentifier;
@@ -137,7 +136,6 @@ public class SourceModelProperty implements SourceElement,
         this.ignoreType = getterAnnotation.ignoreType();
         this.ignoreForEquality = getterAnnotation.ignoreForEquality();
         this.allowsMultipleOccurrences = getterAnnotation.allowsMultipleOccurences();
-        this.stringConvertable = getterAnnotation.isStringConvertable();
         this.inversePropertyIdentifier = getterAnnotation.inverse();
 
         // Detect the identifier style from the raw @Getter.value AST (not the proxy, which
@@ -1394,9 +1392,16 @@ public class SourceModelProperty implements SourceElement,
         return allowsMultipleOccurrences;
     }
 
-    /** {@code true} if the value type can be converted to/from a String. */
+    /**
+     * {@code true} if the property's type can be converted to/from a {@code String}
+     * (a primitive, an enum, or a JDK type PAMELA has a converter for) — i.e. whether
+     * a {@code defaultValue} is meaningful for this property. Delegates to
+     * {@link SourceType#isStringConvertible()}; it is <em>not</em> the raw
+     * {@code @Getter.isStringConvertable()} annotation flag (a developer-declared hint
+     * that defaults to {@code false} and does not reflect the actual type).
+     */
     public boolean isStringConvertable() {
-        return stringConvertable;
+        return type.isStringConvertible();
     }
 
     /**

@@ -31,9 +31,10 @@
             </Panel>
 
             <Label name="DefaultValueLabel" label="default_value" index="6"
+                visible="data.isStringConvertable"
                 constraints="twocols(location=left)" localize="true" />
             <TextField name="DefaultValueTF" index="7" data="data.defaultValue" readOnly="false"
-                validateOnReturn="true"
+                validateOnReturn="true" visible="data.isStringConvertable"
                 constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
 
             <Label name="InverseLabel" label="inverse" index="8"
