@@ -377,7 +377,10 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
             restrictedInputFiles = null; // full parse
         }
 
-        reportProgress(0.0, cacheHit ? "Loading from cache…" : "Parsing source files…");
+        // Progress messages are stable, language-neutral tokens (not display text): this
+        // module has no UI/localization dependency (localization-design.md), so the caller
+        // (pamela-editor-ui's BuildProgressListener) is responsible for translating them.
+        reportProgress(0.0, cacheHit ? "loading_from_cache" : "parsing_source_files");
 
         Launcher launcher = new Launcher();
         launcher.getEnvironment().setNoClasspath(true);
@@ -400,15 +403,15 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
         }
 
         // Phase 1 — discovery
-        reportProgress(SpoonProgressAdapter.COMPLETE_AT, "Discovering entities…");
+        reportProgress(SpoonProgressAdapter.COMPLETE_AT, "discovering_entities");
         phase1Discovery();
 
         // Phase 2 — properties and impl classes
-        reportProgress(0.97, "Building properties…");
+        reportProgress(0.97, "building_properties");
         phase2Properties();
 
         // Phase 3 — resolution
-        reportProgress(0.99, "Resolving references…");
+        reportProgress(0.99, "resolving_references");
         phase3Resolution();
 
         // On a full (cache-miss) build, record the resolved reachable file set so the
@@ -421,7 +424,7 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                     getResolvedSourceFiles(), buildCacheFile.getParentFile());
         }
 
-        reportProgress(1.0, "Done");
+        reportProgress(1.0, "build_done");
 
         pcSupport.firePropertyChange("entities", null, Collections.unmodifiableMap(entities));
         pcSupport.firePropertyChange("allPackages", null, new ArrayList<>(packages.values()));

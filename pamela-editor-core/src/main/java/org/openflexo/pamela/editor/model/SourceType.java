@@ -1,9 +1,14 @@
 package org.openflexo.pamela.editor.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import spoon.reflect.declaration.CtEnum;
+import spoon.reflect.declaration.CtType;
 import spoon.reflect.reference.CtTypeReference;
 
 /**
@@ -21,6 +26,30 @@ import spoon.reflect.reference.CtTypeReference;
  */
 public final class SourceType {
 
+    /**
+     * Qualified names of the non-primitive, non-enum types for which PAMELA's own
+     * {@code org.openflexo.pamela.model.StringConverterLibrary} registers a converter
+     * (see {@code preferences-design.md §7bis} for the same list applied to preference
+     * fields). Kept in sync by hand with that registry — it is a fixed, small set.
+     */
+    private static final Set<String> CONVERTER_SUPPORTED_TYPES = new HashSet<>(Arrays.asList(
+            "java.lang.String",
+            "java.lang.Boolean",
+            "java.lang.Byte",
+            "java.lang.Short",
+            "java.lang.Integer",
+            "java.lang.Long",
+            "java.lang.Float",
+            "java.lang.Double",
+            "java.lang.Number",
+            "java.lang.Class",
+            "java.util.Date",
+            "java.net.URL",
+            "java.io.File",
+            "java.awt.Point",
+            "java.awt.Color",
+            "java.awt.Font"));
+
     // Internal Spoon reference — never exposed in the public API
     private final CtTypeReference<?> ctTypeReference;
 
@@ -32,6 +61,7 @@ public final class SourceType {
     private final String simpleName;
     private final boolean primitive;
     private final boolean array;
+    private final boolean enumType;
     private final List<SourceType> typeArguments;
 
     /**
@@ -46,6 +76,7 @@ public final class SourceType {
         this.simpleName = ctTypeReference.getSimpleName();
         this.primitive = ctTypeReference.isPrimitive();
         this.array = ctTypeReference.isArray();
+        this.enumType = computeIsEnum(ctTypeReference);
 
         List<CtTypeReference<?>> ctArgs = ctTypeReference.getActualTypeArguments();
         if (ctArgs == null || ctArgs.isEmpty()) {
@@ -56,6 +87,20 @@ public final class SourceType {
                 args.add(new SourceType(arg));
             }
             this.typeArguments = Collections.unmodifiableList(args);
+        }
+    }
+
+    private static boolean computeIsEnum(CtTypeReference<?> ctTypeReference) {
+        if (ctTypeReference.isPrimitive() || ctTypeReference.isArray()) {
+            return false;
+        }
+        try {
+            CtType<?> declaration = ctTypeReference.getTypeDeclaration();
+            return declaration instanceof CtEnum;
+        }
+        catch (Exception e) {
+            // Unresolvable type (e.g. no classpath configured) — not an enum as far as we can tell.
+            return false;
         }
     }
 
@@ -81,6 +126,23 @@ public final class SourceType {
     /** {@code true} if this is an array type ({@code int[]}, {@code String[][]}, etc.). */
     public boolean isArray() {
         return array;
+    }
+
+    /** {@code true} if this type resolves to a Java {@code enum} declaration. */
+    public boolean isEnum() {
+        return enumType;
+    }
+
+    /**
+     * {@code true} if a value of this type can be converted to/from a {@code String} —
+     * i.e. it is legal as a PAMELA {@code @Getter(defaultValue = ...)}. Mirrors what
+     * PAMELA's own {@code StringConverterLibrary} (plus its built-in enum handling)
+     * accepts at runtime: a primitive, an enum, or one of the small set of JDK types for
+     * which a converter is registered. A {@code @ModelEntity} reference, a collection, or
+     * any other arbitrary type is not convertible.
+     */
+    public boolean isStringConvertible() {
+        return primitive || enumType || CONVERTER_SUPPORTED_TYPES.contains(qualifiedName);
     }
 
     /**

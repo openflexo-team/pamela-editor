@@ -60,6 +60,26 @@ public class ValidationFIBController extends PamelaEditorFIBController<SourceMet
         }
     }
 
+    /**
+     * The three words composing the always-visible per-severity summary ("N errors,
+     * M warnings, P infos") — the counts still come straight from {@code data.errorsCount}
+     * / {@code data.warningsCount} / {@code data.informationCount} (so the label keeps
+     * refreshing live off the existing {@code SourceMetaModel} property-change events,
+     * gina-analysis.md §18.10); only the literal English words are replaced by these
+     * localized ones (see {@code Fib/ValidationHeaderView.fib}, localization-design.md).
+     */
+    public String getErrorsLabel() {
+        return PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("errors_label");
+    }
+
+    public String getWarningsLabel() {
+        return PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("warnings_label");
+    }
+
+    public String getInfosLabel() {
+        return PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey("infos_label");
+    }
+
     @Override
     protected ImageIcon retrieveIconForObject(Object object) {
         if (object instanceof Issue) {

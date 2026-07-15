@@ -34,13 +34,16 @@ final class SpoonProgressAdapter implements SpoonProgress {
         RANGES.put(Process.IMPORT,          new double[] {0.78, 0.90});
         RANGES.put(Process.COMMENT_LINKING, new double[] {0.90, 0.95});
 
-        LABELS.put(Process.COMPILE,         "Compiling source files");
-        LABELS.put(Process.COMMENT,         "Reading comments");
-        LABELS.put(Process.MODEL,           "Building model");
-        LABELS.put(Process.IMPORT,          "Resolving imports");
-        LABELS.put(Process.COMMENT_LINKING, "Linking comments");
-        LABELS.put(Process.PROCESS,         "Processing");
-        LABELS.put(Process.PRINT,           "Printing");
+        // Stable, language-neutral tokens (not display text) — this module has no
+        // UI/localization dependency (localization-design.md); the caller
+        // (pamela-editor-ui's BuildProgressListener) translates them for display.
+        LABELS.put(Process.COMPILE,         "compiling_source_files");
+        LABELS.put(Process.COMMENT,         "reading_comments");
+        LABELS.put(Process.MODEL,           "building_model");
+        LABELS.put(Process.IMPORT,          "resolving_imports");
+        LABELS.put(Process.COMMENT_LINKING, "linking_comments");
+        LABELS.put(Process.PROCESS,         "processing_files");
+        LABELS.put(Process.PRINT,           "printing_files");
     }
 
     private final BuildProgressListener listener;
@@ -66,13 +69,16 @@ final class SpoonProgressAdapter implements SpoonProgress {
         }
         double within = (nbTasks > 0) ? (double) taskId / nbTasks : 1.0;
         double fraction = range[0] + within * (range[1] - range[0]);
-        emit(fraction, label(process) + " (" + taskId + "/" + nbTasks + "): " + simpleName(task));
+        // Structured, pipe-delimited message ("key|taskId|nbTasks|fileName"): the key is a
+        // translatable token, the rest is display detail the UI reassembles verbatim (see
+        // BuildProgressListener / PamelaEditorApplication.translateBuildMessage).
+        emit(fraction, label(process) + "|" + taskId + "|" + nbTasks + "|" + simpleName(task));
     }
 
     @Override
     public void step(Process process, String task) {
         // No count available: keep the current fraction, just refresh the message.
-        emit(lastFraction, label(process) + ": " + simpleName(task));
+        emit(lastFraction, label(process) + "||" + simpleName(task));
     }
 
     @Override

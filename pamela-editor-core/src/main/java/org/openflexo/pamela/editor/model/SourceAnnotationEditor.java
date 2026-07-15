@@ -189,6 +189,19 @@ public final class SourceAnnotationEditor {
             segments.remove(found);
         }
 
+        // Java forbids the single-element shorthand once an annotation has 2+
+        // elements: a bare implicit-value segment (e.g. "TEXT" in @Getter(TEXT))
+        // must be expanded to "value = TEXT" as soon as another parameter is added.
+        // At most one bare segment can exist (the implicit value element).
+        if (segments.size() > 1) {
+            for (int s = 0; s < segments.size(); s++) {
+                if (!isNamedArgument(segments.get(s))) {
+                    segments.set(s, "value = " + segments.get(s));
+                    break;
+                }
+            }
+        }
+
         StringBuilder newAnn = new StringBuilder("@").append(annotationSimpleName);
         if (!segments.isEmpty()) {
             newAnn.append('(').append(String.join(", ", segments)).append(')');
@@ -359,6 +372,33 @@ public final class SourceAnnotationEditor {
             rest++;
         }
         return rest < segment.length() && segment.charAt(rest) == '=';
+    }
+
+    /**
+     * True if {@code segment} is a named annotation argument {@code identifier = …}
+     * (as opposed to a bare implicit-value expression such as {@code TEXT} or
+     * {@code "foo"}). A top-level {@code =} preceded by a Java identifier marks a
+     * named argument; annotation element values never contain a bare top-level
+     * {@code =} otherwise.
+     */
+    private static boolean isNamedArgument(String segment) {
+        int i = 0;
+        while (i < segment.length() && Character.isWhitespace(segment.charAt(i))) {
+            i++;
+        }
+        int idStart = i;
+        while (i < segment.length() && Character.isJavaIdentifierPart(segment.charAt(i))) {
+            i++;
+        }
+        if (i == idStart) {
+            return false; // no leading identifier
+        }
+        while (i < segment.length() && Character.isWhitespace(segment.charAt(i))) {
+            i++;
+        }
+        // A single '=' (not '==') right after the identifier marks a named argument.
+        return i < segment.length() && segment.charAt(i) == '='
+                && (i + 1 >= segment.length() || segment.charAt(i + 1) != '=');
     }
 
     private static boolean isAlreadyAnnotated(String source, int lineStart, String simpleName) {

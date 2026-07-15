@@ -945,7 +945,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         }
 
         // Run Spoon analysis on a background thread to avoid blocking the EDT.
-        buildStarted("Opening " + pamelaFile.getName() + "…");
+        buildStarted(PAMELA_EDITOR_LOCALIZATION.localizedForKeyWithParams(
+                "opening_project_status", pamelaFile.getName()));
         new javax.swing.SwingWorker<PamelaProject, String>() {
 
             @Override
@@ -1014,7 +1015,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             @Override
             protected void process(java.util.List<String> chunks) {
                 if (!chunks.isEmpty()) {
-                    buildProgress(getProgress(), chunks.get(chunks.size() - 1));
+                    buildProgress(getProgress(), translateBuildMessage(chunks.get(chunks.size() - 1)));
                 }
             }
 
@@ -1147,6 +1148,40 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
 
     private static String loc(String key) {
         return PAMELA_EDITOR_LOCALIZATION.localizedForKey(key);
+    }
+
+    /**
+     * Translates a build-progress message reported by {@code pamela-editor-core}
+     * ({@code SourceMetaModel} / {@code SpoonProgressAdapter}). Core has no localization
+     * dependency (localization-design.md), so it emits stable, language-neutral tokens
+     * instead of display text:
+     * <ul>
+     * <li>a bare phase key, e.g. {@code "parsing_source_files"};</li>
+     * <li>a pipe-delimited {@code "key|taskId|nbTasks|fileName"} (per-file progress with a
+     * count) or {@code "key||fileName"} (no count) emitted by {@code SpoonProgressAdapter}.
+     * </li>
+     * </ul>
+     * This method looks the key up in the three-language dictionary and reassembles the
+     * detail suffix verbatim.
+     */
+    private static String translateBuildMessage(String message) {
+        if (message == null) {
+            return null;
+        }
+        int firstPipe = message.indexOf('|');
+        if (firstPipe < 0) {
+            return loc(message);
+        }
+        String key = message.substring(0, firstPipe);
+        String translatedKey = loc(key);
+        String[] parts = message.substring(firstPipe + 1).split("\\|", -1);
+        if (parts.length == 3 && !parts[0].isEmpty()) {
+            // "key|taskId|nbTasks|fileName"
+            return translatedKey + " (" + parts[0] + "/" + parts[1] + "): " + parts[2];
+        }
+        // "key||fileName"
+        String fileName = parts.length > 0 ? parts[parts.length - 1] : "";
+        return translatedKey + ": " + fileName;
     }
 
     /** Saves the currently active project's {@code .pamela} file and all diagram sidecars. */
@@ -1329,7 +1364,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         rebuildingProjects.add(project);
         SourceMetaModel metaModel = project.getMetaModel();
 
-        buildStarted("Rebuilding " + metaModel.getName() + "…");
+        buildStarted(PAMELA_EDITOR_LOCALIZATION.localizedForKeyWithParams(
+                "rebuilding_project_status", metaModel.getName()));
         new javax.swing.SwingWorker<Void, String>() {
             @Override
             protected Void doInBackground() {
@@ -1358,7 +1394,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             @Override
             protected void process(java.util.List<String> chunks) {
                 if (!chunks.isEmpty()) {
-                    buildProgress(getProgress(), chunks.get(chunks.size() - 1));
+                    buildProgress(getProgress(), translateBuildMessage(chunks.get(chunks.size() - 1)));
                 }
             }
 

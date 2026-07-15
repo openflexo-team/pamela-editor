@@ -15,7 +15,7 @@
     borderTop="3" borderLeft="8" borderBottom="3" borderRight="8" border="empty">
 
     <Label id="11"
-        data="((((((&quot;&quot; + data.errorsCount) + &quot; errors, &quot;) + data.warningsCount) + &quot; warnings, &quot;) + data.informationCount) + &quot; infos&quot;)"
+        data="(&quot;&quot; + data.errorsCount + &quot; &quot; + controller.errorsLabel + &quot;, &quot; + data.warningsCount + &quot; &quot; + controller.warningsLabel + &quot;, &quot; + data.informationCount + &quot; &quot; + controller.infosLabel)"
         align="left" font="SansSerif,2,10" constraints="border(location=west)" name="SummaryLabel" />
 
     <Panel id="15" layout="flow" flowAlignment="RIGHT" hGap="0" vGap="0"

@@ -56,6 +56,39 @@ public class TestSourceAnnotationEditor {
     }
 
     @Test
+    public void testAppendParameterExpandsBareConstantShorthand() {
+        // @Getter(TEXT) is the single-element shorthand for @Getter(value = TEXT);
+        // adding a second parameter must expand it to value = TEXT, else the result
+        // (@Getter(TEXT, defaultValue = "foo")) is illegal Java.
+        String src = "\t@Getter(TEXT)\n\tString getText();\n";
+        String out = SourceAnnotationEditor.setAnnotationParameter(
+                src, declOf(src, "String getText"), "Getter", "defaultValue", "\"foo\"");
+        assertEquals("\t@Getter(value = TEXT, defaultValue = \"foo\")\n\tString getText();\n", out);
+    }
+
+    @Test
+    public void testAppendParameterExpandsBareLiteralShorthand() {
+        String src = "\t@Getter(\"text\")\n\tString getText();\n";
+        String out = SourceAnnotationEditor.setAnnotationParameter(
+                src, declOf(src, "String getText"), "Getter", "defaultValue", "\"foo\"");
+        assertEquals("\t@Getter(value = \"text\", defaultValue = \"foo\")\n\tString getText();\n", out);
+    }
+
+    @Test
+    public void testSingleBareShorthandParameterUnchanged() {
+        // With no second parameter, the bare shorthand stays as-is.
+        String src = "\t@Getter(TEXT)\n\tString getText();\n";
+        String out = SourceAnnotationEditor.setAnnotationParameter(
+                src, declOf(src, "String getText"), "Getter", "isDerived", "true");
+        assertEquals("\t@Getter(value = TEXT, isDerived = true)\n\tString getText();\n", out);
+        // And removing the added parameter should be possible; but a single bare value
+        // must remain valid on its own.
+        String reverted = SourceAnnotationEditor.setAnnotationParameter(
+                out, declOf(out, "String getText"), "Getter", "isDerived", null);
+        assertEquals("\t@Getter(value = TEXT)\n\tString getText();\n", reverted);
+    }
+
+    @Test
     public void testListCardinalityArgumentNotConfusedByComma() {
         String src = "\t@Getter(value = \"x\", cardinality = Cardinality.LIST)\n\tList<X> getX();\n";
         String out = SourceAnnotationEditor.setAnnotationParameter(
