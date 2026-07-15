@@ -30,7 +30,7 @@ public class AddSetterAction extends SourceEditingAction {
 
     @Override
     public String getLabel() {
-        return "Add Setter";
+        return loc("add_setter_action");
     }
 
     @Override

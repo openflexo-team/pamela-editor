@@ -3,7 +3,7 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="ChangePropertyTypeForm" border="empty" width="400" height="100">
 
-  <Label name="typeLabel" label="New type:" localize="false" align="left"
+  <Label name="typeLabel" label="new_type_label" localize="true" align="left"
          index="0" constraints="twocols(location=left)" />
   <Custom name="typeSelector" componentClassName="org.openflexo.gina.swing.utils.TypeSelector"
          data="data.type" manageDynamicModel="true" width="260"
@@ -11,4 +11,9 @@
     <Assignment variable="component.customTypeManager" value="data.customTypeManager" />
     <Assignment variable="component.customTypeEditorProvider" value="data.customTypeEditorProvider" />
   </Custom>
+  <LocalizedDictionary>
+    <Localized key="new_type_label" lang="English" value="New type:" />
+    <Localized key="new_type_label" lang="French" value="Nouveau type :" />
+    <Localized key="new_type_label" lang="Dutch" value="Nieuw type:" />
+  </LocalizedDictionary>
 </Panel>

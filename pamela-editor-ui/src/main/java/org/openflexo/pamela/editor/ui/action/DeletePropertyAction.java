@@ -33,7 +33,7 @@ public class DeletePropertyAction extends SourceEditingAction {
 
     @Override
     public String getLabel() {
-        return "Delete Property";
+        return loc("delete_property_action");
     }
 
     @Override

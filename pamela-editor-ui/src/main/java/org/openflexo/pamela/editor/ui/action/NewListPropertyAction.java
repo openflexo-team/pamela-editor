@@ -34,12 +34,12 @@ public class NewListPropertyAction extends AbstractNewPropertyAction {
 
     @Override
     public String getLabel() {
-        return "New List Property…";
+        return loc("new_list_property_action");
     }
 
     @Override
     protected String getDialogTitle() {
-        return "New List Property";
+        return loc("new_list_property_title");
     }
 
     @Override

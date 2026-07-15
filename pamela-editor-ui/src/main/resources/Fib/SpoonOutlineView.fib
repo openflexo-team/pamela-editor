@@ -15,7 +15,7 @@
     borderTop="0" borderLeft="0" borderBottom="0" borderRight="0" border="empty">
 
     <!-- Loading indicator (visible only while an on-demand parse is running) -->
-    <Label id="1" label="Parsing source file..." localize="false"
+    <Label id="1" label="parsing_source_file" localize="true"
         align="center" font="SansSerif,2,11"
         visible="data.loading"
         constraints="border(location=north)" name="LoadingLabel" />
@@ -102,5 +102,10 @@
         </BrowserElement>
 
     </Browser>
+
+    <LocalizedDictionary>        <Localized key="parsing_source_file" lang="English" value="Parsing source file..." />
+        <Localized key="parsing_source_file" lang="French" value="Analyse du fichier source..." />
+        <Localized key="parsing_source_file" lang="Dutch" value="Bronbestand wordt geparsed..." />
+    </LocalizedDictionary>
 
 </Panel>

@@ -66,7 +66,7 @@ public class NewEntityAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "New Entity…";
+        return loc("new_entity_action");
     }
 
     @Override
@@ -84,7 +84,7 @@ public class NewEntityAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "New Entity";
+        return loc("new_entity_title");
     }
 
     @Override

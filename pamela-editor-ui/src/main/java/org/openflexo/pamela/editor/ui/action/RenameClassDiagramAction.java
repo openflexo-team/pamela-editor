@@ -24,7 +24,7 @@ public class RenameClassDiagramAction extends ContextualAction {
 
     @Override
     public String getLabel() {
-        return "Rename Diagram";
+        return loc("rename_diagram_action");
     }
 
     @Override

@@ -10,12 +10,12 @@ public class DeclareAsUpdaterAction extends DeclareAccessorAction {
 
     @Override
     public String getLabel() {
-        return "Declare as Updater of…";
+        return loc("declare_as_updater_action");
     }
 
     @Override
     protected String getDialogTitle() {
-        return "Declare Method as Updater";
+        return loc("declare_method_as_updater_title");
     }
 
     @Override

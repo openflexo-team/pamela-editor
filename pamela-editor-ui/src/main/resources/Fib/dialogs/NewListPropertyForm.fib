@@ -12,12 +12,12 @@
   <Label name="header" data="data.headerSummary" localize="false" align="center" font="SansSerif,1,14"
          index="0" constraints="twocols(expandHorizontally=true;location=center;insetsTop=10;insetsBottom=10)" />
 
-  <Label name="idLabel" label="Identifier" localize="false" align="left"
+  <Label name="idLabel" label="identifier" localize="true" align="left"
          index="1" constraints="twocols(location=left)" />
   <TextField name="idTF" data="data.identifier" columns="22" validateOnReturn="false"
          index="2" constraints="twocols(expandHorizontally=true;location=right)" />
 
-  <Label name="typeLabel" label="Element type" localize="false" align="left"
+  <Label name="typeLabel" label="element_type_label" localize="true" align="left"
          index="3" constraints="twocols(location=left)" />
   <Custom name="typeSelector" componentClassName="org.openflexo.gina.swing.utils.TypeSelector"
          data="data.type" manageDynamicModel="true" width="260"
@@ -26,7 +26,7 @@
     <Assignment variable="component.customTypeEditorProvider" value="data.customTypeEditorProvider" />
   </Custom>
 
-  <Label name="getterLabel" label="Getter:" localize="false" align="left"
+  <Label name="getterLabel" label="getter_colon_label" localize="true" align="left"
          index="5" constraints="twocols(location=left)" />
   <Panel name="getterRow" layout="gridbag" border="empty"
          index="6" constraints="twocols(expandHorizontally=true;location=right)">
@@ -50,7 +50,7 @@
            constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
 
-  <Label name="adderLabel" label="Adder:" localize="false" align="left"
+  <Label name="adderLabel" label="adder_colon_label" localize="true" align="left"
          index="7" constraints="twocols(location=left)" />
   <Panel name="adderRow" layout="gridbag" border="empty"
          index="8" constraints="twocols(expandHorizontally=true;location=right)">
@@ -74,7 +74,7 @@
            constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
 
-  <Label name="removerLabel" label="Remover:" localize="false" align="left"
+  <Label name="removerLabel" label="remover_colon_label" localize="true" align="left"
          index="9" constraints="twocols(location=left)" />
   <Panel name="removerRow" layout="gridbag" border="empty"
          index="10" constraints="twocols(expandHorizontally=true;location=right)">
@@ -98,7 +98,7 @@
            constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
 
-  <Label name="reindexerLabel" label="Reindexer:" localize="false" align="left"
+  <Label name="reindexerLabel" label="reindexer_colon_label" localize="true" align="left"
          index="11" constraints="twocols(location=left)" />
   <Panel name="reindexerRow" layout="gridbag" border="empty"
          index="12" constraints="twocols(expandHorizontally=true;location=right)">
@@ -121,4 +121,21 @@
     <Label name="reindexerSummary" data="data.reindexerOption.summary" localize="false" align="left" font="SansSerif,2,10"
            constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
+  <LocalizedDictionary>
+    <Localized key="element_type_label" lang="English" value="Element type" />
+    <Localized key="element_type_label" lang="French" value="Type d'élément" />
+    <Localized key="element_type_label" lang="Dutch" value="Elementtype" />
+    <Localized key="getter_colon_label" lang="English" value="Getter:" />
+    <Localized key="getter_colon_label" lang="French" value="Getter :" />
+    <Localized key="getter_colon_label" lang="Dutch" value="Getter:" />
+    <Localized key="adder_colon_label" lang="English" value="Adder:" />
+    <Localized key="adder_colon_label" lang="French" value="Adder :" />
+    <Localized key="adder_colon_label" lang="Dutch" value="Adder:" />
+    <Localized key="remover_colon_label" lang="English" value="Remover:" />
+    <Localized key="remover_colon_label" lang="French" value="Remover :" />
+    <Localized key="remover_colon_label" lang="Dutch" value="Remover:" />
+    <Localized key="reindexer_colon_label" lang="English" value="Reindexer:" />
+    <Localized key="reindexer_colon_label" lang="French" value="Reindexer :" />
+    <Localized key="reindexer_colon_label" lang="Dutch" value="Reindexer:" />
+  </LocalizedDictionary>
 </Panel>

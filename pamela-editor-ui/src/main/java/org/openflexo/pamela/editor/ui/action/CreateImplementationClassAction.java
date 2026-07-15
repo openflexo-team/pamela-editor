@@ -47,7 +47,7 @@ public class CreateImplementationClassAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Create Implementation Class…";
+        return loc("create_implementation_class_action");
     }
 
     @Override
@@ -62,7 +62,7 @@ public class CreateImplementationClassAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Create Implementation Class";
+        return loc("create_implementation_class_title");
     }
 
     @Override

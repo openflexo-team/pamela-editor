@@ -55,7 +55,7 @@ public class RenameMetaModelAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Rename Meta-Model…";
+        return loc("rename_metamodel_action");
     }
 
     @Override
@@ -70,7 +70,7 @@ public class RenameMetaModelAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Rename Meta-Model";
+        return loc("rename_metamodel_dialog_title");
     }
 
     /** Project metadata, not source — no Spoon re-analysis needed after the rename. */

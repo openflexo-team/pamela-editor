@@ -11,8 +11,7 @@
         iteratorClassName="org.openflexo.pamela.editor.model.CustomMethodFilter"
         format="object.name" width="200"
         constraints="twocols(expandHorizontally=true;location=right)" />
-    <LocalizedDictionary>
-        <Localized key="build_cache_enabled" lang="English" value="Enable build cache" />
+    <LocalizedDictionary>        <Localized key="build_cache_enabled" lang="English" value="Enable build cache" />
         <Localized key="build_cache_enabled" lang="French" value="Activer le cache de construction" />
         <Localized key="build_cache_enabled" lang="Dutch" value="Build-cache inschakelen" />
         <Localized key="custom_method_filter" lang="English" value="Operations shown" />

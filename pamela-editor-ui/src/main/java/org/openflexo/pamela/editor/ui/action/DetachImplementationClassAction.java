@@ -35,7 +35,7 @@ public class DetachImplementationClassAction extends SourceEditingAction {
 
     @Override
     public String getLabel() {
-        return "Detach Implementation Class";
+        return loc("detach_implementation_class_action");
     }
 
     @Override

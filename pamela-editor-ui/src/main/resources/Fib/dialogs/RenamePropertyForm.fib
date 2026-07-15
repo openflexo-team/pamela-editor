@@ -9,12 +9,12 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="RenamePropertyForm" border="empty" width="480" height="260">
 
-  <Label name="nameLabel" label="New property name:" localize="false" align="left"
+  <Label name="nameLabel" label="new_property_name_label" localize="true" align="left"
          index="0" constraints="twocols(location=left)" />
   <TextField name="nameTF" data="data.name" columns="22" validateOnReturn="false"
          index="1" constraints="twocols(expandHorizontally=true;location=right;insetsBottom=8)" />
 
-  <Label name="getterLabel" label="Also rename getter:" localize="false" align="left"
+  <Label name="getterLabel" label="also_rename_getter_label" localize="true" align="left"
          visible="data.getterOption.present"
          index="2" constraints="twocols(location=left)" />
   <Panel name="getterRow" layout="gridbag" border="empty"
@@ -29,7 +29,7 @@
            constraints="gridbag(gridX=0;gridY=1;gridWidth=2;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
 
-  <Label name="setterLabel" label="Also rename setter:" localize="false" align="left"
+  <Label name="setterLabel" label="also_rename_setter_label" localize="true" align="left"
          visible="data.setterOption.present"
          index="4" constraints="twocols(location=left)" />
   <Panel name="setterRow" layout="gridbag" border="empty"
@@ -44,7 +44,7 @@
            constraints="gridbag(gridX=0;gridY=1;gridWidth=2;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
 
-  <Label name="updaterLabel" label="Also rename updater:" localize="false" align="left"
+  <Label name="updaterLabel" label="also_rename_updater_label" localize="true" align="left"
          visible="data.updaterOption.present"
          index="6" constraints="twocols(location=left)" />
   <Panel name="updaterRow" layout="gridbag" border="empty"
@@ -59,7 +59,7 @@
            constraints="gridbag(gridX=0;gridY=1;gridWidth=2;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
 
-  <Label name="adderLabel" label="Also rename adder:" localize="false" align="left"
+  <Label name="adderLabel" label="also_rename_adder_label" localize="true" align="left"
          visible="data.adderOption.present"
          index="8" constraints="twocols(location=left)" />
   <Panel name="adderRow" layout="gridbag" border="empty"
@@ -74,7 +74,7 @@
            constraints="gridbag(gridX=0;gridY=1;gridWidth=2;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
 
-  <Label name="removerLabel" label="Also rename remover:" localize="false" align="left"
+  <Label name="removerLabel" label="also_rename_remover_label" localize="true" align="left"
          visible="data.removerOption.present"
          index="10" constraints="twocols(location=left)" />
   <Panel name="removerRow" layout="gridbag" border="empty"
@@ -89,7 +89,7 @@
            constraints="gridbag(gridX=0;gridY=1;gridWidth=2;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
 
-  <Label name="reindexerLabel" label="Also rename reindexer:" localize="false" align="left"
+  <Label name="reindexerLabel" label="also_rename_reindexer_label" localize="true" align="left"
          visible="data.reindexerOption.present"
          index="12" constraints="twocols(location=left)" />
   <Panel name="reindexerRow" layout="gridbag" border="empty"
@@ -103,4 +103,27 @@
     <Label name="reindexerSummary" data="data.reindexerOption.summary" localize="false" align="left" font="SansSerif,2,10"
            constraints="gridbag(gridX=0;gridY=1;gridWidth=2;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
+  <LocalizedDictionary>
+    <Localized key="new_property_name_label" lang="English" value="New property name:" />
+    <Localized key="new_property_name_label" lang="French" value="Nouveau nom de la propriété :" />
+    <Localized key="new_property_name_label" lang="Dutch" value="Nieuwe naam van de eigenschap:" />
+    <Localized key="also_rename_getter_label" lang="English" value="Also rename getter:" />
+    <Localized key="also_rename_getter_label" lang="French" value="Aussi renommer le getter :" />
+    <Localized key="also_rename_getter_label" lang="Dutch" value="Ook de getter hernoemen:" />
+    <Localized key="also_rename_setter_label" lang="English" value="Also rename setter:" />
+    <Localized key="also_rename_setter_label" lang="French" value="Aussi renommer le setter :" />
+    <Localized key="also_rename_setter_label" lang="Dutch" value="Ook de setter hernoemen:" />
+    <Localized key="also_rename_updater_label" lang="English" value="Also rename updater:" />
+    <Localized key="also_rename_updater_label" lang="French" value="Aussi renommer l'updater :" />
+    <Localized key="also_rename_updater_label" lang="Dutch" value="Ook de updater hernoemen:" />
+    <Localized key="also_rename_adder_label" lang="English" value="Also rename adder:" />
+    <Localized key="also_rename_adder_label" lang="French" value="Aussi renommer l'adder :" />
+    <Localized key="also_rename_adder_label" lang="Dutch" value="Ook de adder hernoemen:" />
+    <Localized key="also_rename_remover_label" lang="English" value="Also rename remover:" />
+    <Localized key="also_rename_remover_label" lang="French" value="Aussi renommer le remover :" />
+    <Localized key="also_rename_remover_label" lang="Dutch" value="Ook de remover hernoemen:" />
+    <Localized key="also_rename_reindexer_label" lang="English" value="Also rename reindexer:" />
+    <Localized key="also_rename_reindexer_label" lang="French" value="Aussi renommer le reindexer :" />
+    <Localized key="also_rename_reindexer_label" lang="Dutch" value="Ook de reindexer hernoemen:" />
+  </LocalizedDictionary>
 </Panel>

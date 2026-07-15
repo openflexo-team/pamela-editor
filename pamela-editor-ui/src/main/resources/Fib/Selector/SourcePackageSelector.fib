@@ -18,7 +18,7 @@
         enterPressedAction="controller.apply()" autoSelectFirstRow="true" />
 
   <Label name="MatchesLabel" align="right" index="1"
-         data="((&quot;Found &quot; + data.matchingValues.size) + &quot; matches&quot;)"
+         data="data.matchesLabel"
          constraints="twocols(expandHorizontally=true;location=center)"
          visible="((data.matchingValues.size != 1) &amp;&amp; data.isFiltered)"
          localize="false" />
@@ -52,11 +52,11 @@
 
   <Panel name="buttons" layout="flow" flowAlignment="CENTER" hGap="5" border="empty"
          index="3" constraints="twocols(expandHorizontally=true;location=center)">
-    <Button name="applyBtn" buttonType="Trigger" label="Apply" localize="false"
+    <Button name="applyBtn" buttonType="Trigger" label="apply" localize="true"
             enable="(data.selectedValue != null)" action="controller.apply()" />
-    <Button name="cancelBtn" buttonType="Trigger" label="Cancel" localize="false"
+    <Button name="cancelBtn" buttonType="Trigger" label="cancel" localize="true"
             action="controller.cancel()" />
-    <Button name="resetBtn" buttonType="Trigger" label="Reset" localize="false"
+    <Button name="resetBtn" buttonType="Trigger" label="reset" localize="true"
             action="controller.reset()" />
   </Panel>
 </Panel>

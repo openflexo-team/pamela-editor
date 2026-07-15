@@ -10,12 +10,12 @@ public class DeclareAsAdderAction extends DeclareAccessorAction {
 
     @Override
     public String getLabel() {
-        return "Declare as Adder of…";
+        return loc("declare_as_adder_action");
     }
 
     @Override
     protected String getDialogTitle() {
-        return "Declare Method as Adder";
+        return loc("declare_method_as_adder_title");
     }
 
     @Override

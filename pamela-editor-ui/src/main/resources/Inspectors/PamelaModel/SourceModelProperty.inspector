@@ -180,55 +180,78 @@
 
     </TabPanel>
 
-    <LocalizedDictionary>
-        <Localized key="basic" lang="English" value="Basic" />
+    <LocalizedDictionary>        <Localized key="basic" lang="English" value="Basic" />
         <Localized key="basic" lang="French" value="Basique" />
+        <Localized key="basic" lang="Dutch" value="Basis" />
         <Localized key="property_label" lang="English" value="Property" />
         <Localized key="property_label" lang="French" value="Propriété" />
+        <Localized key="property_label" lang="Dutch" value="Eigenschap" />
         <Localized key="rename_button" lang="English" value="Rename…" />
         <Localized key="rename_button" lang="French" value="Renommer…" />
+        <Localized key="rename_button" lang="Dutch" value="Hernoemen…" />
         <Localized key="change_type_button" lang="English" value="Set…" />
         <Localized key="change_type_button" lang="French" value="Définir…" />
+        <Localized key="change_type_button" lang="Dutch" value="Wijzigen…" />
         <Localized key="accessors" lang="English" value="Accessors" />
         <Localized key="accessors" lang="French" value="Accesseurs" />
+        <Localized key="accessors" lang="Dutch" value="Toegangsmethoden" />
         <Localized key="advanced" lang="English" value="Advanced" />
         <Localized key="advanced" lang="French" value="Avancé" />
+        <Localized key="advanced" lang="Dutch" value="Geavanceerd" />
         <Localized key="identifier" lang="English" value="Identifier" />
         <Localized key="identifier" lang="French" value="Identifiant" />
+        <Localized key="identifier" lang="Dutch" value="Identificatie" />
         <Localized key="cardinality" lang="English" value="Cardinality" />
         <Localized key="cardinality" lang="French" value="Cardinalité" />
+        <Localized key="cardinality" lang="Dutch" value="Kardinaliteit" />
         <Localized key="type" lang="English" value="Type" />
         <Localized key="type" lang="French" value="Type" />
+        <Localized key="type" lang="Dutch" value="Type" />
         <Localized key="default_value" lang="English" value="Default value" />
         <Localized key="default_value" lang="French" value="Valeur par défaut" />
+        <Localized key="default_value" lang="Dutch" value="Standaardwaarde" />
         <Localized key="derived" lang="English" value="Derived" />
         <Localized key="derived" lang="French" value="Dérivé" />
+        <Localized key="derived" lang="Dutch" value="Afgeleid" />
         <Localized key="embedded" lang="English" value="Embedded" />
         <Localized key="embedded" lang="French" value="Embarqué" />
+        <Localized key="embedded" lang="Dutch" value="Ingesloten" />
         <Localized key="ignore_type" lang="English" value="Ignore type" />
         <Localized key="ignore_type" lang="French" value="Ignorer le type" />
+        <Localized key="ignore_type" lang="Dutch" value="Type negeren" />
         <Localized key="ignore_for_equality" lang="English" value="Ignore for equality" />
         <Localized key="ignore_for_equality" lang="French" value="Ignorer (égalité)" />
+        <Localized key="ignore_for_equality" lang="Dutch" value="Negeren voor gelijkheid" />
         <Localized key="allows_multiple" lang="English" value="Allows multiple" />
         <Localized key="allows_multiple" lang="French" value="Occurrences multiples" />
+        <Localized key="allows_multiple" lang="Dutch" value="Meerdere toegestaan" />
         <Localized key="getter" lang="English" value="Getter" />
         <Localized key="getter" lang="French" value="Getter" />
+        <Localized key="getter" lang="Dutch" value="Getter" />
         <Localized key="setter" lang="English" value="Setter" />
         <Localized key="setter" lang="French" value="Setter" />
+        <Localized key="setter" lang="Dutch" value="Setter" />
         <Localized key="updater" lang="English" value="Updater" />
         <Localized key="updater" lang="French" value="Updater" />
+        <Localized key="updater" lang="Dutch" value="Updater" />
         <Localized key="adder" lang="English" value="Adder" />
         <Localized key="adder" lang="French" value="Adder" />
+        <Localized key="adder" lang="Dutch" value="Adder" />
         <Localized key="remover" lang="English" value="Remover" />
         <Localized key="remover" lang="French" value="Remover" />
+        <Localized key="remover" lang="Dutch" value="Remover" />
         <Localized key="reindexer" lang="English" value="Reindexer" />
         <Localized key="reindexer" lang="French" value="Reindexer" />
+        <Localized key="reindexer" lang="Dutch" value="Reindexer" />
         <Localized key="inverse" lang="English" value="Inverse" />
         <Localized key="inverse" lang="French" value="Inverse" />
+        <Localized key="inverse" lang="Dutch" value="Inverse" />
         <Localized key="identifier_style" lang="English" value="Identifier style" />
         <Localized key="identifier_style" lang="French" value="Style d&apos;identifiant" />
+        <Localized key="identifier_style" lang="Dutch" value="Identificatiestijl" />
         <Localized key="constant_name" lang="English" value="Constant" />
         <Localized key="constant_name" lang="French" value="Constante" />
+        <Localized key="constant_name" lang="Dutch" value="Constante" />
     </LocalizedDictionary>
     <Parameter name="title" value="Property" />
 </Inspector>

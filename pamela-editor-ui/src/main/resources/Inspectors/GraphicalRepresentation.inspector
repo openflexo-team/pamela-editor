@@ -63,8 +63,7 @@
       </Table>
     </Tab>
   </TabPanel>
-  <LocalizedDictionary>
-    <Localized key="read_only" lang="English" value="Read only" />
+  <LocalizedDictionary>    <Localized key="read_only" lang="English" value="Read only" />
     <Localized key="read_only" lang="French" value="Lecture seule" />
     <Localized key="read_only" lang="Dutch" value="Read only" />
     <Localized key="is_selectable" lang="English" value="Is selectable" />
@@ -85,7 +84,9 @@
     <Localized key="mouse_drag_controls" lang="English" value="Mouse drag controls" />
     <Localized key="mouse_drag_controls" lang="French" value="Contrôle des 'drag' de souris" />
     <Localized key="mouse_drag_controls" lang="Dutch" value="Mouse drag controls" />
+    <Localized key="Text" lang="English" value="Text" />
     <Localized key="Text" lang="French" value="Texte" />
+    <Localized key="Text" lang="Dutch" value="Text" />
     <Localized key="text" lang="English" value="Text" />
     <Localized key="text" lang="French" value="Texte" />
     <Localized key="text" lang="Dutch" value="Text" />

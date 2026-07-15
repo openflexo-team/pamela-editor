@@ -8,7 +8,7 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="DeclareFinderForm" border="empty" width="400" height="200">
 
-  <Label name="collLabel" label="Collection (list property):" localize="false" align="left"
+  <Label name="collLabel" label="collection_label" localize="true" align="left"
          index="0" constraints="twocols(location=left)" />
   <Custom name="collSelector"
          componentClassName="org.openflexo.pamela.editor.ui.widget.ModelPropertySelector"
@@ -18,7 +18,7 @@
     <Assignment variable="component.restrictedValues" value="data.collectionChoices" />
   </Custom>
 
-  <Label name="attrLabel" label="Attribute (search key):" localize="false" align="left"
+  <Label name="attrLabel" label="attribute_label" localize="true" align="left"
          index="2" constraints="twocols(location=left)" />
   <Custom name="attrSelector"
          componentClassName="org.openflexo.pamela.editor.ui.widget.ModelPropertySelector"
@@ -28,8 +28,19 @@
     <Assignment variable="component.restrictedValues" value="data.attributeChoices" />
   </Custom>
 
-  <Label name="cardLabel" label="Result:" localize="false" align="left"
+  <Label name="cardLabel" label="result_label" localize="true" align="left"
          index="4" constraints="twocols(location=left)" />
   <TextField name="cardValue" data="data.multiValuedLabel" readOnly="true" columns="22"
          index="5" constraints="twocols(expandHorizontally=true;location=right)" />
+  <LocalizedDictionary>
+    <Localized key="collection_label" lang="English" value="Collection (list property):" />
+    <Localized key="collection_label" lang="French" value="Collection (propriété liste) :" />
+    <Localized key="collection_label" lang="Dutch" value="Collectie (lijsteigenschap):" />
+    <Localized key="attribute_label" lang="English" value="Attribute (search key):" />
+    <Localized key="attribute_label" lang="French" value="Attribut (clé de recherche) :" />
+    <Localized key="attribute_label" lang="Dutch" value="Attribuut (zoeksleutel):" />
+    <Localized key="result_label" lang="English" value="Result:" />
+    <Localized key="result_label" lang="French" value="Résultat :" />
+    <Localized key="result_label" lang="Dutch" value="Resultaat:" />
+  </LocalizedDictionary>
 </Panel>

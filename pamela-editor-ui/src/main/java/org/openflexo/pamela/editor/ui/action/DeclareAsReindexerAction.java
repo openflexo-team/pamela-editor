@@ -15,12 +15,12 @@ public class DeclareAsReindexerAction extends DeclareAccessorAction {
 
     @Override
     public String getLabel() {
-        return "Declare as Reindexer of…";
+        return loc("declare_as_reindexer_action");
     }
 
     @Override
     protected String getDialogTitle() {
-        return "Declare Method as Reindexer";
+        return loc("declare_method_as_reindexer_title");
     }
 
     @Override

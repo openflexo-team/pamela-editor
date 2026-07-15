@@ -3,8 +3,13 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="RenameEntityForm" border="empty" width="400" height="60">
 
-  <Label name="nameLabel" label="New entity name:" localize="false"
+  <Label name="nameLabel" label="new_entity_name_label" localize="true"
          align="left" index="0" constraints="twocols(location=left)" />
   <TextField name="nameTF" data="data.name" columns="22" validateOnReturn="false"
          index="1" constraints="twocols(expandHorizontally=true;location=right)" />
+  <LocalizedDictionary>
+    <Localized key="new_entity_name_label" lang="English" value="New entity name:" />
+    <Localized key="new_entity_name_label" lang="French" value="Nouveau nom de l'entité :" />
+    <Localized key="new_entity_name_label" lang="Dutch" value="Nieuwe naam van de entiteit:" />
+  </LocalizedDictionary>
 </Panel>

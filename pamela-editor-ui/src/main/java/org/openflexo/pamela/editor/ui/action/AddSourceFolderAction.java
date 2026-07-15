@@ -42,7 +42,7 @@ public class AddSourceFolderAction extends ContextualAction {
 
     @Override
     public String getLabel() {
-        return "Add Source Folder…";
+        return loc("add_source_folder_action");
     }
 
     @Override
@@ -122,17 +122,18 @@ public class AddSourceFolderAction extends ContextualAction {
      * so that OK adds it directly.
      */
     private static JPanel makeNewFolderAccessory(JFileChooser chooser) {
-        JButton newFolderButton = new JButton("New folder…");
+        JButton newFolderButton = new JButton(loc("new_folder_button"));
         newFolderButton.addActionListener(e -> {
             String name = JOptionPane.showInputDialog(chooser,
-                    "Name of the new folder:", "New folder", JOptionPane.PLAIN_MESSAGE);
+                    loc("new_folder_name_prompt"), loc("new_folder_title"), JOptionPane.PLAIN_MESSAGE);
             if (name == null) {
                 return; // cancelled
             }
             name = name.trim();
             if (name.isEmpty() || name.contains(File.separator) || name.contains("/")) {
                 JOptionPane.showMessageDialog(chooser,
-                        "Invalid folder name: " + name, "New folder", JOptionPane.ERROR_MESSAGE);
+                        loc("error_invalid_folder_name") + " " + name, loc("new_folder_title"),
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
             File selected = chooser.getSelectedFile();
@@ -140,14 +141,15 @@ public class AddSourceFolderAction extends ContextualAction {
             File newDir = new File(base, name);
             if (newDir.exists()) {
                 JOptionPane.showMessageDialog(chooser,
-                        "A file or folder named '" + name + "' already exists here.",
-                        "New folder", JOptionPane.ERROR_MESSAGE);
+                        loc("error_folder_already_exists_prefix") + " '" + name + "' "
+                                + loc("error_folder_already_exists_suffix"),
+                        loc("new_folder_title"), JOptionPane.ERROR_MESSAGE);
                 return;
             }
             if (!newDir.mkdirs()) {
                 JOptionPane.showMessageDialog(chooser,
-                        "Could not create folder: " + newDir.getAbsolutePath(),
-                        "New folder", JOptionPane.ERROR_MESSAGE);
+                        loc("error_creating_folder") + " " + newDir.getAbsolutePath(),
+                        loc("new_folder_title"), JOptionPane.ERROR_MESSAGE);
                 return;
             }
             chooser.setSelectedFile(newDir);

@@ -73,32 +73,44 @@
         constraints="twocols(expandHorizontally=true;location=right)" />
   </Panel>
 
-  <LocalizedDictionary>
-    <Localized key="add_style" lang="English" value="Add" />
+  <LocalizedDictionary>    <Localized key="add_style" lang="English" value="Add" />
     <Localized key="add_style" lang="French" value="Ajouter" />
+    <Localized key="add_style" lang="Dutch" value="Toevoegen" />
     <Localized key="remove_style" lang="English" value="Remove" />
     <Localized key="remove_style" lang="French" value="Supprimer" />
+    <Localized key="remove_style" lang="Dutch" value="Verwijderen" />
     <Localized key="selected_style" lang="English" value="Selected style" />
     <Localized key="selected_style" lang="French" value="Style sélectionné" />
+    <Localized key="selected_style" lang="Dutch" value="Geselecteerde stijl" />
     <Localized key="name" lang="English" value="Name" />
     <Localized key="name" lang="French" value="Nom" />
+    <Localized key="name" lang="Dutch" value="Naam" />
     <Localized key="connector_type" lang="English" value="Routing" />
     <Localized key="connector_type" lang="French" value="Routage" />
+    <Localized key="connector_type" lang="Dutch" value="Routering" />
     <Localized key="color" lang="English" value="Color" />
     <Localized key="color" lang="French" value="Couleur" />
+    <Localized key="color" lang="Dutch" value="Kleur" />
     <Localized key="line_width" lang="English" value="Line width" />
     <Localized key="line_width" lang="French" value="Épaisseur" />
+    <Localized key="line_width" lang="Dutch" value="Lijndikte" />
     <Localized key="straight_when_possible" lang="English" value="Straight when possible" />
     <Localized key="straight_when_possible" lang="French" value="Droit si possible" />
+    <Localized key="straight_when_possible" lang="Dutch" value="Recht indien mogelijk" />
     <Localized key="rounded" lang="English" value="Rounded corners" />
     <Localized key="rounded" lang="French" value="Coins arrondis" />
+    <Localized key="rounded" lang="Dutch" value="Afgeronde hoeken" />
     <Localized key="arc_size" lang="English" value="Arc size" />
     <Localized key="arc_size" lang="French" value="Taille d'arc" />
+    <Localized key="arc_size" lang="Dutch" value="Booggrootte" />
     <Localized key="default_styles" lang="English" value="Default styles" />
     <Localized key="default_styles" lang="French" value="Styles par défaut" />
+    <Localized key="default_styles" lang="Dutch" value="Standaardstijlen" />
     <Localized key="default_inheritance" lang="English" value="Inheritance" />
     <Localized key="default_inheritance" lang="French" value="Héritage" />
+    <Localized key="default_inheritance" lang="Dutch" value="Overerving" />
     <Localized key="default_association" lang="English" value="Association" />
     <Localized key="default_association" lang="French" value="Association" />
+    <Localized key="default_association" lang="Dutch" value="Associatie" />
   </LocalizedDictionary>
 </Panel>

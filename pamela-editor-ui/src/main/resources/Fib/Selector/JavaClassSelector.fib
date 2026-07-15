@@ -18,11 +18,11 @@
         enterPressedAction="controller.apply()" autoSelectFirstRow="true" />
 
   <CheckBox name="hierarchicalCB" selected="data.hierarchical" index="1"
-            label="Hierarchical" localize="false"
+            label="hierarchical_checkbox" localize="true"
             constraints="twocols(location=center)" />
 
   <Label name="MatchesLabel" align="right" index="2"
-         data="((&quot;Found &quot; + data.matchingValues.size) + &quot; matches&quot;)"
+         data="data.matchesLabel"
          constraints="twocols(expandHorizontally=true;location=center)"
          visible="((data.matchingValues.size != 1) &amp;&amp; data.isFiltered)"
          localize="false" />
@@ -71,11 +71,17 @@
 
   <Panel name="buttons" layout="flow" flowAlignment="CENTER" hGap="5" border="empty"
          index="4" constraints="twocols(expandHorizontally=true;location=center)">
-    <Button name="applyBtn" buttonType="Trigger" label="Apply" localize="false"
+    <Button name="applyBtn" buttonType="Trigger" label="apply" localize="true"
             enable="(data.selectedValue != null)" action="controller.apply()" />
-    <Button name="cancelBtn" buttonType="Trigger" label="Cancel" localize="false"
+    <Button name="cancelBtn" buttonType="Trigger" label="cancel" localize="true"
             action="controller.cancel()" />
-    <Button name="resetBtn" buttonType="Trigger" label="Reset" localize="false"
+    <Button name="resetBtn" buttonType="Trigger" label="reset" localize="true"
             action="controller.reset()" />
   </Panel>
+
+  <LocalizedDictionary>
+    <Localized key="hierarchical_checkbox" lang="English" value="Hierarchical" />
+    <Localized key="hierarchical_checkbox" lang="French" value="Hiérarchique" />
+    <Localized key="hierarchical_checkbox" lang="Dutch" value="Hiërarchisch" />
+  </LocalizedDictionary>
 </Panel>

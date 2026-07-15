@@ -42,7 +42,7 @@ public class ShowMemberAction extends ContextualAction {
 
     @Override
     public String getLabel() {
-        return "Show on diagram";
+        return loc("show_on_diagram_action");
     }
 
     @Override

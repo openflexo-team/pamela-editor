@@ -29,7 +29,7 @@ public class NewClassDiagramAction extends ContextualAction {
 
     @Override
     public String getLabel() {
-        return "New Class Diagram";
+        return loc("new_class_diagram_action");
     }
 
     @Override

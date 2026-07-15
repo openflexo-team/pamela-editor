@@ -20,8 +20,7 @@
       <CheckBox selected="false" index="7" data="data.drawWorkingArea" constraints="twocols(expandHorizontally=false;expandVertically=false;index=7;location=right)" name="DrawWorkingArea" localize="true" />
     </Tab>
   </TabPanel>
-  <LocalizedDictionary>
-    <Localized key="selection_color" lang="English" value="Selection color" />
+  <LocalizedDictionary>    <Localized key="selection_color" lang="English" value="Selection color" />
     <Localized key="selection_color" lang="French" value="Couleur de sélection" />
     <Localized key="selection_color" lang="Dutch" value="Selection color" />
     <Localized key="focus_color" lang="English" value="Focus color" />
@@ -30,7 +29,9 @@
     <Localized key="rectangle_selection_color" lang="English" value="Rectangle selection color" />
     <Localized key="rectangle_selection_color" lang="French" value="Couleur du rectangle de sélection" />
     <Localized key="rectangle_selection_color" lang="Dutch" value="Rectangle selection color" />
+    <Localized key="Drawing" lang="English" value="Drawing" />
     <Localized key="Drawing" lang="French" value="Dessin" />
+    <Localized key="Drawing" lang="Dutch" value="Drawing" />
     <Localized key="width" lang="English" value="Width" />
     <Localized key="width" lang="French" value="Largeur" />
     <Localized key="width" lang="Dutch" value="Width" />

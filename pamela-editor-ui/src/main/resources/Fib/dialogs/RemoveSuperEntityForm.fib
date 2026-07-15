@@ -3,7 +3,7 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="RemoveSuperEntityForm" border="empty" width="400" height="200">
 
-  <Label name="superLabel" label="Super-entity to remove:" localize="false"
+  <Label name="superLabel" label="super_entity_to_remove_label" localize="true"
          align="left" index="0" constraints="twocols(location=left)" />
   <Custom name="superSelector"
          componentClassName="org.openflexo.pamela.editor.ui.widget.ModelEntitySelector"
@@ -12,4 +12,9 @@
     <Assignment variable="component.metaModel" value="data.metaModel" />
     <Assignment variable="component.restrictedValues" value="data.candidateEntities" />
   </Custom>
+  <LocalizedDictionary>
+    <Localized key="super_entity_to_remove_label" lang="English" value="Super-entity to remove:" />
+    <Localized key="super_entity_to_remove_label" lang="French" value="Super-entité à supprimer :" />
+    <Localized key="super_entity_to_remove_label" lang="Dutch" value="Te verwijderen superentiteit:" />
+  </LocalizedDictionary>
 </Panel>

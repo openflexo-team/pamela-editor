@@ -14,8 +14,7 @@
         constraints="twocols(location=left)" localize="true" />
     <TextField name="FilesTF" index="15" data="data.files.size.toString" readOnly="true"
         constraints="twocols(location=right)" columns="5" />
-    <LocalizedDictionary>
-        <Localized key="max_count" lang="English" value="Max recent files" />
+    <LocalizedDictionary>        <Localized key="max_count" lang="English" value="Max recent files" />
         <Localized key="max_count" lang="French" value="Nb max de fichiers récents" />
         <Localized key="max_count" lang="Dutch" value="Max recente bestanden" />
         <Localized key="last_directory" lang="English" value="Last directory" />

@@ -20,15 +20,18 @@
                 constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)" />
         </Tab>
     </TabPanel>
-    <LocalizedDictionary>
-        <Localized key="basic" lang="English" value="Basic" />
+    <LocalizedDictionary>        <Localized key="basic" lang="English" value="Basic" />
         <Localized key="basic" lang="French" value="Basique" />
+        <Localized key="basic" lang="Dutch" value="Basis" />
         <Localized key="project_name" lang="English" value="Name" />
         <Localized key="project_name" lang="French" value="Nom" />
+        <Localized key="project_name" lang="Dutch" value="Naam" />
         <Localized key="project_location" lang="English" value="Location" />
         <Localized key="project_location" lang="French" value="Emplacement" />
+        <Localized key="project_location" lang="Dutch" value="Locatie" />
         <Localized key="rename_button" lang="English" value="Rename…" />
         <Localized key="rename_button" lang="French" value="Renommer…" />
+        <Localized key="rename_button" lang="Dutch" value="Hernoemen…" />
     </LocalizedDictionary>
     <Parameter name="title" value="Project" />
 </Inspector>

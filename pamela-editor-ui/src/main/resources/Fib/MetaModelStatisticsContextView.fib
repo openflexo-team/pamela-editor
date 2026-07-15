@@ -43,21 +43,27 @@
 
     </Panel>
 
-    <LocalizedDictionary id="90">
-        <Localized id="91" lang="English" value="Statistics"         key="statistics" />
+    <LocalizedDictionary id="90">        <Localized id="91" lang="English" value="Statistics"         key="statistics" />
         <Localized id="92" lang="French"  value="Statistiques"       key="statistics" />
+        <Localized key="statistics" lang="Dutch" value="Statistieken" />
         <Localized id="93" lang="English" value="Packages"           key="packages" />
         <Localized id="94" lang="French"  value="Packages"           key="packages" />
+        <Localized key="packages" lang="Dutch" value="Packages" />
         <Localized id="95" lang="English" value="Entities"           key="entities" />
         <Localized id="96" lang="French"  value="Entités"            key="entities" />
+        <Localized key="entities" lang="Dutch" value="Entiteiten" />
         <Localized id="97" lang="English" value="Abstract entities"  key="abstract_entities" />
         <Localized id="98" lang="French"  value="Entités abstraites" key="abstract_entities" />
+        <Localized key="abstract_entities" lang="Dutch" value="Abstracte entiteiten" />
         <Localized id="99" lang="English" value="Properties"         key="properties" />
         <Localized id="100" lang="French" value="Propriétés"         key="properties" />
+        <Localized key="properties" lang="Dutch" value="Eigenschappen" />
         <Localized id="101" lang="English" value="Initializers"      key="initializers" />
         <Localized id="102" lang="French"  value="Initialiseurs"     key="initializers" />
+        <Localized key="initializers" lang="Dutch" value="Initialisatoren" />
         <Localized id="103" lang="English" value="Issues"            key="issues" />
         <Localized id="104" lang="French"  value="Problèmes"         key="issues" />
+        <Localized key="issues" lang="Dutch" value="Meldingen" />
     </LocalizedDictionary>
 
 </Panel>

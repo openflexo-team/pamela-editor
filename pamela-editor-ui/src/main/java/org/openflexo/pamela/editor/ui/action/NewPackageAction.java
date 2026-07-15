@@ -51,7 +51,7 @@ public class NewPackageAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "New Package…";
+        return loc("new_package_action");
     }
 
     @Override
@@ -66,7 +66,7 @@ public class NewPackageAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "New Package";
+        return loc("new_package_title");
     }
 
     @Override

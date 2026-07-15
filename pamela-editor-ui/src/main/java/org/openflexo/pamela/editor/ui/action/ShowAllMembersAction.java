@@ -46,26 +46,20 @@ public class ShowAllMembersAction extends ContextualAction {
 
     private final PamelaEditorApplication app;
     private final Compartment kind;
-    private final String label;
 
     public ShowAllMembersAction(PamelaEditorApplication app, Compartment kind) {
         this.app = app;
         this.kind = kind;
-        this.label = labelFor(kind);
-    }
-
-    private static String labelFor(Compartment kind) {
-        switch (kind) {
-            case INITIALIZERS: return "Show all initializers";
-            case METHODS:      return "Show all methods";
-            case PROPERTIES:
-            default:           return "Show all properties";
-        }
     }
 
     @Override
     public String getLabel() {
-        return label;
+        switch (kind) {
+            case INITIALIZERS: return loc("show_all_initializers_action");
+            case METHODS:      return loc("show_all_methods_action");
+            case PROPERTIES:
+            default:           return loc("show_all_properties_action");
+        }
     }
 
     @Override

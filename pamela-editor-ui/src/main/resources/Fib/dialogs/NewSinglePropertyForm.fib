@@ -12,12 +12,12 @@
   <Label name="header" data="data.headerSummary" localize="false" align="center" font="SansSerif,1,14"
          index="0" constraints="twocols(expandHorizontally=true;location=center;insetsTop=10;insetsBottom=10)" />
 
-  <Label name="idLabel" label="Identifier" localize="false" align="left"
+  <Label name="idLabel" label="identifier" localize="true" align="left"
          index="1" constraints="twocols(location=left)" />
   <TextField name="idTF" data="data.identifier" columns="22" validateOnReturn="false"
          index="2" constraints="twocols(expandHorizontally=true;location=right)" />
 
-  <Label name="typeLabel" label="Type" localize="false" align="left"
+  <Label name="typeLabel" label="type" localize="true" align="left"
          index="3" constraints="twocols(location=left)" />
   <Custom name="typeSelector" componentClassName="org.openflexo.gina.swing.utils.TypeSelector"
          data="data.type" manageDynamicModel="true" width="260"
@@ -26,7 +26,7 @@
     <Assignment variable="component.customTypeEditorProvider" value="data.customTypeEditorProvider" />
   </Custom>
 
-  <Label name="getterLabel" label="Getter:" localize="false" align="left"
+  <Label name="getterLabel" label="getter_colon_label" localize="true" align="left"
          index="5" constraints="twocols(location=left)" />
   <Panel name="getterRow" layout="gridbag" border="empty"
          index="6" constraints="twocols(expandHorizontally=true;location=right)">
@@ -50,7 +50,7 @@
            constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
 
-  <Label name="setterLabel" label="Setter:" localize="false" align="left"
+  <Label name="setterLabel" label="setter_colon_label" localize="true" align="left"
          index="7" constraints="twocols(location=left)" />
   <Panel name="setterRow" layout="gridbag" border="empty"
          index="8" constraints="twocols(expandHorizontally=true;location=right)">
@@ -74,7 +74,7 @@
            constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
 
-  <Label name="updaterLabel" label="Updater:" localize="false" align="left"
+  <Label name="updaterLabel" label="updater_colon_label" localize="true" align="left"
          index="9" constraints="twocols(location=left)" />
   <Panel name="updaterRow" layout="gridbag" border="empty"
          index="10" constraints="twocols(expandHorizontally=true;location=right)">
@@ -97,4 +97,15 @@
     <Label name="updaterSummary" data="data.updaterOption.summary" localize="false" align="left" font="SansSerif,2,10"
            constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
+  <LocalizedDictionary>
+    <Localized key="getter_colon_label" lang="English" value="Getter:" />
+    <Localized key="getter_colon_label" lang="French" value="Getter :" />
+    <Localized key="getter_colon_label" lang="Dutch" value="Getter:" />
+    <Localized key="setter_colon_label" lang="English" value="Setter:" />
+    <Localized key="setter_colon_label" lang="French" value="Setter :" />
+    <Localized key="setter_colon_label" lang="Dutch" value="Setter:" />
+    <Localized key="updater_colon_label" lang="English" value="Updater:" />
+    <Localized key="updater_colon_label" lang="French" value="Updater :" />
+    <Localized key="updater_colon_label" lang="Dutch" value="Updater:" />
+  </LocalizedDictionary>
 </Panel>

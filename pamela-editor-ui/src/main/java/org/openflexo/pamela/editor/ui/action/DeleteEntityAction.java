@@ -32,7 +32,7 @@ public class DeleteEntityAction extends SourceEditingAction {
 
     @Override
     public String getLabel() {
-        return "Delete Entity";
+        return loc("delete_entity_action");
     }
 
     @Override

@@ -50,7 +50,7 @@ public class AddImportAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Add Import…";
+        return loc("add_import_action");
     }
 
     @Override
@@ -66,7 +66,7 @@ public class AddImportAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Add Import";
+        return loc("add_import_title");
     }
 
     @Override

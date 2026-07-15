@@ -80,7 +80,7 @@ public class PromoteGetterAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Promote as New Property…";
+        return loc("promote_as_new_property_action");
     }
 
     @Override
@@ -96,7 +96,7 @@ public class PromoteGetterAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Promote Method to New Property";
+        return loc("promote_method_to_new_property_title");
     }
 
     @Override

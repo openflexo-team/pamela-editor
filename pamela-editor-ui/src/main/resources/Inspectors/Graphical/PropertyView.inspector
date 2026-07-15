@@ -36,23 +36,30 @@
     <Label name="NoConnectorNote" label="no_connector_note" index="14"
         visible="data.connectorPresent == false"
         constraints="twocols(expandHorizontally=true;location=center)" localize="true" />
-    <LocalizedDictionary>
-        <Localized key="property" lang="English" value="Property" />
+    <LocalizedDictionary>        <Localized key="property" lang="English" value="Property" />
         <Localized key="property" lang="French" value="Propriété" />
+        <Localized key="property" lang="Dutch" value="Eigenschap" />
         <Localized key="kind" lang="English" value="Kind" />
         <Localized key="kind" lang="French" value="Type de lien" />
+        <Localized key="kind" lang="Dutch" value="Soort" />
         <Localized key="source" lang="English" value="Source" />
         <Localized key="source" lang="French" value="Source" />
+        <Localized key="source" lang="Dutch" value="Subtype" />
         <Localized key="target" lang="English" value="Target" />
         <Localized key="target" lang="French" value="Cible" />
+        <Localized key="target" lang="Dutch" value="Supertype" />
         <Localized key="label_offset_x" lang="English" value="Label offset X" />
         <Localized key="label_offset_x" lang="French" value="Décalage libellé X" />
+        <Localized key="label_offset_x" lang="Dutch" value="Labeloffset X" />
         <Localized key="label_offset_y" lang="English" value="Label offset Y" />
         <Localized key="label_offset_y" lang="French" value="Décalage libellé Y" />
+        <Localized key="label_offset_y" lang="Dutch" value="Labeloffset Y" />
         <Localized key="no_connector_note" lang="English" value="Target not on diagram — no connector to position." />
         <Localized key="no_connector_note" lang="French" value="Cible absente du diagramme — aucun connecteur à positionner." />
+        <Localized key="no_connector_note" lang="Dutch" value="Doel niet op diagram — geen connector te positioneren." />
         <Localized key="style" lang="English" value="Style" />
         <Localized key="style" lang="French" value="Style" />
+        <Localized key="style" lang="Dutch" value="Stijl" />
     </LocalizedDictionary>
     <Parameter name="title" value="Property View" />
 </Inspector>

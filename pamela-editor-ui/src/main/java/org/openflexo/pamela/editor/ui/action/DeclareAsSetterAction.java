@@ -10,12 +10,12 @@ public class DeclareAsSetterAction extends DeclareAccessorAction {
 
     @Override
     public String getLabel() {
-        return "Declare as Setter of…";
+        return loc("declare_as_setter_action");
     }
 
     @Override
     protected String getDialogTitle() {
-        return "Declare Method as Setter";
+        return loc("declare_method_as_setter_title");
     }
 
     @Override

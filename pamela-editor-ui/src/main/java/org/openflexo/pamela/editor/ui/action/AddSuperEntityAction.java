@@ -50,7 +50,7 @@ public class AddSuperEntityAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Add Super-Entity…";
+        return loc("add_super_entity_action");
     }
 
     @Override
@@ -66,7 +66,7 @@ public class AddSuperEntityAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Add Super-Entity";
+        return loc("add_super_entity_title");
     }
 
     @Override

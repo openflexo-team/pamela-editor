@@ -80,37 +80,51 @@
         constraints="twocols(expandHorizontally=true;location=right)" />
   </Panel>
 
-  <LocalizedDictionary>
-    <Localized key="entities" lang="English" value="Entities" />
+  <LocalizedDictionary>    <Localized key="entities" lang="English" value="Entities" />
     <Localized key="entities" lang="French" value="Entités" />
+    <Localized key="entities" lang="Dutch" value="Entiteiten" />
     <Localized key="connectors" lang="English" value="Connectors" />
     <Localized key="connectors" lang="French" value="Connecteurs" />
+    <Localized key="connectors" lang="Dutch" value="Verbindingen" />
     <Localized key="header_background" lang="English" value="Header background" />
     <Localized key="header_background" lang="French" value="Fond de l'en-tête" />
+    <Localized key="header_background" lang="Dutch" value="Achtergrond (kop)" />
     <Localized key="body_background" lang="English" value="Body background" />
     <Localized key="body_background" lang="French" value="Fond du corps" />
+    <Localized key="body_background" lang="Dutch" value="Achtergrond (body)" />
     <Localized key="border_color" lang="English" value="Border color" />
     <Localized key="border_color" lang="French" value="Couleur de bordure" />
+    <Localized key="border_color" lang="Dutch" value="Randkleur" />
     <Localized key="title_font" lang="English" value="Title font" />
     <Localized key="title_font" lang="French" value="Police du titre" />
+    <Localized key="title_font" lang="Dutch" value="Titellettertype" />
     <Localized key="member_font" lang="English" value="Member font" />
     <Localized key="member_font" lang="French" value="Police des membres" />
+    <Localized key="member_font" lang="Dutch" value="Ledenlettertype" />
     <Localized key="name" lang="English" value="Name" />
     <Localized key="name" lang="French" value="Nom" />
+    <Localized key="name" lang="Dutch" value="Naam" />
     <Localized key="connector_type" lang="English" value="Routing" />
     <Localized key="connector_type" lang="French" value="Routage" />
+    <Localized key="connector_type" lang="Dutch" value="Routering" />
     <Localized key="color" lang="English" value="Color" />
     <Localized key="color" lang="French" value="Couleur" />
+    <Localized key="color" lang="Dutch" value="Kleur" />
     <Localized key="line_width" lang="English" value="Line width" />
     <Localized key="line_width" lang="French" value="Épaisseur" />
+    <Localized key="line_width" lang="Dutch" value="Lijndikte" />
     <Localized key="rounded" lang="English" value="Rounded corners" />
     <Localized key="rounded" lang="French" value="Coins arrondis" />
+    <Localized key="rounded" lang="Dutch" value="Afgeronde hoeken" />
     <Localized key="default_styles" lang="English" value="Default styles" />
     <Localized key="default_styles" lang="French" value="Styles par défaut" />
+    <Localized key="default_styles" lang="Dutch" value="Standaardstijlen" />
     <Localized key="default_inheritance" lang="English" value="Inheritance" />
     <Localized key="default_inheritance" lang="French" value="Héritage" />
+    <Localized key="default_inheritance" lang="Dutch" value="Overerving" />
     <Localized key="default_association" lang="English" value="Association" />
     <Localized key="default_association" lang="French" value="Association" />
+    <Localized key="default_association" lang="Dutch" value="Associatie" />
   </LocalizedDictionary>
   <Parameter name="title" value="Diagram" />
 </Inspector>

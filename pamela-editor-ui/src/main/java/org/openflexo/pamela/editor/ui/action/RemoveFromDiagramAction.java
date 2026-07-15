@@ -36,7 +36,7 @@ public class RemoveFromDiagramAction extends ContextualAction {
 
     @Override
     public String getLabel() {
-        return "Remove from diagram";
+        return loc("remove_from_diagram_action");
     }
 
     @Override

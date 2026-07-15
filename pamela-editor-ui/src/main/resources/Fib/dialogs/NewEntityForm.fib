@@ -3,12 +3,12 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="NewEntityForm" border="empty" width="420" height="180">
 
-  <Label name="nameLabel" label="Entity name:" localize="false"
+  <Label name="nameLabel" label="entity_name_label" localize="true"
          align="left" index="4" constraints="twocols(location=left)" />
   <TextField name="nameTF" data="data.name" columns="22" validateOnReturn="false"
          index="5" constraints="twocols(expandHorizontally=true;location=right)" />
 
-  <Label name="sourceFolderLabel" label="Source folder:" localize="false"
+  <Label name="sourceFolderLabel" label="source_folder_label" localize="true"
          align="left" index="0" constraints="twocols(location=left)" />
   <Custom name="sourceFolderSelector"
          componentClassName="org.openflexo.pamela.editor.ui.widget.SourceFolderSelector"
@@ -17,7 +17,7 @@
     <Assignment variable="component.metaModel" value="data.metaModel" />
   </Custom>
 
-  <Label name="packageLabel" label="Package:" localize="false"
+  <Label name="packageLabel" label="package_colon_label" localize="true"
          align="left" index="2" constraints="twocols(location=left)" />
   <Custom name="packageSelector"
          componentClassName="org.openflexo.pamela.editor.ui.widget.SourcePackageSelector"
@@ -27,12 +27,12 @@
     <Assignment variable="component.sourceFolder" value="data.sourceFolder" />
   </Custom>
 
-  <Label name="abstractLabel" label="Abstract:" localize="false"
+  <Label name="abstractLabel" label="abstract_colon_label" localize="true"
          align="left" index="6" constraints="twocols(location=left)" />
   <CheckBox name="abstractCB" data="data.abstractEntity" readOnly="false"
          index="7" constraints="twocols(location=right)" />
 
-  <Label name="superEntityLabel" label="Parent entity (optional):" localize="false"
+  <Label name="superEntityLabel" label="parent_entity_label" localize="true"
          align="left" index="8" constraints="twocols(location=left)" />
   <Custom name="superEntitySelector"
          componentClassName="org.openflexo.pamela.editor.ui.widget.ModelEntitySelector"
@@ -40,4 +40,21 @@
          index="9" constraints="twocols(expandHorizontally=true;location=right)">
     <Assignment variable="component.metaModel" value="data.metaModel" />
   </Custom>
+  <LocalizedDictionary>
+    <Localized key="entity_name_label" lang="English" value="Entity name:" />
+    <Localized key="entity_name_label" lang="French" value="Nom de l'entité :" />
+    <Localized key="entity_name_label" lang="Dutch" value="Naam van de entiteit:" />
+    <Localized key="source_folder_label" lang="English" value="Source folder:" />
+    <Localized key="source_folder_label" lang="French" value="Dossier source :" />
+    <Localized key="source_folder_label" lang="Dutch" value="Bronmap:" />
+    <Localized key="package_colon_label" lang="English" value="Package:" />
+    <Localized key="package_colon_label" lang="French" value="Package :" />
+    <Localized key="package_colon_label" lang="Dutch" value="Package:" />
+    <Localized key="abstract_colon_label" lang="English" value="Abstract:" />
+    <Localized key="abstract_colon_label" lang="French" value="Abstraite :" />
+    <Localized key="abstract_colon_label" lang="Dutch" value="Abstract:" />
+    <Localized key="parent_entity_label" lang="English" value="Parent entity (optional):" />
+    <Localized key="parent_entity_label" lang="French" value="Entité parente (optionnel) :" />
+    <Localized key="parent_entity_label" lang="Dutch" value="Bovenliggende entiteit (optioneel):" />
+  </LocalizedDictionary>
 </Panel>

@@ -37,8 +37,8 @@ public abstract class SourceEditingAction extends ContextualAction {
             // once the in-flight rebuild has finished. (A metadata-only edit, needsRebuild()
             // == false, touches none of those collections, so it need not wait.)
             ModelEditingSupport.error(app, getLabel(),
-                    "A rebuild is already in progress for this project.\n"
-                            + "Please wait for it to finish, then try again.");
+                    loc("error_rebuild_in_progress") + "\n"
+                            + loc("error_rebuild_in_progress_retry"));
             return;
         }
         Supplier<Object> reselect;
@@ -48,7 +48,7 @@ public abstract class SourceEditingAction extends ContextualAction {
         } catch (Exception e) {
         	e.printStackTrace();
             ModelEditingSupport.error(app, getLabel(),
-                    "Operation failed:\n" + e.getMessage());
+                    loc("error_operation_failed") + "\n" + e.getMessage());
             return;
         } finally {
             app.endSourceMutation();

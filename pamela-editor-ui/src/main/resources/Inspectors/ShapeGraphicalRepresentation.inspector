@@ -124,8 +124,9 @@
       </Panel>
     </Tab>
   </TabPanel>
-  <LocalizedDictionary>
+  <LocalizedDictionary>    <Localized key="Location/Size" lang="English" value="Location/Size" />
     <Localized key="Location/Size" lang="French" value="Emplacement/Taille" />
+    <Localized key="Location/Size" lang="Dutch" value="Location/Size" />
     <Localized key="layer" lang="English" value="Layer" />
     <Localized key="layer" lang="French" value="Couche" />
     <Localized key="layer" lang="Dutch" value="Layer" />
@@ -141,7 +142,9 @@
     <Localized key="contained_in_shape" lang="English" value="Contained in shape" />
     <Localized key="contained_in_shape" lang="French" value="Contenu dans la forme" />
     <Localized key="contained_in_shape" lang="Dutch" value="Contained in shape" />
+    <Localized key="unmovable" lang="English" value="Unmovable" />
     <Localized key="unmovable" lang="French" value="non déplaçable" />
+    <Localized key="unmovable" lang="Dutch" value="Unmovable" />
     <Localized key="relative_to_parent" lang="English" value="Relative to parent" />
     <Localized key="relative_to_parent" lang="French" value="Relatif au parent" />
     <Localized key="relative_to_parent" lang="Dutch" value="Relative to parent" />
@@ -149,6 +152,7 @@
     <Localized key="x_fixed" lang="French" value="x fixe" />
     <Localized key="x_fixed" lang="Dutch" value="x fixed" />
     <Localized key="y_fixed" lang="English" value="y fixed" />
+    <Localized key="y_fixed" lang="French" value="y fixe" />
     <Localized key="y_fixed" lang="Dutch" value="y fixed" />
     <Localized key="area_constrained" lang="English" value="area constrained" />
     <Localized key="area_constrained" lang="French" value="espace contraint" />
@@ -165,7 +169,9 @@
     <Localized key="freely_resizable" lang="English" value="Freely resizable" />
     <Localized key="freely_resizable" lang="French" value="Peut être redimensionné" />
     <Localized key="freely_resizable" lang="Dutch" value="Freely resizable" />
+    <Localized key="unresizable" lang="English" value="Unresizable" />
     <Localized key="unresizable" lang="French" value="non redimensionnable" />
+    <Localized key="unresizable" lang="Dutch" value="Unresizable" />
     <Localized key="constrained_dimensions" lang="English" value="Constrained dimensions" />
     <Localized key="constrained_dimensions" lang="French" value="Dimensions contraintes" />
     <Localized key="constrained_dimensions" lang="Dutch" value="Constrained dimensions" />
@@ -193,7 +199,9 @@
     <Localized key="is_visible" lang="English" value="Is visible" />
     <Localized key="is_visible" lang="French" value="Visible" />
     <Localized key="is_visible" lang="Dutch" value="Is visible" />
+    <Localized key="Text" lang="English" value="Text" />
     <Localized key="Text" lang="French" value="Texte" />
+    <Localized key="Text" lang="Dutch" value="Text" />
     <Localized key="floating_label" lang="English" value="Floating label" />
     <Localized key="floating_label" lang="French" value="Label flottant" />
     <Localized key="floating_label" lang="Dutch" value="Floating label" />
@@ -215,7 +223,9 @@
     <Localized key="adjust_minimal_height_to_label_height" lang="English" value="Adjust the minimal height to the label height" />
     <Localized key="adjust_minimal_height_to_label_height" lang="French" value="Ajuster la hauteur minimale à la hauteur du label" />
     <Localized key="adjust_minimal_height_to_label_height" lang="Dutch" value="Adjust the minimal height to the label height" />
+    <Localized key="Shape" lang="English" value="Shape" />
     <Localized key="Shape" lang="French" value="Forme" />
+    <Localized key="Shape" lang="Dutch" value="Shape" />
     <Localized key="foreground" lang="English" value="Foreground" />
     <Localized key="foreground" lang="French" value="Couleur d'avant-plan" />
     <Localized key="foreground" lang="Dutch" value="Foreground" />
@@ -264,7 +274,9 @@
     <Localized key="arc_size" lang="English" value="Arc size" />
     <Localized key="arc_size" lang="French" value="Taille de l'arc" />
     <Localized key="arc_size" lang="Dutch" value="Arc size" />
+    <Localized key="ratio" lang="English" value="Ratio" />
     <Localized key="ratio" lang="French" value="rapport" />
+    <Localized key="ratio" lang="Dutch" value="Ratio" />
     <Localized key="angle_start" lang="English" value="angle start" />
     <Localized key="angle_start" lang="French" value="début d'angle" />
     <Localized key="angle_start" lang="Dutch" value="angle start" />

@@ -38,8 +38,7 @@
 
     </Panel>
 
-    <LocalizedDictionary id="90">
-        <Localized id="97" lang="English"
+    <LocalizedDictionary id="90">        <Localized id="97" lang="English"
             value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Revalidate&lt;/a&gt;&lt;/html&gt;"
             key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;" />
         <Localized id="98" lang="French"
@@ -56,6 +55,15 @@
             key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;hide_table&lt;/a&gt;&lt;/html&gt;" />
         <Localized id="102" lang="French"
             value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Masquer&lt;/a&gt;&lt;/html&gt;"
+            key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;hide_table&lt;/a&gt;&lt;/html&gt;" />
+        <Localized id="103" lang="Dutch"
+            value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Revalideren&lt;/a&gt;&lt;/html&gt;"
+            key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;revalidate&lt;/a&gt;&lt;/html&gt;" />
+        <Localized id="104" lang="Dutch"
+            value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Tonen&lt;/a&gt;&lt;/html&gt;"
+            key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;show_table&lt;/a&gt;&lt;/html&gt;" />
+        <Localized id="105" lang="Dutch"
+            value="&lt;html&gt;&lt;a href=&quot;&quot;&gt;Verbergen&lt;/a&gt;&lt;/html&gt;"
             key="&lt;html&gt;&lt;a href=&quot;&quot;&gt;hide_table&lt;/a&gt;&lt;/html&gt;" />
     </LocalizedDictionary>
 

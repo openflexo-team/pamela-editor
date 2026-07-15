@@ -48,7 +48,7 @@ public class DeclareAsInitializerAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Declare as Initializer…";
+        return loc("declare_as_initializer_action");
     }
 
     @Override
@@ -97,7 +97,7 @@ public class DeclareAsInitializerAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Declare Method as Initializer";
+        return loc("declare_method_as_initializer_title");
     }
 
     @Override

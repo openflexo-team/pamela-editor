@@ -33,7 +33,7 @@ public class DeclareAsPamelaEntityAction extends SourceEditingAction {
 
     @Override
     public String getLabel() {
-        return "Declare as PAMELA Entity";
+        return loc("declare_as_pamela_entity_action");
     }
 
     @Override

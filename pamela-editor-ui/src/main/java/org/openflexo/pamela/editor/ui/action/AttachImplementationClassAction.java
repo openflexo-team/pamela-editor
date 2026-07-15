@@ -58,7 +58,7 @@ public class AttachImplementationClassAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Attach Implementation Class…";
+        return loc("attach_implementation_class_action");
     }
 
     @Override
@@ -74,7 +74,7 @@ public class AttachImplementationClassAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Attach Implementation Class";
+        return loc("attach_implementation_class_title");
     }
 
     @Override

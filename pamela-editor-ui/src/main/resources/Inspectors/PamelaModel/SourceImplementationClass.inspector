@@ -19,15 +19,18 @@
                 constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)" />
         </Tab>
     </TabPanel>
-    <LocalizedDictionary>
-        <Localized key="basic" lang="English" value="Basic" />
+    <LocalizedDictionary>        <Localized key="basic" lang="English" value="Basic" />
         <Localized key="basic" lang="French" value="Basique" />
+        <Localized key="basic" lang="Dutch" value="Basis" />
         <Localized key="simple_name" lang="English" value="Simple name" />
         <Localized key="simple_name" lang="French" value="Nom simple" />
+        <Localized key="simple_name" lang="Dutch" value="Eenvoudige naam" />
         <Localized key="qualified_name" lang="English" value="Qualified name" />
         <Localized key="qualified_name" lang="French" value="Nom qualifié" />
+        <Localized key="qualified_name" lang="Dutch" value="Volledige naam" />
         <Localized key="abstract" lang="English" value="Abstract" />
         <Localized key="abstract" lang="French" value="Abstrait" />
+        <Localized key="abstract" lang="Dutch" value="Abstract" />
     </LocalizedDictionary>
     <Parameter name="title" value="Implementation class" />
 </Inspector>

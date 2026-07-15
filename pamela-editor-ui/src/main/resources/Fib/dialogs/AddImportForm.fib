@@ -3,7 +3,7 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="AddImportForm" border="empty" width="400" height="80">
 
-  <Label name="importLabel" label="Import:" localize="false"
+  <Label name="importLabel" label="import_label" localize="true"
          align="left" index="0" constraints="twocols(location=left)" />
   <Custom name="importSelector"
          componentClassName="org.openflexo.pamela.editor.ui.widget.ModelEntitySelector"
@@ -12,4 +12,9 @@
     <Assignment variable="component.metaModel" value="data.metaModel" />
     <Assignment variable="component.restrictedValues" value="data.candidateEntities" />
   </Custom>
+  <LocalizedDictionary>
+    <Localized key="import_label" lang="English" value="Import:" />
+    <Localized key="import_label" lang="French" value="Import :" />
+    <Localized key="import_label" lang="Dutch" value="Import:" />
+  </LocalizedDictionary>
 </Panel>

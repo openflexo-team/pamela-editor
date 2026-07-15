@@ -10,12 +10,12 @@ public class DeclareAsRemoverAction extends DeclareAccessorAction {
 
     @Override
     public String getLabel() {
-        return "Declare as Remover of…";
+        return loc("declare_as_remover_action");
     }
 
     @Override
     protected String getDialogTitle() {
-        return "Declare Method as Remover";
+        return loc("declare_method_as_remover_title");
     }
 
     @Override

@@ -47,7 +47,7 @@ public class HideMemberAction extends ContextualAction {
 
     @Override
     public String getLabel() {
-        return "Hide on diagram";
+        return loc("hide_on_diagram_action");
     }
 
     @Override

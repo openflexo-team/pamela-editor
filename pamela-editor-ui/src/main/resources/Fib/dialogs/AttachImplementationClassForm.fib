@@ -3,7 +3,7 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="AttachImplementationClassForm" border="empty" width="420" height="90">
 
-  <Label name="classLabel" label="Class:" localize="false"
+  <Label name="classLabel" label="class_label" localize="true"
          align="left" index="0" constraints="twocols(location=left)" />
   <Custom name="classSelector"
          componentClassName="org.openflexo.pamela.editor.ui.widget.JavaClassSelector"
@@ -12,4 +12,9 @@
     <Assignment variable="component.metaModel" value="data.metaModel" />
     <Assignment variable="component.restrictedValues" value="data.candidateTypes" />
   </Custom>
+  <LocalizedDictionary>
+    <Localized key="class_label" lang="English" value="Class:" />
+    <Localized key="class_label" lang="French" value="Classe :" />
+    <Localized key="class_label" lang="Dutch" value="Klasse:" />
+  </LocalizedDictionary>
 </Panel>

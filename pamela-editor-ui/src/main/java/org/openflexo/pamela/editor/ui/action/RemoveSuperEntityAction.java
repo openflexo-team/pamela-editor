@@ -50,7 +50,7 @@ public class RemoveSuperEntityAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Remove Super-Entity…";
+        return loc("remove_super_entity_action");
     }
 
     @Override
@@ -66,7 +66,7 @@ public class RemoveSuperEntityAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Remove Super-Entity";
+        return loc("remove_super_entity_title");
     }
 
     @Override

@@ -49,6 +49,7 @@ import org.openflexo.gina.ApplicationFIBLibrary.ApplicationFIBLibraryImpl;
 import org.openflexo.gina.swing.utils.localization.LocalizedEditor;
 import org.openflexo.gina.swing.utils.logging.FlexoLoggingViewer;
 import org.openflexo.localization.FlexoLocalization;
+import org.openflexo.localization.Language;
 import org.openflexo.localization.LocalizedDelegate;
 import org.openflexo.localization.LocalizedDelegateImpl;
 import org.openflexo.logging.FlexoLogger;
@@ -584,6 +585,12 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         org.openflexo.pamela.editor.ui.preferences.PreferencesManager.initialize(
                 PAMELA_EDITOR_LOCALIZATION::localizedForKey);
 
+        // Apply the persisted language preference before any FIB/inspector view is built, so
+        // the whole UI comes up already in the chosen language.
+        FlexoLocalization.setCurrentLanguage(Language.get(
+                org.openflexo.pamela.editor.ui.preferences.PreferencesManager.getInstance()
+                        .general().getLanguage()));
+
         // Changing the custom-method visibility filter (Analysis preference) must refresh the
         // operations shown in the browsers and diagrams → rebuild every open project, which
         // re-reads the filter (currentCustomMethodFilter) during analysis.
@@ -596,6 +603,10 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                                 rebuildProject(p);
                             }
                         });
+                    }
+                    else if (org.openflexo.pamela.editor.ui.preferences.GeneralPreferences
+                            .LANGUAGE.equals(key)) {
+                        FlexoLocalization.setCurrentLanguage(Language.get((String) newValue));
                     }
                 });
 
@@ -1043,8 +1054,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     cause.printStackTrace();
                     JOptionPane.showMessageDialog(
                             frame,
-                            "Failed to open project:\n" + cause.getMessage(),
-                            "Error",
+                            loc("error_opening_project") + "\n" + cause.getMessage(),
+                            loc("error"),
                             JOptionPane.ERROR_MESSAGE);
                 } finally {
                     buildFinished();
@@ -1361,8 +1372,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                     cause.printStackTrace();
                     JOptionPane.showMessageDialog(
                             frame,
-                            "Rebuild failed:\n" + cause.getMessage(),
-                            "Error",
+                            loc("error_rebuild_failed") + "\n" + cause.getMessage(),
+                            loc("error"),
                             JOptionPane.ERROR_MESSAGE);
                 }
                 // A rebuild recreates all Source* objects. Re-anchor editable source views
@@ -2802,8 +2813,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             return null;
         }
         String name = (String) JOptionPane.showInputDialog(
-                frame, "Diagram name:", "New Class Diagram",
-                JOptionPane.PLAIN_MESSAGE, null, null, "New diagram");
+                frame, loc("diagram_name_prompt"), loc("new_class_diagram_title"),
+                JOptionPane.PLAIN_MESSAGE, null, null, loc("new_diagram"));
         if (name == null || name.trim().isEmpty()) {
             return null; // cancelled or empty
         }
@@ -2830,7 +2841,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             return;
         }
         String newName = (String) JOptionPane.showInputDialog(
-                frame, "Diagram name:", "Rename Class Diagram",
+                frame, loc("diagram_name_prompt"), loc("rename_class_diagram_title"),
                 JOptionPane.PLAIN_MESSAGE, null, null, diagram.getName());
         if (newName == null) {
             return; // cancelled
@@ -2883,8 +2894,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             if (oldFile != null && oldFile.exists()) {
                 if (!oldFile.renameTo(newPamelaFile)) {
                     JOptionPane.showMessageDialog(frame,
-                            "Could not rename the project file to:\n" + newPamelaFile.getName(),
-                            "Rename Meta-Model", JOptionPane.ERROR_MESSAGE);
+                            loc("error_renaming_project_file") + "\n" + newPamelaFile.getName(),
+                            loc("rename_metamodel_title"), JOptionPane.ERROR_MESSAGE);
                 } else {
                     // Move the hidden build-cache sidecar alongside the .pamela file, so the
                     // fast-open path is not orphaned (source-metamodel-design.md §18.6).
@@ -2931,9 +2942,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
             return;
         }
         int choice = JOptionPane.showConfirmDialog(frame,
-                "Delete diagram \"" + diagram.getName() + "\"?\n"
-                        + "Its .diagram file will be removed when the project is saved.",
-                "Delete Class Diagram",
+                loc("confirm_delete_diagram_prefix") + "\"" + diagram.getName() + "\"?\n"
+                        + loc("confirm_delete_diagram_suffix"),
+                loc("delete_class_diagram_title"),
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
         if (choice != JOptionPane.YES_OPTION) {
@@ -2982,8 +2993,9 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
                 ? project.getMetaModel().getName()
                 : project.getPamelaFile().getName();
         int choice = JOptionPane.showConfirmDialog(frame,
-                "Save changes to \"" + name + "\" before closing?",
-                "Unsaved Changes",
+                loc("confirm_save_changes_prefix") + "\"" + name + "\""
+                        + loc("confirm_save_changes_suffix"),
+                loc("unsaved_changes_title"),
                 JOptionPane.YES_NO_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE);
         if (choice == JOptionPane.CANCEL_OPTION

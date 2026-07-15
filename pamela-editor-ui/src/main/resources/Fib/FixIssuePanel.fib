@@ -112,8 +112,7 @@
 	</Panel>
 	<FIBVariable id="26"
 		type="org.openflexo.gina.swing.editor.validation.IssueFixing" name="data" />
-	<LocalizedDictionary id="27">
-		<Localized id="28" lang="English" value="Fix issue" key="fix_issue" />
+	<LocalizedDictionary id="27">		<Localized id="28" lang="English" value="Fix issue" key="fix_issue" />
 		<Localized id="29" lang="Dutch" value="Fix issue" key="fix_issue" />
 		<Localized id="30" lang="French" value="Résoudre le problème"
 			key="fix_issue" />

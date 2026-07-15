@@ -9,7 +9,7 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="DeclareInitializerForm" border="empty" width="400" height="200">
 
-  <Label name="hint" label="Map each parameter to a property:" localize="false" align="left"
+  <Label name="hint" label="map_parameters_hint" localize="true" align="left"
          index="0" constraints="twocols(location=center)" />
 
   <TextField name="p0lbl" data="data.param0.label" readOnly="true" columns="18"
@@ -65,4 +65,9 @@
     <Assignment variable="component.entity" value="data.entity" />
     <Assignment variable="component.restrictedValues" value="data.param5.candidates" />
   </Custom>
+  <LocalizedDictionary>
+    <Localized key="map_parameters_hint" lang="English" value="Map each parameter to a property:" />
+    <Localized key="map_parameters_hint" lang="French" value="Associez chaque paramètre à une propriété :" />
+    <Localized key="map_parameters_hint" lang="Dutch" value="Koppel elke parameter aan een eigenschap:" />
+  </LocalizedDictionary>
 </Panel>

@@ -24,7 +24,7 @@ public class DeleteClassDiagramAction extends ContextualAction {
 
     @Override
     public String getLabel() {
-        return "Delete Diagram";
+        return loc("delete_diagram_action");
     }
 
     @Override

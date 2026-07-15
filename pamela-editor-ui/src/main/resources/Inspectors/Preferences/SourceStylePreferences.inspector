@@ -22,8 +22,7 @@
         constraints="twocols(location=left)" localize="true" />
     <CheckBox name="ExpandEmptyBodyCB" index="19" data="data.expandEmptyBody"
         constraints="twocols(location=right)" />
-    <LocalizedDictionary>
-        <Localized key="use_tabulations" lang="English" value="Indent with tabs" />
+    <LocalizedDictionary>        <Localized key="use_tabulations" lang="English" value="Indent with tabs" />
         <Localized key="use_tabulations" lang="French" value="Indenter avec des tabulations" />
         <Localized key="use_tabulations" lang="Dutch" value="Inspringen met tabs" />
         <Localized key="tabulation_size" lang="English" value="Indent width (spaces)" />

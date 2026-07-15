@@ -3,12 +3,12 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="NewPackageForm" border="empty" width="420" height="90">
 
-  <Label name="nameLabel" label="Package name:" localize="false"
+  <Label name="nameLabel" label="package_name_label" localize="true"
          align="left" index="0" constraints="twocols(location=left)" />
   <TextField name="nameTF" data="data.name" columns="22" validateOnReturn="false"
          index="1" constraints="twocols(expandHorizontally=true;location=right)" />
 
-  <Label name="sourceFolderLabel" label="Source folder:" localize="false"
+  <Label name="sourceFolderLabel" label="source_folder_label" localize="true"
          align="left" index="2" constraints="twocols(location=left)" />
   <Custom name="sourceFolderSelector"
          componentClassName="org.openflexo.pamela.editor.ui.widget.SourceFolderSelector"
@@ -16,4 +16,12 @@
          index="3" constraints="twocols(expandHorizontally=true;location=right)">
     <Assignment variable="component.metaModel" value="data.metaModel" />
   </Custom>
+  <LocalizedDictionary>
+    <Localized key="package_name_label" lang="English" value="Package name:" />
+    <Localized key="package_name_label" lang="French" value="Nom du package :" />
+    <Localized key="package_name_label" lang="Dutch" value="Naam van de package:" />
+    <Localized key="source_folder_label" lang="English" value="Source folder:" />
+    <Localized key="source_folder_label" lang="French" value="Dossier source :" />
+    <Localized key="source_folder_label" lang="Dutch" value="Bronmap:" />
+  </LocalizedDictionary>
 </Panel>

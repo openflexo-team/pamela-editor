@@ -5,8 +5,7 @@
 	border="empty" trackViewPortWidth="true" width="600"
 	dataClassName="org.openflexo.pamela.validation.ValidationReport"
 	titleFont="SansSerif,0,13" trackViewPortHeight="true">
-	<LocalizedDictionary id="1">
-		<Localized id="2" value="All" lang="English" key="all" />
+	<LocalizedDictionary id="1">		<Localized id="2" value="All" lang="English" key="all" />
 		<Localized id="3" value="Tout" lang="French" key="all" />
 		<Localized id="4" value="Alle" lang="Dutch" key="all" />
 		<Localized id="5" value="Errors" lang="English" key="errors" />

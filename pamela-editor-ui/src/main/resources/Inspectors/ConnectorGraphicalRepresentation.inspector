@@ -56,7 +56,7 @@
         <Label label="start_location" localize="true" name="IsStartingLocationFixedLabel" constraints="twocols(location=left;index=10;expandVertically=false;expandHorizontally=false)" useScrollBar="false" />
 	    <Panel layout="flow" hGap="5" vGap="0" flowAlignment="LEADING" constraints="twocols(location=right;index=11;expandVertically=false;expandHorizontally=true)" useScrollBar="false">
        		<CheckBox selected="false" localize="true" name="IsStartingLocationFixed" data="RectPolylinConnectorPanel.data.isStartingLocationFixed" constraints="twocols(location=right;index=1;expandVertically=false;expandHorizontally=false)" useScrollBar="false" />
-			<Label label="fixed" constraints="twocols(location=right;index=2;expandVertically=false;expandHorizontally=false)"/>
+			<Label label="fixed" localize="true" constraints="twocols(location=right;index=2;expandVertically=false;expandHorizontally=false)"/>
        		<CheckBox selected="false" localize="true" name="IsStartingLocationDraggable" data="RectPolylinConnectorPanel.data.isStartingLocationDraggable" constraints="twocols(location=right;index=3;expandVertically=false;expandHorizontally=false)" useScrollBar="false" />
        		<Label label="draggable" localize="true" name="IsStartingLocationDraggableLabel" constraints="twocols(location=left;index=4;expandVertically=false;expandHorizontally=false)" useScrollBar="false" />
 		</Panel>
@@ -105,26 +105,33 @@
       <CheckBox selected="false" localize="true" name="Connectordebug" data="data.connector.debug" constraints="twocols(location=right;index=17;expandVertically=false;expandHorizontally=false)" useScrollBar="false" />
     </Tab>
   </TabPanel>
-  <LocalizedDictionary>
-    <Localized key="debug_covering_area" lang="English" value="Debug covering area" />
+  <LocalizedDictionary>    <Localized key="debug_covering_area" lang="English" value="Debug covering area" />
     <Localized key="debug_covering_area" lang="French" value="Couverture de déverminage" />
     <Localized key="debug_covering_area" lang="Dutch" value="Debug covering area" />
+    <Localized key="Location/Size" lang="English" value="Location/Size" />
     <Localized key="Location/Size" lang="French" value="Emplacement/Taille" />
+    <Localized key="Location/Size" lang="Dutch" value="Location/Size" />
     <Localized key="layer" lang="English" value="Layer" />
     <Localized key="layer" lang="French" value="Couche" />
     <Localized key="layer" lang="Dutch" value="Layer" />
+    <Localized key="Text" lang="English" value="Text" />
     <Localized key="Text" lang="French" value="Texte" />
+    <Localized key="Text" lang="Dutch" value="Text" />
     <Localized key="absolute_text_x" lang="English" value="Absolute text X" />
     <Localized key="absolute_text_x" lang="French" value="texte x absolu" />
     <Localized key="absolute_text_x" lang="Dutch" value="Absolute text X" />
     <Localized key="absolute_text_y" lang="English" value="Absolute text Y" />
     <Localized key="absolute_text_y" lang="French" value="texte y absolu" />
     <Localized key="absolute_text_y" lang="Dutch" value="Absolute text Y" />
+    <Localized key="Connector" lang="English" value="Connector" />
     <Localized key="Connector" lang="French" value="Connecteur" />
+    <Localized key="Connector" lang="Dutch" value="Connector" />
     <Localized key="foreground" lang="English" value="Foreground" />
     <Localized key="foreground" lang="French" value="Couleur d'avant-plan" />
     <Localized key="foreground" lang="Dutch" value="Foreground" />
+    <Localized key="line" lang="English" value="Line" />
     <Localized key="line" lang="French" value="ligne" />
+    <Localized key="line" lang="Dutch" value="Line" />
     <Localized key="rect_polylin" lang="English" value="Rect polyline" />
     <Localized key="rect_polylin" lang="French" value="Polyligne rectangle" />
     <Localized key="rect_polylin" lang="Dutch" value="Rect polyline" />
@@ -134,7 +141,9 @@
     <Localized key="curved_polylin" lang="English" value="Curved polyline" />
     <Localized key="curved_polylin" lang="French" value="Poly-ligne courbe" />
     <Localized key="curved_polylin" lang="Dutch" value="Curved polyline" />
+    <Localized key="custom" lang="English" value="Custom" />
     <Localized key="custom" lang="French" value="Sur mesure" />
+    <Localized key="custom" lang="Dutch" value="Custom" />
     <Localized key="connector_type" lang="English" value="Connector type" />
     <Localized key="connector_type" lang="French" value="Type de connecteur" />
     <Localized key="connector_type" lang="Dutch" value="Connector type" />
@@ -144,7 +153,9 @@
     <Localized key="adjustable_bounds" lang="English" value="Adjustable bounds" />
     <Localized key="adjustable_bounds" lang="French" value="Liens adjustables" />
     <Localized key="adjustable_bounds" lang="Dutch" value="Adjustable bounds" />
+    <Localized key="constraints" lang="English" value="Constraints" />
     <Localized key="constraints" lang="French" value="Contraintes" />
+    <Localized key="constraints" lang="Dutch" value="Constraints" />
     <Localized key="start_orientation" lang="English" value="Start orientation" />
     <Localized key="start_orientation" lang="French" value="Début d'orientation" />
     <Localized key="start_orientation" lang="Dutch" value="Start orientation" />
@@ -154,7 +165,9 @@
     <Localized key="straight_when_possible" lang="English" value="Straight when possible" />
     <Localized key="straight_when_possible" lang="French" value="Droit si possible" />
     <Localized key="straight_when_possible" lang="Dutch" value="Straight when possible" />
+    <Localized key="adjustability" lang="English" value="Adjustability" />
     <Localized key="adjustability" lang="French" value="ajustabilité" />
+    <Localized key="adjustability" lang="Dutch" value="Adjustability" />
     <Localized key="start_location_fixed" lang="English" value="Start location fixed" />
     <Localized key="start_location_fixed" lang="French" value="Point de départ fixe" />
     <Localized key="start_location_fixed" lang="Dutch" value="Start location fixed" />
@@ -197,7 +210,9 @@
     <Localized key="middle_location" lang="English" value="Middle location" />
     <Localized key="middle_location" lang="French" value="Espace de milieu" />
     <Localized key="middle_location" lang="Dutch" value="Middle location" />
+    <Localized key="debug" lang="English" value="Debug" />
     <Localized key="debug" lang="French" value="Déverminage" />
+    <Localized key="debug" lang="Dutch" value="Debug" />
   </LocalizedDictionary>
   <Parameter name="title" value="Connector" />
 </Panel>

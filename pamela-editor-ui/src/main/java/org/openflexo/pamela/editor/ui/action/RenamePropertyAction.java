@@ -72,7 +72,7 @@ public class RenamePropertyAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Rename Property…";
+        return loc("rename_property_action");
     }
 
     @Override
@@ -87,7 +87,7 @@ public class RenamePropertyAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Rename Property";
+        return loc("rename_property_title");
     }
 
     @Override

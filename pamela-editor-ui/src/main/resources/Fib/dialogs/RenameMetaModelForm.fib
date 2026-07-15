@@ -3,22 +3,36 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="RenameMetaModelForm" border="empty" width="440" height="110">
 
-  <Label name="nameLabel" label="New meta-model name:" localize="false"
+  <Label name="nameLabel" label="new_metamodel_name_label" localize="true"
          align="left" index="0" constraints="twocols(location=left)" />
   <TextField name="nameTF" data="data.newName" columns="22" validateOnReturn="false"
          index="1" constraints="twocols(expandHorizontally=true;location=right)" />
 
-  <Label name="renameFileLabel" label="Also rename the .pamela file:" localize="false"
+  <Label name="renameFileLabel" label="also_rename_file_label" localize="true"
          align="left" index="2" constraints="twocols(location=left)" />
   <CheckBox name="renameFileCB" data="data.renameFile" readOnly="false"
          index="3" constraints="twocols(location=right)" />
 
-  <Label name="fileNameLabel" label="New file name:" localize="false"
+  <Label name="fileNameLabel" label="new_file_name_label" localize="true"
          align="left" index="4" constraints="twocols(location=left)" />
   <Panel name="fileNameRow" layout="border" flowAlignment="LEFT" hGap="0" vGap="0" border="empty" index="5"
          constraints="twocols(expandHorizontally=true;location=right)">
     <TextField name="fileNameTF" data="data.newFileName" columns="18" validateOnReturn="false"
          enable="data.renameFile" constraints="border(location=center)" />
-    <Label name="extLabel" label=".pamela" localize="false" constraints="border(location=east)" />
+    <Label name="extLabel" label="pamela_extension_label" localize="true" constraints="border(location=east)" />
   </Panel>
+  <LocalizedDictionary>
+    <Localized key="new_metamodel_name_label" lang="English" value="New meta-model name:" />
+    <Localized key="new_metamodel_name_label" lang="French" value="Nouveau nom du méta-modèle :" />
+    <Localized key="new_metamodel_name_label" lang="Dutch" value="Nieuwe naam van het metamodel:" />
+    <Localized key="also_rename_file_label" lang="English" value="Also rename the .pamela file:" />
+    <Localized key="also_rename_file_label" lang="French" value="Renommer aussi le fichier .pamela :" />
+    <Localized key="also_rename_file_label" lang="Dutch" value="Ook het .pamela-bestand hernoemen:" />
+    <Localized key="new_file_name_label" lang="English" value="New file name:" />
+    <Localized key="new_file_name_label" lang="French" value="Nouveau nom de fichier :" />
+    <Localized key="new_file_name_label" lang="Dutch" value="Nieuwe bestandsnaam:" />
+    <Localized key="pamela_extension_label" lang="English" value=".pamela" />
+    <Localized key="pamela_extension_label" lang="French" value=".pamela" />
+    <Localized key="pamela_extension_label" lang="Dutch" value=".pamela" />
+  </LocalizedDictionary>
 </Panel>

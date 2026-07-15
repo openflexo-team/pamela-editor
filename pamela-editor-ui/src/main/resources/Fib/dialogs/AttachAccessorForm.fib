@@ -8,7 +8,7 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="AttachAccessorForm" border="empty" width="400" height="200">
 
-  <Label name="propLabel" label="Target property:" localize="false" align="left"
+  <Label name="propLabel" label="target_property_label" localize="true" align="left"
          index="0" constraints="twocols(location=left)" />
   <Custom name="propSelector"
          componentClassName="org.openflexo.pamela.editor.ui.widget.ModelPropertySelector"
@@ -17,4 +17,9 @@
     <Assignment variable="component.entity" value="data.entity" />
     <Assignment variable="component.restrictedValues" value="data.candidates" />
   </Custom>
+  <LocalizedDictionary>
+    <Localized key="target_property_label" lang="English" value="Target property:" />
+    <Localized key="target_property_label" lang="French" value="Propriété cible :" />
+    <Localized key="target_property_label" lang="Dutch" value="Doeleigenschap:" />
+  </LocalizedDictionary>
 </Panel>

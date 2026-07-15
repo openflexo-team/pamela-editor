@@ -44,7 +44,7 @@ public class RenameEntityAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Rename Entity…";
+        return loc("rename_entity_action");
     }
 
     @Override
@@ -59,7 +59,7 @@ public class RenameEntityAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Rename Entity";
+        return loc("rename_entity_title");
     }
 
     @Override

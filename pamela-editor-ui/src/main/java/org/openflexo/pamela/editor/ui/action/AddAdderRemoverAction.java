@@ -31,7 +31,7 @@ public class AddAdderRemoverAction extends SourceEditingAction {
 
     @Override
     public String getLabel() {
-        return "Add Adder + Remover";
+        return loc("add_adder_remover_action");
     }
 
     @Override

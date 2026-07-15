@@ -3,8 +3,13 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="CreateImplementationClassForm" border="empty" width="400" height="60">
 
-  <Label name="nameLabel" label="Implementation class name:" localize="false"
+  <Label name="nameLabel" label="implementation_class_name_label" localize="true"
          align="left" index="0" constraints="twocols(location=left)" />
   <TextField name="nameTF" data="data.name" columns="22" validateOnReturn="false"
          index="1" constraints="twocols(expandHorizontally=true;location=right)" />
+  <LocalizedDictionary>
+    <Localized key="implementation_class_name_label" lang="English" value="Implementation class name:" />
+    <Localized key="implementation_class_name_label" lang="French" value="Nom de la classe d'implémentation :" />
+    <Localized key="implementation_class_name_label" lang="Dutch" value="Naam van de implementatieklasse:" />
+  </LocalizedDictionary>
 </Panel>

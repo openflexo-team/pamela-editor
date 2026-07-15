@@ -23,7 +23,7 @@ public class DeclareAsOperationAction extends SourceEditingAction {
 
     @Override
     public String getLabel() {
-        return "Declare as Operation";
+        return loc("declare_as_operation_action");
     }
 
     @Override

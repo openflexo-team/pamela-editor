@@ -65,7 +65,7 @@ public class AddAsRootTypeAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Add as Root Type…";
+        return loc("add_as_root_type_action");
     }
 
     @Override
@@ -91,7 +91,7 @@ public class AddAsRootTypeAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Add as Root Type";
+        return loc("add_as_root_type_title");
     }
 
     @Override

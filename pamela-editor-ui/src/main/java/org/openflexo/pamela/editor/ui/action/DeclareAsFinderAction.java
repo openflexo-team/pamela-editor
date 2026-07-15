@@ -44,7 +44,7 @@ public class DeclareAsFinderAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Declare as Finder…";
+        return loc("declare_as_finder_action");
     }
 
     @Override
@@ -84,7 +84,7 @@ public class DeclareAsFinderAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Declare Method as Finder";
+        return loc("declare_method_as_finder_title");
     }
 
     @Override

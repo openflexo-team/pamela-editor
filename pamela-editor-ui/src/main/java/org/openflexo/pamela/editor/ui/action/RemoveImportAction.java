@@ -49,7 +49,7 @@ public class RemoveImportAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Remove Import…";
+        return loc("remove_import_action");
     }
 
     @Override
@@ -65,7 +65,7 @@ public class RemoveImportAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Remove Import";
+        return loc("remove_import_title");
     }
 
     @Override

@@ -3,7 +3,7 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="RemoveImportForm" border="empty" width="400" height="200">
 
-  <Label name="importLabel" label="Import to remove:" localize="false"
+  <Label name="importLabel" label="import_to_remove_label" localize="true"
          align="left" index="0" constraints="twocols(location=left)" />
   <Custom name="importSelector"
          componentClassName="org.openflexo.pamela.editor.ui.widget.ModelEntitySelector"
@@ -12,4 +12,9 @@
     <Assignment variable="component.metaModel" value="data.metaModel" />
     <Assignment variable="component.restrictedValues" value="data.candidateEntities" />
   </Custom>
+  <LocalizedDictionary>
+    <Localized key="import_to_remove_label" lang="English" value="Import to remove:" />
+    <Localized key="import_to_remove_label" lang="French" value="Import à supprimer :" />
+    <Localized key="import_to_remove_label" lang="Dutch" value="Te verwijderen import:" />
+  </LocalizedDictionary>
 </Panel>

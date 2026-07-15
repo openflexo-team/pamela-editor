@@ -21,8 +21,7 @@
         constraints="twocols(location=left)" localize="true" />
     <Font name="MemberFont" index="19" data="data.memberFont" allowsNull="false"
         constraints="twocols(expandHorizontally=true;location=right)" />
-    <LocalizedDictionary>
-        <Localized key="header_background" lang="English" value="Header background" />
+    <LocalizedDictionary>        <Localized key="header_background" lang="English" value="Header background" />
         <Localized key="header_background" lang="French" value="Fond de l'en-tête" />
         <Localized key="header_background" lang="Dutch" value="Achtergrond kop" />
         <Localized key="body_background" lang="English" value="Body background" />

@@ -28,15 +28,18 @@
 
     </Panel>
 
-    <LocalizedDictionary id="90">
-        <Localized id="91" lang="English" value="Statistics"         key="statistics" />
+    <LocalizedDictionary id="90">        <Localized id="91" lang="English" value="Statistics"         key="statistics" />
         <Localized id="92" lang="French"  value="Statistiques"       key="statistics" />
+        <Localized key="statistics" lang="Dutch" value="Statistieken" />
         <Localized id="93" lang="English" value="Entities"           key="entities" />
         <Localized id="94" lang="French"  value="Entités"            key="entities" />
+        <Localized key="entities" lang="Dutch" value="Entiteiten" />
         <Localized id="95" lang="English" value="Abstract entities"  key="abstract_entities" />
         <Localized id="96" lang="French"  value="Entités abstraites" key="abstract_entities" />
+        <Localized key="abstract_entities" lang="Dutch" value="Abstracte entiteiten" />
         <Localized id="97" lang="English" value="Properties"         key="properties" />
         <Localized id="98" lang="French"  value="Propriétés"         key="properties" />
+        <Localized key="properties" lang="Dutch" value="Eigenschappen" />
     </LocalizedDictionary>
 
 </Panel>

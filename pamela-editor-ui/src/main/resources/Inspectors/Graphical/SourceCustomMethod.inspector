@@ -15,15 +15,18 @@
         constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="15" localize="true" />
     <Label name="NoGeometryNote" label="no_geometry_note" index="6"
         constraints="twocols(expandHorizontally=true;location=center)" localize="true" />
-    <LocalizedDictionary>
-        <Localized key="method" lang="English" value="Method" />
+    <LocalizedDictionary>        <Localized key="method" lang="English" value="Method" />
         <Localized key="method" lang="French" value="Méthode" />
+        <Localized key="method" lang="Dutch" value="Methode" />
         <Localized key="kind" lang="English" value="Kind" />
         <Localized key="kind" lang="French" value="Type" />
+        <Localized key="kind" lang="Dutch" value="Soort" />
         <Localized key="entity" lang="English" value="Entity" />
         <Localized key="entity" lang="French" value="Entité" />
+        <Localized key="entity" lang="Dutch" value="Entiteit" />
         <Localized key="no_geometry_note" lang="English" value="Row of the entity box — no own graphical geometry." />
         <Localized key="no_geometry_note" lang="French" value="Ligne de la boîte d'entité — pas de géométrie graphique propre." />
+        <Localized key="no_geometry_note" lang="Dutch" value="Rij van het entiteitsvak — geen eigen grafische geometrie." />
     </LocalizedDictionary>
     <Parameter name="title" value="Method" />
 </Inspector>

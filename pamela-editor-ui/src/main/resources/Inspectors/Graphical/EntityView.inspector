@@ -37,23 +37,30 @@
         constraints="twocols(location=left)" localize="true" />
     <CheckBox name="DisplayMethodsCB" index="15" selected="true" data="data.displayMethods"
         constraints="twocols(location=right)" localize="true" />
-    <LocalizedDictionary>
-        <Localized key="qualified_name" lang="English" value="Qualified name" />
+    <LocalizedDictionary>        <Localized key="qualified_name" lang="English" value="Qualified name" />
         <Localized key="qualified_name" lang="French" value="Nom qualifié" />
+        <Localized key="qualified_name" lang="Dutch" value="Volledige naam" />
         <Localized key="x" lang="English" value="X" />
         <Localized key="x" lang="French" value="X" />
+        <Localized key="x" lang="Dutch" value="X" />
         <Localized key="y" lang="English" value="Y" />
         <Localized key="y" lang="French" value="Y" />
+        <Localized key="y" lang="Dutch" value="Y" />
         <Localized key="width" lang="English" value="Width" />
         <Localized key="width" lang="French" value="Largeur" />
+        <Localized key="width" lang="Dutch" value="Breedte" />
         <Localized key="height" lang="English" value="Height" />
         <Localized key="height" lang="French" value="Hauteur" />
+        <Localized key="height" lang="Dutch" value="Hoogte" />
         <Localized key="display_initializers" lang="English" value="Display initializers" />
         <Localized key="display_initializers" lang="French" value="Afficher les initialiseurs" />
+        <Localized key="display_initializers" lang="Dutch" value="Initialisatoren tonen" />
         <Localized key="display_properties" lang="English" value="Display properties" />
         <Localized key="display_properties" lang="French" value="Afficher les propriétés" />
+        <Localized key="display_properties" lang="Dutch" value="Eigenschappen tonen" />
         <Localized key="display_methods" lang="English" value="Display methods" />
         <Localized key="display_methods" lang="French" value="Afficher les méthodes" />
+        <Localized key="display_methods" lang="Dutch" value="Methoden tonen" />
     </LocalizedDictionary>
     <Parameter name="title" value="Entity View" />
 </Inspector>

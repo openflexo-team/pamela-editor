@@ -351,6 +351,19 @@ public abstract class FIBPamelaObjectSelector<T> extends TextFieldCustomPopup<T>
 		return matchingValues;
 	}
 
+	/**
+	 * Localized "Found N matches" label shown above the browser when the type-ahead filter
+	 * narrows {@link #getMatchingValues()} to something other than exactly one candidate.
+	 * Composed here (rather than baked as English text into the FIB binding expression) so it
+	 * is translated in all supported languages.
+	 */
+	public String getMatchesLabel() {
+		return org.openflexo.pamela.editor.ui.PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION
+				.localizedForKey("found") + " " + getMatchingValues().size() + " "
+				+ org.openflexo.pamela.editor.ui.PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION
+						.localizedForKey("matches");
+	}
+
 	private void updateMatchingValues() {
 		final List<T> oldMatchingValues = new ArrayList<>(getMatchingValues());
 		matchingValues.clear();

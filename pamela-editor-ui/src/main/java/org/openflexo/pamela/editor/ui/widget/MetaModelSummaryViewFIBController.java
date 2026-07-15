@@ -147,8 +147,11 @@ public class MetaModelSummaryViewFIBController extends PamelaEditorFIBController
         }
         if (AddAsRootTypeAction.candidateTypes(model).isEmpty()) {
             JOptionPane.showMessageDialog(getParentFrame(),
-                    "No eligible Java type found (must declare @ModelEntity and not already be a root type).",
-                    "Add root type", JOptionPane.INFORMATION_MESSAGE);
+                    PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION
+                            .localizedForKey("error_no_eligible_root_type"),
+                    PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION
+                            .localizedForKey("add_root_type_title"),
+                    JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         new AddAsRootTypeAction().perform(model, application);

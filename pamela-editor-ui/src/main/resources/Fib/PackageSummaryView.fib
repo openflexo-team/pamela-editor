@@ -93,19 +93,24 @@
         constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)"
         name="BottomSpacer" />
 
-    <LocalizedDictionary id="90">
-        <Localized id="97" lang="English" value="Entities"  key="entities" />
+    <LocalizedDictionary id="90">        <Localized id="97" lang="English" value="Entities"  key="entities" />
         <Localized id="98" lang="French"  value="Entités"   key="entities" />
+        <Localized key="entities" lang="Dutch" value="Entiteiten" />
         <Localized id="101" lang="English" value="Properties"          key="properties" />
         <Localized id="102" lang="French"  value="Propriétés"          key="properties" />
+        <Localized key="properties" lang="Dutch" value="Eigenschappen" />
         <Localized id="103" lang="English" value="Initializers"        key="initializers" />
         <Localized id="104" lang="French"  value="Initialiseurs"       key="initializers" />
+        <Localized key="initializers" lang="Dutch" value="Initialisatoren" />
         <Localized id="105" lang="English" value="Operations"          key="operations" />
         <Localized id="106" lang="French"  value="Opérations"          key="operations" />
+        <Localized key="operations" lang="Dutch" value="Bewerkingen" />
         <Localized id="107" lang="English" value="Implementation class" key="implementation_class" />
         <Localized id="108" lang="French"  value="Classe d'implémentation" key="implementation_class" />
+        <Localized key="implementation_class" lang="Dutch" value="Implementatieklasse" />
         <Localized id="109" lang="English" value="Imports"                key="imports" />
         <Localized id="110" lang="French"  value="Imports"                key="imports" />
+        <Localized key="imports" lang="Dutch" value="Imports" />
     </LocalizedDictionary>
 
 </Panel>

@@ -37,7 +37,7 @@ public class ShowSourceCodeAction extends ContextualAction {
 
     @Override
     public String getLabel() {
-        return "Show source code";
+        return loc("show_source_code_action");
     }
 
     @Override

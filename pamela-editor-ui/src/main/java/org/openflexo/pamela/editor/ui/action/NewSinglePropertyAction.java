@@ -33,12 +33,12 @@ public class NewSinglePropertyAction extends AbstractNewPropertyAction {
 
     @Override
     public String getLabel() {
-        return "New Single Property…";
+        return loc("new_single_property_action");
     }
 
     @Override
     protected String getDialogTitle() {
-        return "New Single Property";
+        return loc("new_single_property_title");
     }
 
     @Override

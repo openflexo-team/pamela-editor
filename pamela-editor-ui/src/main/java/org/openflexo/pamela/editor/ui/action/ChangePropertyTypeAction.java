@@ -52,7 +52,7 @@ public class ChangePropertyTypeAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Change Type…";
+        return loc("change_type_action");
     }
 
     @Override
@@ -67,7 +67,7 @@ public class ChangePropertyTypeAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Change Property Type";
+        return loc("change_property_type_title");
     }
 
     @Override

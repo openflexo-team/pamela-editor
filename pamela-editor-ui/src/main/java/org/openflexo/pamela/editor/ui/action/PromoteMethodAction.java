@@ -77,7 +77,7 @@ public class PromoteMethodAction extends ParameteredAction {
 
     @Override
     public String getLabel() {
-        return "Promote Method to Property…";
+        return loc("promote_method_to_property_action");
     }
 
     @Override
@@ -93,7 +93,7 @@ public class PromoteMethodAction extends ParameteredAction {
 
     @Override
     protected String getDialogTitle() {
-        return "Promote Method to Property";
+        return loc("promote_method_to_property_title");
     }
 
     @Override

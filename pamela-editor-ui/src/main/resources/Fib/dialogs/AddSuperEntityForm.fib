@@ -3,7 +3,7 @@
        controllerClassName="org.openflexo.gina.controller.FIBController"
        layout="twocols" name="AddSuperEntityForm" border="empty" width="400" height="80">
 
-  <Label name="superLabel" label="Super-entity:" localize="false"
+  <Label name="superLabel" label="super_entity_label" localize="true"
          align="left" index="0" constraints="twocols(location=left)" />
   <Custom name="superSelector"
          componentClassName="org.openflexo.pamela.editor.ui.widget.ModelEntitySelector"
@@ -12,4 +12,9 @@
     <Assignment variable="component.metaModel" value="data.metaModel" />
     <Assignment variable="component.restrictedValues" value="data.candidateEntities" />
   </Custom>
+  <LocalizedDictionary>
+    <Localized key="super_entity_label" lang="English" value="Super-entity:" />
+    <Localized key="super_entity_label" lang="French" value="Super-entité :" />
+    <Localized key="super_entity_label" lang="Dutch" value="Superentiteit:" />
+  </LocalizedDictionary>
 </Panel>

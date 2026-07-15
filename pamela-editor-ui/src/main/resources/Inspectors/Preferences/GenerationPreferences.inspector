@@ -8,8 +8,7 @@
         iteratorClassName="org.openflexo.pamela.editor.model.PropertyIdentifierStyle"
         format="object.name" width="200"
         constraints="twocols(expandHorizontally=true;location=right)" />
-    <LocalizedDictionary>
-        <Localized key="default_identifier_style" lang="English" value="Default identifier style" />
+    <LocalizedDictionary>        <Localized key="default_identifier_style" lang="English" value="Default identifier style" />
         <Localized key="default_identifier_style" lang="French" value="Style d&apos;identifiant par défaut" />
         <Localized key="default_identifier_style" lang="Dutch" value="Standaard-identifierstijl" />
     </LocalizedDictionary>

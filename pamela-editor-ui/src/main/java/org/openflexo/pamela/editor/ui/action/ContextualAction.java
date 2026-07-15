@@ -110,4 +110,14 @@ public abstract class ContextualAction {
 
     /** The action body. */
     protected abstract void doPerform(Object target, PamelaEditorApplication app);
+
+    /**
+     * Localization helper shared by every concrete action's {@link #getLabel()} (and any
+     * other user-facing string it builds) — looks {@code key} up in
+     * {@link PamelaEditorApplication#PAMELA_EDITOR_LOCALIZATION} (the same three-language
+     * dictionary the menu bar and dialogs use).
+     */
+    protected static String loc(String key) {
+        return PamelaEditorApplication.PAMELA_EDITOR_LOCALIZATION.localizedForKey(key);
+    }
 }

@@ -36,7 +36,7 @@ public class RemoveSetterAction extends SourceEditingAction {
 
     @Override
     public String getLabel() {
-        return "Remove Setter (make read-only)";
+        return loc("remove_setter_action");
     }
 
     @Override

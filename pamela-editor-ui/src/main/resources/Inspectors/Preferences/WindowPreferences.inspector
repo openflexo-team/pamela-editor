@@ -13,8 +13,7 @@
         constraints="twocols(location=left)" localize="true" />
     <TextField name="PaletteTF" index="15" data="data.paletteBounds.toString" readOnly="true"
         constraints="twocols(expandHorizontally=true;location=right)" columns="18" />
-    <LocalizedDictionary>
-        <Localized key="frame_bounds" lang="English" value="Main window" />
+    <LocalizedDictionary>        <Localized key="frame_bounds" lang="English" value="Main window" />
         <Localized key="frame_bounds" lang="French" value="Fenêtre principale" />
         <Localized key="frame_bounds" lang="Dutch" value="Hoofdvenster" />
         <Localized key="inspector_bounds" lang="English" value="Inspector window" />
