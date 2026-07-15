@@ -11,12 +11,6 @@
                 constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)" />
         </Tab>
     </TabPanel>
-    <LocalizedDictionary>        <Localized key="basic" lang="English" value="Basic" />
-        <Localized key="basic" lang="French" value="Basique" />
-        <Localized key="basic" lang="Dutch" value="Basis" />
-        <Localized key="name" lang="English" value="Name" />
-        <Localized key="name" lang="French" value="Nom" />
-        <Localized key="name" lang="Dutch" value="Naam" />
-    </LocalizedDictionary>
+    <LocalizedDictionary />
     <Parameter name="title" value="Diagram" />
 </Inspector>

@@ -37,9 +37,7 @@
         constraints="twocols(location=left)" localize="true" />
     <CheckBox name="DisplayMethodsCB" index="15" selected="true" data="data.displayMethods"
         constraints="twocols(location=right)" localize="true" />
-    <LocalizedDictionary>        <Localized key="qualified_name" lang="English" value="Qualified name" />
-        <Localized key="qualified_name" lang="French" value="Nom qualifié" />
-        <Localized key="qualified_name" lang="Dutch" value="Volledige naam" />
+        <LocalizedDictionary>
         <Localized key="x" lang="English" value="X" />
         <Localized key="x" lang="French" value="X" />
         <Localized key="x" lang="Dutch" value="X" />

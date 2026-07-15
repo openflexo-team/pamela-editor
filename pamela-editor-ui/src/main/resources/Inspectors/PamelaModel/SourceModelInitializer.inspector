@@ -15,15 +15,10 @@
                 constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)" />
         </Tab>
     </TabPanel>
-    <LocalizedDictionary>        <Localized key="basic" lang="English" value="Basic" />
-        <Localized key="basic" lang="French" value="Basique" />
-        <Localized key="basic" lang="Dutch" value="Basis" />
+        <LocalizedDictionary>
         <Localized key="initializer_label" lang="English" value="Initializer" />
         <Localized key="initializer_label" lang="French" value="Initialiseur" />
         <Localized key="initializer_label" lang="Dutch" value="Initialisator" />
-        <Localized key="method_name" lang="English" value="Method name" />
-        <Localized key="method_name" lang="French" value="Nom de méthode" />
-        <Localized key="method_name" lang="Dutch" value="Methodenaam" />
         <Localized key="parameters" lang="English" value="Parameters" />
         <Localized key="parameters" lang="French" value="Paramètres" />
         <Localized key="parameters" lang="Dutch" value="Parameters" />

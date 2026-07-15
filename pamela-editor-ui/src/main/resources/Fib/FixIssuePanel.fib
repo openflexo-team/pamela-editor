@@ -128,9 +128,6 @@
 		<Localized id="40" lang="English" value="Fix issue" key="fix" />
 		<Localized id="41" lang="Dutch" value="Los probleem op" key="fix" />
 		<Localized id="42" lang="French" value="Corriger" key="fix" />
-		<Localized id="43" lang="English" value="Object" key="object" />
-		<Localized id="44" lang="Dutch" value="Object" key="object" />
-		<Localized id="45" lang="French" value="Objet" key="object" />
 		<Localized id="46" lang="English" value="Rule" key="rule" />
 		<Localized id="47" lang="Dutch" value="Rule" key="rule" />
 		<Localized id="48" lang="French" value="Règle" key="rule" />

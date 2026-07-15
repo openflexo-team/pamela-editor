@@ -23,18 +23,7 @@
                 constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)" />
         </Tab>
     </TabPanel>
-    <LocalizedDictionary>        <Localized key="basic" lang="English" value="Basic" />
-        <Localized key="basic" lang="French" value="Basique" />
-        <Localized key="basic" lang="Dutch" value="Basis" />
-        <Localized key="name" lang="English" value="Name" />
-        <Localized key="name" lang="French" value="Nom" />
-        <Localized key="name" lang="Dutch" value="Naam" />
-        <Localized key="package" lang="English" value="Package" />
-        <Localized key="package" lang="French" value="Package" />
-        <Localized key="package" lang="Dutch" value="Package" />
-        <Localized key="qualified_name" lang="English" value="Qualified name" />
-        <Localized key="qualified_name" lang="French" value="Nom qualifié" />
-        <Localized key="qualified_name" lang="Dutch" value="Volledige naam" />
+        <LocalizedDictionary>
         <Localized key="potential_model_entity" lang="English" value="Potential @ModelEntity" />
         <Localized key="potential_model_entity" lang="French" value="@ModelEntity potentiel" />
         <Localized key="potential_model_entity" lang="Dutch" value="Mogelijke @ModelEntity" />

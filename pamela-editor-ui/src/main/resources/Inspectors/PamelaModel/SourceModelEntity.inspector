@@ -85,60 +85,25 @@
                 constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)" />
         </Tab>
     </TabPanel>
-    <LocalizedDictionary>        <Localized key="basic" lang="English" value="Basic" />
-        <Localized key="basic" lang="French" value="Basique" />
-        <Localized key="basic" lang="Dutch" value="Basis" />
+        <LocalizedDictionary>
         <Localized key="entity_label" lang="English" value="Entity" />
         <Localized key="entity_label" lang="French" value="Entité" />
         <Localized key="entity_label" lang="Dutch" value="Entiteit" />
-        <Localized key="advanced" lang="English" value="Advanced" />
-        <Localized key="advanced" lang="French" value="Avancé" />
-        <Localized key="advanced" lang="Dutch" value="Geavanceerd" />
-        <Localized key="simple_name" lang="English" value="Simple name" />
-        <Localized key="simple_name" lang="French" value="Nom simple" />
-        <Localized key="simple_name" lang="Dutch" value="Eenvoudige naam" />
-        <Localized key="qualified_name" lang="English" value="Qualified name" />
-        <Localized key="qualified_name" lang="French" value="Nom qualifié" />
-        <Localized key="qualified_name" lang="Dutch" value="Volledige naam" />
-        <Localized key="package" lang="English" value="Package" />
-        <Localized key="package" lang="French" value="Package" />
-        <Localized key="package" lang="Dutch" value="Package" />
-        <Localized key="abstract" lang="English" value="Abstract" />
-        <Localized key="abstract" lang="French" value="Abstrait" />
-        <Localized key="abstract" lang="Dutch" value="Abstract" />
         <Localized key="init_policy" lang="English" value="Init policy" />
         <Localized key="init_policy" lang="French" value="Politique d&apos;initialisation" />
         <Localized key="init_policy" lang="Dutch" value="Initialisatiebeleid" />
-        <Localized key="identifier_style" lang="English" value="Identifier style" />
-        <Localized key="identifier_style" lang="French" value="Style d&apos;identifiant" />
-        <Localized key="identifier_style" lang="Dutch" value="Identificatiestijl" />
-        <Localized key="properties" lang="English" value="Properties" />
-        <Localized key="properties" lang="French" value="Propriétés" />
-        <Localized key="properties" lang="Dutch" value="Eigenschappen" />
         <Localized key="super_entities" lang="English" value="Super entities" />
         <Localized key="super_entities" lang="French" value="Super entités" />
         <Localized key="super_entities" lang="Dutch" value="Superentiteiten" />
-        <Localized key="name" lang="English" value="Name" />
-        <Localized key="name" lang="French" value="Nom" />
-        <Localized key="name" lang="Dutch" value="Naam" />
         <Localized key="add_super_entity" lang="English" value="Add" />
         <Localized key="add_super_entity" lang="French" value="Ajouter" />
         <Localized key="add_super_entity" lang="Dutch" value="Toevoegen" />
-        <Localized key="imports" lang="English" value="Imports" />
-        <Localized key="imports" lang="French" value="Imports" />
-        <Localized key="imports" lang="Dutch" value="Imports" />
         <Localized key="add_import" lang="English" value="Add" />
         <Localized key="add_import" lang="French" value="Ajouter" />
         <Localized key="add_import" lang="Dutch" value="Toevoegen" />
-        <Localized key="implementation_class" lang="English" value="Implementation class" />
-        <Localized key="implementation_class" lang="French" value="Classe d'implémentation" />
-        <Localized key="implementation_class" lang="Dutch" value="Implementatieklasse" />
         <Localized key="create_button" lang="English" value="Create…" />
         <Localized key="create_button" lang="French" value="Créer…" />
         <Localized key="create_button" lang="Dutch" value="Aanmaken…" />
-        <Localized key="rename_button" lang="English" value="Rename…" />
-        <Localized key="rename_button" lang="French" value="Renommer…" />
-        <Localized key="rename_button" lang="Dutch" value="Hernoemen…" />
     </LocalizedDictionary>
     <Parameter name="title" value="Entity" />
 </Inspector>

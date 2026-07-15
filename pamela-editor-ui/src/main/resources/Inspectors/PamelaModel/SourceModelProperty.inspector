@@ -180,24 +180,17 @@
 
     </TabPanel>
 
-    <LocalizedDictionary>        <Localized key="basic" lang="English" value="Basic" />
-        <Localized key="basic" lang="French" value="Basique" />
-        <Localized key="basic" lang="Dutch" value="Basis" />
+        <LocalizedDictionary>
+
         <Localized key="property_label" lang="English" value="Property" />
         <Localized key="property_label" lang="French" value="Propriété" />
         <Localized key="property_label" lang="Dutch" value="Eigenschap" />
-        <Localized key="rename_button" lang="English" value="Rename…" />
-        <Localized key="rename_button" lang="French" value="Renommer…" />
-        <Localized key="rename_button" lang="Dutch" value="Hernoemen…" />
         <Localized key="change_type_button" lang="English" value="Set…" />
         <Localized key="change_type_button" lang="French" value="Définir…" />
         <Localized key="change_type_button" lang="Dutch" value="Wijzigen…" />
         <Localized key="accessors" lang="English" value="Accessors" />
         <Localized key="accessors" lang="French" value="Accesseurs" />
         <Localized key="accessors" lang="Dutch" value="Toegangsmethoden" />
-        <Localized key="advanced" lang="English" value="Advanced" />
-        <Localized key="advanced" lang="French" value="Avancé" />
-        <Localized key="advanced" lang="Dutch" value="Geavanceerd" />
         <Localized key="identifier" lang="English" value="Identifier" />
         <Localized key="identifier" lang="French" value="Identifiant" />
         <Localized key="identifier" lang="Dutch" value="Identificatie" />
@@ -246,9 +239,6 @@
         <Localized key="inverse" lang="English" value="Inverse" />
         <Localized key="inverse" lang="French" value="Inverse" />
         <Localized key="inverse" lang="Dutch" value="Inverse" />
-        <Localized key="identifier_style" lang="English" value="Identifier style" />
-        <Localized key="identifier_style" lang="French" value="Style d&apos;identifiant" />
-        <Localized key="identifier_style" lang="Dutch" value="Identificatiestijl" />
         <Localized key="constant_name" lang="English" value="Constant" />
         <Localized key="constant_name" lang="French" value="Constante" />
         <Localized key="constant_name" lang="Dutch" value="Constante" />

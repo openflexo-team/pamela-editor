@@ -14,12 +14,6 @@
     <LocalizedDictionary>        <Localized key="initializer" lang="English" value="Initializer" />
         <Localized key="initializer" lang="French" value="Initialiseur" />
         <Localized key="initializer" lang="Dutch" value="Initialisator" />
-        <Localized key="entity" lang="English" value="Entity" />
-        <Localized key="entity" lang="French" value="Entité" />
-        <Localized key="entity" lang="Dutch" value="Entiteit" />
-        <Localized key="no_geometry_note" lang="English" value="Row of the entity box — no own graphical geometry." />
-        <Localized key="no_geometry_note" lang="French" value="Ligne de la boîte d'entité — pas de géométrie graphique propre." />
-        <Localized key="no_geometry_note" lang="Dutch" value="Rij van het entiteitsvak — geen eigen grafische geometrie." />
     </LocalizedDictionary>
     <Parameter name="title" value="Initializer" />
 </Inspector>

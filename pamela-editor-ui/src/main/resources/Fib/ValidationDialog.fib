@@ -39,9 +39,6 @@
 		<Localized id="29" value="Message" lang="English" key="message" />
 		<Localized id="30" value="Message" lang="French" key="message" />
 		<Localized id="31" value="Bericht" lang="Dutch" key="message" />
-		<Localized id="32" value="Object" lang="English" key="object" />
-		<Localized id="33" value="Objet" lang="French" key="object" />
-		<Localized id="34" value="Object" lang="Dutch" key="object" />
 		<Localized id="35" value="Classes" lang="English" key="classes" />
 		<Localized id="36" value="Classes" lang="French" key="classes" />
 		<Localized id="37" value="classes" lang="Dutch" key="classes" />

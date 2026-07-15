@@ -97,15 +97,5 @@
     <Label name="updaterSummary" data="data.updaterOption.summary" localize="false" align="left" font="SansSerif,2,10"
            constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
-  <LocalizedDictionary>
-    <Localized key="getter_colon_label" lang="English" value="Getter:" />
-    <Localized key="getter_colon_label" lang="French" value="Getter :" />
-    <Localized key="getter_colon_label" lang="Dutch" value="Getter:" />
-    <Localized key="setter_colon_label" lang="English" value="Setter:" />
-    <Localized key="setter_colon_label" lang="French" value="Setter :" />
-    <Localized key="setter_colon_label" lang="Dutch" value="Setter:" />
-    <Localized key="updater_colon_label" lang="English" value="Updater:" />
-    <Localized key="updater_colon_label" lang="French" value="Updater :" />
-    <Localized key="updater_colon_label" lang="Dutch" value="Updater:" />
-  </LocalizedDictionary>
+  <LocalizedDictionary />
 </Panel>

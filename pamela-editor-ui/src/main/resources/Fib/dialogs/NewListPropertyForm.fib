@@ -125,17 +125,5 @@
     <Localized key="element_type_label" lang="English" value="Element type" />
     <Localized key="element_type_label" lang="French" value="Type d'élément" />
     <Localized key="element_type_label" lang="Dutch" value="Elementtype" />
-    <Localized key="getter_colon_label" lang="English" value="Getter:" />
-    <Localized key="getter_colon_label" lang="French" value="Getter :" />
-    <Localized key="getter_colon_label" lang="Dutch" value="Getter:" />
-    <Localized key="adder_colon_label" lang="English" value="Adder:" />
-    <Localized key="adder_colon_label" lang="French" value="Adder :" />
-    <Localized key="adder_colon_label" lang="Dutch" value="Adder:" />
-    <Localized key="remover_colon_label" lang="English" value="Remover:" />
-    <Localized key="remover_colon_label" lang="French" value="Remover :" />
-    <Localized key="remover_colon_label" lang="Dutch" value="Remover:" />
-    <Localized key="reindexer_colon_label" lang="English" value="Reindexer:" />
-    <Localized key="reindexer_colon_label" lang="French" value="Reindexer :" />
-    <Localized key="reindexer_colon_label" lang="Dutch" value="Reindexer:" />
   </LocalizedDictionary>
 </Panel>

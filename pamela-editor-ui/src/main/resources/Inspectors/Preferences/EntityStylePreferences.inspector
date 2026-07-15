@@ -21,20 +21,7 @@
         constraints="twocols(location=left)" localize="true" />
     <Font name="MemberFont" index="19" data="data.memberFont" allowsNull="false"
         constraints="twocols(expandHorizontally=true;location=right)" />
-    <LocalizedDictionary>        <Localized key="header_background" lang="English" value="Header background" />
-        <Localized key="header_background" lang="French" value="Fond de l'en-tête" />
-        <Localized key="header_background" lang="Dutch" value="Achtergrond kop" />
-        <Localized key="body_background" lang="English" value="Body background" />
-        <Localized key="body_background" lang="French" value="Fond du corps" />
-        <Localized key="body_background" lang="Dutch" value="Achtergrond body" />
-        <Localized key="border_color" lang="English" value="Border color" />
-        <Localized key="border_color" lang="French" value="Couleur de bordure" />
-        <Localized key="border_color" lang="Dutch" value="Randkleur" />
-        <Localized key="title_font" lang="English" value="Title font" />
-        <Localized key="title_font" lang="French" value="Police du titre" />
-        <Localized key="title_font" lang="Dutch" value="Titellettertype" />
-        <Localized key="member_font" lang="English" value="Member font" />
-        <Localized key="member_font" lang="French" value="Police des membres" />
+        <LocalizedDictionary>
         <Localized key="member_font" lang="Dutch" value="Lidlettertype" />
     </LocalizedDictionary>
     <Parameter name="title" value="Entities" />

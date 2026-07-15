@@ -20,8 +20,5 @@
     <Localized key="package_name_label" lang="English" value="Package name:" />
     <Localized key="package_name_label" lang="French" value="Nom du package :" />
     <Localized key="package_name_label" lang="Dutch" value="Naam van de package:" />
-    <Localized key="source_folder_label" lang="English" value="Source folder:" />
-    <Localized key="source_folder_label" lang="French" value="Dossier source :" />
-    <Localized key="source_folder_label" lang="Dutch" value="Bronmap:" />
   </LocalizedDictionary>
 </Panel>

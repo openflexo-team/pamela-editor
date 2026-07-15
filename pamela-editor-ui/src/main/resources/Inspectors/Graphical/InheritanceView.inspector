@@ -21,9 +21,6 @@
         <Localized key="target" lang="English" value="Super-type" />
         <Localized key="target" lang="French" value="Super-type" />
         <Localized key="target" lang="Dutch" value="Supertype" />
-        <Localized key="style" lang="English" value="Style" />
-        <Localized key="style" lang="French" value="Style" />
-        <Localized key="style" lang="Dutch" value="Stijl" />
     </LocalizedDictionary>
     <Parameter name="title" value="Inheritance View" />
 </Inspector>

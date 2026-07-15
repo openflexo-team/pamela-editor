@@ -19,21 +19,13 @@
                 constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)" />
         </Tab>
     </TabPanel>
-    <LocalizedDictionary>        <Localized key="basic" lang="English" value="Basic" />
-        <Localized key="basic" lang="French" value="Basique" />
-        <Localized key="basic" lang="Dutch" value="Basis" />
+        <LocalizedDictionary>
         <Localized key="method_label" lang="English" value="Method" />
         <Localized key="method_label" lang="French" value="Méthode" />
         <Localized key="method_label" lang="Dutch" value="Methode" />
-        <Localized key="method_name" lang="English" value="Method name" />
-        <Localized key="method_name" lang="French" value="Nom de méthode" />
-        <Localized key="method_name" lang="Dutch" value="Methodenaam" />
         <Localized key="signature" lang="English" value="Signature" />
         <Localized key="signature" lang="French" value="Signature" />
         <Localized key="signature" lang="Dutch" value="Signatuur" />
-        <Localized key="kind" lang="English" value="Kind" />
-        <Localized key="kind" lang="French" value="Type" />
-        <Localized key="kind" lang="Dutch" value="Soort" />
         <Localized key="implemented" lang="English" value="Implemented in impl class" />
         <Localized key="implemented" lang="French" value="Implémentée dans la classe d'impl" />
         <Localized key="implemented" lang="Dutch" value="Geïmplementeerd in implementatieklasse" />

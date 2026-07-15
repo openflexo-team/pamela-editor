@@ -134,27 +134,5 @@
     <Label name="reindexerSummary" data="data.reindexerOption.summary" localize="false" align="left" font="SansSerif,2,10"
            constraints="gridbag(gridX=0;gridY=1;gridWidth=3;weightX=1.0;fill=horizontal;anchor=west;insetsTop=1)" />
   </Panel>
-  <LocalizedDictionary>
-    <Localized key="property_name_label" lang="English" value="Property name:" />
-    <Localized key="property_name_label" lang="French" value="Nom de la propriété :" />
-    <Localized key="property_name_label" lang="Dutch" value="Naam van de eigenschap:" />
-    <Localized key="cardinality_colon_label" lang="English" value="Cardinality:" />
-    <Localized key="cardinality_colon_label" lang="French" value="Cardinalité :" />
-    <Localized key="cardinality_colon_label" lang="Dutch" value="Kardinaliteit:" />
-    <Localized key="setter_colon_label" lang="English" value="Setter:" />
-    <Localized key="setter_colon_label" lang="French" value="Setter :" />
-    <Localized key="setter_colon_label" lang="Dutch" value="Setter:" />
-    <Localized key="updater_colon_label" lang="English" value="Updater:" />
-    <Localized key="updater_colon_label" lang="French" value="Updater :" />
-    <Localized key="updater_colon_label" lang="Dutch" value="Updater:" />
-    <Localized key="adder_colon_label" lang="English" value="Adder:" />
-    <Localized key="adder_colon_label" lang="French" value="Adder :" />
-    <Localized key="adder_colon_label" lang="Dutch" value="Adder:" />
-    <Localized key="remover_colon_label" lang="English" value="Remover:" />
-    <Localized key="remover_colon_label" lang="French" value="Remover :" />
-    <Localized key="remover_colon_label" lang="Dutch" value="Remover:" />
-    <Localized key="reindexer_colon_label" lang="English" value="Reindexer:" />
-    <Localized key="reindexer_colon_label" lang="French" value="Reindexer :" />
-    <Localized key="reindexer_colon_label" lang="Dutch" value="Reindexer:" />
-  </LocalizedDictionary>
+  <LocalizedDictionary />
 </Panel>

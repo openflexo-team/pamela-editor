@@ -44,9 +44,6 @@
     <Localized key="entity_name_label" lang="English" value="Entity name:" />
     <Localized key="entity_name_label" lang="French" value="Nom de l'entité :" />
     <Localized key="entity_name_label" lang="Dutch" value="Naam van de entiteit:" />
-    <Localized key="source_folder_label" lang="English" value="Source folder:" />
-    <Localized key="source_folder_label" lang="French" value="Dossier source :" />
-    <Localized key="source_folder_label" lang="Dutch" value="Bronmap:" />
     <Localized key="package_colon_label" lang="English" value="Package:" />
     <Localized key="package_colon_label" lang="French" value="Package :" />
     <Localized key="package_colon_label" lang="Dutch" value="Package:" />
