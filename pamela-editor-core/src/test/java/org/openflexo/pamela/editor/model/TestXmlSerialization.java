@@ -166,6 +166,34 @@ public class TestXmlSerialization {
     }
 
     @Test
+    public void testAbstractEntityWithXmlElementFiresWarning() throws IOException {
+        SourceMetaModel mm = load("abstractXml");
+
+        // Make Foo1 abstract, then declare @XMLElement (rebuild between edits — app contract).
+        mm.getEntity("test.model1.Foo1").setAbstract(true);
+        mm.flushAll();
+        mm.rebuildMetaModel();
+        mm.getEntity("test.model1.Foo1").setXmlElement(true);
+        mm.flushAll();
+        mm.rebuildMetaModel();
+
+        boolean warned = mm.getIssues().stream().anyMatch(i ->
+                i instanceof Warning
+                        && i.getMessage().contains("Abstract entity")
+                        && i.getMessage().contains("test.model1.Foo1")
+                        && i.getMessage().contains("@XMLElement"));
+        assertTrue("abstract entity with @XMLElement must fire a warning", warned);
+
+        // Removing @XMLElement clears the warning.
+        mm.getEntity("test.model1.Foo1").setXmlElement(false);
+        mm.flushAll();
+        mm.rebuildMetaModel();
+        assertFalse("warning gone once @XMLElement is removed",
+                mm.getIssues().stream().anyMatch(i -> i.getMessage().contains("Abstract entity")
+                        && i.getMessage().contains("test.model1.Foo1")));
+    }
+
+    @Test
     public void testAutoAnnotateFillsOnlyMissing() throws IOException {
         SourceMetaModel mm = load("autoXml");
 
