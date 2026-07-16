@@ -81,7 +81,30 @@
                 <RemoveAction name="delete" method="data.unlinkImport(selected)" />
                 <AddAction name="add_import" method="data.requestAddImport()" />
             </Table>
-            <Panel name="Spacer" layout="flow" index="6"
+            <Label name="XmlElementLabel" label="xml_element" index="6"
+                constraints="twocols(location=left)" localize="true" />
+            <CheckBox name="XmlElementCB" index="7" data="data.xmlElement" readOnly="false"
+                constraints="twocols(location=right)" localize="true" />
+            <Label label="" visible="data.xmlElement"
+                constraints="twocols(location=left)" localize="true" />
+            <Panel name="XmlPanel" layout="twocols" border="rounded3d" visible="data.xmlElement" index="8"
+                constraints="twocols(expandHorizontally=true;location=right)">
+                <Label name="XmlTagLabel" label="xml_tag" index="0"
+                    constraints="twocols(location=left)" localize="true" />
+                <TextField name="XmlTagTF" index="1" data="data.xmlTag" readOnly="false"
+                    validateOnReturn="true"
+                    constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="12" localize="true" />
+                <Label name="XmlPrimaryLabel" label="xml_primary" index="2"
+                    constraints="twocols(location=left)" localize="true" />
+                <CheckBox name="XmlPrimaryCB" index="3" data="data.xmlPrimary" readOnly="false"
+                    constraints="twocols(location=right)" localize="true" />
+                <Label name="XmlContextLabel" label="xml_context" index="4"
+                    constraints="twocols(location=left)" localize="true" />
+                <TextField name="XmlContextTF" index="5" data="data.xmlContext" readOnly="false"
+                    validateOnReturn="true"
+                    constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="12" localize="true" />
+            </Panel>
+            <Panel name="Spacer" layout="flow" index="9"
                 constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)" />
         </Tab>
     </TabPanel>
@@ -104,6 +127,18 @@
         <Localized key="create_button" lang="English" value="Create…" />
         <Localized key="create_button" lang="French" value="Créer…" />
         <Localized key="create_button" lang="Dutch" value="Aanmaken…" />
+        <Localized key="xml_element" lang="English" value="XML element" />
+        <Localized key="xml_element" lang="French" value="Élément XML" />
+        <Localized key="xml_element" lang="Dutch" value="XML-element" />
+        <Localized key="xml_tag" lang="English" value="XML tag" />
+        <Localized key="xml_tag" lang="French" value="Balise XML" />
+        <Localized key="xml_tag" lang="Dutch" value="XML-tag" />
+        <Localized key="xml_primary" lang="English" value="Primary" />
+        <Localized key="xml_primary" lang="French" value="Primaire" />
+        <Localized key="xml_primary" lang="Dutch" value="Primair" />
+        <Localized key="xml_context" lang="English" value="Context" />
+        <Localized key="xml_context" lang="French" value="Contexte" />
+        <Localized key="xml_context" lang="Dutch" value="Context" />
     </LocalizedDictionary>
     <Parameter name="title" value="Entity" />
 </Inspector>

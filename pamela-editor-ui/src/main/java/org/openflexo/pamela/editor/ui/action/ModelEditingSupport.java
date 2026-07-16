@@ -109,4 +109,10 @@ public final class ModelEditingSupport {
         JOptionPane.showMessageDialog(app.getFrame(), message, title,
                 JOptionPane.ERROR_MESSAGE);
     }
+
+    /** Shows a blocking information dialog with the given title and message. */
+    public static void info(PamelaEditorApplication app, String title, String message) {
+        JOptionPane.showMessageDialog(app.getFrame(), message, title,
+                JOptionPane.INFORMATION_MESSAGE);
+    }
 }

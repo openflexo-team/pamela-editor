@@ -108,7 +108,10 @@ public class SourceModelEntity implements SourceElement,
     private final List<SourceCustomMethod> declaredCustomMethods;
 
     // Serialization
-    private final String xmlTag;
+    private boolean xmlElementPresent;
+    private String xmlTag;
+    private boolean xmlPrimary;
+    private String xmlContext;
 
     // Diagnostics
     private final List<Issue> issues;
@@ -143,8 +146,13 @@ public class SourceModelEntity implements SourceElement,
 
         // @XMLElement on the type itself
         XMLElement xmlElement = ctType.getAnnotation(XMLElement.class);
+        this.xmlElementPresent = xmlElement != null;
         this.xmlTag = (xmlElement != null && !xmlElement.xmlTag().isEmpty())
                 ? xmlElement.xmlTag()
+                : null;
+        this.xmlPrimary = xmlElement != null && xmlElement.primary();
+        this.xmlContext = (xmlElement != null && !xmlElement.context().isEmpty())
+                ? xmlElement.context()
                 : null;
     }
 
@@ -1724,6 +1732,139 @@ public class SourceModelEntity implements SourceElement,
      */
     public String getXmlTag() {
         return xmlTag;
+    }
+
+    /** {@code true} if this type carries {@code @XMLElement} (serialized as an XML element). */
+    public boolean isXmlElement() {
+        return xmlElementPresent;
+    }
+
+    /** {@code true} if {@code @XMLElement(primary = true)} is set on this type. */
+    public boolean isXmlPrimary() {
+        return xmlPrimary;
+    }
+
+    /**
+     * Editable inspector setter ({@code xml-serialization-design.md §4.1}): adds/removes
+     * {@code @XMLElement} on the type. When removed, its {@code xmlTag}/{@code primary}
+     * go with it. Mutates the buffer, updates the field, fires {@code "xmlElement"} — no
+     * rebuild (the UI reacts, {@code model-editing-design.md §6}).
+     */
+    public void setXmlElement(boolean present) throws IOException {
+        if (present == this.xmlElementPresent) {
+            return;
+        }
+        int declStart = requireTypePosition();
+        String source = compilationUnit.getText();
+        String edited = present
+                ? SourceAnnotationEditor.addAnnotation(source, declStart, "XMLElement", XMLElement.class.getName())
+                : SourceAnnotationEditor.removeAnnotation(source, declStart, "XMLElement");
+        compilationUnit.setText(edited);
+        boolean old = this.xmlElementPresent;
+        this.xmlElementPresent = present;
+        if (!present) {
+            this.xmlTag = null;
+            this.xmlPrimary = false;
+            this.xmlContext = null;
+        }
+        pcSupport.firePropertyChange("xmlElement", old, present);
+    }
+
+    /**
+     * Editable inspector setter: sets (or clears, when {@code tag} is null/empty) the
+     * {@code @XMLElement(xmlTag=…)} on the type. Adds the bare {@code @XMLElement} first
+     * if absent. An empty tag lets PAMELA derive it from the type name (Q4).
+     */
+    public void setXmlTag(String tag) throws IOException {
+        String normalized = (tag == null || tag.isEmpty()) ? null : tag;
+        if (java.util.Objects.equals(normalized, this.xmlTag)) {
+            return;
+        }
+        int declStart = requireTypePosition();
+        String source = compilationUnit.getText();
+        String argExpr = normalized == null ? null : "\"" + normalized + "\"";
+        String edited;
+        if (!xmlElementPresent) {
+            // Add the annotation carrying the tag in one edit (avoids a stale-offset second edit).
+            edited = SourceAnnotationEditor.addAnnotation(source, declStart, "XMLElement",
+                    XMLElement.class.getName(), argExpr == null ? null : "xmlTag = " + argExpr);
+            this.xmlElementPresent = true;
+        } else {
+            edited = SourceAnnotationEditor.setAnnotationParameter(
+                    source, declStart, "XMLElement", "xmlTag", argExpr);
+        }
+        compilationUnit.setText(edited);
+        String old = this.xmlTag;
+        this.xmlTag = normalized;
+        pcSupport.firePropertyChange("xmlTag", old, normalized);
+    }
+
+    /** Editable inspector setter: sets/clears {@code @XMLElement(primary=…)} on the type. */
+    public void setXmlPrimary(boolean primary) throws IOException {
+        if (primary == this.xmlPrimary) {
+            return;
+        }
+        int declStart = requireTypePosition();
+        String source = compilationUnit.getText();
+        // primary defaults to false in PAMELA, so removing the parameter is the canonical false.
+        String edited;
+        if (!xmlElementPresent) {
+            edited = SourceAnnotationEditor.addAnnotation(source, declStart, "XMLElement",
+                    XMLElement.class.getName(), primary ? "primary = true" : null);
+            this.xmlElementPresent = true;
+        } else {
+            edited = SourceAnnotationEditor.setAnnotationParameter(
+                    source, declStart, "XMLElement", "primary", primary ? "true" : null);
+        }
+        compilationUnit.setText(edited);
+        boolean old = this.xmlPrimary;
+        this.xmlPrimary = primary;
+        pcSupport.firePropertyChange("xmlPrimary", old, primary);
+    }
+
+    /** The {@code @XMLElement(context=…)} value on this type, or {@code null} if unset. */
+    public String getXmlContext() {
+        return xmlContext;
+    }
+
+    /**
+     * Editable inspector setter: sets (or clears, when null/empty) the
+     * {@code @XMLElement(context=…)} on the type. Adds the bare {@code @XMLElement} first
+     * if absent.
+     */
+    public void setXmlContext(String context) throws IOException {
+        String normalized = (context == null || context.isEmpty()) ? null : context;
+        if (java.util.Objects.equals(normalized, this.xmlContext)) {
+            return;
+        }
+        int declStart = requireTypePosition();
+        String source = compilationUnit.getText();
+        String argExpr = normalized == null ? null : "\"" + normalized + "\"";
+        String edited;
+        if (!xmlElementPresent) {
+            edited = SourceAnnotationEditor.addAnnotation(source, declStart, "XMLElement",
+                    XMLElement.class.getName(), argExpr == null ? null : "context = " + argExpr);
+            this.xmlElementPresent = true;
+        } else {
+            edited = SourceAnnotationEditor.setAnnotationParameter(
+                    source, declStart, "XMLElement", "context", argExpr);
+        }
+        compilationUnit.setText(edited);
+        String old = this.xmlContext;
+        this.xmlContext = normalized;
+        pcSupport.firePropertyChange("xmlContext", old, normalized);
+    }
+
+    private int requireTypePosition() {
+        if (ctType.getPosition() == null || !ctType.getPosition().isValidPosition()) {
+            throw new IllegalStateException("No source position for " + qualifiedName);
+        }
+        return ctType.getPosition().getSourceStart();
+    }
+
+    /** Package-private: source offset of the type declaration (for ordered bulk edits). */
+    int typeSourceStart() {
+        return requireTypePosition();
     }
 
     /**

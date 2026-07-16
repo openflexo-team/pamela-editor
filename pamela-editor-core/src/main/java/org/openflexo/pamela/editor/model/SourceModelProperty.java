@@ -106,9 +106,13 @@ public class SourceModelProperty implements SourceElement,
     private final List<String> embeddedDeletionConditions;
 
     // Serialization
-    private final String xmlAttributeName;     // from @XMLAttribute, null if absent
-    private final String xmlElementTag;        // from @XMLElement on getter, null if absent
-    private final boolean primaryXmlElement;   // from @XMLElement.primary()
+    private boolean xmlAttributePresent;       // @XMLAttribute on the getter
+    private String xmlAttributeName;           // from @XMLAttribute, null if absent (effective name)
+    private String xmlAttributeTag;            // raw @XMLAttribute.xmlTag(), null if empty/absent
+    private boolean xmlElementPresent;         // @XMLElement on the getter
+    private String xmlElementTag;              // raw @XMLElement.xmlTag(), null if empty/absent
+    private boolean primaryXmlElement;         // from @XMLElement.primary()
+    private String xmlElementContext;          // raw @XMLElement.context(), null if empty/absent
 
     // Cloning
     private final StrategyType cloningStrategyType; // null if @CloningStrategy is absent
@@ -193,18 +197,23 @@ public class SourceModelProperty implements SourceElement,
 
         // @XMLAttribute
         XMLAttribute xmlAttr = ctGetter.getAnnotation(XMLAttribute.class);
+        this.xmlAttributePresent = xmlAttr != null;
+        this.xmlAttributeTag = (xmlAttr != null && !xmlAttr.xmlTag().isEmpty()) ? xmlAttr.xmlTag() : null;
         this.xmlAttributeName = (xmlAttr != null)
                 ? (xmlAttr.xmlTag().isEmpty() ? propertyIdentifier : xmlAttr.xmlTag())
                 : null;
 
         // @XMLElement on getter
         XMLElement xmlElem = ctGetter.getAnnotation(XMLElement.class);
+        this.xmlElementPresent = xmlElem != null;
         if (xmlElem != null) {
             this.xmlElementTag = xmlElem.xmlTag().isEmpty() ? null : xmlElem.xmlTag();
             this.primaryXmlElement = xmlElem.primary();
+            this.xmlElementContext = xmlElem.context().isEmpty() ? null : xmlElem.context();
         } else {
             this.xmlElementTag = null;
             this.primaryXmlElement = false;
+            this.xmlElementContext = null;
         }
 
         // @CloningStrategy
@@ -606,6 +615,17 @@ public class SourceModelProperty implements SourceElement,
         String edited = SourceAnnotationEditor.setAnnotationParameter(
                 source, ctGetter.getPosition().getSourceStart(), "Getter", parameter, valueExpr);
         cu.setText(edited);
+    }
+
+    /** Package-private: whether the getter has a usable source position (for bulk edits). */
+    boolean hasValidGetterPosition() {
+        return ctGetter.getPosition() != null && ctGetter.getPosition().isValidPosition();
+    }
+
+    /** Package-private: source offset of the getter declaration (for ordered bulk edits). */
+    int getterSourceStart() {
+        requireGetterPosition();
+        return ctGetter.getPosition().getSourceStart();
     }
 
     private void requireGetterPosition() {
@@ -1456,6 +1476,185 @@ public class SourceModelProperty implements SourceElement,
      */
     public boolean isPrimaryXmlElement() {
         return primaryXmlElement;
+    }
+
+    // -------------------------------------------------------------------------
+    // XML serialization — editable inspector (xml-serialization-design.md §4.2)
+    // -------------------------------------------------------------------------
+
+    /** The current XML serialization mode of this property (NONE / ATTRIBUTE / ELEMENT). */
+    public XmlSerializationMode getXmlSerialization() {
+        if (xmlAttributePresent) {
+            return XmlSerializationMode.ATTRIBUTE;
+        }
+        if (xmlElementPresent) {
+            return XmlSerializationMode.ELEMENT;
+        }
+        return XmlSerializationMode.NONE;
+    }
+
+    /**
+     * The modes offered in the inspector {@code <DropDown>}: {@code ATTRIBUTE} is only
+     * available for a string-convertible property (an entity/collection reference can only be
+     * an XML element), so a non-convertible property offers just {@code NONE} / {@code ELEMENT}.
+     */
+    public XmlSerializationMode[] getXmlSerializationChoices() {
+        if (isStringConvertable()) {
+            return new XmlSerializationMode[] {
+                    XmlSerializationMode.NONE, XmlSerializationMode.ATTRIBUTE, XmlSerializationMode.ELEMENT };
+        }
+        return new XmlSerializationMode[] { XmlSerializationMode.NONE, XmlSerializationMode.ELEMENT };
+    }
+
+    /**
+     * Switches this property's XML serialization mode (mutually exclusive
+     * {@code @XMLAttribute} / {@code @XMLElement}). Removes whichever annotation is not
+     * wanted and adds the wanted one, on the getter position. Editable-inspector pattern:
+     * mutate the buffer, update fields, fire {@code "xmlSerialization"} — no rebuild.
+     */
+    public void setXmlSerialization(XmlSerializationMode mode) throws IOException {
+        XmlSerializationMode old = getXmlSerialization();
+        if (mode == old) {
+            return;
+        }
+        requireGetterPosition();
+        SourceCompilationUnit cu = modelEntity.getCompilationUnit();
+        String source = cu.getText();
+        int start = ctGetter.getPosition().getSourceStart();
+
+        boolean wantAttribute = mode == XmlSerializationMode.ATTRIBUTE;
+        boolean wantElement = mode == XmlSerializationMode.ELEMENT;
+
+        if (xmlAttributePresent && !wantAttribute) {
+            source = SourceAnnotationEditor.removeAnnotation(source, start, "XMLAttribute");
+        }
+        if (xmlElementPresent && !wantElement) {
+            source = SourceAnnotationEditor.removeAnnotation(source, start, "XMLElement");
+        }
+        if (wantAttribute && !xmlAttributePresent) {
+            source = SourceAnnotationEditor.addAnnotation(source, start, "XMLAttribute", XMLAttribute.class.getName());
+        }
+        if (wantElement && !xmlElementPresent) {
+            source = SourceAnnotationEditor.addAnnotation(source, start, "XMLElement", XMLElement.class.getName());
+        }
+        cu.setText(source);
+
+        // Update in-memory state; a mode switch drops the old annotation's tag/primary.
+        xmlAttributePresent = wantAttribute;
+        xmlElementPresent = wantElement;
+        if (!wantAttribute) {
+            xmlAttributeTag = null;
+            xmlAttributeName = null;
+        } else {
+            xmlAttributeName = (xmlAttributeTag == null) ? propertyIdentifier : xmlAttributeTag;
+        }
+        if (!wantElement) {
+            xmlElementTag = null;
+            primaryXmlElement = false;
+            xmlElementContext = null;
+        }
+        pcSupport.firePropertyChange("xmlSerialization", old, mode);
+    }
+
+    /**
+     * The XML tag of the currently-active annotation ({@code @XMLAttribute} or
+     * {@code @XMLElement}), or empty if none/derived. Bound editable in the inspector.
+     */
+    public String getXmlTag() {
+        if (xmlAttributePresent) {
+            return xmlAttributeTag == null ? "" : xmlAttributeTag;
+        }
+        if (xmlElementPresent) {
+            return xmlElementTag == null ? "" : xmlElementTag;
+        }
+        return "";
+    }
+
+    /**
+     * Sets (or clears with an empty value) {@code xmlTag} on the active annotation. No-op
+     * when the mode is NONE. An empty tag lets PAMELA derive it from the property name (Q4).
+     */
+    public void setXmlTag(String tag) throws IOException {
+        XmlSerializationMode mode = getXmlSerialization();
+        if (mode == XmlSerializationMode.NONE) {
+            return;
+        }
+        String normalized = (tag == null || tag.isEmpty()) ? null : tag;
+        String annotation = mode == XmlSerializationMode.ATTRIBUTE ? "XMLAttribute" : "XMLElement";
+        String current = mode == XmlSerializationMode.ATTRIBUTE ? xmlAttributeTag : xmlElementTag;
+        if (java.util.Objects.equals(normalized, current)) {
+            return;
+        }
+        requireGetterPosition();
+        SourceCompilationUnit cu = modelEntity.getCompilationUnit();
+        String edited = SourceAnnotationEditor.setAnnotationParameter(
+                cu.getText(), ctGetter.getPosition().getSourceStart(), annotation, "xmlTag",
+                normalized == null ? null : "\"" + normalized + "\"");
+        cu.setText(edited);
+        String old = getXmlTag();
+        if (mode == XmlSerializationMode.ATTRIBUTE) {
+            xmlAttributeTag = normalized;
+            xmlAttributeName = (normalized == null) ? propertyIdentifier : normalized;
+        } else {
+            xmlElementTag = normalized;
+        }
+        pcSupport.firePropertyChange("xmlTag", old, getXmlTag());
+    }
+
+    /** {@code true} when this property is XML-serialized (ATTRIBUTE or ELEMENT) — for {@code enable} bindings. */
+    public boolean isXmlSerialized() {
+        return getXmlSerialization() != XmlSerializationMode.NONE;
+    }
+
+    /** {@code true} when this property is serialized as an XML element — for {@code enable} bindings. */
+    public boolean isXmlElementMode() {
+        return getXmlSerialization() == XmlSerializationMode.ELEMENT;
+    }
+
+    /** {@code @XMLElement.primary()} editable flag (ELEMENT mode only). */
+    public boolean isXmlPrimary() {
+        return primaryXmlElement;
+    }
+
+    /** Sets/clears {@code @XMLElement(primary=…)}. No-op unless the mode is ELEMENT. */
+    public void setXmlPrimary(boolean primary) throws IOException {
+        if (!xmlElementPresent || primary == primaryXmlElement) {
+            return;
+        }
+        requireGetterPosition();
+        SourceCompilationUnit cu = modelEntity.getCompilationUnit();
+        String edited = SourceAnnotationEditor.setAnnotationParameter(
+                cu.getText(), ctGetter.getPosition().getSourceStart(), "XMLElement", "primary",
+                primary ? "true" : null);
+        cu.setText(edited);
+        boolean old = primaryXmlElement;
+        primaryXmlElement = primary;
+        pcSupport.firePropertyChange("xmlPrimary", old, primary);
+    }
+
+    /** The {@code @XMLElement(context=…)} value (ELEMENT mode only), or empty otherwise. */
+    public String getXmlContext() {
+        return (xmlElementPresent && xmlElementContext != null) ? xmlElementContext : "";
+    }
+
+    /** Sets/clears {@code @XMLElement(context=…)}. No-op unless the mode is ELEMENT. */
+    public void setXmlContext(String context) throws IOException {
+        if (!xmlElementPresent) {
+            return;
+        }
+        String normalized = (context == null || context.isEmpty()) ? null : context;
+        if (java.util.Objects.equals(normalized, xmlElementContext)) {
+            return;
+        }
+        requireGetterPosition();
+        SourceCompilationUnit cu = modelEntity.getCompilationUnit();
+        String edited = SourceAnnotationEditor.setAnnotationParameter(
+                cu.getText(), ctGetter.getPosition().getSourceStart(), "XMLElement", "context",
+                normalized == null ? null : "\"" + normalized + "\"");
+        cu.setText(edited);
+        String old = xmlElementContext;
+        xmlElementContext = normalized;
+        pcSupport.firePropertyChange("xmlContext", old, normalized);
     }
 
     /**

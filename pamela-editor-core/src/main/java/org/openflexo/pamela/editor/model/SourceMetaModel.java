@@ -25,6 +25,8 @@ import org.openflexo.pamela.annotations.Imports;
 import org.openflexo.pamela.annotations.Initializer;
 import org.openflexo.pamela.annotations.ModelEntity;
 import org.openflexo.pamela.annotations.Operation;
+import org.openflexo.pamela.annotations.XMLAttribute;
+import org.openflexo.pamela.annotations.XMLElement;
 import org.openflexo.pamela.annotations.Reindexer;
 import org.openflexo.pamela.annotations.Remover;
 import org.openflexo.pamela.annotations.Setter;
@@ -807,6 +809,15 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
                     && entity.getInitPolicy() == ModelEntity.InitPolicy.REQUIRED) {
                 fireIssue(new Warning("Non-abstract entity '" + entity.getQualifiedName()
                         + "' declares initPolicy=REQUIRED but has no @Initializer method", entity));
+            }
+
+            // An abstract entity cannot be instantiated, so serializing it directly as an
+            // @XMLElement is questionable — the element tag normally belongs to its concrete
+            // subtypes (xml-serialization-design.md).
+            if (entity.isAbstract() && entity.isXmlElement()) {
+                fireIssue(new Warning("Abstract entity '" + entity.getQualifiedName()
+                        + "' declares @XMLElement — an abstract entity cannot be instantiated; "
+                        + "@XMLElement is normally placed on its concrete subtypes", entity));
             }
         }
     }
@@ -1635,6 +1646,96 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
      * @throws IOException           if the source file cannot be written
      * @throws IllegalStateException if the type cannot be located in the Spoon model
      */
+    /**
+     * Metamodel-wide auto-annotation for XML serialization (fill-only-missing —
+     * {@code xml-serialization-design.md §2.1}). For each entity that has no
+     * {@code @XMLElement}, adds one; for each declared property that carries no XML
+     * annotation: a SINGLE string-convertible property becomes an {@code @XMLAttribute},
+     * an {@code @Embedded} property becomes an {@code @XMLElement}; derived / ignoreType
+     * properties and non-embedded entity references are skipped. Existing annotations are
+     * never touched (idempotent). All {@code xmlTag}s are left empty (PAMELA-derived, Q4).
+     *
+     * <p>Edits are applied to the compilation-unit buffers only (no per-edit rebuild); the
+     * caller (the action) triggers a single rebuild afterwards. Within a file, edits are
+     * applied in descending source-offset order so an insertion never invalidates a
+     * not-yet-processed (smaller) offset.</p>
+     *
+     * @return the number of annotations added (entities + properties)
+     */
+    public int autoAnnotateXmlSerialization() throws IOException {
+        // Collect insertions per compilation unit. A single-pass batched text edit is required:
+        // each insertion (annotation line above a declaration, and the import at the top of the
+        // file) shifts every source offset below it, so we must apply all of a file's insertions
+        // in one pass using the ORIGINAL Spoon offsets — annotation lines in descending order,
+        // then the imports last (top-of-file, lowest offset).
+        Map<SourceCompilationUnit, List<int[]>> offsetsByCu = new LinkedHashMap<>();
+        Map<SourceCompilationUnit, List<String>> textsByCu = new LinkedHashMap<>();
+        Map<SourceCompilationUnit, java.util.Set<String>> importsByCu = new LinkedHashMap<>();
+        int total = 0;
+        for (SourceModelEntity entity : entities.values()) {
+            SourceCompilationUnit cu = entity.getCompilationUnit();
+            if (cu == null || entity.getCtType().getPosition() == null
+                    || !entity.getCtType().getPosition().isValidPosition()) {
+                continue; // not editable (e.g. a shadow/JAR type)
+            }
+            if (!entity.isXmlElement()) {
+                addXmlInsert(offsetsByCu, textsByCu, importsByCu, cu, entity.typeSourceStart(),
+                        "@XMLElement", XMLElement.class.getName());
+                total++;
+            }
+            for (SourceModelProperty prop : entity.getDeclaredProperties().values()) {
+                if (prop.getXmlSerialization() != XmlSerializationMode.NONE) {
+                    continue; // already annotated — leave it (fill-only-missing)
+                }
+                if (prop.isDerived() || prop.isIgnoreType() || !prop.hasValidGetterPosition()) {
+                    continue;
+                }
+                String text;
+                String importFqn;
+                if (prop.getCardinality() == Getter.Cardinality.SINGLE && prop.isStringConvertable()) {
+                    text = "@XMLAttribute";
+                    importFqn = XMLAttribute.class.getName();
+                } else if (prop.isEmbedded()) {
+                    text = "@XMLElement";
+                    importFqn = XMLElement.class.getName();
+                } else {
+                    continue; // non-embedded reference, or unresolvable — skip
+                }
+                addXmlInsert(offsetsByCu, textsByCu, importsByCu, cu, prop.getterSourceStart(),
+                        text, importFqn);
+                total++;
+            }
+        }
+        // Apply, per compilation unit: annotation lines descending, then imports.
+        for (SourceCompilationUnit cu : offsetsByCu.keySet()) {
+            List<int[]> offsets = offsetsByCu.get(cu);
+            List<String> texts = textsByCu.get(cu);
+            Integer[] order = new Integer[offsets.size()];
+            for (int i = 0; i < order.length; i++) {
+                order[i] = i;
+            }
+            java.util.Arrays.sort(order, (a, b) -> Integer.compare(offsets.get(b)[0], offsets.get(a)[0]));
+            String src = cu.getText();
+            for (int i : order) {
+                src = SourceAnnotationEditor.insertAnnotationLine(src, offsets.get(i)[0], texts.get(i));
+            }
+            for (String imp : importsByCu.get(cu)) {
+                src = SourceAnnotationEditor.ensureImport(src, imp);
+            }
+            cu.setText(src);
+        }
+        return total;
+    }
+
+    private static void addXmlInsert(Map<SourceCompilationUnit, List<int[]>> offsetsByCu,
+            Map<SourceCompilationUnit, List<String>> textsByCu,
+            Map<SourceCompilationUnit, java.util.Set<String>> importsByCu,
+            SourceCompilationUnit cu, int offset, String text, String importFqn) {
+        offsetsByCu.computeIfAbsent(cu, k -> new ArrayList<>()).add(new int[] { offset });
+        textsByCu.computeIfAbsent(cu, k -> new ArrayList<>()).add(text);
+        importsByCu.computeIfAbsent(cu, k -> new java.util.LinkedHashSet<>()).add(importFqn);
+    }
+
     public void declareAsEntity(SourceJavaFile file) throws IOException {
         String qualifiedName = file.getQualifiedName();
         CtType<?> ctType = findType(qualifiedName);

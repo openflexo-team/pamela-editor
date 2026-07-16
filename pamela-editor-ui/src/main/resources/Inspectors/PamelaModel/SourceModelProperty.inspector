@@ -175,7 +175,36 @@
             <TextField name="ConstantNameTF" index="11" data="data.referencedConstantName" readOnly="true"
                 visible="data.referencedConstantName != null"
                 constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="12" localize="true" />
-            <Panel name="Spacer" layout="flow" index="12"
+            <Label name="XmlSerializationLabel" label="xml_serialization" index="12"
+                constraints="twocols(location=left)" localize="true" />
+            <DropDown name="XmlSerializationDD" index="13" data="data.xmlSerialization" readOnly="false"
+                list="data.xmlSerializationChoices"
+                iteratorClassName="org.openflexo.pamela.editor.model.XmlSerializationMode"
+                format="object.name.toLowerCase" localize="true" autoSelectFirstRow="false"
+                constraints="twocols(expandHorizontally=false;location=right)" width="120" />
+             <Label label="" visible="data.xmlSerialized"
+                constraints="twocols(location=left)" localize="true" />
+            <Panel name="XmlPanel" layout="twocols" border="rounded3d" visible="data.xmlSerialized" index="14"
+                constraints="twocols(expandHorizontally=true;location=right)">
+                <Label name="XmlTagLabel" label="xml_tag" index="0"
+                    constraints="twocols(location=left)" localize="true" />
+                <TextField name="XmlTagTF" index="1" data="data.xmlTag" readOnly="false"
+                    validateOnReturn="true"
+                    constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="12" localize="true" />
+                <Label name="XmlPrimaryLabel" label="xml_primary" index="2"
+                    visible="data.xmlElementMode"
+                    constraints="twocols(location=left)" localize="true" />
+                <CheckBox name="XmlPrimaryCB" index="3" data="data.xmlPrimary" readOnly="false"
+                    visible="data.xmlElementMode"
+                    constraints="twocols(location=right)" localize="true" />
+                <Label name="XmlContextLabel" label="xml_context" index="4"
+                    visible="data.xmlElementMode"
+                    constraints="twocols(location=left)" localize="true" />
+                <TextField name="XmlContextTF" index="5" data="data.xmlContext" readOnly="false"
+                    validateOnReturn="true" visible="data.xmlElementMode"
+                    constraints="twocols(expandHorizontally=true;insetsRight=5;location=right)" columns="12" localize="true" />
+            </Panel>
+            <Panel name="Spacer" layout="flow" index="15"
                 constraints="twocols(expandHorizontally=true;expandVertically=true;location=center)" />
         </Tab>
 
@@ -240,6 +269,27 @@
         <Localized key="inverse" lang="English" value="Inverse" />
         <Localized key="inverse" lang="French" value="Inverse" />
         <Localized key="inverse" lang="Dutch" value="Inverse" />
+        <Localized key="xml_serialization" lang="English" value="XML serialization" />
+        <Localized key="xml_serialization" lang="French" value="Sérialisation XML" />
+        <Localized key="xml_serialization" lang="Dutch" value="XML-serialisatie" />
+        <Localized key="xml_tag" lang="English" value="XML tag" />
+        <Localized key="xml_tag" lang="French" value="Balise XML" />
+        <Localized key="xml_tag" lang="Dutch" value="XML-tag" />
+        <Localized key="xml_primary" lang="English" value="Primary" />
+        <Localized key="xml_primary" lang="French" value="Primaire" />
+        <Localized key="xml_primary" lang="Dutch" value="Primair" />
+        <Localized key="xml_context" lang="English" value="Context" />
+        <Localized key="xml_context" lang="French" value="Contexte" />
+        <Localized key="xml_context" lang="Dutch" value="Context" />
+        <Localized key="none" lang="English" value="None" />
+        <Localized key="none" lang="French" value="Aucune" />
+        <Localized key="none" lang="Dutch" value="Geen" />
+        <Localized key="attribute" lang="English" value="Attribute" />
+        <Localized key="attribute" lang="French" value="Attribut" />
+        <Localized key="attribute" lang="Dutch" value="Attribuut" />
+        <Localized key="element" lang="English" value="Element" />
+        <Localized key="element" lang="French" value="Élément" />
+        <Localized key="element" lang="Dutch" value="Element" />
         <Localized key="constant_name" lang="English" value="Constant" />
         <Localized key="constant_name" lang="French" value="Constante" />
         <Localized key="constant_name" lang="Dutch" value="Constante" />

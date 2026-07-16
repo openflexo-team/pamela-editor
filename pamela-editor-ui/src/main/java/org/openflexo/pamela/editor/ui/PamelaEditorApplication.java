@@ -70,6 +70,7 @@ import org.openflexo.pamela.editor.model.SourcePackage;
 import org.openflexo.pamela.editor.ui.action.ActionGroup;
 import org.openflexo.pamela.editor.ui.action.AddAsRootTypeAction;
 import org.openflexo.pamela.editor.ui.action.AddSourceFolderAction;
+import org.openflexo.pamela.editor.ui.action.AutoAnnotateXmlAction;
 import org.openflexo.pamela.editor.ui.action.RenameMetaModelAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsAdderAction;
 import org.openflexo.pamela.editor.ui.action.DeclareAsFinderAction;
@@ -859,6 +860,8 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         registerAction(new ShowAllMembersAction(this, PamelaClassDiagramDrawing.Compartment.PROPERTIES));
         registerAction(new ShowAllMembersAction(this, PamelaClassDiagramDrawing.Compartment.INITIALIZERS));
         registerAction(new ShowAllMembersAction(this, PamelaClassDiagramDrawing.Compartment.METHODS));
+        // --- XML serialization — xml-serialization-design.md ---
+        registerAction(new AutoAnnotateXmlAction());
 
         frame.validate();
         frame.pack();
