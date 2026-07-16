@@ -154,6 +154,60 @@ public class TestIssueSourceAndSeverity {
         assertFalse("model3 has no Error anywhere", model3.hasErrors(model3));
     }
 
+    // -------------------------------------------------------------------------
+    // issuesRegarding(element) — the actual Issue list behind the browser hover tooltips
+    // (same roll-up semantics as hasErrors/hasWarnings, ordered by severity).
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testIssuesRegardingLeafReturnsOnlyItsOwnIssue() {
+        SourceModelEntity inconsistent = model3.getEntity("test.model3.InconsistentEntity");
+        SourceModelProperty label = inconsistent.getDeclaredProperties().get("label");
+
+        java.util.List<Issue> issues = model3.issuesRegarding(label);
+        assertEquals(1, issues.size());
+        assertTrue(issues.get(0).getMessage().contains("mixes constant and literal identifiers"));
+        assertSame(label, issues.get(0).getSource());
+    }
+
+    @Test
+    public void testIssuesRegardingEntityRollsUpNestedPropertyIssue() {
+        SourceModelEntity inconsistent = model3.getEntity("test.model3.InconsistentEntity");
+        SourceModelProperty label = inconsistent.getDeclaredProperties().get("label");
+
+        java.util.List<Issue> issues = model3.issuesRegarding(inconsistent);
+        // The entity's own "no @Initializer" warning AND the nested property's warning.
+        assertTrue("expected the entity's own issue to be listed",
+                issues.stream().anyMatch(i -> i.getSource() == inconsistent));
+        assertTrue("expected the nested property's issue to roll up",
+                issues.stream().anyMatch(i -> i.getSource() == label));
+    }
+
+    @Test
+    public void testIssuesRegardingIsOrderedBySeverity() {
+        // Errors before warnings before information — verify the rank sequence never decreases.
+        java.util.List<Issue> issues = model3.issuesRegarding(model3);
+        assertFalse("model3 has issues to order", issues.isEmpty());
+        int previousRank = -1;
+        for (Issue issue : issues) {
+            int rank = issue instanceof Error ? 0 : issue instanceof Warning ? 1 : 2;
+            assertTrue("issues must be ordered by decreasing severity", rank >= previousRank);
+            previousRank = rank;
+        }
+    }
+
+    @Test
+    public void testIssuesRegardingCleanLeafIsEmpty() {
+        SourceModelEntity literalEntity = model3.getEntity("test.model3.LiteralEntity");
+        SourceModelProperty clean = literalEntity.getDeclaredProperties().get("name");
+        assertTrue(model3.issuesRegarding(clean).isEmpty());
+    }
+
+    @Test
+    public void testIssuesRegardingNullIsEmpty() {
+        assertTrue(model3.issuesRegarding(null).isEmpty());
+    }
+
     @Test
     public void testRollUpIsOneDirectionalChildToParentOnly() {
         // MixedEntity itself carries its own "no @Initializer" warning, but its two

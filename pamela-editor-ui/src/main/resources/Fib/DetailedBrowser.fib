@@ -32,6 +32,7 @@
         <!-- SourceMetaModel: shown when the user selects a session's metamodel node -->
         <BrowserElement id="5"
             icon="controller.iconForObject(metaModel)"
+            tooltip="controller.tooltipForObject(metaModel)"
             filtered="false"
             label="metaModel.name"
             defaultVisible="true"
@@ -43,6 +44,7 @@
 
         <BrowserElement id="10"
             icon="controller.iconForObject(project)"
+            tooltip="controller.tooltipForObject(project)"
             filtered="false"
             label="project.metaModel.name"
             defaultVisible="true"
@@ -55,6 +57,7 @@
 
         <BrowserElement id="15"
             icon="controller.iconForObject(folder)"
+            tooltip="controller.tooltipForObject(folder)"
             filtered="false"
             label="folder.name"
             defaultVisible="true"
@@ -66,6 +69,7 @@
 
         <BrowserElement id="20"
             icon="controller.iconForObject(pkg)"
+            tooltip="controller.tooltipForObject(pkg)"
             filtered="false"
             label="pkg.qualifiedName"
             defaultVisible="true"
@@ -77,6 +81,7 @@
 
         <BrowserElement id="90"
             icon="controller.iconForObject(javaFile)"
+            tooltip="controller.tooltipForObject(javaFile)"
             filtered="false"
             label="javaFile.simpleName"
             defaultVisible="true"
@@ -87,6 +92,7 @@
 
         <BrowserElement id="30"
             icon="controller.iconForObject(entity)"
+            tooltip="controller.tooltipForObject(entity)"
             filtered="false"
             label="entity.simpleName"
             defaultVisible="true"
@@ -111,6 +117,7 @@
 
         <BrowserElement id="60"
             icon="controller.iconForObject(property)"
+            tooltip="controller.tooltipForObject(property)"
             filtered="false"
             label="property.propertyIdentifier"
             defaultVisible="true"
@@ -121,6 +128,7 @@
 
         <BrowserElement id="70"
             icon="controller.iconForObject(initializer)"
+            tooltip="controller.tooltipForObject(initializer)"
             filtered="false"
             label="initializer.signature"
             defaultVisible="true"
@@ -131,6 +139,7 @@
 
         <BrowserElement id="75"
             icon="controller.iconForObject(method)"
+            tooltip="controller.tooltipForObject(method)"
             filtered="false"
             label="method.signature"
             defaultVisible="true"

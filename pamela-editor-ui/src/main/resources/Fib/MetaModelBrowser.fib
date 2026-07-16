@@ -29,6 +29,7 @@
 
         <BrowserElement id="3"
             icon="controller.iconForObject(project)"
+            tooltip="controller.tooltipForObject(project)"
             filtered="false"
             label="project.metaModel.name+&quot;.pamela&quot;"
             defaultVisible="true"
@@ -51,6 +52,7 @@
 
         <BrowserElement id="8"
             icon="controller.iconForObject(folder)"
+            tooltip="controller.tooltipForObject(folder)"
             filtered="false"
             label="folder.name"
             defaultVisible="true"
@@ -62,6 +64,7 @@
 
         <BrowserElement id="5"
             icon="controller.iconForObject(pkg)"
+            tooltip="controller.tooltipForObject(pkg)"
             filtered="false"
             label="pkg.qualifiedName"
             defaultVisible="true"
@@ -73,6 +76,7 @@
 
         <BrowserElement id="6"
             icon="controller.iconForObject(entity)"
+            tooltip="controller.tooltipForObject(entity)"
             filtered="false"
             label="controller.labelForEntity(entity)"
             defaultVisible="true"
@@ -83,6 +87,7 @@
 
         <BrowserElement id="7"
             icon="controller.iconForObject(javaFile)"
+            tooltip="controller.tooltipForObject(javaFile)"
             filtered="false"
             label="controller.labelForJavaFile(javaFile)"
             defaultVisible="true"

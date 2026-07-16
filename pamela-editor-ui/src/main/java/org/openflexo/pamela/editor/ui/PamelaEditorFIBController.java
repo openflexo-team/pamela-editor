@@ -62,7 +62,11 @@ import org.openflexo.gina.swing.view.SwingViewFactory;
 import org.openflexo.icon.IconFactory;
 import org.openflexo.localization.LocalizedDelegate;
 import org.openflexo.localization.LocalizedDelegateImpl;
+import org.openflexo.pamela.editor.model.Error;
+import org.openflexo.pamela.editor.model.Issue;
 import org.openflexo.pamela.editor.model.SourceElement;
+import org.openflexo.pamela.editor.model.SourceMetaModel;
+import org.openflexo.pamela.editor.model.Warning;
 import org.openflexo.pamela.validation.FixProposal;
 import org.openflexo.pamela.validation.InformationIssue;
 import org.openflexo.pamela.validation.ValidationError;
@@ -176,6 +180,76 @@ public class PamelaEditorFIBController<T> extends FIBController implements Prope
 
 	protected void clearCachedIcons() {
 		cachedIcons.clear();
+	}
+
+	// =========================================================================
+	// Browser hover tooltips — the issues concerning a node
+	// =========================================================================
+
+	/**
+	 * HTML tooltip listing the errors / warnings / infos concerning the given browser node,
+	 * or {@code null} when there is none (so no tooltip is shown for that node). Bound from
+	 * the browser FIBs via {@code tooltip="controller.tooltipForObject(<var>)"}.
+	 *
+	 * <p>Like {@link #iconForObject(Object)}'s severity markers, the list rolls up through the
+	 * containment hierarchy (package → entity → property…): a container's tooltip lists the
+	 * problems found anywhere underneath it, not only those raised directly against it — so the
+	 * hover explains what the node's error/warning icon marker is signalling. Each issue is a
+	 * language-neutral colored bullet (red = error, orange = warning, blue = info) followed by
+	 * the issue message; issues are ordered by decreasing severity
+	 * ({@link SourceMetaModel#issuesRegarding(SourceElement)}).</p>
+	 */
+	@NotificationUnsafe
+	public String tooltipForObject(Object object) {
+		SourceElement element = null;
+		if (object instanceof SourceElement) {
+			element = (SourceElement) object;
+		}
+		else if (object instanceof PamelaProject) {
+			// PamelaProject (a UI wrapper, not a SourceElement) → its owning metamodel.
+			element = ((PamelaProject) object).getMetaModel();
+		}
+		if (element == null) {
+			return null;
+		}
+		SourceMetaModel metaModel = element.getMetaModel();
+		if (metaModel == null) {
+			return null;
+		}
+		List<Issue> issues = metaModel.issuesRegarding(element);
+		if (issues.isEmpty()) {
+			return null;
+		}
+		StringBuilder html = new StringBuilder("<html>");
+		boolean first = true;
+		for (Issue issue : issues) {
+			if (!first) {
+				html.append("<br>");
+			}
+			first = false;
+			html.append("<font color='").append(colorForSeverity(issue)).append("'>&#9679;</font> ");
+			html.append(escapeHtml(issue.getMessage()));
+		}
+		html.append("</html>");
+		return html.toString();
+	}
+
+	private static String colorForSeverity(Issue issue) {
+		if (issue instanceof Error) {
+			return "#cc0000";
+		}
+		if (issue instanceof Warning) {
+			return "#e69500";
+		}
+		return "#3366cc"; // Information
+	}
+
+	private static String escapeHtml(String text) {
+		if (text == null) {
+			return "";
+		}
+		return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+				.replace("\n", "<br>");
 	}
 
 	@Override

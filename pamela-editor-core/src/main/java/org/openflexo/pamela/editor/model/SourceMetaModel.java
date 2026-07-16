@@ -9,6 +9,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -2231,6 +2232,47 @@ public class SourceMetaModel implements SourceElement, org.openflexo.toolbox.Has
             return children;
         }
         return Collections.emptyList();
+    }
+
+    /**
+     * Collects every {@link Issue} that concerns {@code element}: those raised directly
+     * against it, plus — exactly like the icon severity markers
+     * ({@link #hasErrors(SourceElement)}) — those raised against any element nested
+     * underneath it in the containment hierarchy ({@link #childrenOf(SourceElement)}).
+     * So a container's list reflects any problem found beneath it, not only issues raised
+     * directly against it. The result is ordered by decreasing severity (errors, then
+     * warnings, then information), preserving discovery order within each severity.
+     * Used to build the browser hover tooltips.
+     */
+    public List<Issue> issuesRegarding(SourceElement element) {
+        List<Issue> collected = new ArrayList<>();
+        collectIssues(element, collected);
+        collected.sort(Comparator.comparingInt(SourceMetaModel::severityRank));
+        return collected;
+    }
+
+    private void collectIssues(SourceElement element, List<Issue> into) {
+        if (element == null) {
+            return;
+        }
+        for (Issue issue : issues) {
+            if (issue.getSource() == element && !into.contains(issue)) {
+                into.add(issue);
+            }
+        }
+        for (SourceElement child : childrenOf(element)) {
+            collectIssues(child, into);
+        }
+    }
+
+    private static int severityRank(Issue issue) {
+        if (issue instanceof Error) {
+            return 0;
+        }
+        if (issue instanceof Warning) {
+            return 1;
+        }
+        return 2; // Information (and any other severity)
     }
 
     /** {@code this} — a {@link SourceMetaModel} is its own owning meta-model. */
