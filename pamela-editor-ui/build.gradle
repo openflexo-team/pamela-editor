@@ -4,7 +4,7 @@ dependencies {
   implementation dianaSwing()
   implementation dianaApi()
   implementation diana()
-  implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.4'
+  implementation jacksonDatabind()
   // Spoon is needed for the SpoonOutlineView which displays CtType/CtMethod etc. directly
   // (decision D2: intentional exception to the no-Spoon-in-UI-API rule)
   implementation group: 'fr.inria.gforge.spoon', name: 'spoon-core', version: '9.1.0'
