@@ -88,7 +88,7 @@ public class PamelaEditorFIBController<T> extends FIBController implements Prope
 	static final Logger LOGGER = Logger.getLogger(PamelaEditorFIBController.class.getPackage().getName());
 
 	public static LocalizedDelegate EDITOR_LOCALIZATION = new LocalizedDelegateImpl(
-			ResourceLocator.locateResource("PamelaLocalization/PamelaEditor"), null, true, true);
+			ResourceLocator.locateResource("PamelaLocalization/PamelaEditor"), null, true, true).withContext("pamela-editor");
 
 	private final Map<Object, ImageIcon> cachedIcons = new HashMap<>();
 	private final List<ValidationReport> observedReports = new ArrayList<>();

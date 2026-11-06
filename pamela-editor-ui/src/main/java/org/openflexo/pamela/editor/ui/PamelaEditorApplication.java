@@ -187,7 +187,7 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
     public static final LocalizedDelegate PAMELA_EDITOR_LOCALIZATION =
             new LocalizedDelegateImpl(
                     ResourceLocator.locateResource("PamelaLocalization/PamelaEditor"),
-                    FlexoLocalization.getMainLocalizer(), true, true);
+                    FlexoLocalization.getMainLocalizer(), true, true).withContext("pamela-editor:application");
 
     static final int META_MASK =
             ToolBox.isMacOS() ? InputEvent.META_MASK : InputEvent.CTRL_MASK;
