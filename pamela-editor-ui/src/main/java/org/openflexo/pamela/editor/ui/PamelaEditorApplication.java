@@ -664,13 +664,13 @@ public class PamelaEditorApplication implements org.openflexo.toolbox.HasPropert
         // --- Central column: navigation bar ---
         backButton = new JButton("←");
         backButton.setFont(backButton.getFont().deriveFont(Font.BOLD));
-        backButton.setToolTipText("Navigate back");
+        backButton.setToolTipText(PAMELA_EDITOR_LOCALIZATION.localizedTooltipForKey("navigate_back", backButton));
         backButton.setEnabled(false);
         backButton.addActionListener(e -> navigateBack());
 
         forwardButton = new JButton("→");
         forwardButton.setFont(forwardButton.getFont().deriveFont(Font.BOLD));
-        forwardButton.setToolTipText("Navigate forward");
+        forwardButton.setToolTipText(PAMELA_EDITOR_LOCALIZATION.localizedTooltipForKey("navigate_forward", forwardButton));
         forwardButton.setEnabled(false);
         forwardButton.addActionListener(e -> navigateForward());
 
