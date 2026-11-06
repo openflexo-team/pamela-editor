@@ -19,7 +19,7 @@
         <Localized key="source" lang="French" value="Sous-type" />
         <Localized key="source" lang="Dutch" value="Subtype" />
         <Localized key="target" lang="English" value="Super-type" />
-        <Localized key="target" lang="French" value="Super-type" />
+        <Localized key="target" lang="French" value="Cible" />
         <Localized key="target" lang="Dutch" value="Supertype" />
     </LocalizedDictionary>
     <Parameter name="title" value="Inheritance View" />

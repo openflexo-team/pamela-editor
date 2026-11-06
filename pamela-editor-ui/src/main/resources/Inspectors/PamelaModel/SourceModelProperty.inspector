@@ -249,22 +249,22 @@
         <Localized key="allows_multiple" lang="French" value="Occurrences multiples" />
         <Localized key="allows_multiple" lang="Dutch" value="Meerdere toegestaan" />
         <Localized key="getter" lang="English" value="Getter" />
-        <Localized key="getter" lang="French" value="Getter" />
+        <Localized key="getter" lang="French" value="Accesseur en lecture" />
         <Localized key="getter" lang="Dutch" value="Getter" />
         <Localized key="setter" lang="English" value="Setter" />
-        <Localized key="setter" lang="French" value="Setter" />
+        <Localized key="setter" lang="French" value="Accesseur en écriture" />
         <Localized key="setter" lang="Dutch" value="Setter" />
         <Localized key="updater" lang="English" value="Updater" />
-        <Localized key="updater" lang="French" value="Updater" />
+        <Localized key="updater" lang="French" value="Mise à jour" />
         <Localized key="updater" lang="Dutch" value="Updater" />
         <Localized key="adder" lang="English" value="Adder" />
-        <Localized key="adder" lang="French" value="Adder" />
+        <Localized key="adder" lang="French" value="Ajout" />
         <Localized key="adder" lang="Dutch" value="Adder" />
         <Localized key="remover" lang="English" value="Remover" />
-        <Localized key="remover" lang="French" value="Remover" />
+        <Localized key="remover" lang="French" value="Retrait" />
         <Localized key="remover" lang="Dutch" value="Remover" />
         <Localized key="reindexer" lang="English" value="Reindexer" />
-        <Localized key="reindexer" lang="French" value="Reindexer" />
+        <Localized key="reindexer" lang="French" value="Réindexation" />
         <Localized key="reindexer" lang="Dutch" value="Reindexer" />
         <Localized key="inverse" lang="English" value="Inverse" />
         <Localized key="inverse" lang="French" value="Inverse" />
