@@ -164,7 +164,7 @@
         <Localized key="source_directories" lang="Dutch" value="Bronmappen" />
         <Localized id="127" lang="English" value="Root"                key="root" />
         <Localized id="128" lang="French"  value="Racine"              key="root" />
-        <Localized key="root" lang="Dutch" value="Root" />
+        <Localized key="root" lang="Dutch" value="Hoofdmap" />
     </LocalizedDictionary>
 
 </Panel>

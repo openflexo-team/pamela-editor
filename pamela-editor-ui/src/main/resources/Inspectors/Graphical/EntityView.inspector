@@ -40,10 +40,10 @@
         <LocalizedDictionary>
         <Localized key="x" lang="English" value="X" />
         <Localized key="x" lang="French" value="X" />
-        <Localized key="x" lang="Dutch" value="X" />
+        <Localized key="x" lang="Dutch" value="Positie x" />
         <Localized key="y" lang="English" value="Y" />
         <Localized key="y" lang="French" value="Y" />
-        <Localized key="y" lang="Dutch" value="Y" />
+        <Localized key="y" lang="Dutch" value="Positie y" />
         <Localized key="width" lang="English" value="Width" />
         <Localized key="width" lang="French" value="Largeur" />
         <Localized key="width" lang="Dutch" value="Breedte" />
