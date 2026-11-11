@@ -157,10 +157,6 @@
                 constraints="twocols(location=left)" localize="true" />
             <CheckBox name="IgnoreTypeCB" index="3" data="data.ignoreType" readOnly="false"
                 constraints="twocols(location=right)" localize="true" />
-            <Label name="IgnoreEqualityLabel" label="ignore_for_equality" index="4"
-                constraints="twocols(location=left)" localize="true" />
-            <CheckBox name="IgnoreEqualityCB" index="5" data="data.ignoreForEquality" readOnly="false"
-                constraints="twocols(location=right)" localize="true" />
             <Label name="AllowsMultipleLabel" label="allows_multiple" index="6"
                 constraints="twocols(location=left)" localize="true" />
             <CheckBox name="AllowsMultipleCB" index="7" data="data.allowsMultipleOccurrences" readOnly="false"
@@ -242,9 +238,6 @@
         <Localized key="ignore_type" lang="English" value="Ignore type" />
         <Localized key="ignore_type" lang="French" value="Ignorer le type" />
         <Localized key="ignore_type" lang="Dutch" value="Type negeren" />
-        <Localized key="ignore_for_equality" lang="English" value="Ignore for equality" />
-        <Localized key="ignore_for_equality" lang="French" value="Ignorer (égalité)" />
-        <Localized key="ignore_for_equality" lang="Dutch" value="Negeren voor gelijkheid" />
         <Localized key="allows_multiple" lang="English" value="Allows multiple" />
         <Localized key="allows_multiple" lang="French" value="Occurrences multiples" />
         <Localized key="allows_multiple" lang="Dutch" value="Meerdere toegestaan" />

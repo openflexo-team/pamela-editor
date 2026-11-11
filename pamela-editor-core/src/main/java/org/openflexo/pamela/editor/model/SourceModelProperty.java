@@ -93,7 +93,6 @@ public class SourceModelProperty implements SourceElement,
     private String defaultValue;
     private boolean derived;
     private boolean ignoreType;
-    private boolean ignoreForEquality;
     private boolean allowsMultipleOccurrences;
 
     // Relationships
@@ -138,7 +137,6 @@ public class SourceModelProperty implements SourceElement,
         this.defaultValue = getterAnnotation.defaultValue();
         this.derived = getterAnnotation.isDerived();
         this.ignoreType = getterAnnotation.ignoreType();
-        this.ignoreForEquality = getterAnnotation.ignoreForEquality();
         this.allowsMultipleOccurrences = getterAnnotation.allowsMultipleOccurences();
         this.inversePropertyIdentifier = getterAnnotation.inverse();
 
@@ -572,16 +570,6 @@ public class SourceModelProperty implements SourceElement,
         boolean old = this.ignoreType;
         this.ignoreType = ignoreType;
         pcSupport.firePropertyChange("ignoreType", old, ignoreType);
-    }
-
-    public void setIgnoreForEquality(boolean ignoreForEquality) throws IOException {
-        if (ignoreForEquality == this.ignoreForEquality) {
-            return;
-        }
-        editGetterParameter("ignoreForEquality", ignoreForEquality ? "true" : null);
-        boolean old = this.ignoreForEquality;
-        this.ignoreForEquality = ignoreForEquality;
-        pcSupport.firePropertyChange("ignoreForEquality", old, ignoreForEquality);
     }
 
     public void setAllowsMultipleOccurrences(boolean allows) throws IOException {
@@ -1397,11 +1385,6 @@ public class SourceModelProperty implements SourceElement,
      */
     public boolean isIgnoreType() {
         return ignoreType;
-    }
-
-    /** {@code true} if the property is excluded from equality checks. */
-    public boolean isIgnoreForEquality() {
-        return ignoreForEquality;
     }
 
     /**
